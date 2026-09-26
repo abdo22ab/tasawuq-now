@@ -197,7 +197,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       </select>
     </div>
     <div class="field"><label>رقم الواتساب للتواصل</label><input id="phone" placeholder="218912345678"></div>
-    <div class="field"><label>رابط صورة (اختياري)</label><input id="imageUrl" placeholder="https://..."></div>
+    <div class="field">
+      <label>صورة الإعلان (اختياري)</label>
+      <div id="imgPickBox" class="imgPickBox" onclick="document.getElementById('imageFile').click()">
+        <span id="imgPickText">📷 اضغط لاختيار صورة من الجهاز</span>
+        <img id="imgPreview" class="hidden">
+      </div>
+      <input id="imageFile" type="file" accept="image/*" class="hidden" onchange="previewImage()">
+    </div>
     <button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
   </div>
 </div>
@@ -255,6 +262,7 @@ const auth=getAuth();
 const db=getFirestore();
 const storage=getStorage(app);
 
+const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 let isAdmin=false;
 let showOnlyMine=false;
@@ -413,13 +421,37 @@ function escapeHtml(str){
 return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
+window.previewImage=()=>{
+const file=document.getElementById("imageFile").files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=e=>{
+document.getElementById("imgPreview").src=e.target.result;
+document.getElementById("imgPreview").classList.remove("hidden");
+document.getElementById("imgPickText").classList.add("hidden");
+};
+reader.readAsDataURL(file);
+};
+
+async function uploadToImgBB(file){
+const formData=new FormData();
+formData.append("image",file);
+const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{
+method:"POST",
+body:formData
+});
+const data=await res.json();
+if(!data.success)throw new Error("فشل رفع الصورة");
+return data.data.url;
+}
+
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const title=document.getElementById("title").value.trim();
 const price=document.getElementById("price").value;
 const category=document.getElementById("category").value;
 const phone=document.getElementById("phone").value.trim();
-const imageUrl=document.getElementById("imageUrl").value.trim();
+const file=document.getElementById("imageFile").files[0];
 const saveBtn=document.getElementById("saveBtn");
 
 if(!title||!price){alert("الرجاء إدخال العنوان والسعر");return;}
@@ -428,6 +460,12 @@ saveBtn.disabled=true;
 saveBtn.textContent="جاري النشر...";
 
 try{
+let imageUrl="";
+if(file){
+saveBtn.textContent="جاري رفع الصورة...";
+imageUrl=await uploadToImgBB(file);
+}
+
 await addDoc(collection(db,"posts"),{
 title,price:Number(price),category,phone,imageUrl,
 uid:auth.currentUser.uid,
@@ -437,7 +475,9 @@ createdAt:Date.now()
 document.getElementById("title").value="";
 document.getElementById("price").value="";
 document.getElementById("phone").value="";
-document.getElementById("imageUrl").value="";
+document.getElementById("imageFile").value="";
+document.getElementById("imgPreview").classList.add("hidden");
+document.getElementById("imgPickText").classList.remove("hidden");
 showHome();
 }catch(e){
 alert("خطأ أثناء الحفظ: "+e.message);
@@ -452,10 +492,4 @@ if(!confirm("هل تريد حذف هذا الإعلان؟"))return;
 try{
 await deleteDoc(doc(db,"posts",id));
 }catch(e){
-alert("خطأ أثناء الحذف: "+e.message);
-}
-};
-</script>
-
-</body>
-</html>
+alert("خطأ أثناء الحذ
