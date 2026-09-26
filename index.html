@@ -492,4 +492,10 @@ if(!confirm("هل تريد حذف هذا الإعلان؟"))return;
 try{
 await deleteDoc(doc(db,"posts",id));
 }catch(e){
-alert("خطأ أثناء الحذ
+alert("خطأ أثناء الحذف: "+e.message);
+}
+};
+</script>
+
+</body>
+</html>
