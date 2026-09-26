@@ -171,11 +171,23 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
   <div class="catsRow">
     <button class="catChip active" data-cat="الكل" onclick="filterCategory('الكل')">✨ الكل</button>
-    <button class="catChip" data-cat="سيارات" onclick="filterCategory('سيارات')">🚗 سيارات</button>
-    <button class="catChip" data-cat="دراجات" onclick="filterCategory('دراجات')">🏍️ دراجات</button>
-    <button class="catChip" data-cat="العاب" onclick="filterCategory('العاب')">🎮 العاب</button>
-    <button class="catChip" data-cat="عقارات" onclick="filterCategory('عقارات')">🏠 عقارات</button>
-    <button class="catChip" data-cat="وظائف" onclick="filterCategory('وظائف')">💼 وظائف</button>
+    <button class="catChip" data-cat="سيارات ومركبات" onclick="filterCategory('سيارات ومركبات')">🚗 سيارات ومركبات</button>
+    <button class="catChip" data-cat="دراجات نارية" onclick="filterCategory('دراجات نارية')">🏍️ دراجات نارية</button>
+    <button class="catChip" data-cat="دراجات هوائية" onclick="filterCategory('دراجات هوائية')">🚲 دراجات هوائية</button>
+    <button class="catChip" data-cat="الخدمات" onclick="filterCategory('الخدمات')">🛠️ الخدمات</button>
+    <button class="catChip" data-cat="عقارات للبيع" onclick="filterCategory('عقارات للبيع')">🏠 عقارات للبيع</button>
+    <button class="catChip" data-cat="عقارات للإيجار" onclick="filterCategory('عقارات للإيجار')">🔑 عقارات للإيجار</button>
+    <button class="catChip" data-cat="موبايل وتابلت" onclick="filterCategory('موبايل وتابلت')">📱 موبايل وتابلت</button>
+    <button class="catChip" data-cat="لابتوب وكمبيوتر" onclick="filterCategory('لابتوب وكمبيوتر')">💻 لابتوب وكمبيوتر</button>
+    <button class="catChip" data-cat="ألعاب وألعاب الفيديو" onclick="filterCategory('ألعاب وألعاب الفيديو')">🎮 ألعاب وألعاب الفيديو</button>
+    <button class="catChip" data-cat="أجهزة منزلية" onclick="filterCategory('أجهزة منزلية')">🧊 أجهزة منزلية</button>
+    <button class="catChip" data-cat="ملابس رجالية" onclick="filterCategory('ملابس رجالية')">👔 ملابس رجالية</button>
+    <button class="catChip" data-cat="ملابس نسائية" onclick="filterCategory('ملابس نسائية')">👗 ملابس نسائية</button>
+    <button class="catChip" data-cat="ملابس أطفال" onclick="filterCategory('ملابس أطفال')">👶 ملابس أطفال</button>
+    <button class="catChip" data-cat="جمال وصحة" onclick="filterCategory('جمال وصحة')">💆 جمال وصحة</button>
+    <button class="catChip" data-cat="مكياج" onclick="filterCategory('مكياج')">💄 مكياج</button>
+    <button class="catChip" data-cat="مطاعم وغداء" onclick="filterCategory('مطاعم وغداء')">🍽️ مطاعم وغداء</button>
+    <button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
   </div>
 
   <div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
@@ -193,7 +205,23 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <div class="field"><label>السعر (د.ل)</label><input id="price" type="number" placeholder="0"></div>
     <div class="field"><label>التصنيف</label>
       <select id="category">
-        <option>سيارات</option><option>دراجات</option><option>العاب</option><option>عقارات</option><option>وظائف</option>
+        <option>سيارات ومركبات</option>
+        <option>دراجات نارية</option>
+        <option>دراجات هوائية</option>
+        <option>الخدمات</option>
+        <option>عقارات للبيع</option>
+        <option>عقارات للإيجار</option>
+        <option>موبايل وتابلت</option>
+        <option>لابتوب وكمبيوتر</option>
+        <option>ألعاب وألعاب الفيديو</option>
+        <option>أجهزة منزلية</option>
+        <option>ملابس رجالية</option>
+        <option>ملابس نسائية</option>
+        <option>ملابس أطفال</option>
+        <option>جمال وصحة</option>
+        <option>مكياج</option>
+        <option>مطاعم وغداء</option>
+        <option>إلكترونيات</option>
       </select>
     </div>
     <div class="field"><label>رقم الواتساب للتواصل</label><input id="phone" placeholder="218912345678"></div>
