@@ -84,9 +84,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .catTag{font-size:10.5px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:7px}
 .card .time{font-size:10.5px;color:var(--muted)}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
-.card .actions a.waBtn{
+.card .actions .waBtn{
   flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;
-  cursor:pointer;text-decoration:none;text-align:center;display:block
+  font-family:inherit;cursor:pointer;text-decoration:none;text-align:center;display:block
 }
 .waBtn{background:var(--wa);color:#fff}
 .iconBtn2{
@@ -179,6 +179,30 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .rDismiss{background:var(--bg);color:var(--muted)}
 .reportsEmpty{text-align:center;color:var(--muted);padding:20px 0;font-size:14px}
 
+.warnBanner{margin:10px 16px 0;padding:9px 12px;background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;font-size:12.5px;color:#7a5c00;line-height:1.6}
+.sellerLine{font-size:11.5px;color:var(--teal-dark);font-weight:700;cursor:pointer}
+.termsBox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.8}
+.termsBox .termsTitle{font-weight:800;margin-bottom:4px}
+.termsBox ul{margin:0 0 8px 0;padding:0 18px 0 0}
+.termsCheck{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
+.termsCheck input{width:18px;height:18px}
+.sHead{text-align:center;margin-bottom:10px}
+.sName{font-size:18px;font-weight:800}
+.sStats{display:flex;gap:8px;margin:10px 0 14px}
+.sStat{flex:1;background:var(--bg);border-radius:12px;padding:8px 4px;text-align:center}
+.sStat b{display:block;font-size:13.5px}
+.sStat span{font-size:11px;color:var(--muted)}
+.starsRow{color:#f5a623;letter-spacing:1px}
+.reviewItem{border-top:1px solid var(--border);padding:10px 0}
+.reviewItem .rvTop{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;gap:8px}
+.reviewItem .rvText{font-size:13px;margin-top:4px;word-break:break-word}
+.rvDel{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;font-family:inherit}
+.starPick{display:flex;gap:6px;justify-content:center;margin:6px 0 10px;direction:ltr}
+.starPick button{background:none;border:none;font-size:32px;color:#cfd4dc;cursor:pointer;padding:0}
+.starPick button.on{color:#f5a623}
+.sheet textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);font-family:inherit;font-size:14px;resize:none;margin-bottom:10px;box-sizing:border-box}
+.warnBox{background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;padding:12px;font-size:14px;line-height:1.8;color:#7a5c00;margin-bottom:14px}
+
 .hidden{display:none!important}
 </style>
 </head>
@@ -222,6 +246,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <button class="catChip" data-cat="مطاعم وغداء" onclick="filterCategory('مطاعم وغداء')">🍽️ مطاعم وغداء</button>
     <button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
   </div>
+
+  <div class="warnBanner">⚠️ <b>تنبيه للمشتري:</b> لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
 
   <div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
   <div class="grid" id="posts"></div>
@@ -267,6 +293,15 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <div id="imgAddTile" class="imgAddTile" onclick="document.getElementById('imageFile').click()">📷 إضافة صورة</div>
       <input id="imageFile" type="file" accept="image/*" multiple class="hidden" onchange="handleFilesSelected()">
     </div>
+    <div id="termsBox" class="termsBox">
+      <div class="termsTitle">📋 شروط نشر الإعلان</div>
+      <ul>
+        <li>أتعهد بأن المعلومات والصور التي أنشرها صحيحة.</li>
+        <li>أتحمل كامل المسؤولية عن إعلاني.</li>
+        <li>لا أنشر إعلانات وهمية أو مضللة.</li>
+      </ul>
+      <label class="termsCheck"><input type="checkbox" id="termsCheck"> قرأت الشروط وأوافق عليها</label>
+    </div>
     <button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
   </div>
 </div>
@@ -285,6 +320,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <h3>تسجيل الدخول / إنشاء حساب</h3>
     <div class="field"><input id="email" placeholder="البريد الإلكتروني"></div>
     <div class="field"><input id="password" type="password" placeholder="كلمة المرور"></div>
+    <div class="field"><input id="regName" maxlength="30" placeholder="اسمك (عند إنشاء حساب جديد فقط)"></div>
     <button class="btnMain" onclick="login()">دخول</button>
     <button class="btnGhost" style="background:#fff;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;gap:8px" onclick="loginWithGoogle()">
       <span>🔵</span> المتابعة عبر جوجل
@@ -299,6 +335,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="sheet">
     <h3>حسابي</h3>
     <div class="accountEmail" id="accountEmail"></div>
+    <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر للآخرين</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
+    <button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
+    <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع (التقييمات)</button>
     <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
     <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
@@ -314,10 +353,28 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
+<!-- ===== SELLER OVERLAY ===== -->
+<div id="sellerOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:88vh;overflow-y:auto">
+    <div id="sellerContent"></div>
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+  </div>
+</div>
+
+<!-- ===== BUYER WARNING BEFORE CONTACT ===== -->
+<div id="warnOverlay" class="overlay hidden">
+  <div class="sheet">
+    <h3>⚠️ تنبيه قبل التواصل</h3>
+    <div class="warnBox">لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
+    <a id="warnGo" class="btnMain" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" target="_blank" rel="noopener" onclick="closeOverlay()">متابعة إلى واتساب</a>
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithRedirect,getRedirectResult } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,updateDoc,onSnapshot,deleteDoc,doc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getStorage,ref,uploadBytes,getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
 
 const firebaseConfig={
@@ -349,6 +406,12 @@ let currentCity="الكل";
 let allPosts=[];
 let pendingAction=null;
 let editingPostId=null;
+let myProfile=null;
+let unsubProfile=null;
+let profileCreateTried=false;
+let pendingRegisterName="";
+let sellerPanelUid=null;
+let selectedStars=0;
 let selectedImages=[]; // {type:'existing'|'new', url?, file?, previewUrl?}
 let allReports=[];
 let reportsListenerStarted=false;
@@ -361,6 +424,8 @@ const authOverlay=document.getElementById("authOverlay");
 const accountOverlay=document.getElementById("accountOverlay");
 const reportsOverlay=document.getElementById("reportsOverlay");
 const reportsBtn=document.getElementById("reportsBtn");
+const sellerOverlay=document.getElementById("sellerOverlay");
+const warnOverlay=document.getElementById("warnOverlay");
 const adminChip=document.getElementById("adminChip");
 const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
@@ -373,6 +438,7 @@ if(user){
 isAdmin=user.email===ADMIN_EMAIL;
 adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
+startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 closeOverlay();
 if(pendingAction==="form"){showForm();}
@@ -383,12 +449,16 @@ pendingAction=null;
 isAdmin=false;
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
+stopProfileListener();
 if(showOnlyMine){showHome();}
 renderPosts();
 }
 });
 
-window.register=()=>createUserWithEmailAndPassword(auth,email.value,password.value).catch(e=>alert(e.message));
+window.register=()=>{
+pendingRegisterName=document.getElementById("regName").value.trim();
+return createUserWithEmailAndPassword(auth,email.value,password.value).catch(e=>{pendingRegisterName="";alert(e.message);});
+};
 window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value).catch(e=>alert(e.message));
 window.logout=()=>signOut(auth);
 
@@ -396,11 +466,16 @@ const googleProvider=new GoogleAuthProvider();
 window.loginWithGoogle=()=>signInWithRedirect(auth,googleProvider).catch(e=>alert(e.message));
 getRedirectResult(auth).catch(e=>{if(e && e.code!=="auth/no-current-user")console.error(e);});
 
-window.closeOverlay=()=>{authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");pendingAction=null;};
+window.closeOverlay=()=>{
+authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
+sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");
+pendingAction=null;
+};
 
 window.openAccount=()=>{
 if(auth.currentUser){
 document.getElementById("accountEmail").textContent=auth.currentUser.email;
+document.getElementById("myName").value=(myProfile&&myProfile.name)||"";
 reportsBtn.classList.toggle("hidden",!isAdmin);
 accountOverlay.classList.remove("hidden");
 }else{
@@ -450,6 +525,8 @@ document.getElementById("title").value="";
 document.getElementById("price").value="";
 document.getElementById("phone").value="";
 document.getElementById("city").value="";
+document.getElementById("termsCheck").checked=false;
+document.getElementById("termsBox").classList.remove("hidden");
 selectedImages=[];
 renderImagePicker();
 openFormScreen();
@@ -467,6 +544,7 @@ document.getElementById("price").value=post.price||"";
 document.getElementById("category").value=post.category||"سيارات ومركبات";
 document.getElementById("city").value=post.city||"";
 document.getElementById("phone").value=post.phone||"";
+document.getElementById("termsBox").classList.add("hidden");
 const existing=(post.images && post.images.length)?post.images:(post.imageUrl?[post.imageUrl]:[]);
 selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();
@@ -548,7 +626,7 @@ const img=images.length
 ?`<img src="${escapeHtml(images[0])}" onerror="this.parentElement.innerHTML='<span class=ph>🖼️</span>'">`
 :`<span class="ph">🖼️</span>`;
 const countBadge=images.length>1?`<span class="imgCountBadge">📷 ${images.length}</span>`:"";
-const wa=p.phone?`<a class="waBtn" target="_blank" href="https://wa.me/${encodeURIComponent(p.phone.replace(/[^0-9]/g,''))}">واتساب</a>`:"";
+const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const report=`<button class="iconBtn2 reportBtn" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>`;
@@ -559,12 +637,183 @@ return `
     <h4>${escapeHtml(p.title||"بدون عنوان")}</h4>
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
     ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
+    ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
     <div class="meta"><span class="catTag">${escapeHtml(p.category||"")}</span><span class="time">${timeAgo(p.createdAt)}</span></div>
     <div class="actions">${wa}${edit}${del}${report}</div>
   </div>
 </div>`;
 }).join("");
 }
+
+
+/* ================= الملف الشخصي والتقييمات ================= */
+function defaultName(user){
+const dn=(user.displayName||"").trim().slice(0,30);
+return dn.length>=2?dn:("مستخدم "+user.uid.slice(0,4));
+}
+
+function profileCreatedAt(user){
+const t=Date.parse(user.metadata&&user.metadata.creationTime);
+return isNaN(t)?Date.now():t;
+}
+
+function startProfileListener(user){
+stopProfileListener();
+profileCreateTried=false;
+unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
+if(snap.exists()){
+myProfile=snap.data();
+const inp=document.getElementById("myName");
+if(inp && document.activeElement!==inp)inp.value=myProfile.name||"";
+}else if(!profileCreateTried){
+profileCreateTried=true;
+let name=(pendingRegisterName||"").trim().slice(0,30);
+if(name.length<2)name=defaultName(user);
+pendingRegisterName="";
+setDoc(doc(db,"profiles",user.uid),{name,createdAt:profileCreatedAt(user)}).catch(e=>console.error(e));
+}
+},err=>console.error(err));
+}
+
+function stopProfileListener(){
+if(unsubProfile){unsubProfile();unsubProfile=null;}
+myProfile=null;
+}
+
+window.saveMyName=async()=>{
+const me=auth.currentUser;
+if(!me)return;
+const name=document.getElementById("myName").value.trim();
+if(name.length<2||name.length>30){alert("الاسم يجب أن يكون بين 2 و30 حرفاً");return;}
+try{
+if(myProfile){
+await updateDoc(doc(db,"profiles",me.uid),{name});
+}else{
+await setDoc(doc(db,"profiles",me.uid),{name,createdAt:profileCreatedAt(me)});
+}
+const mine=allPosts.filter(p=>p.uid===me.uid);
+await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));
+alert("تم حفظ الاسم");
+}catch(e){
+alert("تعذر حفظ الاسم: "+e.message);
+}
+};
+
+window.contactSeller=(id)=>{
+const p=allPosts.find(x=>x.id===id);
+if(!p||!p.phone)return;
+document.getElementById("warnGo").href="https://wa.me/"+encodeURIComponent(p.phone.replace(/[^0-9]/g,""));
+warnOverlay.classList.remove("hidden");
+};
+
+function starsText(n){
+const r=Math.max(0,Math.min(5,Math.round(n)));
+return "★".repeat(r)+"☆".repeat(5-r);
+}
+
+window.loginToRate=()=>{
+closeOverlay();
+authOverlay.classList.remove("hidden");
+};
+
+window.openMySeller=()=>{
+if(auth.currentUser)openSeller(auth.currentUser.uid);
+};
+
+window.openSeller=async(uid)=>{
+sellerPanelUid=uid;
+accountOverlay.classList.add("hidden");
+sellerOverlay.classList.remove("hidden");
+const box=document.getElementById("sellerContent");
+box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
+const profP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
+const ratP=getDocs(query(collection(db,"ratings"),where("sellerUid","==",uid))).catch(()=>null);
+const [profSnap,ratSnap]=await Promise.all([profP,ratP]);
+const prof=(profSnap&&profSnap.exists())?profSnap.data():null;
+const ratings=ratSnap?ratSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)):[];
+renderSeller(uid,prof,ratings,!ratSnap);
+};
+
+function renderSeller(uid,prof,ratings,ratingsFailed){
+const box=document.getElementById("sellerContent");
+const posts=allPosts.filter(p=>p.uid===uid);
+const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"بائع";
+const since=(prof&&prof.createdAt)?new Date(prof.createdAt).toLocaleDateString("ar",{year:"numeric",month:"long"}):"غير متوفر";
+const count=ratings.length;
+const avg=count?ratings.reduce((sum,r)=>sum+(r.stars||0),0)/count:0;
+const me=auth.currentUser;
+const isMe=!!me&&me.uid===uid;
+const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
+selectedStars=mine?(mine.stars||0):0;
+
+let rateHtml="";
+if(isMe){
+rateHtml="";
+}else if(!me){
+rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
+}else{
+rateHtml=`
+<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div>
+<div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div>
+<textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea>
+<button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
+}
+
+const reviewsHtml=count?ratings.map(r=>{
+const canDel=isAdmin||(me&&r.raterUid===me.uid);
+return `<div class="reviewItem">
+<div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span>
+<span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>
+${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}
+</div>`;
+}).join(""):`<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
+
+box.innerHTML=`
+<div class="sHead">
+<div class="sName">👤 ${escapeHtml(name)}</div>
+<div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div>
+</div>
+<div class="sStats">
+<div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div>
+<div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div>
+<div class="sStat"><b>${count}</b><span>التقييمات</span></div>
+</div>
+${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات حالياً</div>":""}
+${rateHtml}
+<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>
+${reviewsHtml}`;
+}
+
+window.setStars=(n)=>{
+selectedStars=n;
+document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));
+};
+
+window.submitRating=async()=>{
+const me=auth.currentUser;
+if(!me){loginToRate();return;}
+const uid=sellerPanelUid;
+if(!uid||uid===me.uid)return;
+if(!selectedStars){alert("اختر عدد النجوم من 1 إلى 5");return;}
+const comment=(document.getElementById("ratingComment").value||"").trim().slice(0,300);
+const raterName=(myProfile&&myProfile.name)||defaultName(me);
+try{
+await setDoc(doc(db,"ratings",uid+"_"+me.uid),{sellerUid:uid,raterUid:me.uid,raterName,stars:selectedStars,comment,createdAt:Date.now()});
+await openSeller(uid);
+}catch(e){
+alert("تعذر إرسال التقييم: "+e.message);
+}
+};
+
+window.deleteRating=async(id)=>{
+if(!confirm("حذف هذا التقييم؟"))return;
+try{
+await deleteDoc(doc(db,"ratings",id));
+await openSeller(sellerPanelUid);
+}catch(e){
+alert("خطأ: "+e.message);
+}
+};
 
 function escapeHtml(str){
 return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -616,9 +865,11 @@ const city=document.getElementById("city").value;
 const phone=document.getElementById("phone").value.trim();
 const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
+const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
 
 if(!title||!price){alert("الرجاء إدخال العنوان والسعر");return;}
 if(!city){alert("الرجاء اختيار المدينة");return;}
+if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على شروط نشر الإعلان أولاً");return;}
 
 if(!wasEditing){
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
@@ -642,10 +893,10 @@ images.push(await uploadToImgBB(item.file));
 }
 
 if(wasEditing){
-await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,city,phone,images});
+await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,city,phone,images,sellerName});
 }else{
 await addDoc(collection(db,"posts"),{
-title,price:Number(price),category,city,phone,images,
+title,price:Number(price),category,city,phone,images,sellerName,termsAcceptedAt:Date.now(),
 uid:auth.currentUser.uid,
 email:auth.currentUser.email,
 createdAt:Date.now()
