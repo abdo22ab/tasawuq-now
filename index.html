@@ -96,6 +96,11 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .editBtn{background:#eef2ff}
 .delBtn{background:#fdeceb}
 .reportBtn{background:#fff3cd}
+.reportOnImg{
+  position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border:none;border-radius:50%;
+  background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)
+}
 .dots{
   position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
   pointer-events:none;direction:ltr
@@ -231,6 +236,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 <div class="topbar">
   <div class="brand"><span class="dot"></span>تسوق الآن</div>
+  <button class="iconBtn" onclick="enableNotifications()" title="تفعيل الإشعارات" style="margin-left:8px">🔔</button>
   <button class="iconBtn" onclick="openAccount()" title="حسابي">
     👤<span id="adminChip" class="adminChip hidden">A</span>
   </button>
@@ -362,6 +368,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر للآخرين</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
     <button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
     <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع (التقييمات)</button>
+    <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل إشعارات الموقع</button>
     <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
     <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
@@ -408,6 +415,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebas
 import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithRedirect,getRedirectResult } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getStorage,ref,uploadBytes,getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
+import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",
@@ -418,10 +426,39 @@ messagingSenderId:"786110830242",
 appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"
 };
 
+const VAPID_KEY="BHRF5HbhXf1jIUy61_SPuhlLWtWpn-zKMCe6l29rwPYHyLHDm_yoXohAG-Vp43zyfGnIJAjjdOSnGgej2XG7css";
 const app=initializeApp(firebaseConfig);
 const auth=getAuth();
 const db=getFirestore();
 const storage=getStorage(app);
+let messaging=null;
+
+async function initMessaging(){
+try{
+if(!(await isSupported()))return;
+messaging=getMessaging(app);
+onMessage(messaging,payload=>{
+const title=(payload.notification&&payload.notification.title)||"تسوق الآن";
+const body=(payload.notification&&payload.notification.body)||"";
+alert(title+(body?"\n"+body:""));
+});
+}catch(e){console.error(e);}
+}
+initMessaging();
+
+window.enableNotifications=async()=>{
+try{
+if(!("Notification" in window)){alert("متصفحك لا يدعم الإشعارات");return;}
+const perm=await Notification.requestPermission();
+if(perm!=="granted"){alert("لم يتم منح إذن الإشعارات");return;}
+if(!messaging){alert("الإشعارات غير مدعومة على هذا المتصفح");return;}
+const reg=await navigator.serviceWorker.register("firebase-messaging-sw.js");
+const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+if(token)alert("تم تفعيل الإشعارات بنجاح ✅");
+}catch(e){
+alert("تعذر تفعيل الإشعارات: "+e.message);
+}
+};
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
@@ -663,17 +700,17 @@ const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
-const report=`<button class="iconBtn2 reportBtn" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>`;
+const reportOnImg=`<button class="reportOnImg" title="إبلاغ" onclick="event.stopPropagation();reportPost('${p.id}')">🚩</button>`;
 return `
 <div class="card">
-  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}</div>
+  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${reportOnImg}${dots}</div>
   <div class="body">
     <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
     ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
     ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
     <div class="meta"><span class="catTag">${escapeHtml(p.category||"")}</span><span class="time">${timeAgo(p.createdAt)}</span></div>
-    <div class="actions">${wa}${edit}${del}${report}</div>
+    <div class="actions">${wa}${edit}${del}</div>
   </div>
 </div>`;
 }).join("");
@@ -907,7 +944,7 @@ const desc=p.description
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 document.getElementById("postContent").innerHTML=`
-<div class="pImg">${carouselHtml(images)}${dots}</div>
+<div class="pImg"><button class="reportOnImg" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
@@ -915,8 +952,7 @@ ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
 <div style="height:14px"></div>
-${wa}
-<button class="btnGhost" style="margin-top:0" onclick="reportPost('${p.id}')">🚩 إبلاغ عن الإعلان</button>`;
+${wa}`;
 postOverlay.classList.remove("hidden");
 };
 
