@@ -101,6 +101,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;
   cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)
 }
+.reportOnImg.right{left:auto;right:10px;top:10px;width:32px;height:32px;font-size:15px}
 .dots{
   position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
   pointer-events:none;direction:ltr
@@ -700,10 +701,9 @@ const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
-const reportOnImg=`<button class="reportOnImg" title="إبلاغ" onclick="event.stopPropagation();reportPost('${p.id}')">🚩</button>`;
 return `
 <div class="card">
-  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${reportOnImg}${dots}</div>
+  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}</div>
   <div class="body">
     <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
@@ -944,7 +944,7 @@ const desc=p.description
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 document.getElementById("postContent").innerHTML=`
-<div class="pImg"><button class="reportOnImg" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
+<div class="pImg"><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
