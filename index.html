@@ -68,7 +68,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .sectionTitle{padding:16px 16px 6px 16px;font-weight:800;font-size:15px;color:var(--text)}
 
 /* ===== Feed grid ===== */
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:8px 16px 20px 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px 16px}
 .card{
   background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);
   box-shadow:0 2px 10px rgba(15,23,42,.05);display:flex;flex-direction:column
@@ -76,13 +76,13 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .imgWrap{position:relative;width:100%;aspect-ratio:1/1;background:var(--teal-light);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .card .imgWrap img{width:100%;height:100%;object-fit:cover}
 .card .imgWrap .ph{font-size:28px;opacity:.5}
-.card .body{padding:10px 12px 12px 12px;display:flex;flex-direction:column;gap:4px}
-.card h4{margin:0;font-size:13.5px;font-weight:700;line-height:1.35;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
-.card .price{color:var(--teal-dark);font-weight:800;font-size:15px}
+.card .body{padding:11px 12px 13px 12px;display:flex;flex-direction:column;gap:5px}
+.card h4{margin:0;font-size:14.5px;font-weight:700;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em}
+.card .price{color:var(--teal-dark);font-weight:800;font-size:16.5px}
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
-.card .catTag{font-size:10.5px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:7px}
-.card .time{font-size:10.5px;color:var(--muted)}
+.card .catTag{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 9px;border-radius:7px}
+.card .time{font-size:11px;color:var(--muted)}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .card .actions .waBtn{
   flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;
@@ -90,16 +90,18 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .waBtn{background:var(--wa);color:#fff}
 .iconBtn2{
-  width:28px;height:28px;flex:0 0 auto;border:none;border-radius:8px;cursor:pointer;
-  font-size:13px;display:flex;align-items:center;justify-content:center
+  width:32px;height:32px;flex:0 0 auto;border:none;border-radius:9px;cursor:pointer;
+  font-size:14.5px;display:flex;align-items:center;justify-content:center
 }
 .editBtn{background:#eef2ff}
 .delBtn{background:#fdeceb}
 .reportBtn{background:#fff3cd}
-.imgCountBadge{
-  position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;
-  font-size:10px;padding:2px 6px;border-radius:8px
+.dots{
+  position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
+  pointer-events:none;direction:ltr
 }
+.dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55);transition:width .15s,height .15s}
+.dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
 
 /* ===== Bottom nav ===== */
@@ -203,6 +205,24 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .sheet textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);font-family:inherit;font-size:14px;resize:none;margin-bottom:10px;box-sizing:border-box}
 .warnBox{background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;padding:12px;font-size:14px;line-height:1.8;color:#7a5c00;margin-bottom:14px}
 
+.carousel{
+  position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;direction:ltr;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain
+}
+.carousel::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
+.slide img{width:100%;height:100%;object-fit:cover}
+.slide .ph{font-size:34px;opacity:.5}
+.pImg{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--teal-light);margin-bottom:12px}
+.pTitle{font-size:18px;font-weight:800;line-height:1.5;margin-bottom:2px}
+.pMeta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pDesc{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.9}
+.field textarea{
+  width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;
+  font-size:15px;background:var(--card);resize:vertical;min-height:120px;box-sizing:border-box
+}
+.charCount{font-size:11.5px;color:var(--muted);text-align:left;margin-top:4px;direction:ltr}
+
 .hidden{display:none!important}
 </style>
 </head>
@@ -286,6 +306,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <div class="field"><label>المدينة</label>
       <select id="city"></select>
     </div>
+    <div class="field"><label>الوصف (اختياري)</label>
+      <textarea id="description" maxlength="1000" rows="5" oninput="updateDescCount()" placeholder="اكتب تفاصيل الإعلان براحتك: الحالة، المواصفات، وأي مشاكل أو عيوب إن وجدت..."></textarea>
+      <div class="charCount"><span id="descCount">0</span>/1000 حرف</div>
+    </div>
     <div class="field"><label>رقم الواتساب للتواصل</label><input id="phone" placeholder="218912345678"></div>
     <div class="field">
       <label>صور الإعلان (اختياري - حتى 5 صور)</label>
@@ -349,6 +373,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="sheet" style="max-height:75vh;overflow-y:auto">
     <h3>الإبلاغات</h3>
     <div id="reportsList"></div>
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+  </div>
+</div>
+
+<!-- ===== POST DETAILS OVERLAY ===== -->
+<div id="postOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:92vh;overflow-y:auto">
+    <div id="postContent"></div>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
 </div>
@@ -425,6 +457,7 @@ const accountOverlay=document.getElementById("accountOverlay");
 const reportsOverlay=document.getElementById("reportsOverlay");
 const reportsBtn=document.getElementById("reportsBtn");
 const sellerOverlay=document.getElementById("sellerOverlay");
+const postOverlay=document.getElementById("postOverlay");
 const warnOverlay=document.getElementById("warnOverlay");
 const adminChip=document.getElementById("adminChip");
 const navHome=document.getElementById("navHome");
@@ -468,7 +501,7 @@ getRedirectResult(auth).catch(e=>{if(e && e.code!=="auth/no-current-user")consol
 
 window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
-sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");
+sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
 pendingAction=null;
 };
 
@@ -525,6 +558,8 @@ document.getElementById("title").value="";
 document.getElementById("price").value="";
 document.getElementById("phone").value="";
 document.getElementById("city").value="";
+document.getElementById("description").value="";
+updateDescCount();
 document.getElementById("termsCheck").checked=false;
 document.getElementById("termsBox").classList.remove("hidden");
 selectedImages=[];
@@ -544,6 +579,8 @@ document.getElementById("price").value=post.price||"";
 document.getElementById("category").value=post.category||"سيارات ومركبات";
 document.getElementById("city").value=post.city||"";
 document.getElementById("phone").value=post.phone||"";
+document.getElementById("description").value=post.description||"";
+updateDescCount();
 document.getElementById("termsBox").classList.add("hidden");
 const existing=(post.images && post.images.length)?post.images:(post.imageUrl?[post.imageUrl]:[]);
 selectedImages=existing.map(url=>({type:"existing",url}));
@@ -621,20 +658,17 @@ return;
 
 postsBox.innerHTML=list.map(p=>{
 const canDelete=isAdmin||(auth.currentUser && p.uid===auth.currentUser.uid);
-const images=(p.images && p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
-const img=images.length
-?`<img src="${escapeHtml(images[0])}" onerror="this.parentElement.innerHTML='<span class=ph>🖼️</span>'">`
-:`<span class="ph">🖼️</span>`;
-const countBadge=images.length>1?`<span class="imgCountBadge">📷 ${images.length}</span>`:"";
+const images=getImages(p);
+const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const report=`<button class="iconBtn2 reportBtn" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>`;
 return `
 <div class="card">
-  <div class="imgWrap">${img}${countBadge}</div>
+  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}</div>
   <div class="body">
-    <h4>${escapeHtml(p.title||"بدون عنوان")}</h4>
+    <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
     ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
     ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
@@ -723,6 +757,7 @@ if(auth.currentUser)openSeller(auth.currentUser.uid);
 window.openSeller=async(uid)=>{
 sellerPanelUid=uid;
 accountOverlay.classList.add("hidden");
+postOverlay.classList.add("hidden");
 sellerOverlay.classList.remove("hidden");
 const box=document.getElementById("sellerContent");
 box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
@@ -815,6 +850,76 @@ alert("خطأ: "+e.message);
 }
 };
 
+
+/* ================= عرض الصور (سحب يمين/يسار) وتفاصيل الإعلان ================= */
+function getImages(p){
+return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
+}
+
+function carouselHtml(images){
+if(!images.length)return `<div class="carousel"><div class="slide"><span class="ph">🖼️</span></div></div>`;
+return `<div class="carousel">${images.map(u=>`<div class="slide"><img src="${escapeHtml(u)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=ph>🖼️</span>'"></div>`).join("")}</div>`;
+}
+
+function dotsHtml(images){
+if(images.length<=1)return "";
+return `<div class="dots">${images.map((_,i)=>`<span class="dot${i===0?" active":""}"></span>`).join("")}</div>`;
+}
+
+// تحديث ترقيم الصورة (1/5) أثناء السحب
+document.addEventListener("scroll",e=>{
+const el=e.target;
+if(!el||!el.classList||!el.classList.contains("carousel"))return;
+const dotsBox=el.parentElement&&el.parentElement.querySelector(".dots");
+if(!dotsBox)return;
+const i=Math.round(el.scrollLeft/(el.clientWidth||1));
+Array.from(dotsBox.children).forEach((d,idx)=>d.classList.toggle("active",idx===i));
+},true);
+
+window.updateDescCount=()=>{
+const d=document.getElementById("description");
+document.getElementById("descCount").textContent=d?d.value.length:0;
+};
+
+async function compressImage(file,maxSize=1280,quality=0.82){
+try{
+const bmp=await createImageBitmap(file);
+const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));
+const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
+const canvas=document.createElement("canvas");
+canvas.width=w;canvas.height=h;
+canvas.getContext("2d").drawImage(bmp,0,0,w,h);
+const blob=await new Promise(res=>canvas.toBlob(res,"image/jpeg",quality));
+return blob||file;
+}catch(e){
+return file;
+}
+}
+
+window.openPost=(id)=>{
+const p=allPosts.find(x=>x.id===id);
+if(!p)return;
+const images=getImages(p);
+const dots=dotsHtml(images);
+const desc=p.description
+?`<div class="pDesc">${escapeHtml(p.description)}</div>`
+:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
+const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
+const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
+document.getElementById("postContent").innerHTML=`
+<div class="pImg">${carouselHtml(images)}${dots}</div>
+<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
+<div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
+<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
+${seller}
+<div style="font-weight:800;margin:14px 0 4px">الوصف</div>
+${desc}
+<div style="height:14px"></div>
+${wa}
+<button class="btnGhost" style="margin-top:0" onclick="reportPost('${p.id}')">🚩 إبلاغ عن الإعلان</button>`;
+postOverlay.classList.remove("hidden");
+};
+
 function escapeHtml(str){
 return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
@@ -846,7 +951,8 @@ renderImagePicker();
 
 async function uploadToImgBB(file){
 const formData=new FormData();
-formData.append("image",file);
+const toSend=await compressImage(file);
+formData.append("image",toSend,"photo.jpg");
 const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{
 method:"POST",
 body:formData
@@ -863,6 +969,7 @@ const price=document.getElementById("price").value;
 const category=document.getElementById("category").value;
 const city=document.getElementById("city").value;
 const phone=document.getElementById("phone").value.trim();
+const description=document.getElementById("description").value.trim().slice(0,1000);
 const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
@@ -893,10 +1000,10 @@ images.push(await uploadToImgBB(item.file));
 }
 
 if(wasEditing){
-await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,city,phone,images,sellerName});
+await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,city,description,phone,images,sellerName});
 }else{
 await addDoc(collection(db,"posts"),{
-title,price:Number(price),category,city,phone,images,sellerName,termsAcceptedAt:Date.now(),
+title,price:Number(price),category,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
 uid:auth.currentUser.uid,
 email:auth.currentUser.email,
 createdAt:Date.now()
