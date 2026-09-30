@@ -24,7 +24,6 @@
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);
   padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
 
-/* ===== Download App Banner ===== */
 .dlBanner{
   background:linear-gradient(135deg,#0284c7,#38bdf8);
   color:#fff;padding:10px 14px;
@@ -50,7 +49,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .dlBanner.hidden{display:none!important}
 
-/* ===== Top bar ===== */
 .topbar{
   position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;
   padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
@@ -73,7 +71,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   font-weight:800;padding:1px 5px;border-radius:6px
 }
 
-/* ===== Search & categories ===== */
 .searchWrap{padding:14px 16px 4px 16px;display:flex;gap:8px;align-items:stretch}
 .searchWrap .searchBox{flex:1;min-width:0}
 .cityFilter{
@@ -100,7 +97,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 .sectionTitle{padding:16px 16px 6px 16px;font-weight:800;font-size:15px;color:var(--text)}
 
-/* ===== Feed grid ===== */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px 16px}
 .card{
   background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);
@@ -201,7 +197,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   box-shadow:0 4px 12px rgba(245,158,11,.35)
 }
 
-/* ===== Upgrade Modal Plans ===== */
 .planCard{
   border:2px solid var(--border);border-radius:14px;padding:16px 14px;
   margin-bottom:12px;cursor:pointer;transition:all .2s;
@@ -228,9 +223,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   font-size:10px;font-weight:800;
   padding:3px 8px;border-radius:999px
 }
-.planCard .planIcon{font-size:24px;margin-left:8px}
 
-/* ===== Admin Quick Plans ===== */
 .adminPlans{
   display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
   margin-top:8px
@@ -246,7 +239,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)
 }
 
-/* ===== Bottom nav ===== */
 .bottomNav{
   position:fixed;bottom:0;right:0;left:0;z-index:30;background:#fff;border-top:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-around;
@@ -265,7 +257,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   cursor:pointer;box-shadow:0 6px 14px rgba(245,158,11,.4)
 }
 
-/* ===== Screens: add form ===== */
 .screen{background:var(--bg);min-height:100%}
 .screenHeader{
   display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);
@@ -301,7 +292,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px
 }
 
-/* ===== Overlay ===== */
 .overlay{
   position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;
   display:flex;align-items:flex-end;justify-content:center
@@ -371,7 +361,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 .hidden{display:none!important}
 
-/* ===== Ad popup ===== */
 .adPopup{
   position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;
   display:flex;align-items:center;justify-content:center;padding:20px
@@ -390,7 +379,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0
 }
 
-/* ===== Splash Screen ===== */
 #splashScreen{
   position:fixed;inset:0;z-index:99999;
   background:linear-gradient(160deg,#38bdf8 0%,#0284c7 100%);
@@ -427,7 +415,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   40%{transform:scale(1);opacity:1}
 }
 
-/* ===== Auth ===== */
 .authOption{
   width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;
   background:#fff;font-family:inherit;font-size:15px;font-weight:700;
@@ -452,14 +439,12 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 <body>
 
-<!-- ===== Splash Screen ===== -->
 <div id="splashScreen">
   <img src="icon-192.png" alt="تسوق الآن" class="splashLogo" onerror="this.style.display='none'">
   <div class="splashName">تسوق الآن</div>
   <div class="splashLoader"><span></span><span></span><span></span></div>
 </div>
 
-<!-- ===== Download App Banner ===== -->
 <div id="dlBanner" class="dlBanner hidden">
   <span class="dlText">📱 نزّل تطبيق تسوق الآن</span>
   <a class="dlBtn" href="tasawuq-now.apk" download>📥 حمّل</a>
@@ -477,7 +462,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
 
-<!-- ===== HOME ===== -->
 <div id="home">
   <div class="searchWrap">
     <div class="searchBox">
@@ -514,7 +498,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="grid" id="posts"></div>
 </div>
 
-<!-- ===== ADD FORM SCREEN ===== -->
 <div id="form" class="screen hidden">
   <div class="screenHeader">
     <button class="back" onclick="showHome()">→</button>
@@ -571,7 +554,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== BOTTOM NAV ===== -->
 <div class="bottomNav">
   <button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
   <button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
@@ -580,7 +562,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon">👤</span><span id="navAccountLabel">حسابي</span></button>
 </div>
 
-<!-- ===== AUTH OVERLAY ===== -->
 <div id="authOverlay" class="overlay hidden">
   <div class="sheet">
     <div id="authOptions">
@@ -607,7 +588,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== ACCOUNT OVERLAY ===== -->
 <div id="accountOverlay" class="overlay hidden">
   <div class="sheet">
     <h3>حسابي</h3>
@@ -623,7 +603,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== REPORTS OVERLAY ===== -->
 <div id="reportsOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:75vh;overflow-y:auto">
     <h3>الإبلاغات</h3>
@@ -632,14 +611,12 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== POST DETAILS OVERLAY ===== -->
 <div id="postOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:92vh;overflow-y:auto;padding-top:0">
     <div id="postContent"></div>
   </div>
 </div>
 
-<!-- ===== UPGRADE OVERLAY (خطط الترقية) ===== -->
 <div id="upgradeOverlay" class="overlay hidden">
   <div class="sheet">
     <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
@@ -682,7 +659,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== SELLER OVERLAY ===== -->
 <div id="sellerOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:88vh;overflow-y:auto">
     <div id="sellerContent"></div>
@@ -690,7 +666,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== BUYER WARNING ===== -->
 <div id="warnOverlay" class="overlay hidden">
   <div class="sheet">
     <h3>⚠️ تنبيه قبل التواصل</h3>
@@ -700,7 +675,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
-<!-- ===== AD POPUP ===== -->
 <div id="adPopup" class="adPopup hidden">
   <div class="adPopupInner">
     <button class="adClose" onclick="closeAd()" aria-label="إغلاق">✕</button>
@@ -714,7 +688,6 @@ import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup }
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
 
-/* ===== Splash Screen ===== */
 window.addEventListener('load', () => {
   setTimeout(() => {
     const splash = document.getElementById('splashScreen');
@@ -725,7 +698,6 @@ window.addEventListener('load', () => {
   }, 1800);
 });
 
-/* ===== Download App Banner ===== */
 (function(){
   const isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -790,7 +762,7 @@ alert("تعذر تفعيل الإشعارات: "+e.message);
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
-const ADMIN_WHATSAPP="218912345678"; // ⚠️ غيّر هذا لرقمك الحقيقي
+const ADMIN_WHATSAPP="218928476784";
 let isAdmin=false;
 let showOnlyMine=false;
 let showOnlyFavorites=false;
@@ -832,7 +804,6 @@ const navMine=document.getElementById("navMine");
 const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
 
-/* ================= Featured helpers ================= */
 function isPostFeatured(p){
   return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());
 }
@@ -849,7 +820,6 @@ function sortPosts(arr){
   });
 }
 
-/* ================= Favorites ================= */
 function getFavorites(){
   try{ return JSON.parse(localStorage.getItem('favorites')||'[]'); }
   catch(e){ return []; }
@@ -870,7 +840,6 @@ window.toggleFavorite = (id, event)=>{
   renderPosts();
 };
 
-/* ================= Views tracking ================= */
 function hasViewedOnDevice(postId){
   try{
     const viewed = JSON.parse(localStorage.getItem('viewedPosts')||'[]');
@@ -895,7 +864,6 @@ async function incrementViews(postId){
   }catch(e){ console.error("views:", e); }
 }
 
-/* ================= Ad popup ================= */
 const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا";
 const AD_INTERVAL_DAYS = 30;
 
@@ -952,7 +920,6 @@ renderPosts();
 
 window.logout=()=>signOut(auth);
 
-/* ================ Google Login ================ */
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
@@ -1187,10 +1154,13 @@ return `
 }
 
 
-/* ================= الملف الشخصي ================= */
 function defaultName(user){
 const dn=(user.displayName||"").trim().slice(0,30);
 if(dn.length>=2) return dn;
+if(user.phoneNumber){
+  const last = user.phoneNumber.slice(-4);
+  return "مستخدم " + last;
+}
 const emailName=(user.email||"").split("@")[0].slice(0,30);
 if(emailName.length>=2) return emailName;
 return "مستخدم "+user.uid.slice(0,4);
@@ -1248,7 +1218,6 @@ document.getElementById("warnGo").href="https://wa.me/"+encodeURIComponent(p.pho
 warnOverlay.classList.remove("hidden");
 };
 
-/* ================= Share ================= */
 window.sharePost = async (id)=>{
   const p = allPosts.find(x=>x.id===id);
   if(!p) return;
@@ -1382,7 +1351,6 @@ alert("خطأ: "+e.message);
 }
 };
 
-/* ================= عرض الصور ================= */
 function getImages(p){
 return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
 }
@@ -1446,7 +1414,6 @@ const shareBtn=`<button class="btnMain" style="background:var(--teal-dark);margi
 
 const viewsBadge = (isOwner || isAdmin) ? `<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>` : "";
 
-/* شارة مميز */
 let featBadge = "";
 if(isPostFeatured(p)){
   const days = featuredDaysLeft(p);
@@ -1459,7 +1426,6 @@ if(isPostFeatured(p)){
   }
 }
 
-/* زر الترقية (للمعلن فقط) */
 let upgradeBtn = "";
 if(isOwner){
   if(isPostFeatured(p)){
@@ -1469,7 +1435,6 @@ if(isOwner){
   }
 }
 
-/* لوحة الأدمن السريعة */
 let adminPanel = "";
 if(isAdmin){
   adminPanel = `
@@ -1684,7 +1649,6 @@ alert("خطأ أثناء الحذف: "+e.message);
 }
 };
 
-/* ================= Featured: Admin toggle ================= */
 window.toggleFeatured = async (id, event) => {
   if(event) event.stopPropagation();
   if(!isAdmin){ alert("هذي الميزة للمشرف فقط"); return; }
@@ -1696,7 +1660,6 @@ window.toggleFeatured = async (id, event) => {
       await updateDoc(doc(db,"posts",id), {featured:false, featuredUntil:0, featuredPlan:null});
     }catch(e){ alert("خطأ: " + e.message); }
   } else {
-    // افتراضياً: 30 يوم
     try{
       const until = Date.now() + 30*24*60*60*1000;
       await updateDoc(doc(db,"posts",id), {featured:true, featuredUntil:until, featuredPlan:30});
@@ -1704,7 +1667,6 @@ window.toggleFeatured = async (id, event) => {
   }
 };
 
-/* ================= Featured: Admin set days ================= */
 window.adminFeature = async (id, days) => {
   if(!isAdmin) return;
   try{
@@ -1719,7 +1681,6 @@ window.adminFeature = async (id, days) => {
   }catch(e){ alert("خطأ: " + e.message); }
 };
 
-/* ================= Featured: Owner upgrade ================= */
 window.openUpgrade = (id) => {
   if(!auth.currentUser) return;
   postOverlay.classList.add("hidden");
@@ -1746,7 +1707,6 @@ window.selectPlan = (days, label, price) => {
   }, 400);
 };
 
-/* ================= Deep link ================= */
 window.addEventListener('load', () => {
   const hash = window.location.hash;
   if(hash && hash.startsWith('#post-')){
