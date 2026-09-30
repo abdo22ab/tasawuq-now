@@ -86,6 +86,25 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .searchBox input{border:none;outline:none;flex:1;font-family:inherit;font-size:15px;background:transparent}
 .searchBox .ic{color:var(--muted)}
+.clearSearchBtn{
+  flex:0 0 auto;
+  width:22px;height:22px;
+  border-radius:50%;
+  border:none;
+  background:#e5e7eb;
+  color:#4b5563;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  font-family:inherit;
+  transition:background .15s;
+}
+.clearSearchBtn:hover{background:#d1d5db}
+.clearSearchBtn:active{transform:scale(.9)}
 
 .catsRow{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px 16px;scrollbar-width:none}
 .catsRow::-webkit-scrollbar{display:none}
@@ -491,7 +510,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="searchWrap">
     <div class="searchBox">
       <span class="ic">🔎</span>
-      <input id="searchInput" placeholder="ابحث..." oninput="loadPosts()">
+      <input id="searchInput" placeholder="ابحث..." oninput="saveSearch()">
+      <button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" style="display:none">✕</button>
     </div>
     <select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
   </div>
@@ -775,7 +795,6 @@ if("serviceWorker" in navigator){
 navigator.serviceWorker.register("firebase-messaging-sw.js").catch(e=>console.error(e));
 }
 
-/* ================= تفعيل الإشعارات + حفظ الرمز ================= */
 window.enableNotifications=async()=>{
 try{
 if(!("Notification" in window)){alert("متصفحك لا يدعم الإشعارات");return;}
@@ -803,12 +822,10 @@ alert("تعذر تفعيل الإشعارات: "+e.message);
 }
 };
 
-/* ================= إعدادات ================= */
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
 
-/* ================= 🚫 قائمة الكلمات الممنوعة ================= */
 const FORBIDDEN_WORDS = [
   "إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس",
   "عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا",
@@ -843,7 +860,6 @@ function checkContent(title, description){
   return null;
 }
 
-/* ================= حالة عامة ================= */
 let isAdmin=false;
 let showOnlyMine=false;
 let showOnlyFavorites=false;
@@ -1177,6 +1193,7 @@ document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 �
 document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${groups}`;
 }
 populateCitySelects();
+setTimeout(updateClearBtn, 500);
 
 window.filterCity=()=>{
 currentCity=document.getElementById("cityFilter").value;
@@ -1190,6 +1207,35 @@ renderPosts();
 };
 
 window.loadPosts=()=>renderPosts();
+
+window.saveSearch = () => {
+  const v = document.getElementById("searchInput").value;
+  try{ localStorage.setItem('lastSearch', v); }catch(e){}
+  updateClearBtn();
+  renderPosts();
+};
+
+window.clearSearch = () => {
+  const input = document.getElementById("searchInput");
+  if(input){
+    input.value = "";
+    input.focus();
+  }
+  try{ localStorage.removeItem('lastSearch'); }catch(e){}
+  updateClearBtn();
+  renderPosts();
+};
+
+function updateClearBtn(){
+  const input = document.getElementById("searchInput");
+  const btn = document.getElementById("clearSearchBtn");
+  if(!input || !btn) return;
+  if(input.value && input.value.length > 0){
+    btn.style.display = "flex";
+  } else {
+    btn.style.display = "none";
+  }
+}
 
 function startPostsListener(){
 onSnapshot(collection(db,"posts"),snapshot=>{
@@ -1602,6 +1648,35 @@ if(isAdmin){
     </div>`;
 }
 
+/* ===== إعلانات مشابهة ===== */
+const similar = allPosts
+  .filter(x => x.id !== p.id && x.category === p.category && getStatus(x) === "approved")
+  .slice(0, 4);
+
+const similarHtml = similar.length ? `
+  <div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2">
+    <div style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--text)">
+      🔄 إعلانات مشابهة
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${similar.map(s => {
+        const sImgs = getImages(s);
+        const sThumb = sImgs[0] || "";
+        return `
+          <div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer">
+            <div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">
+              ${sThumb ? `<img src="${escapeHtml(sThumb)}" style="width:100%;height:100%;object-fit:cover">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}
+            </div>
+            <div style="padding:8px 10px">
+              <div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div>
+              <div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div>
+              ${s.city?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px">📍 ${escapeHtml(s.city)}</div>`:""}
+            </div>
+          </div>`;
+      }).join("")}
+    </div>
+  </div>` : "";
+
 document.getElementById("postContent").innerHTML=`
 <div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
@@ -1615,6 +1690,7 @@ ${desc}
 ${upgradeBtn}
 ${wa}
 ${shareBtn}
+${similarHtml}
 ${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
@@ -2117,6 +2193,19 @@ function tryApplyPendingUpgrade(){
     }
   }, 1200);
 }
+
+/* ===== استرجاع آخر بحث ===== */
+(function(){
+  try{
+    const last = localStorage.getItem('lastSearch') || '';
+    const input = document.getElementById("searchInput");
+    if(input && last){
+      input.value = last;
+      updateClearBtn();
+      setTimeout(()=>{ renderPosts(); }, 1500);
+    }
+  }catch(e){ console.error(e); }
+})();
 
 window.addEventListener('load', () => {
   const hash = window.location.hash;
