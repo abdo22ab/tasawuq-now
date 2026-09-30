@@ -227,7 +227,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="searchWrap">
 <div class="searchBox">
 <span class="ic">🔎</span>
-<input id="searchInput" placeholder="ابحث..." oninput="onSearchTyping()" onfocus="showSearchDropdown()">
+<input id="searchInput" placeholder="ابحث..." onfocus="showSearchDropdown()">
 <button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" style="display:none">✕</button>
 <div id="searchDropdown" class="searchDropdown hidden"></div>
 </div>
@@ -386,21 +386,9 @@ const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاواز�
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
 
-const SUB_CATEGORIES={
-"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
-"دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},
-"موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},
-"لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}
-};
+const SUB_CATEGORIES={"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},"دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},"موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},"لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}};
 
-const CATEGORIES=[
-{name:"الكل",icon:"✨"},{name:"سيارات ومركبات",icon:"🚗"},{name:"دراجات نارية",icon:"🏍️"},
-{name:"دراجات هوائية",icon:"🚲"},{name:"الخدمات",icon:"🛠️"},{name:"عقارات للبيع",icon:"🏠"},
-{name:"عقارات للإيجار",icon:"🔑"},{name:"موبايل وتابلت",icon:"📱"},{name:"لابتوب وكمبيوتر",icon:"💻"},
-{name:"ألعاب وألعاب الفيديو",icon:"🎮"},{name:"أجهزة منزلية",icon:"🧊"},{name:"ملابس رجالية",icon:"👔"},
-{name:"ملابس نسائية",icon:"👗"},{name:"ملابس أطفال",icon:"👶"},{name:"جمال وصحة",icon:"💆"},
-{name:"مكياج",icon:"💄"},{name:"مطاعم وغداء",icon:"🍽️"},{name:"إلكترونيات",icon:"🔌"}
-];
+const CATEGORIES=[{name:"الكل",icon:"✨"},{name:"سيارات ومركبات",icon:"🚗"},{name:"دراجات نارية",icon:"🏍️"},{name:"دراجات هوائية",icon:"🚲"},{name:"الخدمات",icon:"🛠️"},{name:"عقارات للبيع",icon:"🏠"},{name:"عقارات للإيجار",icon:"🔑"},{name:"موبايل وتابلت",icon:"📱"},{name:"لابتوب وكمبيوتر",icon:"💻"},{name:"ألعاب وألعاب الفيديو",icon:"🎮"},{name:"أجهزة منزلية",icon:"🧊"},{name:"ملابس رجالية",icon:"👔"},{name:"ملابس نسائية",icon:"👗"},{name:"ملابس أطفال",icon:"👶"},{name:"جمال وصحة",icon:"💆"},{name:"مكياج",icon:"💄"},{name:"مطاعم وغداء",icon:"🍽️"},{name:"إلكترونيات",icon:"🔌"}];
 
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
 function detectForbidden(t){if(!t)return null;const s=String(t).toLowerCase();for(const w of FORBIDDEN_WORDS){if(s.includes(w.toLowerCase()))return w;}return null;}
@@ -422,7 +410,46 @@ const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=documen
 const adminChip=document.getElementById("adminChip"),navHome=document.getElementById("navHome"),navMine=document.getElementById("navMine"),navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel"),subCatsRow=document.getElementById("subCatsRow");
 
-/* السجل والمقترحات */
+/* ====== إصلاح البحث - مبسط ومضمون ====== */
+const searchInputEl=document.getElementById("searchInput");
+const clearSearchBtnEl=document.getElementById("clearSearchBtn");
+
+// استرجاع البحث المحفوظ فوراً
+try{
+  const saved=localStorage.getItem('lastSearch');
+  if(saved && searchInputEl){
+    searchInputEl.value=saved;
+    if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';
+  }
+}catch(e){}
+
+// حفظ عند أي كتابة
+if(searchInputEl){
+  searchInputEl.addEventListener('input',function(){
+    const v=this.value||"";
+    try{localStorage.setItem('lastSearch',v);}catch(e){}
+    if(clearSearchBtnEl)clearSearchBtnEl.style.display=v.length>0?'flex':'none';
+    if(typeof renderPosts==='function')renderPosts();
+    if(typeof showSearchDropdown==='function')showSearchDropdown();
+  });
+  searchInputEl.addEventListener('focus',function(){
+    if(typeof showSearchDropdown==='function')showSearchDropdown();
+  });
+}
+
+// زر المسح
+if(clearSearchBtnEl){
+  clearSearchBtnEl.addEventListener('click',function(e){
+    e.preventDefault();
+    if(searchInputEl)searchInputEl.value="";
+    try{localStorage.removeItem('lastSearch');sessionStorage.removeItem('lastSearch');}catch(e){}
+    this.style.display='none';
+    if(typeof hideSearchDropdown==='function')hideSearchDropdown();
+    if(typeof renderPosts==='function')renderPosts();
+  });
+}
+
+// السجل والمقترحات
 function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
@@ -431,14 +458,12 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
 window.showSearchDropdown=function(){const box=document.getElementById("searchDropdown"),input=document.getElementById("searchInput");if(!box||!input)return;const term=(input.value||"").trim();const history=getSearchHistory();const suggestions=getSuggestions(term);let html="";if(!term && history.length>0){html+=`<div class="sdSection">🕐 آخر ما بحثت عنه</div>`;html+=history.map(h=>`<div class="sdItem" onclick="pickSearch('${h.replace(/'/g,"\\'")}')"><span class="sdIcon">🕐</span><span class="sdText">${escapeHtml(h)}</span><button class="sdRemove" onclick="removeFromHistory('${h.replace(/'/g,"\\'")}',event)">✕</button></div>`).join("");html+=`<div class="sdClearAll" onclick="clearSearchHistory(event)">🗑️ مسح كل السجل</div>`;}if(suggestions.length>0){const label=term?"💡 مقترحات":"🔥 إعلانات مقترحة";html+=`<div class="sdSection">${label}</div>`;html+=suggestions.map(s=>`<div class="sdItem" onclick="pickSearch('${s.title.replace(/'/g,"\\'")}')"><span class="sdIcon">${s.isBrand?"🏷️":(s.thumb?"📦":"🔎")}</span><span class="sdText">${escapeHtml(s.title)}</span>${s.price!=null?`<span style="font-size:11.5px;color:var(--teal-dark);font-weight:700">${s.price} د.ل</span>`:""}</div>`).join("");}if(!html)html=`<div class="sdSection" style="text-align:center;padding:20px;color:var(--muted)">اكتب للبحث...</div>`;box.innerHTML=html;box.classList.remove("hidden");};
 window.hideSearchDropdown=function(){const box=document.getElementById("searchDropdown");if(box)box.classList.add("hidden");};
 window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}try{sessionStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();renderPosts();};
-window.onSearchTyping=function(){const input=document.getElementById("searchInput");if(!input)return;updateClearBtn();renderPosts();showSearchDropdown();if(window._searchTimer)clearTimeout(window._searchTimer);window._searchTimer=setTimeout(()=>{const v=input.value||"";try{localStorage.setItem('lastSearch',v);}catch(e){}try{sessionStorage.setItem('lastSearch',v);}catch(e){}if(v.trim().length>=2)addToSearchHistory(v);},800);};
-window.quickSave=window.onSearchTyping;
-window.saveSearch=window.onSearchTyping;
-function saveSearchNow(){try{const el=document.getElementById("searchInput");if(!el)return;const v=el.value||"";try{localStorage.setItem("lastSearch",v);}catch(e){}try{sessionStorage.setItem("lastSearch",v);}catch(e){}if(v.trim().length>=2)addToSearchHistory(v);}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)saveSearchNow();});
-window.addEventListener('pagehide',saveSearchNow);
-window.addEventListener('beforeunload',saveSearchNow);
+window.updateClearBtn=function(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";};
+window.clearSearch=function(){const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');sessionStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
 
+document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
+
+/* ====== بقية الدوال ====== */
 function isPostFeatured(p){return !!(p&&p.featured&&p.featuredUntil&&p.featuredUntil>Date.now());}
 function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.featuredUntil-Date.now())/(24*60*60*1000));}
 function getStatus(p){return p.status||"approved";}
@@ -556,12 +581,7 @@ populateBrandSelect("سيارات ومركبات");
 
 window.onCategoryChange=()=>{const cat=document.getElementById("category").value;const bf=document.getElementById("brandField");const bl=document.getElementById("brandLabel");if(cat==="سيارات ومركبات"||cat==="دراجات نارية"||cat==="موبايل وتابلت"||cat==="لابتوب وكمبيوتر"){bf.classList.remove("hidden");if(cat==="سيارات ومركبات")bl.textContent="الماركة (نوع السيارة)";else if(cat==="دراجات نارية")bl.textContent="الماركة (نوع الدراجة)";else bl.textContent="الماركة (نوع الجهاز)";populateBrandSelect(cat);}else{bf.classList.add("hidden");document.getElementById("brand").value="";}};
 
-/* بناء شريط التصنيفات */
-(function(){
-  const catsRow=document.getElementById("catsRow");
-  if(!catsRow)return;
-  catsRow.innerHTML=CATEGORIES.map((c,i)=>`<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`).join("");
-})();
+(function(){const catsRow=document.getElementById("catsRow");if(!catsRow)return;catsRow.innerHTML=CATEGORIES.map((c,i)=>`<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`).join("");})();
 
 setTimeout(updateClearBtn,500);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
@@ -569,8 +589,6 @@ window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";
 function renderSubCats(){if(!subCatsRow)return;const subs=SUB_CATEGORIES[currentCategory];if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}subCatsRow.classList.remove("hidden");subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;}
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 window.loadPosts=()=>renderPosts();
-window.clearSearch=()=>{const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');}catch(e){}try{sessionStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
-function updateClearBtn(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";}
 
 function startPostsListener(){onSnapshot(collection(db,"posts"),snap=>{allPosts=snap.docs.map(d=>({id:d.id,...d.data()}));allPosts=sortPosts(allPosts);renderPosts();updateModBadge();},err=>{postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";});}
 function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
@@ -744,10 +762,6 @@ window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add(
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\nأرجو ترتيب عملية الدفع والتفعيل.`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط الذي وصلك في واتساب");},400);};
 
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){alert("⚠️ الإعلان غير موجود");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 المدة: ${d.days} يوم\n💵 المبلغ: ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
-
-document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
-
-(function(){try{let last="";try{last=localStorage.getItem('lastSearch')||"";}catch(e){}if(!last){try{last=sessionStorage.getItem('lastSearch')||"";}catch(e){}}if(!last)return;const input=document.getElementById("searchInput");if(input&&last){input.value=last;updateClearBtn();let a=0;const tr=()=>{a++;if(allPosts.length>0||a>20){renderPosts();}else{setTimeout(tr,300);}};tr();}}catch(e){}})();
 
 window.addEventListener('load',()=>{const hash=window.location.hash;if(hash&&hash.startsWith('#post-')){const [pp,qp]=hash.split('?');const id=pp.substring(6);const params=new URLSearchParams(qp||'');const pd=parseInt(params.get('plan')||'0',10);const pr=parseInt(params.get('price')||'0',10);if(pd>0){pendingAutoUpgrade={postId:id,days:pd,price:pr};}let t=0;const iv=setInterval(()=>{t++;if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}},500);}});
 </script>
