@@ -19,6 +19,7 @@
   --bg:#f5f6f8; --card:#ffffff; --text:#1f2937; --muted:#8a93a3; --border:#edeff2;
   --danger:#e5484d;
   --wa:#25d366;
+  --green:#16a34a;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);
@@ -58,7 +59,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .bellBtn{
   width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
   color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  padding:0
+  padding:0;position:relative
+}
+.bellBtn .badge{
+  position:absolute;top:-4px;left:-4px;
+  background:#e5484d;color:#fff;
+  font-size:9px;font-weight:800;
+  padding:2px 5px;border-radius:999px;
+  min-width:16px;text-align:center
 }
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
@@ -163,17 +171,40 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .card.featured::before{
   content:"⭐ مميز";
-  position:absolute;
-  top:0;right:0;
+  position:absolute;top:0;right:0;
   background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  color:#3a2500;
-  font-size:11px;
-  font-weight:800;
-  padding:4px 10px;
-  border-radius:0 14px 0 12px;
+  color:#3a2500;font-size:11px;font-weight:800;
+  padding:4px 10px;border-radius:0 14px 0 12px;
   z-index:5;
   box-shadow:0 2px 6px rgba(0,0,0,.15)
 }
+.card.pending{
+  border:2px dashed #f59e0b;
+  opacity:.9;
+  position:relative;
+}
+.card.pending::before{
+  content:"⏳ قيد المراجعة";
+  position:absolute;top:0;right:0;
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);
+  color:#fff;font-size:10.5px;font-weight:800;
+  padding:4px 10px;border-radius:0 14px 0 12px;
+  z-index:5
+}
+.card.rejected{
+  border:2px solid var(--danger);
+  opacity:.8;
+  position:relative;
+}
+.card.rejected::before{
+  content:"❌ مرفوض";
+  position:absolute;top:0;right:0;
+  background:linear-gradient(135deg,#e5484d,#b91c1c);
+  color:#fff;font-size:10.5px;font-weight:800;
+  padding:4px 10px;border-radius:0 14px 0 12px;
+  z-index:5
+}
+
 .featBadge{
   display:inline-flex;align-items:center;gap:5px;
   background:linear-gradient(135deg,#f59e0b,#fbbf24);
@@ -187,6 +218,15 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;
   border:1px solid #f59e0b
 }
+.statusBadge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:800;
+  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px
+}
+.statusBadge.pending{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}
+.statusBadge.rejected{background:#fdeceb;color:#b91c1c;border:1px solid var(--danger)}
+.statusBadge.approved{background:#dcfce7;color:#166534;border:1px solid var(--green)}
+
 .upgradeBtn{
   width:100%;padding:14px;border:none;border-radius:12px;
   font-size:16px;font-weight:800;color:#3a2500;
@@ -203,18 +243,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .planCard:hover{border-color:#f59e0b;background:#fffbf0}
 .planCard:active{transform:scale(.98)}
-.planCard.best{
-  border-color:#f59e0b;
-  background:linear-gradient(135deg,#fffbf0,#fef3c7)
-}
-.planCard .planTitle{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:6px
-}
+.planCard.best{border-color:#f59e0b;background:linear-gradient(135deg,#fffbf0,#fef3c7)}
+.planCard .planTitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .planCard .planDays{font-size:17px;font-weight:800;color:var(--text)}
-.planCard .planPrice{
-  font-size:20px;font-weight:900;color:#92400e
-}
+.planCard .planPrice{font-size:20px;font-weight:900;color:#92400e}
 .planCard .planDesc{font-size:12px;color:var(--muted);line-height:1.6}
 .planCard .bestBadge{
   position:absolute;top:10px;left:10px;
@@ -224,19 +256,30 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 
 .adminPlans{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
-  margin-top:8px
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px
 }
 .adminPlans button{
   padding:10px 4px;border:1px solid #f59e0b;border-radius:10px;
   background:#fffbf0;color:#92400e;
-  font-family:inherit;font-size:12.5px;font-weight:800;
-  cursor:pointer
+  font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer
 }
 .adminPlans button:hover{background:#fef3c7}
 .adminPlans button.cancel{
   grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)
 }
+
+.reviewBox{
+  background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;
+  padding:12px;margin-top:8px
+}
+.reviewBox .rbTitle{font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13px}
+.reviewBox .rbBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.reviewBox .rbBtns button{
+  padding:10px 4px;border:none;border-radius:10px;
+  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer
+}
+.reviewBox .rbBtns .approve{background:#16a34a;color:#fff}
+.reviewBox .rbBtns .reject{background:#e5484d;color:#fff}
 
 .bottomNav{
   position:fixed;bottom:0;right:0;left:0;z-index:30;background:#fff;border-top:1px solid var(--border);
@@ -392,27 +435,19 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   background:#fff;padding:6px;
   animation:popIn .5s ease-out;
 }
-@keyframes popIn{
-  0%{transform:scale(.6);opacity:0}
-  100%{transform:scale(1);opacity:1}
-}
+@keyframes popIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
 #splashScreen .splashName{
   color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;
   text-shadow:0 4px 12px rgba(0,0,0,.25);
 }
-#splashScreen .splashLoader{
-  display:flex;gap:8px;margin-top:14px;
-}
+#splashScreen .splashLoader{display:flex;gap:8px;margin-top:14px}
 #splashScreen .splashLoader span{
   width:10px;height:10px;border-radius:50%;background:#fff;
   animation:bounce 1.2s infinite ease-in-out;
 }
 #splashScreen .splashLoader span:nth-child(2){animation-delay:.15s}
 #splashScreen .splashLoader span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{
-  0%,80%,100%{transform:scale(.6);opacity:.5}
-  40%{transform:scale(1);opacity:1}
-}
+@keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
 
 .authOption{
   width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;
@@ -423,9 +458,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .authOption:hover{background:var(--teal-light)}
 .authOption.primary{background:#fff}
 .authOption .icon{font-size:20px}
-.authOption.disabled{
-  opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative
-}
+.authOption.disabled{opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative}
 .authOption.disabled .soonBadge{
   position:absolute;top:-8px;left:10px;
   background:var(--amber);color:#3a2500;
@@ -545,7 +578,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <ul>
         <li>أتعهد بأن المعلومات والصور التي أنشرها صحيحة.</li>
         <li>أتحمل كامل المسؤولية عن إعلاني.</li>
-        <li>لا أنشر إعلانات وهمية أو مضللة.</li>
+        <li>لا أنشر إعلانات وهمية أو مضللة أو مخالفة.</li>
       </ul>
       <label class="termsCheck"><input type="checkbox" id="termsCheck"> قرأت الشروط وأوافق عليها</label>
     </div>
@@ -597,6 +630,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع (التقييمات)</button>
     <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل إشعارات الموقع</button>
     <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
+    <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
     <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
@@ -606,6 +640,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="sheet" style="max-height:75vh;overflow-y:auto">
     <h3>الإبلاغات</h3>
     <div id="reportsList"></div>
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+  </div>
+</div>
+
+<div id="moderationOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:80vh;overflow-y:auto">
+    <h3>⏳ الإعلانات قيد المراجعة</h3>
+    <div id="moderationList"></div>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
 </div>
@@ -623,7 +665,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       اختر الباقة التي تناسبك<br>
       سيظهر إعلانك <b>في الأعلى بلون ذهبي</b> طوال المدة
     </p>
-
     <div class="planCard" onclick="selectPlan(7,'7 أيام',5)">
       <div class="planTitle">
         <span class="planDays">🥉 7 أيام</span>
@@ -631,7 +672,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       </div>
       <div class="planDesc">إعلانك يظهر في الأعلى لمدة أسبوع كامل</div>
     </div>
-
     <div class="planCard best" onclick="selectPlan(15,'15 يوم',10)">
       <span class="bestBadge">الأكثر طلباً</span>
       <div class="planTitle">
@@ -640,7 +680,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       </div>
       <div class="planDesc">توفير 25% — إعلانك في الأعلى لنصف شهر</div>
     </div>
-
     <div class="planCard" onclick="selectPlan(30,'30 يوم',18)">
       <div class="planTitle">
         <span class="planDays">🥇 30 يوم</span>
@@ -648,12 +687,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       </div>
       <div class="planDesc">أفضل قيمة — إعلانك في الأعلى لشهر كامل</div>
     </div>
-
     <div style="background:var(--teal-light);border-radius:12px;padding:12px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;margin-top:8px;text-align:center">
       💬 عند اختيار الباقة، سيتم فتح واتساب مع الإدارة<br>
       لترتيب عملية الدفع
     </div>
-
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
 </div>
@@ -759,9 +796,47 @@ alert("تعذر تفعيل الإشعارات: "+e.message);
 }
 };
 
+/* ================= إعدادات ================= */
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
+
+/* ================= 🚫 قائمة الكلمات الممنوعة ================= */
+const FORBIDDEN_WORDS = [
+  "إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس",
+  "عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا",
+  "شهواني","شهوانية","خليعة","خليع","دعارة","عاهر","عاهرة","شرموط","شرموطة",
+  "قحبة","قحب","زانية","زاني","فحل","فحول",
+  "للتعارف","تعارف جنسي","تعارف للزواج السريع","شات جنسي","مكالمات جنسية",
+  "فتاة ليل","بنت ليل","فراش",
+  "حشيش","كوكايين","هيروين","حبوب مخدرة","بانجو","ماريجوانا","ترامادول",
+  "كبتاجون","استروكس","حشيشة","مخدر",
+  "بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع",
+  "تهريب","نصب","غش","وهمي","مزيف","فلوس مزيفة","دينار مزيف","دولار مزيف",
+  "porn","porno","sex","nude","nudes","xxx","adult","erotic","escort",
+  "prostitute","prostitution","whore","slut","bitch","fuck","fucking",
+  "weed","cocaine","heroin","meth","cannabis","marijuana",
+  "scam","fake money","counterfeit","drugs"
+];
+
+function detectForbidden(text){
+  if(!text) return null;
+  const t = String(text).toLowerCase();
+  for(const w of FORBIDDEN_WORDS){
+    if(t.includes(w.toLowerCase())) return w;
+  }
+  return null;
+}
+
+function checkContent(title, description){
+  const t = detectForbidden(title);
+  if(t) return {word:t, field:"العنوان"};
+  const d = detectForbidden(description);
+  if(d) return {word:d, field:"الوصف"};
+  return null;
+}
+
+/* ================= حالة عامة ================= */
 let isAdmin=false;
 let showOnlyMine=false;
 let showOnlyFavorites=false;
@@ -794,6 +869,8 @@ const authOverlay=document.getElementById("authOverlay");
 const accountOverlay=document.getElementById("accountOverlay");
 const reportsOverlay=document.getElementById("reportsOverlay");
 const reportsBtn=document.getElementById("reportsBtn");
+const moderationBtn=document.getElementById("moderationBtn");
+const moderationOverlay=document.getElementById("moderationOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay");
 const postOverlay=document.getElementById("postOverlay");
 const warnOverlay=document.getElementById("warnOverlay");
@@ -810,6 +887,9 @@ function isPostFeatured(p){
 function featuredDaysLeft(p){
   if(!isPostFeatured(p)) return 0;
   return Math.ceil((p.featuredUntil - Date.now()) / (24*60*60*1000));
+}
+function getStatus(p){
+  return p.status || "approved";
 }
 function sortPosts(arr){
   return arr.slice().sort((a,b)=>{
@@ -898,6 +978,8 @@ adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
+if(moderationBtn) moderationBtn.classList.toggle("hidden",!isAdmin);
+updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){ setTimeout(tryApplyPendingUpgrade, 1500); }
 if(pendingAction==="form"){pendingAction=null;showForm();}
@@ -943,6 +1025,7 @@ window.loginWithGoogle=async()=>{
 
 window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
+moderationOverlay.classList.add("hidden");
 sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
 upgradeOverlay.classList.add("hidden");
 pendingAction=null;
@@ -955,6 +1038,7 @@ const displayName = (myProfile && myProfile.name) || auth.currentUser.displayNam
 document.getElementById("accountName").textContent="👤 " + displayName;
 document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
 reportsBtn.classList.toggle("hidden",!isAdmin);
+if(moderationBtn) moderationBtn.classList.toggle("hidden",!isAdmin);
 accountOverlay.classList.remove("hidden");
 }else{
 pendingAction=null;
@@ -967,6 +1051,22 @@ renderReports();
 reportsOverlay.classList.remove("hidden");
 accountOverlay.classList.add("hidden");
 };
+
+window.openModeration=()=>{
+renderModeration();
+moderationOverlay.classList.remove("hidden");
+accountOverlay.classList.add("hidden");
+};
+
+function updateModBadge(){
+  if(!isAdmin || !moderationBtn) return;
+  const count = allPosts.filter(p=>getStatus(p)==="pending").length;
+  if(count > 0){
+    moderationBtn.textContent = `⏳ الإعلانات قيد المراجعة (${count})`;
+  } else {
+    moderationBtn.textContent = "⏳ الإعلانات قيد المراجعة";
+  }
+}
 
 function setActiveNav(which){
 navHome.classList.toggle("active",which==="home");
@@ -1089,6 +1189,7 @@ onSnapshot(collection(db,"posts"),snapshot=>{
 allPosts=snapshot.docs.map(d=>({id:d.id,...d.data()}));
 allPosts=sortPosts(allPosts);
 renderPosts();
+updateModBadge();
 },err=>{
 console.error(err);
 postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";
@@ -1107,13 +1208,17 @@ return Math.floor(diff/86400)+" يوم";
 function renderPosts(){
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
+const me = auth.currentUser;
 let list=allPosts.filter(p=>{
-if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
-if(currentCity!=="الكل" && p.city!==currentCity)return false;
-if(showOnlyMine && p.uid!==auth.currentUser?.uid)return false;
-if(showOnlyFavorites && !favs.includes(p.id))return false;
-if(term && !(p.title||"").toLowerCase().includes(term))return false;
-return true;
+  const status = getStatus(p);
+  const isOwner = me && p.uid === me.uid;
+  if(status !== "approved" && !isOwner && !isAdmin) return false;
+  if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
+  if(currentCity!=="الكل" && p.city!==currentCity)return false;
+  if(showOnlyMine && p.uid!==me?.uid)return false;
+  if(showOnlyFavorites && !favs.includes(p.id))return false;
+  if(term && !(p.title||"").toLowerCase().includes(term))return false;
+  return true;
 });
 list = sortPosts(list);
 
@@ -1127,8 +1232,9 @@ if(list.length===0){
 }
 
 postsBox.innerHTML=list.map(p=>{
-const canDelete=isAdmin||(auth.currentUser && p.uid===auth.currentUser.uid);
-const isOwner=auth.currentUser && p.uid===auth.currentUser.uid;
+const status = getStatus(p);
+const isOwner = me && p.uid === me.uid;
+const canDelete=isAdmin||isOwner;
 const images=getImages(p);
 const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
@@ -1137,9 +1243,14 @@ const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="del
 const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" title="${isPostFeatured(p)?'إلغاء التمييز':'تمييز لمدة 30 يوم'}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
-const featuredCard = isPostFeatured(p) ? 'featured' : '';
+
+let cardClass = "";
+if(status === "approved" && isPostFeatured(p)) cardClass = "featured";
+else if(status === "pending") cardClass = "pending";
+else if(status === "rejected") cardClass = "rejected";
+
 return `
-<div class="card ${featuredCard}">
+<div class="card ${cardClass}">
   <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
   <div class="body">
     <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
@@ -1273,7 +1384,7 @@ renderSeller(uid,prof,ratings,!ratSnap);
 
 function renderSeller(uid,prof,ratings,ratingsFailed){
 const box=document.getElementById("sellerContent");
-const posts=allPosts.filter(p=>p.uid===uid);
+const posts=allPosts.filter(p=>p.uid===uid && getStatus(p)==="approved");
 const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"بائع";
 const since=(prof&&prof.createdAt)?new Date(prof.createdAt).toLocaleDateString("ar",{year:"numeric",month:"long"}):"غير متوفر";
 const count=ratings.length;
@@ -1399,7 +1510,14 @@ window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);
 if(!p)return;
 
+const status = getStatus(p);
 const isOwner = auth.currentUser && auth.currentUser.uid === p.uid;
+
+if(status !== "approved" && !isOwner && !isAdmin){
+  alert("هذا الإعلان غير متاح حالياً.");
+  return;
+}
+
 if(!isOwner){
   incrementViews(id);
 }
@@ -1411,12 +1529,21 @@ const desc=p.description
 :`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
-const shareBtn=`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`;
+const shareBtn=(status==="approved")?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
 
 const viewsBadge = (isOwner || isAdmin) ? `<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>` : "";
 
+let statusBadge = "";
+if(isOwner || isAdmin){
+  if(status === "pending"){
+    statusBadge = `<span class="statusBadge pending">⏳ قيد المراجعة</span>`;
+  } else if(status === "rejected"){
+    statusBadge = `<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;
+  }
+}
+
 let featBadge = "";
-if(isPostFeatured(p)){
+if(status === "approved" && isPostFeatured(p)){
   const days = featuredDaysLeft(p);
   if(isOwner){
     featBadge = `<span class="featBadgeOwner">⭐ مميز — ${days} ${days===1?'يوم':'أيام'} متبقية</span>`;
@@ -1428,7 +1555,7 @@ if(isPostFeatured(p)){
 }
 
 let upgradeBtn = "";
-if(isOwner){
+if(isOwner && status === "approved"){
   if(isPostFeatured(p)){
     upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;
   } else {
@@ -1438,7 +1565,25 @@ if(isOwner){
 
 let adminPanel = "";
 if(isAdmin){
-  adminPanel = `
+  if(status === "pending"){
+    adminPanel = `
+      <div class="reviewBox">
+        <div class="rbTitle">⏳ هذا الإعلان بانتظار المراجعة</div>
+        <div class="rbBtns">
+          <button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button>
+          <button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button>
+        </div>
+      </div>`;
+  } else if(status === "rejected"){
+    adminPanel = `
+      <div class="reviewBox" style="background:#fdeceb;border-color:#e5484d">
+        <div class="rbTitle" style="color:#b91c1c">❌ إعلان مرفوض</div>
+        <div class="rbBtns">
+          <button class="approve" onclick="approvePost('${p.id}')">✅ قبول الإعلان</button>
+        </div>
+      </div>`;
+  }
+  adminPanel += `
     <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px">
       <div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div>
       <div class="adminPlans">
@@ -1455,7 +1600,7 @@ document.getElementById("postContent").innerHTML=`
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
-<div>${featBadge}${viewsBadge}</div>
+<div>${featBadge}${statusBadge}${viewsBadge}</div>
 ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
@@ -1526,6 +1671,13 @@ if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على شروط نشر الإعلان أولاً");return;}
 
+/* 🚫 فحص الكلمات الممنوعة */
+const bad = checkContent(title, description);
+if(bad){
+  alert(`❌ لا يمكن نشر الإعلان\n\nالسبب: يحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}\n\nالرجاء تعديل النص والمحاولة مرة أخرى.`);
+  return;
+}
+
 if(!wasEditing){
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
 if(myCount>=3){
@@ -1548,7 +1700,11 @@ images.push(await uploadToImgBB(item.file));
 }
 
 if(wasEditing){
-await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,city,description,phone,images,sellerName});
+  await updateDoc(doc(db,"posts",editingPostId),{
+    title,price:Number(price),category,city,description,phone,images,sellerName,
+    status:"pending",
+    rejectReason:null
+  });
 }else{
 await addDoc(collection(db,"posts"),{
 title,price:Number(price),category,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
@@ -1558,8 +1714,10 @@ views:0,
 featured:false,
 featuredUntil:0,
 featuredPlan:null,
+status:"pending",
 createdAt:Date.now()
 });
+alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");
 }
 
 editingPostId=null;
@@ -1575,6 +1733,154 @@ alert("خطأ أثناء الحفظ: "+e.message);
 saveBtn.disabled=false;
 saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";
 }
+};
+
+/* ================= Admin: Approve / Reject ================= */
+window.approvePost = async (id) => {
+  if(!isAdmin) return;
+  try{
+    await updateDoc(doc(db,"posts",id), {
+      status:"approved",
+      approvedAt: Date.now(),
+      rejectReason: null
+    });
+    alert("✅ تم قبول الإعلان");
+    closeOverlay();
+  }catch(e){ alert("خطأ: "+e.message); }
+};
+
+window.rejectPost = async (id) => {
+  if(!isAdmin) return;
+  const reason = prompt("سبب الرفض (سيظهر لصاحب الإعلان):", "محتوى غير مناسب");
+  if(reason === null) return;
+  try{
+    await updateDoc(doc(db,"posts",id), {
+      status:"rejected",
+      rejectReason: reason || "محتوى غير مناسب",
+      rejectedAt: Date.now()
+    });
+    alert("✅ تم رفض الإعلان");
+    closeOverlay();
+  }catch(e){ alert("خطأ: "+e.message); }
+};
+
+/* ================= شاشة المراجعة الجماعية ================= */
+function renderModeration(){
+  const list = document.getElementById("moderationList");
+  if(!list) return;
+  const pending = allPosts.filter(p => getStatus(p) === "pending");
+
+  if(pending.length === 0){
+    list.innerHTML = "<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة حالياً</div>";
+    return;
+  }
+
+  const toolbar = `
+    <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">
+        📊 يوجد ${pending.length} إعلان بانتظار المراجعة
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">
+          ✅ موافقة على الكل
+        </button>
+        <button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">
+          ❌ رفض الكل
+        </button>
+      </div>
+    </div>`;
+
+  const items = pending.map(p=>{
+    const imgs = getImages(p);
+    const thumb = imgs[0] || "";
+    const desc = (p.description||"").trim();
+    const descShort = desc.length > 80 ? desc.slice(0,80) + "…" : (desc || "لا يوجد وصف");
+
+    return `
+      <div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">
+            ${thumb
+              ? `<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover">`
+              : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:14.5px;color:var(--text);margin-bottom:3px">
+              ${escapeHtml(p.title||"بدون عنوان")}
+            </div>
+            <div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">
+              ${p.price!=null?p.price+" د.ل":""}
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.6">
+              ${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>
+              👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
+            </div>
+            <div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">
+              ${escapeHtml(descShort)}
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+          <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
+            ✅ موافقة
+          </button>
+          <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
+            ❌ رفض
+          </button>
+          <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
+            👁️ عرض
+          </button>
+        </div>
+      </div>`;
+  }).join("");
+
+  list.innerHTML = toolbar + items;
+}
+
+/* ================= أزرار جماعية ================= */
+window.approveAllPending = async () => {
+  if(!isAdmin) return;
+  const pending = allPosts.filter(p => getStatus(p) === "pending");
+  if(pending.length === 0){ alert("لا توجد إعلانات بانتظار المراجعة"); return; }
+  if(!confirm(`هل تريد الموافقة على جميع الإعلانات (${pending.length} إعلان)؟`)) return;
+
+  let ok = 0, fail = 0;
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id), {
+        status:"approved",
+        approvedAt: Date.now(),
+        rejectReason: null
+      });
+      ok++;
+    }catch(e){ fail++; console.error(e); }
+  }
+  alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
+  renderModeration();
+};
+
+window.deleteAllPending = async () => {
+  if(!isAdmin) return;
+  const pending = allPosts.filter(p => getStatus(p) === "pending");
+  if(pending.length === 0){ alert("لا توجد إعلانات بانتظار المراجعة"); return; }
+  if(!confirm(`⚠️ هل تريد رفض جميع الإعلانات (${pending.length} إعلان)؟`)) return;
+
+  const reason = prompt("سبب الرفض الجماعي:", "محتوى غير مناسب");
+  if(reason === null) return;
+
+  let ok = 0, fail = 0;
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id), {
+        status:"rejected",
+        rejectReason: reason || "محتوى غير مناسب",
+        rejectedAt: Date.now()
+      });
+      ok++;
+    }catch(e){ fail++; console.error(e); }
+  }
+  alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
+  renderModeration();
 };
 
 window.reportPost=async(id)=>{
@@ -1710,7 +2016,6 @@ window.selectPlan = (days, label, price) => {
   }, 400);
 };
 
-/* ================= Auto upgrade (deep link with plan) ================= */
 function tryApplyPendingUpgrade(){
   if(!pendingAutoUpgrade) return;
   if(!isAdmin) return;
