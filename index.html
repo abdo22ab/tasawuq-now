@@ -61,13 +61,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;
   padding:0;position:relative
 }
-.bellBtn .badge{
-  position:absolute;top:-4px;left:-4px;
-  background:#e5484d;color:#fff;
-  font-size:9px;font-weight:800;
-  padding:2px 5px;border-radius:999px;
-  min-width:16px;text-align:center
-}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{
@@ -346,14 +339,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .sheet h3{margin:0 0 14px 0;font-size:17px;font-weight:800}
 .sheet .accountEmail{font-size:14px;color:var(--muted);margin-bottom:16px;word-break:break-all}
 
-.reportItem{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
-.reportItem .rTitle{font-weight:800;font-size:14px;margin-bottom:2px}
-.reportItem .rMeta{font-size:12px;color:var(--muted);margin-bottom:8px}
-.reportItem .rActions{display:flex;gap:8px}
-.reportItem .rActions button{flex:1;border:none;border-radius:9px;padding:8px 0;font-size:12.5px;font-weight:700;cursor:pointer}
+.reportItem{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.reportItem .rTitle{font-weight:800;font-size:14px;margin-bottom:4px}
+.reportItem .rMeta{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.7}
+.reportItem .rActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.reportItem .rActions button{border:none;border-radius:9px;padding:8px 4px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .rDelete{background:#fdeceb;color:var(--danger)}
 .rDismiss{background:var(--bg);color:var(--muted)}
-.reportsEmpty{text-align:center;color:var(--muted);padding:20px 0;font-size:14px}
+.reportsEmpty{text-align:center;color:var(--muted);padding:30px 20px;font-size:14px;line-height:1.7}
 
 .warnBanner{margin:10px 16px 0;padding:9px 12px;background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;font-size:12.5px;color:#7a5c00;line-height:1.6}
 .sellerLine{font-size:11.5px;color:var(--teal-dark);font-weight:700;cursor:pointer}
@@ -637,8 +630,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 </div>
 
 <div id="reportsOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:75vh;overflow-y:auto">
-    <h3>الإبلاغات</h3>
+  <div class="sheet" style="max-height:80vh;overflow-y:auto">
+    <h3>🚩 الإبلاغات</h3>
     <div id="reportsList"></div>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
@@ -1671,7 +1664,6 @@ if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على شروط نشر الإعلان أولاً");return;}
 
-/* 🚫 فحص الكلمات الممنوعة */
 const bad = checkContent(title, description);
 if(bad){
   alert(`❌ لا يمكن نشر الإعلان\n\nالسبب: يحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}\n\nالرجاء تعديل النص والمحاولة مرة أخرى.`);
@@ -1837,7 +1829,6 @@ function renderModeration(){
   list.innerHTML = toolbar + items;
 }
 
-/* ================= أزرار جماعية ================= */
 window.approveAllPending = async () => {
   if(!isAdmin) return;
   const pending = allPosts.filter(p => getStatus(p) === "pending");
@@ -1883,6 +1874,7 @@ window.deleteAllPending = async () => {
   renderModeration();
 };
 
+/* ================= الإبلاغات ================= */
 window.reportPost=async(id)=>{
 if(!auth.currentUser){
   pendingAction = { type: "report", postId: id };
@@ -1920,19 +1912,92 @@ function renderReports(){
 const list=document.getElementById("reportsList");
 if(!list)return;
 if(allReports.length===0){
-list.innerHTML="<div class='reportsEmpty'>لا توجد إبلاغات حالياً</div>";
+list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات حالياً</div>";
 return;
 }
-list.innerHTML=allReports.map(r=>`
-<div class="reportItem">
-<div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div>
-<div class="rMeta">${escapeHtml(r.reason||"بدون سبب محدد")} — ${escapeHtml(r.reporterEmail||"")}</div>
-<div class="rActions">
-<button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">حذف الإعلان</button>
-<button class="rDismiss" onclick="dismissReport('${r.id}')">تجاهل</button>
-</div>
+
+const toolbar = `
+  <div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px">
+    <div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">
+      🚩 يوجد ${allReports.length} إبلاغ بانتظار المراجعة
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">
+        🗑️ تجاهل الكل
+      </button>
+      <button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">
+        ❌ حذف الكل
+      </button>
+    </div>
+  </div>`;
+
+const items = allReports.map(r=>`
+<div class="reportItem" style="background:#fff">
+  <div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div>
+  <div class="rMeta">
+    <b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br>
+    <b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}
+  </div>
+  <div class="rActions">
+    <button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button>
+    <button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button>
+    <button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button>
+  </div>
 </div>`).join("");
+
+list.innerHTML = toolbar + items;
 }
+
+/* ================= أزرار جماعية للإبلاغات ================= */
+window.dismissAllReports = async () => {
+  if(!isAdmin) return;
+  if(allReports.length === 0){ alert("لا توجد إبلاغات"); return; }
+  if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ)؟\n\nلن يتم حذف أي إعلان، فقط مسح الإبلاغات.`)) return;
+
+  let ok = 0, fail = 0;
+  for(const r of allReports){
+    try{
+      await deleteDoc(doc(db,"reports",r.id));
+      ok++;
+    }catch(e){ fail++; console.error(e); }
+  }
+  alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+  renderReports();
+};
+
+window.deleteAllReportedPosts = async () => {
+  if(!isAdmin) return;
+  if(allReports.length === 0){ alert("لا توجد إبلاغات"); return; }
+
+  const uniquePostIds = [...new Set(allReports.map(r=>r.postId).filter(x=>x))];
+
+  if(!confirm(`⚠️ تحذير!\n\nسيتم حذف ${uniquePostIds.length} إعلان نهائياً\nوإزالة ${allReports.length} إبلاغ.\n\nهل أنت متأكد؟`)) return;
+
+  const confirmText = prompt(`اكتب "حذف" للتأكيد:`);
+  if(confirmText !== "حذف"){
+    alert("❌ تم إلغاء العملية");
+    return;
+  }
+
+  let okPosts = 0, okReports = 0, fail = 0;
+
+  for(const pid of uniquePostIds){
+    try{
+      await deleteDoc(doc(db,"posts",pid));
+      okPosts++;
+    }catch(e){ fail++; console.error(e); }
+  }
+
+  for(const r of allReports){
+    try{
+      await deleteDoc(doc(db,"reports",r.id));
+      okReports++;
+    }catch(e){ fail++; console.error(e); }
+  }
+
+  alert(`✅ تم حذف ${okPosts} إعلان\n✅ تم إزالة ${okReports} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+  renderReports();
+};
 
 window.dismissReport=async(reportId)=>{
 try{await deleteDoc(doc(db,"reports",reportId));}
