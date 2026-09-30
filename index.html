@@ -28,17 +28,29 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .adminChip{position:absolute;top:-4px;left:-4px;background:var(--amber);color:#3a2500;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px}
-.searchWrap{padding:14px 16px 4px 16px;display:flex;gap:8px;align-items:stretch}
+.searchWrap{padding:14px 16px 4px 16px;display:flex;gap:8px;align-items:stretch;position:relative;z-index:28}
 .searchWrap .searchBox{flex:1;min-width:0}
 .cityFilter{flex:0 0 auto;max-width:118px;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:0 8px;font-family:inherit;font-size:13px;font-weight:700;color:var(--text);box-shadow:0 2px 8px rgba(15,23,42,.04)}
 .cityLine{font-size:11.5px;color:var(--muted)}
-.searchBox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.searchBox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04);position:relative}
 .searchBox input{border:none;outline:none;flex:1;font-family:inherit;font-size:15px;background:transparent}
 .searchBox .ic{color:var(--muted)}
 .clearSearchBtn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:none;background:#e5e7eb;color:#4b5563;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:background .15s}
 .clearSearchBtn:hover{background:#d1d5db}
 .clearSearchBtn:active{transform:scale(.9)}
-.catsRow{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px 16px;scrollbar-width:none}
+.searchDropdown{position:absolute;top:calc(100% + 6px);right:0;left:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.15);max-height:340px;overflow-y:auto;z-index:35;padding:6px 0;animation:dropDown .15s ease-out}
+@keyframes dropDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.searchDropdown.hidden{display:none!important}
+.sdSection{padding:6px 14px 4px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px}
+.sdItem{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:14px;color:var(--text);transition:background .1s;font-family:inherit}
+.sdItem:hover,.sdItem:active{background:var(--teal-light)}
+.sdItem .sdIcon{font-size:16px;flex:0 0 auto;opacity:.7}
+.sdItem .sdText{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sdItem .sdRemove{flex:0 0 auto;background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.sdItem .sdRemove:hover{background:#fdeceb;color:var(--danger)}
+.sdClearAll{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;font-size:12.5px;color:var(--danger);font-weight:700;cursor:pointer;border-top:1px solid var(--border);margin-top:4px;font-family:inherit}
+.sdClearAll:hover{background:#fdeceb}
+.catsRow{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px 16px;scrollbar-width:none;position:relative;z-index:1}
 .catsRow::-webkit-scrollbar{display:none}
 .catChip{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .catChip.active{background:var(--teal);border-color:var(--teal);color:#fff}
@@ -235,8 +247,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="searchWrap">
     <div class="searchBox">
       <span class="ic">🔎</span>
-      <input id="searchInput" placeholder="ابحث..." oninput="quickSave()">
+      <input id="searchInput" placeholder="ابحث..." oninput="onSearchTyping()" onfocus="showSearchDropdown()">
       <button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" style="display:none">✕</button>
+      <div id="searchDropdown" class="searchDropdown hidden"></div>
     </div>
     <select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
   </div>
@@ -296,7 +309,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       </select>
     </div>
     <div class="field hidden" id="brandField">
-      <label>الماركة (نوع السيارة)</label>
+      <label id="brandLabel">الماركة</label>
       <select id="brand"></select>
     </div>
     <div class="field"><label>المدينة</label><select id="city"></select></div>
@@ -505,9 +518,20 @@ const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
 
+/* ===== ماركات السيارات ===== */
 const CAR_BRANDS = ["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 
-const SUB_CATEGORIES = {"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS}};
+/* ===== ماركات الموبايلات ===== */
+const PHONE_BRANDS = ["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel / جوجل بيكسل","Sony / سوني","LG / إل جي","Motorola / موتورولا","HTC","Lenovo / لينوفو","Asus / أسوس","ZTE / زد تي إي","itel","Lava","Micromax","Wiko / ويكو","Alcatel / ألكاتيل","TCL","Blackberry / بلاك بيري","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
+
+/* ===== ماركات اللابتوب والكمبيوتر ===== */
+const COMPUTER_BRANDS = ["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook / ماك بوك","MSI","Samsung / سامسونج","Microsoft Surface","Sony Vaio","Fujitsu / فوجيتسو","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Clevo","Panasonic","Gateway","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
+
+const SUB_CATEGORIES = {
+  "سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
+  "موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},
+  "لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}
+};
 
 const FORBIDDEN_WORDS = ["إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس","عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا","شهواني","شهوانية","خليعة","خليع","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","قحب","زانية","زاني","فحل","فحول","للتعارف","تعارف جنسي","تعارف للزواج السريع","شات جنسي","مكالمات جنسية","فتاة ليل","بنت ليل","فراش","حشيش","كوكايين","هيروين","حبوب مخدرة","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","حشيشة","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","فلوس مزيفة","دينار مزيف","دولار مزيف","porn","porno","sex","nude","nudes","xxx","adult","erotic","escort","prostitute","prostitution","whore","slut","bitch","fuck","fucking","weed","cocaine","heroin","meth","cannabis","marijuana","scam","fake money","counterfeit","drugs"];
 
@@ -525,6 +549,7 @@ if(d)return{word:d,field:"الوصف"};
 return null;
 }
 
+/* ===== حدود المستخدمين ===== */
 const userLimitsCache = {};
 const DEFAULT_LIMIT = 3;
 
@@ -595,32 +620,143 @@ const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
 const subCatsRow=document.getElementById("subCatsRow");
 
-/* ===== حفظ البحث (مُصلح) ===== */
-window.quickSave = function(){
-  try{
-    const el = document.getElementById("searchInput");
-    if(!el) return;
-    const v = el.value || "";
-    localStorage.setItem("lastSearch", v);
-    sessionStorage.setItem("lastSearch", v);
-    updateClearBtn();
-    renderPosts();
-  }catch(e){ console.error("quickSave error:", e); }
+/* ===== البحث + السجل + المقترحات ===== */
+function getSearchHistory(){
+  try{ return JSON.parse(localStorage.getItem('searchHistory')||'[]'); }
+  catch(e){ return []; }
+}
+function addToSearchHistory(term){
+  if(!term || term.trim().length < 2) return;
+  const t = term.trim();
+  let h = getSearchHistory();
+  h = h.filter(x => x !== t);
+  h.unshift(t);
+  if(h.length > 10) h = h.slice(0, 10);
+  try{ localStorage.setItem('searchHistory', JSON.stringify(h)); }catch(e){}
+}
+function removeFromHistory(term, event){
+  if(event) event.stopPropagation();
+  let h = getSearchHistory();
+  h = h.filter(x => x !== term);
+  try{ localStorage.setItem('searchHistory', JSON.stringify(h)); }catch(e){}
+  showSearchDropdown();
+}
+function clearSearchHistory(event){
+  if(event) event.stopPropagation();
+  if(!confirm("مسح كل سجل البحث؟")) return;
+  try{ localStorage.removeItem('searchHistory'); }catch(e){}
+  showSearchDropdown();
+}
+
+function getSuggestions(term){
+  const t = (term||"").trim().toLowerCase();
+  const seen = new Set();
+  const results = [];
+  allPosts.forEach(p => {
+    if(getStatus(p) !== "approved") return;
+    const title = (p.title||"").trim();
+    if(!title) return;
+    const lower = title.toLowerCase();
+    if(t && !lower.includes(t)) return;
+    const key = lower.slice(0, 30);
+    if(seen.has(key)) return;
+    seen.add(key);
+    results.push({title:title, price:p.price, thumb:(p.images && p.images[0]) || p.imageUrl || ""});
+  });
+  if(t){
+    const allBrands = [...CAR_BRANDS, ...PHONE_BRANDS, ...COMPUTER_BRANDS];
+    allBrands.forEach(b => {
+      if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){
+        seen.add(b.toLowerCase());
+        results.push({title:b, price:null, thumb:"", isBrand:true});
+      }
+    });
+  }
+  return results.slice(0, 6);
+}
+
+window.showSearchDropdown = function(){
+  const box = document.getElementById("searchDropdown");
+  const input = document.getElementById("searchInput");
+  if(!box || !input) return;
+  const term = (input.value || "").trim();
+  const history = getSearchHistory();
+  const suggestions = getSuggestions(term);
+  let html = "";
+  if(!term && history.length > 0){
+    html += `<div class="sdSection">🕐 آخر ما بحثت عنه</div>`;
+    html += history.map(h => `
+      <div class="sdItem" onclick="pickSearch('${h.replace(/'/g,"\\'")}')">
+        <span class="sdIcon">🕐</span>
+        <span class="sdText">${escapeHtml(h)}</span>
+        <button class="sdRemove" onclick="removeFromHistory('${h.replace(/'/g,"\\'")}',event)" title="حذف">✕</button>
+      </div>`).join("");
+    html += `<div class="sdClearAll" onclick="clearSearchHistory(event)">🗑️ مسح كل السجل</div>`;
+  }
+  if(suggestions.length > 0){
+    const label = term ? "💡 مقترحات" : "🔥 إعلانات مقترحة";
+    html += `<div class="sdSection">${label}</div>`;
+    html += suggestions.map(s => `
+      <div class="sdItem" onclick="pickSearch('${s.title.replace(/'/g,"\\'")}')">
+        <span class="sdIcon">${s.isBrand ? "🏷️" : (s.thumb ? "📦" : "🔎")}</span>
+        <span class="sdText">${escapeHtml(s.title)}</span>
+        ${s.price!=null ? `<span style="font-size:11.5px;color:var(--teal-dark);font-weight:700;flex:0 0 auto">${s.price} د.ل</span>` : ""}
+      </div>`).join("");
+  }
+  if(!html){
+    html = `<div class="sdSection" style="text-align:center;padding:20px;color:var(--muted)">اكتب للبحث...</div>`;
+  }
+  box.innerHTML = html;
+  box.classList.remove("hidden");
 };
 
-window.saveSearch = window.quickSave;
+window.hideSearchDropdown = function(){
+  const box = document.getElementById("searchDropdown");
+  if(box) box.classList.add("hidden");
+};
+
+window.pickSearch = function(term){
+  const input = document.getElementById("searchInput");
+  if(!input) return;
+  input.value = term;
+  addToSearchHistory(term);
+  try{ localStorage.setItem('lastSearch', term); }catch(e){}
+  try{ sessionStorage.setItem('lastSearch', term); }catch(e){}
+  updateClearBtn();
+  hideSearchDropdown();
+  input.blur();
+  renderPosts();
+};
+
+window.onSearchTyping = function(){
+  const input = document.getElementById("searchInput");
+  if(!input) return;
+  updateClearBtn();
+  renderPosts();
+  showSearchDropdown();
+  if(window._searchTimer) clearTimeout(window._searchTimer);
+  window._searchTimer = setTimeout(() => {
+    const v = input.value || "";
+    try{ localStorage.setItem('lastSearch', v); }catch(e){}
+    try{ sessionStorage.setItem('lastSearch', v); }catch(e){}
+    if(v.trim().length >= 2) addToSearchHistory(v);
+  }, 800);
+};
+
+window.quickSave = window.onSearchTyping;
+window.saveSearch = window.onSearchTyping;
 
 function saveSearchNow(){
   try{
     const el = document.getElementById("searchInput");
     if(!el) return;
     const v = el.value || "";
-    localStorage.setItem("lastSearch", v);
-    sessionStorage.setItem("lastSearch", v);
+    try{ localStorage.setItem("lastSearch", v); }catch(e){}
+    try{ sessionStorage.setItem("lastSearch", v); }catch(e){}
+    if(v.trim().length >= 2) addToSearchHistory(v);
   }catch(e){}
 }
 
-/* حفظ البحث عند الخروج/الإخفاء */
 document.addEventListener('visibilitychange', () => { if(document.hidden) saveSearchNow(); });
 window.addEventListener('pagehide', saveSearchNow);
 window.addEventListener('beforeunload', saveSearchNow);
@@ -808,7 +944,7 @@ else{moderationBtn.textContent="⏳ الإعلانات قيد المراجعة";
 function setActiveNav(which){navHome.classList.toggle("active",which==="home");navMine.classList.toggle("active",which==="mine");navFav.classList.toggle("active",which==="fav");}
 
 window.showHome=()=>{
-showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();
+showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();
 homeTitle.textContent="أحدث الإعلانات";
 home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();
 };
@@ -869,14 +1005,14 @@ openFormScreen();
 
 window.showMyPosts=()=>{
 if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}
-showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();
+showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();
 homeTitle.textContent="إعلاناتي";
 home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();
 };
 
 window.showFavorites=()=>{
 if(showOnlyFavorites && !showOnlyMine){showHome();return;}
-showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";renderSubCats();
+showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();
 homeTitle.textContent="❤️ المفضلة";
 home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();
 };
@@ -888,18 +1024,31 @@ document.getElementById("city").innerHTML=`<option value="">اختر المدي�
 }
 populateCitySelects();
 
-function populateBrandSelect(){
-const sel=document.getElementById("brand");
-if(!sel)return;
-sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+CAR_BRANDS.map(b=>`<option value="${b}">${b}</option>`).join("");
+function populateBrandSelect(cat){
+  const sel=document.getElementById("brand");
+  if(!sel) return;
+  let brands = [];
+  if(cat === "سيارات ومركبات") brands = CAR_BRANDS;
+  else if(cat === "موبايل وتابلت") brands = PHONE_BRANDS;
+  else if(cat === "لابتوب وكمبيوتر") brands = COMPUTER_BRANDS;
+  sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");
 }
-populateBrandSelect();
+populateBrandSelect("سيارات ومركبات");
 
 window.onCategoryChange = () => {
-const cat=document.getElementById("category").value;
-const brandField=document.getElementById("brandField");
-if(cat==="سيارات ومركبات"){brandField.classList.remove("hidden");}
-else{brandField.classList.add("hidden");document.getElementById("brand").value="";}
+  const cat=document.getElementById("category").value;
+  const brandField=document.getElementById("brandField");
+  const brandLabel=document.getElementById("brandLabel");
+  if(cat === "سيارات ومركبات" || cat === "موبايل وتابلت" || cat === "لابتوب وكمبيوتر"){
+    brandField.classList.remove("hidden");
+    if(cat === "سيارات ومركبات") brandLabel.textContent = "الماركة (نوع السيارة)";
+    else if(cat === "موبايل وتابلت") brandLabel.textContent = "الماركة (نوع الجهاز)";
+    else if(cat === "لابتوب وكمبيوتر") brandLabel.textContent = "الماركة (نوع الجهاز)";
+    populateBrandSelect(cat);
+  } else {
+    brandField.classList.add("hidden");
+    document.getElementById("brand").value="";
+  }
 };
 
 setTimeout(updateClearBtn, 500);
@@ -930,7 +1079,7 @@ const input=document.getElementById("searchInput");
 if(input){input.value="";input.focus();}
 try{localStorage.removeItem('lastSearch');}catch(e){}
 try{sessionStorage.removeItem('lastSearch');}catch(e){}
-updateClearBtn();renderPosts();
+updateClearBtn();hideSearchDropdown();renderPosts();
 };
 
 function updateClearBtn(){
@@ -1215,7 +1364,7 @@ if(status==="pending"){statusBadge=`<span class="statusBadge pending">⏳ قيد
 else if(status==="rejected"){statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
 }
 let brandBadge="";
-if(p.brand){brandBadge=`<span class="brandBadge">🚗 ${escapeHtml(p.brand)}</span>`;}
+if(p.brand){brandBadge=`<span class="brandBadge">🏷️ ${escapeHtml(p.brand)}</span>`;}
 let featBadge="";
 if(status==="approved" && isPostFeatured(p)){
 const days=featuredDaysLeft(p);
@@ -1412,132 +1561,4 @@ list.innerHTML=toolbar+items;
 window.dismissAllReports = async () => {
 if(!isAdmin)return;
 if(allReports.length===0){alert("لا توجد إبلاغات");return;}
-if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ)؟\n\nلن يتم حذف أي إعلان، فقط مسح الإبلاغات.`))return;
-let ok=0,fail=0;
-for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){fail++;console.error(e);}}
-alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
-renderReports();
-};
-
-window.deleteAllReportedPosts = async () => {
-if(!isAdmin)return;
-if(allReports.length===0){alert("لا توجد إبلاغات");return;}
-const uniquePostIds=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];
-if(!confirm(`⚠️ تحذير!\n\nسيتم حذف ${uniquePostIds.length} إعلان نهائياً\nوإزالة ${allReports.length} إبلاغ.\n\nهل أنت متأكد؟`))return;
-const confirmText=prompt(`اكتب "حذف" للتأكيد:`);
-if(confirmText!=="حذف"){alert("❌ تم إلغاء العملية");return;}
-let okPosts=0,okReports=0,fail=0;
-for(const pid of uniquePostIds){try{await deleteDoc(doc(db,"posts",pid));okPosts++;}catch(e){fail++;console.error(e);}}
-for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okReports++;}catch(e){fail++;console.error(e);}}
-alert(`✅ تم حذف ${okPosts} إعلان\n✅ تم إزالة ${okReports} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
-renderReports();
-};
-
-window.dismissReport=async(reportId)=>{try{await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
-window.deleteReportedPost=async(postId,reportId)=>{if(!confirm("حذف الإعلان المبلّغ عنه نهائياً؟"))return;try{await deleteDoc(doc(db,"posts",postId));await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
-window.deletePost=async(id)=>{if(!confirm("هل تريد حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ أثناء الحذف: "+e.message);}};
-
-window.toggleFeatured = async (id, event) => {
-if(event)event.stopPropagation();
-if(!isAdmin){alert("هذي الميزة للمشرف فقط");return;}
-const post=allPosts.find(p=>p.id===id);
-if(!post)return;
-if(isPostFeatured(post)){
-if(!confirm("إلغاء تمييز هذا الإعلان؟"))return;
-try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){alert("خطأ: "+e.message);}
-}else{
-try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){alert("خطأ: "+e.message);}
-}
-};
-
-window.adminFeature = async (id, days) => {
-if(!isAdmin)return;
-try{
-if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}
-else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);}
-}catch(e){alert("خطأ: "+e.message);}
-};
-
-window.openUpgrade = (id) => {
-if(!auth.currentUser)return;
-postOverlay.classList.add("hidden");
-upgradeOverlay.classList.remove("hidden");
-window._upgradePostId=id;
-};
-
-window.selectPlan = (days, label, price) => {
-const id=window._upgradePostId;
-const p=allPosts.find(x=>x.id===id);
-if(!p)return;
-const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;
-const msg=`🛒 طلب ترقية إعلان\n\n`+`📌 الإعلان: ${p.title||'بدون عنوان'}\n`+`💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n`+`📦 الباقة: ${label}\n`+`💵 المبلغ: ${price} د.ل\n`+`🔗 الرابط: ${link}\n\n`+`⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\n`+`أرجو ترتيب عملية الدفع والتفعيل.`;
-const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-window.open(waUrl,'_blank');
-setTimeout(()=>{closeOverlay();alert("✅ بعد إتمام الدفع، اضغط الرابط الذي وصلك في واتساب لتفعيل الترقية.");},400);
-};
-
-function tryApplyPendingUpgrade(){
-if(!pendingAutoUpgrade)return;
-if(!isAdmin)return;
-const data=pendingAutoUpgrade;
-pendingAutoUpgrade=null;
-setTimeout(()=>{
-const p=allPosts.find(x=>x.id===data.postId);
-if(!p){alert("⚠️ الإعلان غير موجود أو حُذف.");history.replaceState(null,'',window.location.pathname);return;}
-const title=p.title||'بدون عنوان';
-const confirmMsg=`⭐ تفعيل الترقية\n\n`+`📌 الإعلان: ${title}\n`+`📦 المدة: ${data.days} يوم\n`+`💵 المبلغ: ${data.price} د.ل\n\n`+`هل تأكدت من استلام المبلغ؟`;
-if(confirm(confirmMsg)){adminFeature(data.postId,data.days);history.replaceState(null,'',window.location.pathname);}
-else{history.replaceState(null,'',window.location.pathname);}
-},1200);
-}
-
-/* ===== استرجاع البحث المحفوظ ===== */
-(function(){
-  try{
-    let last = "";
-    try{ last = localStorage.getItem('lastSearch') || ""; }catch(e){}
-    if(!last){ try{ last = sessionStorage.getItem('lastSearch') || ""; }catch(e){} }
-    if(!last) return;
-    const input = document.getElementById("searchInput");
-    if(input && last){
-      input.value = last;
-      updateClearBtn();
-      console.log("✅ تم استرجاع البحث:", last);
-      let attempts = 0;
-      const tryRender = () => {
-        attempts++;
-        if(allPosts.length > 0 || attempts > 20){ renderPosts(); }
-        else{ setTimeout(tryRender, 300); }
-      };
-      tryRender();
-    }
-  }catch(e){ console.error("Restore search error:", e); }
-})();
-
-window.addEventListener('load', () => {
-const hash=window.location.hash;
-if(hash && hash.startsWith('#post-')){
-const [postPart, queryPart]=hash.split('?');
-const id=postPart.substring(6);
-const params=new URLSearchParams(queryPart||'');
-const planDays=parseInt(params.get('plan')||'0',10);
-const planPrice=parseInt(params.get('price')||'0',10);
-if(planDays>0){pendingAutoUpgrade={postId:id,days:planDays,price:planPrice};}
-let tries=0;
-const t=setInterval(()=>{
-tries++;
-if(allPosts.find(p=>p.id===id)){
-clearInterval(t);
-openPost(id);
-setTimeout(tryApplyPendingUpgrade,1500);
-}else if(tries>20){
-clearInterval(t);
-setTimeout(tryApplyPendingUpgrade,500);
-}
-},500);
-}
-});
-</script>
-
-</body>
-</html>
+if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ
