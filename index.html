@@ -34,10 +34,11 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   display:flex;align-items:center;gap:6px;flex:0 0 auto;
 }
 .bellBtn{
-  width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
-  color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
+  color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;
   padding:0
 }
+.bellBtn.active{background:rgba(255,255,255,.35)}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{
@@ -118,6 +119,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;padding:0
 }
+.favBtn{
+  position:absolute;top:8px;right:8px;z-index:3;
+  width:34px;height:34px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.92);font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);padding:0
+}
+.favBtn.active{background:#fff}
 .dots{
   position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
   pointer-events:none;direction:ltr
@@ -265,6 +274,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   display:flex;align-items:center;justify-content:center;
   box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0
 }
+
+/* ===== Share row ===== */
+.shareRow{display:flex;gap:8px;margin-bottom:8px}
+.shareRow .btnMain{flex:1;margin-bottom:0}
 </style>
 </head>
 
@@ -273,6 +286,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="topbar">
   <div class="topbarActions">
     <button class="bellBtn" onclick="enableNotifications()" title="تفعيل الإشعارات">🔔</button>
+    <button class="bellBtn" id="favTopBtn" onclick="showFavorites()" title="المفضلة">❤️</button>
     <button class="iconBtn" onclick="openAccount()" title="حسابي">
       👤<span id="adminChip" class="adminChip hidden">A</span>
     </button>
@@ -379,6 +393,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
   <button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
   <div class="fabWrap"><button class="fab" onclick="showForm()">+</button></div>
+  <button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
   <button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon">👤</span><span id="navAccountLabel">حسابي</span></button>
 </div>
 
@@ -513,6 +528,7 @@ const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 let isAdmin=false;
 let showOnlyMine=false;
+let showOnlyFavorites=false;
 let currentCategory="الكل";
 const LIBYA_CITIES={
 "الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],
@@ -548,7 +564,33 @@ const warnOverlay=document.getElementById("warnOverlay");
 const adminChip=document.getElementById("adminChip");
 const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
+const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
+const favTopBtn=document.getElementById("favTopBtn");
+
+/* ================= Favorites ================= */
+function getFavorites(){
+  try{ return JSON.parse(localStorage.getItem('favorites')||'[]'); }
+  catch(e){ return []; }
+}
+function saveFavorites(arr){
+  try{ localStorage.setItem('favorites', JSON.stringify(arr)); }
+  catch(e){ console.error(e); }
+}
+function isFavorite(id){
+  return getFavorites().includes(id);
+}
+window.toggleFavorite = (id, event)=>{
+  if(event) event.stopPropagation();
+  let favs = getFavorites();
+  if(favs.includes(id)){
+    favs = favs.filter(x=>x!==id);
+  } else {
+    favs.push(id);
+  }
+  saveFavorites(favs);
+  renderPosts();
+};
 
 /* ================= Ad popup ================= */
 const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا"; // ← غيّر الرابط بصورة إعلانك
@@ -588,6 +630,7 @@ if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsL
 closeOverlay();
 if(pendingAction==="form"){showForm();}
 else if(pendingAction==="mine"){showMyPosts();}
+else if(pendingAction==="favorites"){showFavorites();}
 else{renderPosts();}
 pendingAction=null;
 }else{
@@ -638,10 +681,12 @@ accountOverlay.classList.add("hidden");
 function setActiveNav(which){
 navHome.classList.toggle("active",which==="home");
 navMine.classList.toggle("active",which==="mine");
+navFav.classList.toggle("active",which==="fav");
 }
 
 window.showHome=()=>{
 showOnlyMine=false;
+showOnlyFavorites=false;
 homeTitle.textContent="أحدث الإعلانات";
 home.classList.remove("hidden");
 form.classList.add("hidden");
@@ -703,11 +748,27 @@ openFormScreen();
 window.showMyPosts=()=>{
 if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}
 showOnlyMine=true;
+showOnlyFavorites=false;
 homeTitle.textContent="إعلاناتي";
 home.classList.remove("hidden");
 form.classList.add("hidden");
 closeOverlay();
 setActiveNav("mine");
+renderPosts();
+};
+
+window.showFavorites=()=>{
+if(showOnlyFavorites && !showOnlyMine){
+  showHome();
+  return;
+}
+showOnlyFavorites=true;
+showOnlyMine=false;
+homeTitle.textContent="❤️ المفضلة";
+home.classList.remove("hidden");
+form.classList.add("hidden");
+closeOverlay();
+setActiveNav("fav");
 renderPosts();
 };
 
@@ -755,17 +816,23 @@ return Math.floor(diff/86400)+" يوم";
 
 function renderPosts(){
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
+const favs=getFavorites();
 let list=allPosts.filter(p=>{
 if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
 if(currentCity!=="الكل" && p.city!==currentCity)return false;
 if(showOnlyMine && p.uid!==auth.currentUser?.uid)return false;
+if(showOnlyFavorites && !favs.includes(p.id))return false;
 if(term && !(p.title||"").toLowerCase().includes(term))return false;
 return true;
 });
 
 if(list.length===0){
-postsBox.innerHTML="<div class='empty'>لا توجد إعلانات هنا حالياً</div>";
-return;
+  if(showOnlyFavorites){
+    postsBox.innerHTML="<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.<br>اضغط على القلب في أي إعلان لإضافته هنا.</div>";
+  } else {
+    postsBox.innerHTML="<div class='empty'>لا توجد إعلانات هنا حالياً</div>";
+  }
+  return;
 }
 
 postsBox.innerHTML=list.map(p=>{
@@ -775,9 +842,10 @@ const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
+const fav=isFavorite(p.id);
 return `
 <div class="card">
-  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}</div>
+  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
   <div class="body">
     <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
@@ -849,6 +917,34 @@ const p=allPosts.find(x=>x.id===id);
 if(!p||!p.phone)return;
 document.getElementById("warnGo").href="https://wa.me/"+encodeURIComponent(p.phone.replace(/[^0-9]/g,""));
 warnOverlay.classList.remove("hidden");
+};
+
+/* ================= Share ================= */
+window.sharePost = async (id)=>{
+  const p = allPosts.find(x=>x.id===id);
+  if(!p) return;
+  const url = window.location.origin + window.location.pathname + '#post-' + id;
+  const priceText = p.price!=null ? p.price + ' د.ل' : '';
+  const cityText = p.city ? '\n📍 ' + p.city : '';
+  const text = `🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;
+  const shareData = {
+    title: p.title || 'تسوق الآن',
+    text: text,
+    url: url
+  };
+  try{
+    if(navigator.share){
+      await navigator.share(shareData);
+    } else {
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+      window.open(waUrl, '_blank');
+    }
+  }catch(e){
+    if(e && e.name !== 'AbortError'){
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+      window.open(waUrl, '_blank');
+    }
+  }
 };
 
 function starsText(n){
@@ -1016,6 +1112,7 @@ const desc=p.description
 :`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
+const shareBtn=`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`;
 document.getElementById("postContent").innerHTML=`
 <div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
@@ -1025,7 +1122,8 @@ ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
 <div style="height:14px"></div>
-${wa}`;
+${wa}
+${shareBtn}`;
 postOverlay.classList.remove("hidden");
 };
 
@@ -1202,6 +1300,24 @@ await deleteDoc(doc(db,"posts",id));
 alert("خطأ أثناء الحذف: "+e.message);
 }
 };
+
+/* ================= Deep link من المشاركة ================= */
+window.addEventListener('load', () => {
+  const hash = window.location.hash;
+  if(hash && hash.startsWith('#post-')){
+    const id = hash.substring(6);
+    let tries = 0;
+    const t = setInterval(()=>{
+      tries++;
+      if(allPosts.find(p=>p.id===id)){
+        clearInterval(t);
+        openPost(id);
+      } else if(tries > 20){
+        clearInterval(t);
+      }
+    }, 500);
+  }
+});
 </script>
 
 </body>
