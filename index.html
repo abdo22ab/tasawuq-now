@@ -16,7 +16,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0))}
 .dlBanner{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;position:sticky;top:0;z-index:25}
-.dlBanner .dlText{flex:1 1 auto}
+.dlBanner .dlText{flex:1}
 .dlBanner .dlBtn{flex:0 0 auto;background:#fff;color:#0284c7;border:none;border-radius:999px;padding:8px 16px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none}
 .dlBanner .dlClose{flex:0 0 auto;background:transparent;color:#fff;border:none;font-size:18px;cursor:pointer;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
 .dlBanner.hidden{display:none!important}
@@ -313,8 +313,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 </div>
 </div>
 
-<div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:80vh"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
-<div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:80vh"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+<div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+<div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 <div id="limitsOverlay" class="overlay hidden"><div class="sheet" style="max-height:85vh"><h3>⚙️ إدارة حدود المستخدمين</h3>
 <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
 <div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد</div>
@@ -360,7 +360,6 @@ import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,update
 import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
 
 setTimeout(()=>{const s=document.getElementById('splashScreen');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),700);}},1800);
-
 (function(){const isStandalone=window.matchMedia('(display-mode:standalone)').matches||window.matchMedia('(display-mode:fullscreen)').matches||window.navigator.standalone===true||document.referrer.includes('android-app://');if(isStandalone)return;const b=document.getElementById('dlBanner');if(b)b.classList.remove('hidden');})();
 window.closeDlBanner=function(){const b=document.getElementById('dlBanner');if(b)b.classList.add('hidden');};
 
@@ -385,9 +384,7 @@ const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هون�
 const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاوازاكي","BMW","دوكاتي","KTM","هارلي ديفيدسون","تريومف","أبريليا","بياجيو","فيسبا","بولاريس","رويال إنفيلد","بينيللي","هوسكفارنا","CF Moto","بينجو","هوجان","دايون","أخرى"];
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
-
 const SUB_CATEGORIES={"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},"دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},"موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},"لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}};
-
 const CATEGORIES=[{name:"الكل",icon:"✨"},{name:"سيارات ومركبات",icon:"🚗"},{name:"دراجات نارية",icon:"🏍️"},{name:"دراجات هوائية",icon:"🚲"},{name:"الخدمات",icon:"🛠️"},{name:"عقارات للبيع",icon:"🏠"},{name:"عقارات للإيجار",icon:"🔑"},{name:"موبايل وتابلت",icon:"📱"},{name:"لابتوب وكمبيوتر",icon:"💻"},{name:"ألعاب وألعاب الفيديو",icon:"🎮"},{name:"أجهزة منزلية",icon:"🧊"},{name:"ملابس رجالية",icon:"👔"},{name:"ملابس نسائية",icon:"👗"},{name:"ملابس أطفال",icon:"👶"},{name:"جمال وصحة",icon:"💆"},{name:"مكياج",icon:"💄"},{name:"مطاعم وغداء",icon:"🍽️"},{name:"إلكترونيات",icon:"🔌"}];
 
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
@@ -410,46 +407,12 @@ const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=documen
 const adminChip=document.getElementById("adminChip"),navHome=document.getElementById("navHome"),navMine=document.getElementById("navMine"),navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel"),subCatsRow=document.getElementById("subCatsRow");
 
-/* ====== إصلاح البحث - مبسط ومضمون ====== */
 const searchInputEl=document.getElementById("searchInput");
 const clearSearchBtnEl=document.getElementById("clearSearchBtn");
+try{const saved=localStorage.getItem('lastSearch');if(saved && searchInputEl){searchInputEl.value=saved;if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';}}catch(e){}
+if(searchInputEl){searchInputEl.addEventListener('input',function(){const v=this.value||"";try{localStorage.setItem('lastSearch',v);}catch(e){}if(clearSearchBtnEl)clearSearchBtnEl.style.display=v.length>0?'flex':'none';if(typeof renderPosts==='function')renderPosts();if(typeof showSearchDropdown==='function')showSearchDropdown();});searchInputEl.addEventListener('focus',function(){if(typeof showSearchDropdown==='function')showSearchDropdown();});}
+if(clearSearchBtnEl){clearSearchBtnEl.addEventListener('click',function(e){e.preventDefault();if(searchInputEl)searchInputEl.value="";try{localStorage.removeItem('lastSearch');sessionStorage.removeItem('lastSearch');}catch(e){}this.style.display='none';if(typeof hideSearchDropdown==='function')hideSearchDropdown();if(typeof renderPosts==='function')renderPosts();});}
 
-// استرجاع البحث المحفوظ فوراً
-try{
-  const saved=localStorage.getItem('lastSearch');
-  if(saved && searchInputEl){
-    searchInputEl.value=saved;
-    if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';
-  }
-}catch(e){}
-
-// حفظ عند أي كتابة
-if(searchInputEl){
-  searchInputEl.addEventListener('input',function(){
-    const v=this.value||"";
-    try{localStorage.setItem('lastSearch',v);}catch(e){}
-    if(clearSearchBtnEl)clearSearchBtnEl.style.display=v.length>0?'flex':'none';
-    if(typeof renderPosts==='function')renderPosts();
-    if(typeof showSearchDropdown==='function')showSearchDropdown();
-  });
-  searchInputEl.addEventListener('focus',function(){
-    if(typeof showSearchDropdown==='function')showSearchDropdown();
-  });
-}
-
-// زر المسح
-if(clearSearchBtnEl){
-  clearSearchBtnEl.addEventListener('click',function(e){
-    e.preventDefault();
-    if(searchInputEl)searchInputEl.value="";
-    try{localStorage.removeItem('lastSearch');sessionStorage.removeItem('lastSearch');}catch(e){}
-    this.style.display='none';
-    if(typeof hideSearchDropdown==='function')hideSearchDropdown();
-    if(typeof renderPosts==='function')renderPosts();
-  });
-}
-
-// السجل والمقترحات
 function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
@@ -457,13 +420,11 @@ function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm(
 function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
 window.showSearchDropdown=function(){const box=document.getElementById("searchDropdown"),input=document.getElementById("searchInput");if(!box||!input)return;const term=(input.value||"").trim();const history=getSearchHistory();const suggestions=getSuggestions(term);let html="";if(!term && history.length>0){html+=`<div class="sdSection">🕐 آخر ما بحثت عنه</div>`;html+=history.map(h=>`<div class="sdItem" onclick="pickSearch('${h.replace(/'/g,"\\'")}')"><span class="sdIcon">🕐</span><span class="sdText">${escapeHtml(h)}</span><button class="sdRemove" onclick="removeFromHistory('${h.replace(/'/g,"\\'")}',event)">✕</button></div>`).join("");html+=`<div class="sdClearAll" onclick="clearSearchHistory(event)">🗑️ مسح كل السجل</div>`;}if(suggestions.length>0){const label=term?"💡 مقترحات":"🔥 إعلانات مقترحة";html+=`<div class="sdSection">${label}</div>`;html+=suggestions.map(s=>`<div class="sdItem" onclick="pickSearch('${s.title.replace(/'/g,"\\'")}')"><span class="sdIcon">${s.isBrand?"🏷️":(s.thumb?"📦":"🔎")}</span><span class="sdText">${escapeHtml(s.title)}</span>${s.price!=null?`<span style="font-size:11.5px;color:var(--teal-dark);font-weight:700">${s.price} د.ل</span>`:""}</div>`).join("");}if(!html)html=`<div class="sdSection" style="text-align:center;padding:20px;color:var(--muted)">اكتب للبحث...</div>`;box.innerHTML=html;box.classList.remove("hidden");};
 window.hideSearchDropdown=function(){const box=document.getElementById("searchDropdown");if(box)box.classList.add("hidden");};
-window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}try{sessionStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();renderPosts();};
+window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();renderPosts();};
 window.updateClearBtn=function(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";};
 window.clearSearch=function(){const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');sessionStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
-
 document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
 
-/* ====== بقية الدوال ====== */
 function isPostFeatured(p){return !!(p&&p.featured&&p.featuredUntil&&p.featuredUntil>Date.now());}
 function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.featuredUntil-Date.now())/(24*60*60*1000));}
 function getStatus(p){return p.status||"approved";}
@@ -481,7 +442,6 @@ const AD_INTERVAL_DAYS=30;
 function showAdIfDue(){try{const last=localStorage.getItem('adLastShownAt');const now=Date.now();const interval=AD_INTERVAL_DAYS*24*60*60*1000;if(!last||(now-parseInt(last,10))>=interval){const img=document.getElementById('adImage');if(img)img.src=AD_IMAGE_URL;const popup=document.getElementById('adPopup');if(popup)popup.classList.remove('hidden');localStorage.setItem('adLastShownAt',String(now));}}catch(e){}}
 window.closeAd=function(){const p=document.getElementById('adPopup');if(p)p.classList.add('hidden');};
 setTimeout(showAdIfDue,2600);
-
 startPostsListener();
 
 onAuthStateChanged(auth,user=>{
@@ -518,9 +478,7 @@ googleProvider.setCustomParameters({prompt:'select_account'});
 window.loginWithGoogle=async()=>{try{const r=await signInWithPopup(auth,googleProvider);console.log("✅",r.user.email);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")alert("الرجاء السماح بالنوافذ المنبثقة");else if(e.code==="auth/unauthorized-domain")alert("هذا النطاق غير مصرح به");else alert("تعذر تسجيل الدخول: "+e.code);}};
 
 window.closeOverlay=()=>{authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");pendingAction=null;};
-
 window.openAccount=()=>{if(auth.currentUser){document.getElementById("accountEmail").textContent="";const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";document.getElementById("accountName").textContent="👤 "+dn;document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";reportsBtn.classList.toggle("hidden",!isAdmin);if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);accountOverlay.classList.remove("hidden");}else{pendingAction=null;authOverlay.classList.remove("hidden");}};
-
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
@@ -532,7 +490,6 @@ window.applyUserLimit=async()=>{if(!isAdmin)return;const email=document.getEleme
 
 function updateModBadge(){if(!isAdmin||!moderationBtn)return;const c=allPosts.filter(p=>getStatus(p)==="pending").length;moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";}
 function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
-
 window.showHome=()=>{showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();homeTitle.textContent="أحدث الإعلانات";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();};
 function openFormScreen(){home.classList.add("hidden");form.classList.remove("hidden");closeOverlay();}
 
@@ -575,14 +532,10 @@ window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showHome();retu
 
 function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;}
 populateCitySelects();
-
 function populateBrandSelect(cat){const sel=document.getElementById("brand");if(!sel)return;let brands=[];if(cat==="سيارات ومركبات")brands=CAR_BRANDS;else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");}
 populateBrandSelect("سيارات ومركبات");
-
 window.onCategoryChange=()=>{const cat=document.getElementById("category").value;const bf=document.getElementById("brandField");const bl=document.getElementById("brandLabel");if(cat==="سيارات ومركبات"||cat==="دراجات نارية"||cat==="موبايل وتابلت"||cat==="لابتوب وكمبيوتر"){bf.classList.remove("hidden");if(cat==="سيارات ومركبات")bl.textContent="الماركة (نوع السيارة)";else if(cat==="دراجات نارية")bl.textContent="الماركة (نوع الدراجة)";else bl.textContent="الماركة (نوع الجهاز)";populateBrandSelect(cat);}else{bf.classList.add("hidden");document.getElementById("brand").value="";}};
-
-(function(){const catsRow=document.getElementById("catsRow");if(!catsRow)return;catsRow.innerHTML=CATEGORIES.map((c,i)=>`<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`).join("");})();
-
+(function(){const cr=document.getElementById("catsRow");if(!cr)return;cr.innerHTML=CATEGORIES.map((c,i)=>`<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`).join("");})();
 setTimeout(updateClearBtn,500);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
 window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));renderSubCats();renderPosts();};
@@ -712,7 +665,11 @@ saveBtn.disabled=true;saveBtn.textContent=wasEditing?"جاري الحفظ...":"�
 try{
 const images=[];
 for(const item of selectedImages){if(item.type==="existing")images.push(item.url);else{saveBtn.textContent="جاري رفع الصور...";images.push(await uploadToImgBB(item.file));}}
-if(wasEditing){await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,status:"pending",rejectReason:null});}
+if(wasEditing){
+const oldPost=allPosts.find(p=>p.id===editingPostId);
+const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
+await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now()});
+}
 else{await addDoc(collection(db,"posts"),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),uid:auth.currentUser.uid,email:auth.currentUser.email||"",views:0,featured:false,featuredUntil:0,featuredPlan:null,status:"pending",createdAt:Date.now()});alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");}
 editingPostId=null;
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
@@ -721,7 +678,7 @@ selectedImages=[];renderImagePicker();showHome();
 finally{saveBtn.disabled=false;saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";}
 };
 
-window.approvePost=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null});alert("✅ تم قبول الإعلان");closeOverlay();}catch(e){alert("خطأ: "+e.message);}};
+window.approvePost=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});alert("✅ تم قبول الإعلان");closeOverlay();}catch(e){alert("خطأ: "+e.message);}};
 window.rejectPost=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","محتوى غير مناسب");if(reason===null)return;try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});alert("✅ تم رفض الإعلان");closeOverlay();}catch(e){alert("خطأ: "+e.message);}};
 
 function renderModeration(){
@@ -729,22 +686,81 @@ const list=document.getElementById("moderationList");if(!list)return;
 const pending=allPosts.filter(p=>getStatus(p)==="pending");
 if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة</div>";return;}
 const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
-const items=pending.map(p=>{const imgs=getImages(p);const th=imgs[0]||"";const desc=(p.description||"").trim();const dS=desc.length>80?desc.slice(0,80)+"…":(desc||"لا يوجد وصف");return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">${th?`<img src="${escapeHtml(th)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}</div><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14.5px;margin-bottom:3px">${escapeHtml(p.title||"بدون عنوان")}</div><div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}</div><div style="font-size:11.5px;color:var(--muted);line-height:1.6">${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}</div><div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">${escapeHtml(dS)}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px"><button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ موافقة</button><button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ رفض</button><button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض</button></div></div>`;}).join("");
+const items=pending.map(p=>{
+const imgs=getImages(p);
+const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
+let editNote="";
+if(p.originalData){
+let changes=[];
+if(p.originalData.title!==p.title)changes.push(`<div><b>📝 العنوان:</b><br><span style="color:#e5484d">قبل: ${escapeHtml(p.originalData.title||"")}</span><br><span style="color:#16a34a">بعد: ${escapeHtml(p.title||"")}</span></div>`);
+if(Number(p.originalData.price)!==Number(p.price))changes.push(`<div><b>💰 السعر:</b><br><span style="color:#e5484d">قبل: ${p.originalData.price} د.ل</span><br><span style="color:#16a34a">بعد: ${p.price} د.ل</span></div>`);
+if((p.originalData.description||"")!==(p.description||""))changes.push(`<div><b>📄 الوصف:</b><br><span style="color:#e5484d">قبل: ${escapeHtml((p.originalData.description||"").slice(0,200))}</span><br><span style="color:#16a34a">بعد: ${escapeHtml((p.description||"").slice(0,200))}</span></div>`);
+if((p.originalData.category||"")!==(p.category||""))changes.push(`<div><b>📁 التصنيف:</b> ${escapeHtml(p.originalData.category||"")} → ${escapeHtml(p.category||"")}</div>`);
+if((p.originalData.brand||"")!==(p.brand||""))changes.push(`<div><b>🏷️ الماركة:</b> ${escapeHtml(p.originalData.brand||"")} → ${escapeHtml(p.brand||"")}</div>`);
+if((p.originalData.city||"")!==(p.city||""))changes.push(`<div><b>📍 المدينة:</b> ${escapeHtml(p.originalData.city||"")} → ${escapeHtml(p.city||"")}</div>`);
+if((p.originalData.phone||"")!==(p.phone||""))changes.push(`<div><b>☎️ الواتساب:</b> ${escapeHtml(p.originalData.phone||"")} → ${escapeHtml(p.phone||"")}</div>`);
+if(changes.length){
+editNote=`<div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;line-height:1.9"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13.5px">✏️ هذا الإعلان تم تعديله — التغييرات:</div>${changes.join("")}</div>`;
+}else if(p.wasEdited){
+editNote=`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;color:#92400e;font-weight:700">✏️ تم تعديل الإعلان (بدون تغيير في البيانات)</div>`;
+}
+}
+return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
+<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
+<div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${p.price!=null?p.price+" د.ل":""}</div>
+${imgsHtml}
+<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
+📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
+👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
+</div>
+${editNote}
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
+<button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>
+<button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
+<button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
+</div></div>`;
+}).join("");
 list.innerHTML=toolbar+items;
 }
 
-window.approveAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){alert("لا توجد إعلانات");return;}if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null});ok++;}catch(e){fail++;}}alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);renderModeration();};
+window.approveAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){alert("لا توجد إعلانات");return;}if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});ok++;}catch(e){fail++;}}alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);renderModeration();};
 window.deleteAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){alert("لا توجد إعلانات");return;}if(!confirm(`رفض ${pending.length} إعلان؟`))return;const reason=prompt("سبب الرفض الجماعي:","محتوى غير مناسب");if(reason===null)return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){fail++;}}alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);renderModeration();};
 
 window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});alert("تم إرسال الإبلاغ، شكراً لك");}catch(e){alert("تعذر إرسال الإبلاغ: "+e.message);}};
-
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
 
 function renderReports(){
 const list=document.getElementById("reportsList");if(!list)return;
 if(allReports.length===0){list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات</div>";return;}
 const toolbar=`<div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">🚩 يوجد ${allReports.length} إبلاغ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ تجاهل الكل</button><button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ حذف الكل</button></div></div>`;
-const items=allReports.map(r=>`<div class="reportItem" style="background:#fff"><div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div><div class="rMeta"><b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}</div><div class="rActions"><button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button><button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button></div></div>`).join("");
+const items=allReports.map(r=>{
+const p=allPosts.find(x=>x.id===r.postId);
+const imgs=p?getImages(p):[];
+const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور أو الإعلان محذوف</div>`;
+const postInfo=p?`
+<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
+<div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${p.price!=null?p.price+" د.ل":""}</div>
+${imgsHtml}
+<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
+📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
+📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
+👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
+</div>`:`<div style="text-align:center;padding:20px;color:var(--muted);background:#fdeceb;border-radius:10px;font-size:13.5px">⚠️ الإعلان لم يعد موجوداً</div>`;
+return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff">
+<div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">
+🚩 <b>سبب الإبلاغ:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br>
+<b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}
+</div>
+${postInfo}
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
+<button style="padding:12px 4px;border:none;border-radius:9px;background:#fdeceb;color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف</button>
+<button style="padding:12px 4px;border:none;border-radius:9px;background:var(--bg);color:var(--muted);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="dismissReport('${r.id}')">👁️ تجاهل</button>
+<button style="padding:12px 4px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button>
+</div></div>`;
+}).join("");
 list.innerHTML=toolbar+items;
 }
 
@@ -755,9 +771,7 @@ window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ: "+e.message);}};
 
 window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin){alert("للمشرف فقط");return;}const post=allPosts.find(p=>p.id===id);if(!post)return;if(isPostFeatured(post)){if(!confirm("إلغاء التمييز؟"))return;try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){}}else{try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){}}};
-
 window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);}}catch(e){alert("خطأ: "+e.message);}};
-
 window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\nأرجو ترتيب عملية الدفع والتفعيل.`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط الذي وصلك في واتساب");},400);};
 
