@@ -111,6 +111,13 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)
 }
 .reportOnImg.right{left:auto;right:10px;top:10px;width:32px;height:32px;font-size:15px}
+.closeOnImg{
+  position:absolute;top:10px;left:10px;z-index:3;
+  width:32px;height:32px;border:none;border-radius:50%;
+  background:rgba(0,0,0,.65);color:#fff;font-size:16px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;padding:0
+}
 .dots{
   position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
   pointer-events:none;direction:ltr
@@ -1010,7 +1017,7 @@ const desc=p.description
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 document.getElementById("postContent").innerHTML=`
-<div class="pImg"><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
+<div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
