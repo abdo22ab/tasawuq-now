@@ -340,7 +340,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   40%{transform:scale(1);opacity:1}
 }
 
-/* ===== Phone Auth ===== */
+/* ===== Auth ===== */
 .authOption{
   width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;
   background:#fff;font-family:inherit;font-size:15px;font-weight:700;
@@ -350,7 +350,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .authOption:hover{background:var(--teal-light)}
 .authOption.primary{background:#fff}
 .authOption .icon{font-size:20px}
-#recaptcha-container{position:absolute;bottom:-9999px}
+#recaptcha-container{position:absolute;bottom:-9999px;left:0}
 </style>
 </head>
 
@@ -488,7 +488,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div id="authOverlay" class="overlay hidden">
   <div class="sheet">
 
-    <!-- الخطوة 1: اختيار الطريقة -->
     <div id="authOptions">
       <h3 style="text-align:center">تسجيل الدخول</h3>
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
@@ -513,7 +512,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
     </div>
 
-    <!-- الخطوة 2: إدخال الرقم -->
     <div id="phoneLoginStep" class="hidden">
       <h3 style="text-align:center">📱 رقم الهاتف</h3>
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
@@ -527,7 +525,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="backToAuthOptions()">رجوع</button>
     </div>
 
-    <!-- الخطوة 3: إدخال الكود -->
     <div id="otpStep" class="hidden">
       <h3 style="text-align:center">📩 أدخل الكود</h3>
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
@@ -542,7 +539,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="backToPhoneStep()">تغيير الرقم</button>
     </div>
 
-    <!-- reCAPTCHA (مخفي) -->
     <div id="recaptcha-container"></div>
 
   </div>
@@ -711,7 +707,7 @@ let selectedImages=[];
 let allReports=[];
 let reportsListenerStarted=false;
 
-/* ===== Phone Auth ===== */
+/* ===== Phone Auth state ===== */
 let confirmationResult = null;
 let recaptchaVerifier = null;
 
@@ -877,10 +873,22 @@ window.backToPhoneStep = () => {
   document.getElementById("otpInput").value = "";
 };
 
+/* ⭐ إصلاح reCAPTCHA: امسح الموجود دائماً قبل إنشاء جديد */
+function resetRecaptcha(){
+  try{
+    if(recaptchaVerifier){
+      recaptchaVerifier.clear();
+    }
+  }catch(_){}
+  recaptchaVerifier = null;
+  const box = document.getElementById('recaptcha-container');
+  if(box) box.innerHTML = '';
+}
+
 window.sendOtp = async () => {
   let phone = document.getElementById("phoneInput").value.trim();
-  phone = phone.replace(/\s+/g, "");
-  if(!phone || phone.length < 8){
+  phone = phone.replace(/\s+/g, "").replace(/[^0-9+]/g, "");
+  if(!phone || phone.replace(/[^0-9]/g,"").length < 8){
     alert("الرجاء إدخال رقم صحيح مع رمز الدولة (مثال: +218912345678)");
     return;
   }
@@ -892,18 +900,17 @@ window.sendOtp = async () => {
   if(btn){ btn.disabled = true; btn.textContent = "جاري الإرسال..."; }
 
   try{
-    if(!recaptchaVerifier){
-      recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {},
-        'expired-callback': () => {
-          if(recaptchaVerifier){
-            recaptchaVerifier.clear();
-            recaptchaVerifier = null;
-          }
-        }
-      });
-    }
+    // ⭐ ننظف أي reCAPTCHA سابق أولاً
+    resetRecaptcha();
+
+    // ⭐ ننشئ reCAPTCHA جديد
+    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => {
+        resetRecaptcha();
+      }
+    });
 
     confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
 
@@ -916,14 +923,12 @@ window.sendOtp = async () => {
     let msg = "تعذر إرسال الكود: ";
     if(e.code === "auth/invalid-phone-number") msg += "الرقم غير صحيح. تأكد من رمز الدولة (+218).";
     else if(e.code === "auth/too-many-requests") msg += "تم إرسال طلبات كثيرة. انتظر قليلاً ثم جرب.";
-    else if(e.code === "auth/quota-exceeded") msg += "تم تجاوز الحد المسموح. جرب لاحقاً.";
-    else msg += e.message;
+    else if(e.code === "auth/quota-exceeded") msg += "تم تجاوز الحد المسموح اليومي. جرب لاحقاً أو اربط بطاقة في Firebase.";
+    else if(e.code === "auth/billing-not-enabled") msg += "يجب تفعيل الفوترة (Billing) في Firebase لاستخدام هذه الخدمة.";
+    else if(e.code === "auth/captcha-check-failed") msg += "فشل التحقق من reCAPTCHA. حدّث الصفحة وحاول مرة أخرى.";
+    else msg += (e.message || e.code || "خطأ غير معروف");
     alert(msg);
-    // Reset reCAPTCHA
-    if(recaptchaVerifier){
-      try{ recaptchaVerifier.clear(); }catch(_){}
-      recaptchaVerifier = null;
-    }
+    resetRecaptcha();
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = "إرسال الكود"; }
   }
@@ -946,8 +951,8 @@ window.confirmOtp = async () => {
 
   try{
     await confirmationResult.confirm(code);
-    // onAuthStateChanged سيتولى بقية العملية
     confirmationResult = null;
+    resetRecaptcha();
     document.getElementById("otpInput").value = "";
     document.getElementById("phoneInput").value = "";
     document.getElementById("otpStep").classList.add("hidden");
@@ -957,7 +962,7 @@ window.confirmOtp = async () => {
     let msg = "الكود غير صحيح. ";
     if(e.code === "auth/code-expired") msg += "انتهت صلاحية الكود، أعد إرساله.";
     else if(e.code === "auth/invalid-verification-code") msg += "تأكد من الأرقام ثم جرب مرة ثانية.";
-    else msg += e.message;
+    else msg += (e.message || e.code || "");
     alert(msg);
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = "تأكيد"; }
@@ -968,7 +973,6 @@ window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
 sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
 pendingAction=null;
-// إعادة ضبط النوافذ الداخلية
 document.getElementById("authOptions")?.classList.remove("hidden");
 document.getElementById("phoneLoginStep")?.classList.add("hidden");
 document.getElementById("otpStep")?.classList.add("hidden");
