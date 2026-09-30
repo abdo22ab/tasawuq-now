@@ -350,7 +350,16 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .authOption:hover{background:var(--teal-light)}
 .authOption.primary{background:#fff}
 .authOption .icon{font-size:20px}
-#recaptcha-container{position:absolute;bottom:-9999px;left:0}
+.authOption.disabled{
+  opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative
+}
+.authOption.disabled .soonBadge{
+  position:absolute;top:-8px;left:10px;
+  background:var(--amber);color:#3a2500;
+  font-size:10px;font-weight:800;
+  padding:3px 8px;border-radius:999px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
 </style>
 </head>
 
@@ -491,7 +500,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <div id="authOptions">
       <h3 style="text-align:center">تسجيل الدخول</h3>
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
-        اختر طريقة تسجيل الدخول للاستمرار
+        سجّل دخولك بحساب Google للاستمرار
       </p>
 
       <button class="authOption primary" onclick="loginWithGoogle()">
@@ -504,42 +513,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
         المتابعة باستخدام Google
       </button>
 
-      <button class="authOption" onclick="showPhoneLogin()">
+      <button class="authOption disabled" onclick="alert('📱 تسجيل الدخول برقم الهاتف قريباً جداً!\n\nحالياً استخدم حساب Google للتسجيل.')">
+        <span class="soonBadge">قريباً</span>
         <span class="icon">📱</span>
         المتابعة برقم الهاتف
       </button>
 
       <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
     </div>
-
-    <div id="phoneLoginStep" class="hidden">
-      <h3 style="text-align:center">📱 رقم الهاتف</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
-        أدخل رقمك مع رمز الدولة<br>
-        مثال: +218 91 234 5678
-      </p>
-      <div class="field">
-        <input id="phoneInput" type="tel" placeholder="+218 91 234 5678" dir="ltr" style="text-align:center;font-size:17px">
-      </div>
-      <button class="btnMain" id="sendOtpBtn" onclick="sendOtp()">إرسال الكود</button>
-      <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="backToAuthOptions()">رجوع</button>
-    </div>
-
-    <div id="otpStep" class="hidden">
-      <h3 style="text-align:center">📩 أدخل الكود</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
-        أرسلنا كوداً مكوناً من 6 أرقام إلى<br>
-        <b id="otpPhone" style="color:var(--teal-dark)" dir="ltr"></b>
-      </p>
-      <div class="field">
-        <input id="otpInput" type="tel" inputmode="numeric" maxlength="6" placeholder="123456" dir="ltr" style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:800">
-      </div>
-      <button class="btnMain" id="confirmOtpBtn" onclick="confirmOtp()">تأكيد</button>
-      <button class="btnGhost" onclick="sendOtp()">إعادة إرسال الكود</button>
-      <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="backToPhoneStep()">تغيير الرقم</button>
-    </div>
-
-    <div id="recaptcha-container"></div>
 
   </div>
 </div>
@@ -604,7 +585,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup,RecaptchaVerifier,signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
 
@@ -706,10 +687,6 @@ let selectedStars=0;
 let selectedImages=[];
 let allReports=[];
 let reportsListenerStarted=false;
-
-/* ===== Phone Auth state ===== */
-let confirmationResult = null;
-let recaptchaVerifier = null;
 
 const home=document.getElementById("home");
 const form=document.getElementById("form");
@@ -853,129 +830,10 @@ window.loginWithGoogle=async()=>{
   }
 };
 
-/* ================ Phone Login ================ */
-window.showPhoneLogin = () => {
-  document.getElementById("authOptions").classList.add("hidden");
-  document.getElementById("phoneLoginStep").classList.remove("hidden");
-};
-
-window.backToAuthOptions = () => {
-  document.getElementById("phoneLoginStep").classList.add("hidden");
-  document.getElementById("otpStep").classList.add("hidden");
-  document.getElementById("authOptions").classList.remove("hidden");
-  document.getElementById("phoneInput").value = "";
-  document.getElementById("otpInput").value = "";
-};
-
-window.backToPhoneStep = () => {
-  document.getElementById("otpStep").classList.add("hidden");
-  document.getElementById("phoneLoginStep").classList.remove("hidden");
-  document.getElementById("otpInput").value = "";
-};
-
-/* ⭐ إصلاح reCAPTCHA: امسح الموجود دائماً قبل إنشاء جديد */
-function resetRecaptcha(){
-  try{
-    if(recaptchaVerifier){
-      recaptchaVerifier.clear();
-    }
-  }catch(_){}
-  recaptchaVerifier = null;
-  const box = document.getElementById('recaptcha-container');
-  if(box) box.innerHTML = '';
-}
-
-window.sendOtp = async () => {
-  let phone = document.getElementById("phoneInput").value.trim();
-  phone = phone.replace(/\s+/g, "").replace(/[^0-9+]/g, "");
-  if(!phone || phone.replace(/[^0-9]/g,"").length < 8){
-    alert("الرجاء إدخال رقم صحيح مع رمز الدولة (مثال: +218912345678)");
-    return;
-  }
-  if(!phone.startsWith("+")){
-    phone = "+" + phone;
-  }
-
-  const btn = document.getElementById("sendOtpBtn");
-  if(btn){ btn.disabled = true; btn.textContent = "جاري الإرسال..."; }
-
-  try{
-    // ⭐ ننظف أي reCAPTCHA سابق أولاً
-    resetRecaptcha();
-
-    // ⭐ ننشئ reCAPTCHA جديد
-    recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {},
-      'expired-callback': () => {
-        resetRecaptcha();
-      }
-    });
-
-    confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-
-    document.getElementById("otpPhone").textContent = phone;
-    document.getElementById("phoneLoginStep").classList.add("hidden");
-    document.getElementById("otpStep").classList.remove("hidden");
-    document.getElementById("otpInput").focus();
-  }catch(e){
-    console.error("❌ خطأ إرسال الكود:", e);
-    let msg = "تعذر إرسال الكود: ";
-    if(e.code === "auth/invalid-phone-number") msg += "الرقم غير صحيح. تأكد من رمز الدولة (+218).";
-    else if(e.code === "auth/too-many-requests") msg += "تم إرسال طلبات كثيرة. انتظر قليلاً ثم جرب.";
-    else if(e.code === "auth/quota-exceeded") msg += "تم تجاوز الحد المسموح اليومي. جرب لاحقاً أو اربط بطاقة في Firebase.";
-    else if(e.code === "auth/billing-not-enabled") msg += "يجب تفعيل الفوترة (Billing) في Firebase لاستخدام هذه الخدمة.";
-    else if(e.code === "auth/captcha-check-failed") msg += "فشل التحقق من reCAPTCHA. حدّث الصفحة وحاول مرة أخرى.";
-    else msg += (e.message || e.code || "خطأ غير معروف");
-    alert(msg);
-    resetRecaptcha();
-  }finally{
-    if(btn){ btn.disabled = false; btn.textContent = "إرسال الكود"; }
-  }
-};
-
-window.confirmOtp = async () => {
-  const code = document.getElementById("otpInput").value.trim();
-  if(!code || code.length < 6){
-    alert("أدخل الكود المكون من 6 أرقام");
-    return;
-  }
-  if(!confirmationResult){
-    alert("انتهت الجلسة. أعد إرسال الكود.");
-    backToPhoneStep();
-    return;
-  }
-
-  const btn = document.getElementById("confirmOtpBtn");
-  if(btn){ btn.disabled = true; btn.textContent = "جاري التحقق..."; }
-
-  try{
-    await confirmationResult.confirm(code);
-    confirmationResult = null;
-    resetRecaptcha();
-    document.getElementById("otpInput").value = "";
-    document.getElementById("phoneInput").value = "";
-    document.getElementById("otpStep").classList.add("hidden");
-    document.getElementById("authOptions").classList.remove("hidden");
-  }catch(e){
-    console.error("❌ كود خطأ:", e);
-    let msg = "الكود غير صحيح. ";
-    if(e.code === "auth/code-expired") msg += "انتهت صلاحية الكود، أعد إرساله.";
-    else if(e.code === "auth/invalid-verification-code") msg += "تأكد من الأرقام ثم جرب مرة ثانية.";
-    else msg += (e.message || e.code || "");
-    alert(msg);
-  }finally{
-    if(btn){ btn.disabled = false; btn.textContent = "تأكيد"; }
-  }
-};
-
 window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
 sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
 pendingAction=null;
-document.getElementById("authOptions")?.classList.remove("hidden");
-document.getElementById("phoneLoginStep")?.classList.add("hidden");
-document.getElementById("otpStep")?.classList.add("hidden");
 };
 
 window.openAccount=()=>{
@@ -988,9 +846,6 @@ reportsBtn.classList.toggle("hidden",!isAdmin);
 accountOverlay.classList.remove("hidden");
 }else{
 pendingAction=null;
-document.getElementById("authOptions").classList.remove("hidden");
-document.getElementById("phoneLoginStep").classList.add("hidden");
-document.getElementById("otpStep").classList.add("hidden");
 authOverlay.classList.remove("hidden");
 }
 };
@@ -1281,9 +1136,6 @@ return "★".repeat(r)+"☆".repeat(5-r);
 
 window.loginToRate=()=>{
 closeOverlay();
-document.getElementById("authOptions").classList.remove("hidden");
-document.getElementById("phoneLoginStep").classList.add("hidden");
-document.getElementById("otpStep").classList.add("hidden");
 authOverlay.classList.remove("hidden");
 };
 
@@ -1577,9 +1429,6 @@ saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعل
 window.reportPost=async(id)=>{
 if(!auth.currentUser){
   pendingAction = { type: "report", postId: id };
-  document.getElementById("authOptions").classList.remove("hidden");
-  document.getElementById("phoneLoginStep").classList.add("hidden");
-  document.getElementById("otpStep").classList.add("hidden");
   authOverlay.classList.remove("hidden");
   return;
 }
@@ -1591,7 +1440,7 @@ await addDoc(collection(db,"reports"),{
 postId:id,
 postTitle:post?post.title:"",
 reason:reason||"",
-reporterEmail:auth.currentUser.email||auth.currentUser.phoneNumber||"",
+reporterEmail:auth.currentUser.email||"",
 reporterUid:auth.currentUser.uid,
 createdAt:Date.now()
 });
