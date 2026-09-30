@@ -15,7 +15,7 @@
 <style>
 :root{
   --teal:#38bdf8; --teal-dark:#0284c7; --teal-light:#e6f6fe;
-  --amber:#f59e0b;
+  --amber:#f59e0b; --amber-light:#fef3c7;
   --bg:#f5f6f8; --card:#ffffff; --text:#1f2937; --muted:#8a93a3; --border:#edeff2;
   --danger:#e5484d;
   --wa:#25d366;
@@ -129,7 +129,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .editBtn{background:#eef2ff}
 .delBtn{background:#fdeceb}
-.reportBtn{background:#fff3cd}
+.featBtn{background:var(--amber-light);color:#92400e}
+.featBtn.on{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500}
 .reportOnImg{
   position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border:none;border-radius:50%;
   background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;
@@ -158,6 +159,92 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55);transition:width .15s,height .15s}
 .dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
+
+/* ===== Featured Posts ===== */
+.card.featured{
+  border:2px solid #f59e0b;
+  box-shadow:0 4px 18px rgba(245,158,11,.35);
+  position:relative;
+}
+.card.featured::before{
+  content:"⭐ مميز";
+  position:absolute;
+  top:0;right:0;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#3a2500;
+  font-size:11px;
+  font-weight:800;
+  padding:4px 10px;
+  border-radius:0 14px 0 12px;
+  z-index:5;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+.featBadge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#3a2500;font-size:12px;font-weight:800;
+  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px
+}
+.featBadgeOwner{
+  display:inline-flex;align-items:center;gap:5px;
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  color:#92400e;font-size:12px;font-weight:800;
+  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;
+  border:1px solid #f59e0b
+}
+.upgradeBtn{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  font-size:16px;font-weight:800;color:#3a2500;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  cursor:pointer;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 12px rgba(245,158,11,.35)
+}
+
+/* ===== Upgrade Modal Plans ===== */
+.planCard{
+  border:2px solid var(--border);border-radius:14px;padding:16px 14px;
+  margin-bottom:12px;cursor:pointer;transition:all .2s;
+  background:#fff;position:relative;overflow:hidden
+}
+.planCard:hover{border-color:#f59e0b;background:#fffbf0}
+.planCard:active{transform:scale(.98)}
+.planCard.best{
+  border-color:#f59e0b;
+  background:linear-gradient(135deg,#fffbf0,#fef3c7)
+}
+.planCard .planTitle{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:6px
+}
+.planCard .planDays{font-size:17px;font-weight:800;color:var(--text)}
+.planCard .planPrice{
+  font-size:20px;font-weight:900;color:#92400e
+}
+.planCard .planDesc{font-size:12px;color:var(--muted);line-height:1.6}
+.planCard .bestBadge{
+  position:absolute;top:10px;left:10px;
+  background:#f59e0b;color:#3a2500;
+  font-size:10px;font-weight:800;
+  padding:3px 8px;border-radius:999px
+}
+.planCard .planIcon{font-size:24px;margin-left:8px}
+
+/* ===== Admin Quick Plans ===== */
+.adminPlans{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  margin-top:8px
+}
+.adminPlans button{
+  padding:10px 4px;border:1px solid #f59e0b;border-radius:10px;
+  background:#fffbf0;color:#92400e;
+  font-family:inherit;font-size:12.5px;font-weight:800;
+  cursor:pointer
+}
+.adminPlans button:hover{background:#fef3c7}
+.adminPlans button.cancel{
+  grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)
+}
 
 /* ===== Bottom nav ===== */
 .bottomNav{
@@ -221,7 +308,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .sheet{
   background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));
-  animation:up .18s ease-out
+  animation:up .18s ease-out;max-height:88vh;overflow-y:auto
 }
 @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 .sheet h3{margin:0 0 14px 0;font-size:17px;font-weight:800}
@@ -496,13 +583,11 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <!-- ===== AUTH OVERLAY ===== -->
 <div id="authOverlay" class="overlay hidden">
   <div class="sheet">
-
     <div id="authOptions">
       <h3 style="text-align:center">تسجيل الدخول</h3>
       <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
         سجّل دخولك بحساب Google للاستمرار
       </p>
-
       <button class="authOption primary" onclick="loginWithGoogle()">
         <svg width="20" height="20" viewBox="0 0 48 48">
           <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/>
@@ -512,16 +597,13 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
         </svg>
         المتابعة باستخدام Google
       </button>
-
       <button class="authOption disabled" onclick="alert('📱 تسجيل الدخول برقم الهاتف قريباً جداً!\n\nحالياً استخدم حساب Google للتسجيل.')">
         <span class="soonBadge">قريباً</span>
         <span class="icon">📱</span>
         المتابعة برقم الهاتف
       </button>
-
       <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
     </div>
-
   </div>
 </div>
 
@@ -554,6 +636,49 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div id="postOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:92vh;overflow-y:auto;padding-top:0">
     <div id="postContent"></div>
+  </div>
+</div>
+
+<!-- ===== UPGRADE OVERLAY (خطط الترقية) ===== -->
+<div id="upgradeOverlay" class="overlay hidden">
+  <div class="sheet">
+    <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px 0;text-align:center;line-height:1.7">
+      اختر الباقة التي تناسبك<br>
+      سيظهر إعلانك <b>في الأعلى بلون ذهبي</b> طوال المدة
+    </p>
+
+    <div class="planCard" onclick="selectPlan(7,'7 أيام',5)">
+      <div class="planTitle">
+        <span class="planDays">🥉 7 أيام</span>
+        <span class="planPrice">5 د.ل</span>
+      </div>
+      <div class="planDesc">إعلانك يظهر في الأعلى لمدة أسبوع كامل</div>
+    </div>
+
+    <div class="planCard best" onclick="selectPlan(15,'15 يوم',10)">
+      <span class="bestBadge">الأكثر طلباً</span>
+      <div class="planTitle">
+        <span class="planDays">🥈 15 يوم</span>
+        <span class="planPrice">10 د.ل</span>
+      </div>
+      <div class="planDesc">توفير 25% — إعلانك في الأعلى لنصف شهر</div>
+    </div>
+
+    <div class="planCard" onclick="selectPlan(30,'30 يوم',18)">
+      <div class="planTitle">
+        <span class="planDays">🥇 30 يوم</span>
+        <span class="planPrice">18 د.ل</span>
+      </div>
+      <div class="planDesc">أفضل قيمة — إعلانك في الأعلى لشهر كامل</div>
+    </div>
+
+    <div style="background:var(--teal-light);border-radius:12px;padding:12px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;margin-top:8px;text-align:center">
+      💬 عند اختيار الباقة، سيتم فتح واتساب مع الإدارة<br>
+      لترتيب عملية الدفع
+    </div>
+
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
 </div>
 
@@ -665,6 +790,7 @@ alert("تعذر تفعيل الإشعارات: "+e.message);
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
+const ADMIN_WHATSAPP="218912345678"; // ⚠️ غيّر هذا لرقمك الحقيقي
 let isAdmin=false;
 let showOnlyMine=false;
 let showOnlyFavorites=false;
@@ -699,11 +825,29 @@ const reportsBtn=document.getElementById("reportsBtn");
 const sellerOverlay=document.getElementById("sellerOverlay");
 const postOverlay=document.getElementById("postOverlay");
 const warnOverlay=document.getElementById("warnOverlay");
+const upgradeOverlay=document.getElementById("upgradeOverlay");
 const adminChip=document.getElementById("adminChip");
 const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
 const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
+
+/* ================= Featured helpers ================= */
+function isPostFeatured(p){
+  return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());
+}
+function featuredDaysLeft(p){
+  if(!isPostFeatured(p)) return 0;
+  return Math.ceil((p.featuredUntil - Date.now()) / (24*60*60*1000));
+}
+function sortPosts(arr){
+  return arr.slice().sort((a,b)=>{
+    const af = isPostFeatured(a) ? 1 : 0;
+    const bf = isPostFeatured(b) ? 1 : 0;
+    if(af !== bf) return bf - af;
+    return (b.createdAt||0) - (a.createdAt||0);
+  });
+}
 
 /* ================= Favorites ================= */
 function getFavorites(){
@@ -819,7 +963,6 @@ window.loginWithGoogle=async()=>{
   }catch(e){
     console.error("❌ خطأ Google:", e);
     if(e.code === "auth/popup-closed-by-user"){
-      // المستخدم أغلق النافذة
     }else if(e.code === "auth/popup-blocked"){
       alert("الرجاء السماح بالنوافذ المنبثقة ثم جرب مرة أخرى");
     }else if(e.code === "auth/unauthorized-domain"){
@@ -833,6 +976,7 @@ window.loginWithGoogle=async()=>{
 window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
 sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
+upgradeOverlay.classList.add("hidden");
 pendingAction=null;
 };
 
@@ -975,7 +1119,7 @@ window.loadPosts=()=>renderPosts();
 function startPostsListener(){
 onSnapshot(collection(db,"posts"),snapshot=>{
 allPosts=snapshot.docs.map(d=>({id:d.id,...d.data()}));
-allPosts.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+allPosts=sortPosts(allPosts);
 renderPosts();
 },err=>{
 console.error(err);
@@ -1003,6 +1147,7 @@ if(showOnlyFavorites && !favs.includes(p.id))return false;
 if(term && !(p.title||"").toLowerCase().includes(term))return false;
 return true;
 });
+list = sortPosts(list);
 
 if(list.length===0){
   if(showOnlyFavorites){
@@ -1021,10 +1166,12 @@ const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
+const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" title="${isPostFeatured(p)?'إلغاء التمييز':'تمييز لمدة 30 يوم'}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
+const featuredCard = isPostFeatured(p) ? 'featured' : '';
 return `
-<div class="card">
+<div class="card ${featuredCard}">
   <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
   <div class="body">
     <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
@@ -1033,7 +1180,7 @@ return `
     ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
     <div class="meta"><span class="catTag">${escapeHtml(p.category||"")}</span><span class="time">${timeAgo(p.createdAt)}</span></div>
     ${viewsLine}
-    <div class="actions">${wa}${edit}${del}</div>
+    <div class="actions">${wa}${feat}${edit}${del}</div>
   </div>
 </div>`;
 }).join("");
@@ -1044,10 +1191,6 @@ return `
 function defaultName(user){
 const dn=(user.displayName||"").trim().slice(0,30);
 if(dn.length>=2) return dn;
-if(user.phoneNumber){
-  const last = user.phoneNumber.slice(-4);
-  return "مستخدم " + last;
-}
 const emailName=(user.email||"").split("@")[0].slice(0,30);
 if(emailName.length>=2) return emailName;
 return "مستخدم "+user.uid.slice(0,4);
@@ -1239,7 +1382,6 @@ alert("خطأ: "+e.message);
 }
 };
 
-
 /* ================= عرض الصور ================= */
 function getImages(p){
 return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
@@ -1304,18 +1446,58 @@ const shareBtn=`<button class="btnMain" style="background:var(--teal-dark);margi
 
 const viewsBadge = (isOwner || isAdmin) ? `<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>` : "";
 
+/* شارة مميز */
+let featBadge = "";
+if(isPostFeatured(p)){
+  const days = featuredDaysLeft(p);
+  if(isOwner){
+    featBadge = `<span class="featBadgeOwner">⭐ مميز — ${days} ${days===1?'يوم':'أيام'} متبقية</span>`;
+  } else if(isAdmin){
+    featBadge = `<span class="featBadge">⭐ مميز — ${days} ${days===1?'يوم':'أيام'}</span>`;
+  } else {
+    featBadge = `<span class="featBadge">⭐ إعلان مميز</span>`;
+  }
+}
+
+/* زر الترقية (للمعلن فقط) */
+let upgradeBtn = "";
+if(isOwner){
+  if(isPostFeatured(p)){
+    upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;
+  } else {
+    upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;
+  }
+}
+
+/* لوحة الأدمن السريعة */
+let adminPanel = "";
+if(isAdmin){
+  adminPanel = `
+    <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px">
+      <div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div>
+      <div class="adminPlans">
+        <button onclick="adminFeature('${p.id}',7)">7 أيام</button>
+        <button onclick="adminFeature('${p.id}',15)">15 يوم</button>
+        <button onclick="adminFeature('${p.id}',30)">30 يوم</button>
+        ${isPostFeatured(p)?`<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>`:""}
+      </div>
+    </div>`;
+}
+
 document.getElementById("postContent").innerHTML=`
 <div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
-${viewsBadge}
+<div>${featBadge}${viewsBadge}</div>
 ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
 <div style="height:14px"></div>
+${upgradeBtn}
 ${wa}
-${shareBtn}`;
+${shareBtn}
+${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
 
@@ -1407,6 +1589,9 @@ title,price:Number(price),category,city,description,phone,images,sellerName,term
 uid:auth.currentUser.uid,
 email:auth.currentUser.email||"",
 views:0,
+featured:false,
+featuredUntil:0,
+featuredPlan:null,
 createdAt:Date.now()
 });
 }
@@ -1497,6 +1682,68 @@ await deleteDoc(doc(db,"posts",id));
 }catch(e){
 alert("خطأ أثناء الحذف: "+e.message);
 }
+};
+
+/* ================= Featured: Admin toggle ================= */
+window.toggleFeatured = async (id, event) => {
+  if(event) event.stopPropagation();
+  if(!isAdmin){ alert("هذي الميزة للمشرف فقط"); return; }
+  const post = allPosts.find(p => p.id === id);
+  if(!post) return;
+  if(isPostFeatured(post)){
+    if(!confirm("إلغاء تمييز هذا الإعلان؟")) return;
+    try{
+      await updateDoc(doc(db,"posts",id), {featured:false, featuredUntil:0, featuredPlan:null});
+    }catch(e){ alert("خطأ: " + e.message); }
+  } else {
+    // افتراضياً: 30 يوم
+    try{
+      const until = Date.now() + 30*24*60*60*1000;
+      await updateDoc(doc(db,"posts",id), {featured:true, featuredUntil:until, featuredPlan:30});
+    }catch(e){ alert("خطأ: " + e.message); }
+  }
+};
+
+/* ================= Featured: Admin set days ================= */
+window.adminFeature = async (id, days) => {
+  if(!isAdmin) return;
+  try{
+    if(days === 0){
+      await updateDoc(doc(db,"posts",id), {featured:false, featuredUntil:0, featuredPlan:null});
+      alert("✅ تم إلغاء التمييز");
+    } else {
+      const until = Date.now() + days*24*60*60*1000;
+      await updateDoc(doc(db,"posts",id), {featured:true, featuredUntil:until, featuredPlan:days});
+      alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);
+    }
+  }catch(e){ alert("خطأ: " + e.message); }
+};
+
+/* ================= Featured: Owner upgrade ================= */
+window.openUpgrade = (id) => {
+  if(!auth.currentUser) return;
+  postOverlay.classList.add("hidden");
+  upgradeOverlay.classList.remove("hidden");
+  window._upgradePostId = id;
+};
+
+window.selectPlan = (days, label, price) => {
+  const id = window._upgradePostId;
+  const p = allPosts.find(x=>x.id===id);
+  if(!p) return;
+  const msg = `🛒 طلب ترقية إعلان\n\n` +
+              `📌 الإعلان: ${p.title||'بدون عنوان'}\n` +
+              `💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n` +
+              `📦 الباقة: ${label}\n` +
+              `💵 المبلغ: ${price} د.ل\n` +
+              `🔗 الرابط: ${window.location.origin + window.location.pathname}#post-${id}\n\n` +
+              `أرجو ترتيب عملية الدفع والتفعيل.`;
+  const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
+  setTimeout(()=>{
+    closeOverlay();
+    alert("✅ بعد إتمام الدفع مع الإدارة، سيتم تفعيل الترقية خلال دقائق.");
+  }, 400);
 };
 
 /* ================= Deep link ================= */
