@@ -30,15 +30,12 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
   display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
-.topbarActions{
-  display:flex;align-items:center;gap:6px;flex:0 0 auto;
-}
+.topbarActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .bellBtn{
   width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
   color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;
   padding:0
 }
-.bellBtn.active{background:rgba(255,255,255,.35)}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{
@@ -93,6 +90,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
 .card .catTag{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 9px;border-radius:7px}
 .card .time{font-size:11px;color:var(--muted)}
+.card .cardViews{font-size:11.5px;color:var(--teal-dark);font-weight:700;margin-top:2px}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .card .actions .waBtn{
   flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;
@@ -248,6 +246,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .pTitle{font-size:18px;font-weight:800;line-height:1.5;margin-bottom:2px}
 .pMeta{font-size:12.5px;color:var(--muted);margin-top:2px}
 .pDesc{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.9}
+.pViewsBadge{
+  display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);
+  font-size:12px;font-weight:800;padding:5px 10px;border-radius:9px;margin-top:6px
+}
 .field textarea{
   width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;
   font-size:15px;background:var(--card);resize:vertical;min-height:120px;box-sizing:border-box
@@ -275,13 +277,53 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0
 }
 
-/* ===== Share row ===== */
-.shareRow{display:flex;gap:8px;margin-bottom:8px}
-.shareRow .btnMain{flex:1;margin-bottom:0}
+/* ===== Splash Screen ===== */
+#splashScreen{
+  position:fixed;inset:0;z-index:99999;
+  background:linear-gradient(160deg,#38bdf8 0%,#0284c7 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none}
+#splashScreen .splashLogo{
+  width:120px;height:120px;border-radius:28px;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+  background:#fff;padding:6px;
+  animation:popIn .5s ease-out;
+}
+@keyframes popIn{
+  0%{transform:scale(.6);opacity:0}
+  100%{transform:scale(1);opacity:1}
+}
+#splashScreen .splashName{
+  color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;
+  text-shadow:0 4px 12px rgba(0,0,0,.25);
+}
+#splashScreen .splashLoader{
+  display:flex;gap:8px;margin-top:14px;
+}
+#splashScreen .splashLoader span{
+  width:10px;height:10px;border-radius:50%;background:#fff;
+  animation:bounce 1.2s infinite ease-in-out;
+}
+#splashScreen .splashLoader span:nth-child(2){animation-delay:.15s}
+#splashScreen .splashLoader span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{
+  0%,80%,100%{transform:scale(.6);opacity:.5}
+  40%{transform:scale(1);opacity:1}
+}
 </style>
 </head>
 
 <body>
+
+<!-- ===== Splash Screen ===== -->
+<div id="splashScreen">
+  <img src="icon-192.png" alt="تسوق الآن" class="splashLogo" onerror="this.style.display='none'">
+  <div class="splashName">تسوق الآن</div>
+  <div class="splashLoader"><span></span><span></span><span></span></div>
+</div>
 
 <div class="topbar">
   <div class="topbarActions">
@@ -473,9 +515,20 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithRedirect,getRedirectResult } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getStorage,ref,uploadBytes,getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
 import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
+
+/* ===== Splash Screen ===== */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
+    if(splash){
+      splash.classList.add('hide');
+      setTimeout(() => splash.remove(), 700);
+    }
+  }, 1800);
+});
 
 const firebaseConfig={
 apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",
@@ -566,7 +619,6 @@ const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
 const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
-const favTopBtn=document.getElementById("favTopBtn");
 
 /* ================= Favorites ================= */
 function getFavorites(){
@@ -583,17 +635,39 @@ function isFavorite(id){
 window.toggleFavorite = (id, event)=>{
   if(event) event.stopPropagation();
   let favs = getFavorites();
-  if(favs.includes(id)){
-    favs = favs.filter(x=>x!==id);
-  } else {
-    favs.push(id);
-  }
+  if(favs.includes(id)){ favs = favs.filter(x=>x!==id); }
+  else { favs.push(id); }
   saveFavorites(favs);
   renderPosts();
 };
 
+/* ================= Views tracking ================= */
+function hasViewedOnDevice(postId){
+  try{
+    const viewed = JSON.parse(localStorage.getItem('viewedPosts')||'[]');
+    return viewed.includes(postId);
+  }catch(e){ return false; }
+}
+function markViewedOnDevice(postId){
+  try{
+    let viewed = JSON.parse(localStorage.getItem('viewedPosts')||'[]');
+    if(!viewed.includes(postId)){
+      viewed.push(postId);
+      if(viewed.length > 300) viewed = viewed.slice(-300);
+      localStorage.setItem('viewedPosts', JSON.stringify(viewed));
+    }
+  }catch(e){}
+}
+async function incrementViews(postId){
+  try{
+    if(hasViewedOnDevice(postId)) return;
+    markViewedOnDevice(postId);
+    await updateDoc(doc(db,"posts",postId), { views: increment(1) });
+  }catch(e){ console.error("views:", e); }
+}
+
 /* ================= Ad popup ================= */
-const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا"; // ← غيّر الرابط بصورة إعلانك
+const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا";
 const AD_INTERVAL_DAYS = 30;
 
 function showAdIfDue(){
@@ -616,7 +690,7 @@ window.closeAd = function(){
   if(popup) popup.classList.add('hidden');
 };
 
-window.addEventListener('load', () => setTimeout(showAdIfDue, 900));
+setTimeout(showAdIfDue, 2600);
 
 startPostsListener();
 
@@ -837,12 +911,14 @@ if(list.length===0){
 
 postsBox.innerHTML=list.map(p=>{
 const canDelete=isAdmin||(auth.currentUser && p.uid===auth.currentUser.uid);
+const isOwner=auth.currentUser && p.uid===auth.currentUser.uid;
 const images=getImages(p);
 const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
 const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const fav=isFavorite(p.id);
+const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
 return `
 <div class="card">
   <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
@@ -852,6 +928,7 @@ return `
     ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
     ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
     <div class="meta"><span class="catTag">${escapeHtml(p.category||"")}</span><span class="time">${timeAgo(p.createdAt)}</span></div>
+    ${viewsLine}
     <div class="actions">${wa}${edit}${del}</div>
   </div>
 </div>`;
@@ -927,11 +1004,7 @@ window.sharePost = async (id)=>{
   const priceText = p.price!=null ? p.price + ' د.ل' : '';
   const cityText = p.city ? '\n📍 ' + p.city : '';
   const text = `🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;
-  const shareData = {
-    title: p.title || 'تسوق الآن',
-    text: text,
-    url: url
-  };
+  const shareData = { title: p.title || 'تسوق الآن', text: text, url: url };
   try{
     if(navigator.share){
       await navigator.share(shareData);
@@ -1058,7 +1131,7 @@ alert("خطأ: "+e.message);
 };
 
 
-/* ================= عرض الصور (سحب يمين/يسار) وتفاصيل الإعلان ================= */
+/* ================= عرض الصور وتفاصيل الإعلان ================= */
 function getImages(p){
 return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
 }
@@ -1105,6 +1178,13 @@ return file;
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);
 if(!p)return;
+
+// زيادة عداد المشاهدات (لا يُحسب للصاحب نفسه)
+const isOwner = auth.currentUser && auth.currentUser.uid === p.uid;
+if(!isOwner){
+  incrementViews(id);
+}
+
 const images=getImages(p);
 const dots=dotsHtml(images);
 const desc=p.description
@@ -1113,11 +1193,15 @@ const desc=p.description
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 const shareBtn=`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`;
+
+const viewsBadge = (isOwner || isAdmin) ? `<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>` : "";
+
 document.getElementById("postContent").innerHTML=`
 <div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
+${viewsBadge}
 ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
@@ -1213,6 +1297,7 @@ await addDoc(collection(db,"posts"),{
 title,price:Number(price),category,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
 uid:auth.currentUser.uid,
 email:auth.currentUser.email,
+views:0,
 createdAt:Date.now()
 });
 }
