@@ -11,9 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-
 <style>
-:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#ffffff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--green:#16a34a}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--green:#16a34a}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
 .dlBanner{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;position:sticky;top:0;z-index:25;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -35,21 +34,18 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .searchBox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04);position:relative}
 .searchBox input{border:none;outline:none;flex:1;font-family:inherit;font-size:15px;background:transparent}
 .searchBox .ic{color:var(--muted)}
-.clearSearchBtn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:none;background:#e5e7eb;color:#4b5563;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:background .15s}
-.clearSearchBtn:hover{background:#d1d5db}
+.clearSearchBtn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:none;background:#e5e7eb;color:#4b5563;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit}
 .clearSearchBtn:active{transform:scale(.9)}
 .searchDropdown{position:absolute;top:calc(100% + 6px);right:0;left:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.15);max-height:340px;overflow-y:auto;z-index:35;padding:6px 0;animation:dropDown .15s ease-out}
 @keyframes dropDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .searchDropdown.hidden{display:none!important}
-.sdSection{padding:6px 14px 4px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px}
-.sdItem{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:14px;color:var(--text);transition:background .1s;font-family:inherit}
+.sdSection{padding:6px 14px 4px;font-size:11px;font-weight:800;color:var(--muted)}
+.sdItem{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:14px;color:var(--text);font-family:inherit}
 .sdItem:hover,.sdItem:active{background:var(--teal-light)}
 .sdItem .sdIcon{font-size:16px;flex:0 0 auto;opacity:.7}
 .sdItem .sdText{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sdItem .sdRemove{flex:0 0 auto;background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.sdItem .sdRemove:hover{background:#fdeceb;color:var(--danger)}
 .sdClearAll{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;font-size:12.5px;color:var(--danger);font-weight:700;cursor:pointer;border-top:1px solid var(--border);margin-top:4px;font-family:inherit}
-.sdClearAll:hover{background:#fdeceb}
 .catsRow{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px 16px;scrollbar-width:none;position:relative;z-index:1}
 .catsRow::-webkit-scrollbar{display:none}
 .catChip{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
@@ -58,10 +54,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .subCatsRow::-webkit-scrollbar{display:none}
 .subCatsRow.hidden{display:none!important}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.subCatChip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid #fde68a;color:#92400e;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
-.subCatChip:hover{background:#fef3c7}
-.subCatChip.active{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b;color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.3)}
-.subCatTitle{flex:0 0 auto;padding:7px 4px;font-size:12px;font-weight:800;color:#92400e;display:flex;align-items:center;gap:4px}
+.subCatChip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid #fde68a;color:#92400e;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.subCatChip.active{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b;color:#fff}
+.subCatTitle{flex:0 0 auto;padding:7px 4px;font-size:12px;font-weight:800;color:#92400e}
 .sectionTitle{padding:16px 16px 6px 16px;font-weight:800;font-size:15px;color:var(--text)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px 16px}
 .card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 2px 10px rgba(15,23,42,.05);display:flex;flex-direction:column}
@@ -86,15 +81,15 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .featBtn.on{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500}
 .reportOnImg{position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border:none;border-radius:50%;background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .reportOnImg.right{left:auto;right:10px;top:10px;width:32px;height:32px;font-size:15px}
-.closeOnImg{position:absolute;top:10px;left:10px;z-index:3;width:32px;height:32px;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;padding:0}
-.favBtn{position:absolute;top:8px;right:8px;z-index:3;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.92);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);padding:0}
+.closeOnImg{position:absolute;top:10px;left:10px;z-index:3;width:32px;height:32px;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;padding:0}
+.favBtn{position:absolute;top:8px;right:8px;z-index:3;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.92);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .favBtn.active{background:#fff}
 .dots{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;pointer-events:none;direction:ltr}
 .dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55);transition:width .15s,height .15s}
 .dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
 .card.featured{border:2px solid #f59e0b;box-shadow:0 4px 18px rgba(245,158,11,.35);position:relative}
-.card.featured::before{content:"⭐ مميز";position:absolute;top:0;right:0;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-size:11px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.card.featured::before{content:"⭐ مميز";position:absolute;top:0;right:0;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-size:11px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5}
 .card.pending{border:2px dashed #f59e0b;opacity:.9;position:relative}
 .card.pending::before{content:"⏳ قيد المراجعة";position:absolute;top:0;right:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5}
 .card.rejected{border:2px solid var(--danger);opacity:.8;position:relative}
@@ -105,19 +100,16 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .statusBadge.pending{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}
 .statusBadge.rejected{background:#fdeceb;color:#b91c1c;border:1px solid var(--danger)}
 .statusBadge.approved{background:#dcfce7;color:#166534;border:1px solid var(--green)}
-.upgradeBtn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#3a2500;background:linear-gradient(135deg,#f59e0b,#fbbf24);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(245,158,11,.35)}
-.planCard{border:2px solid var(--border);border-radius:14px;padding:16px 14px;margin-bottom:12px;cursor:pointer;transition:all .2s;background:#fff;position:relative;overflow:hidden}
-.planCard:hover{border-color:#f59e0b;background:#fffbf0}
-.planCard:active{transform:scale(.98)}
+.upgradeBtn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#3a2500;background:linear-gradient(135deg,#f59e0b,#fbbf24);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+.planCard{border:2px solid var(--border);border-radius:14px;padding:16px 14px;margin-bottom:12px;cursor:pointer;background:#fff;position:relative;overflow:hidden}
 .planCard.best{border-color:#f59e0b;background:linear-gradient(135deg,#fffbf0,#fef3c7)}
 .planCard .planTitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.planCard .planDays{font-size:17px;font-weight:800;color:var(--text)}
+.planCard .planDays{font-size:17px;font-weight:800}
 .planCard .planPrice{font-size:20px;font-weight:900;color:#92400e}
 .planCard .planDesc{font-size:12px;color:var(--muted);line-height:1.6}
 .planCard .bestBadge{position:absolute;top:10px;left:10px;background:#f59e0b;color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
 .adminPlans{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
 .adminPlans button{padding:10px 4px;border:1px solid #f59e0b;border-radius:10px;background:#fffbf0;color:#92400e;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
-.adminPlans button:hover{background:#fef3c7}
 .adminPlans button.cancel{grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)}
 .reviewBox{background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-top:8px}
 .reviewBox .rbTitle{font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13px}
@@ -130,7 +122,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .navItem .navIcon{font-size:19px}
 .navItem.active{color:var(--teal)}
 .fabWrap{flex:1;display:flex;justify-content:center;margin-top:-26px}
-.fab{width:52px;height:52px;border-radius:50%;background:var(--amber);color:#3a2500;border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 14px rgba(245,158,11,.4)}
+.fab{width:52px;height:52px;border-radius:50%;background:var(--amber);color:#3a2500;border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit}
 .screen{background:var(--bg);min-height:100%}
 .screenHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15}
 .screenHeader .back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
@@ -142,11 +134,11 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .imgThumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .imgThumb{position:relative;width:70px;height:70px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
 .imgThumb img{width:100%;height:100%;object-fit:cover}
-.imgThumb .rm{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer}
+.imgThumb .rm{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer;font-family:inherit}
 .imgAddTile{border:2px dashed var(--border);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13.5px;cursor:pointer;background:var(--card)}
 .imgAddTile.hidden{display:none}
-.btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer}
-.btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px}
+.btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;font-family:inherit}
+.btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px;font-family:inherit}
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));animation:up .18s ease-out;max-height:88vh;overflow-y:auto}
 @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -185,7 +177,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .warnBox{background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;padding:12px;font-size:14px;line-height:1.8;color:#7a5c00;margin-bottom:14px}
 .carousel{position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;direction:ltr;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
 .carousel::-webkit-scrollbar{display:none}
-.slide{flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
+.slide{flex:0 0 100%;height:100%;scroll-snap-align:start;display:flex;align-items:center;justify-content:center}
 .slide img{width:100%;height:100%;object-fit:cover}
 .slide .ph{font-size:34px;opacity:.5}
 .pImg{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--teal-light);margin-bottom:12px}
@@ -199,261 +191,211 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .hidden{display:none!important}
 .adPopup{position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
 .adPopupInner{position:relative;max-width:92vw;max-height:85vh}
-.adPopupInner img{max-width:100%;max-height:85vh;border-radius:14px;display:block;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff}
-.adClose{position:absolute;top:10px;left:10px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.95);color:#1f2937;border:none;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0}
+.adPopupInner img{max-width:100%;max-height:85vh;border-radius:14px;display:block;background:#fff}
+.adClose{position:absolute;top:10px;left:10px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.95);color:#1f2937;border:none;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;font-family:inherit;padding:0}
 #splashScreen{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#38bdf8 0%,#0284c7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s ease,visibility .6s ease}
 #splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none}
-#splashScreen .splashLogo{width:120px;height:120px;border-radius:28px;box-shadow:0 20px 50px rgba(0,0,0,.3);background:#fff;padding:6px;animation:popIn .5s ease-out}
-@keyframes popIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
-#splashScreen .splashName{color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;text-shadow:0 4px 12px rgba(0,0,0,.25)}
+#splashScreen .splashLogo{width:120px;height:120px;border-radius:28px;background:#fff;padding:6px}
+#splashScreen .splashName{color:#fff;font-size:26px;font-weight:800;letter-spacing:1px}
 #splashScreen .splashLoader{display:flex;gap:8px;margin-top:14px}
 #splashScreen .splashLoader span{width:10px;height:10px;border-radius:50%;background:#fff;animation:bounce 1.2s infinite ease-in-out}
 #splashScreen .splashLoader span:nth-child(2){animation-delay:.15s}
 #splashScreen .splashLoader span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
 .authOption{width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-family:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px}
-.authOption:hover{background:var(--teal-light)}
 .authOption.primary{background:#fff}
 .authOption .icon{font-size:20px}
 .authOption.disabled{opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative}
-.authOption.disabled .soonBadge{position:absolute;top:-8px;left:10px;background:var(--amber);color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.authOption.disabled .soonBadge{position:absolute;top:-8px;left:10px;background:var(--amber);color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
 </style>
 </head>
-
 <body>
 
 <div id="splashScreen">
-  <img src="icon-192.png" alt="تسوق الآن" class="splashLogo" onerror="this.style.display='none'">
-  <div class="splashName">تسوق الآن</div>
-  <div class="splashLoader"><span></span><span></span><span></span></div>
+<img src="icon-192.png" alt="تسوق الآن" class="splashLogo" onerror="this.style.display='none'">
+<div class="splashName">تسوق الآن</div>
+<div class="splashLoader"><span></span><span></span><span></span></div>
 </div>
 
 <div id="dlBanner" class="dlBanner hidden">
-  <span class="dlText">📱 نزّل تطبيق تسوق الآن</span>
-  <a class="dlBtn" href="tasawuq-now.apk" download>📥 حمّل</a>
-  <button class="dlClose" onclick="closeDlBanner()" aria-label="إغلاق">✕</button>
+<span class="dlText">📱 نزّل تطبيق تسوق الآن</span>
+<a class="dlBtn" href="tasawuq-now.apk" download>📥 حمّل</a>
+<button class="dlClose" onclick="closeDlBanner()" aria-label="إغلاق">✕</button>
 </div>
 
 <div class="topbar">
-  <div class="topbarActions">
-    <button class="bellBtn" onclick="enableNotifications()" title="تفعيل الإشعارات">🔔</button>
-    <button class="bellBtn" id="favTopBtn" onclick="showFavorites()" title="المفضلة">❤️</button>
-    <button class="iconBtn" onclick="openAccount()" title="حسابي">👤<span id="adminChip" class="adminChip hidden">A</span></button>
-  </div>
-  <div class="brand"><span class="dot"></span>تسوق الآن</div>
+<div class="topbarActions">
+<button class="bellBtn" onclick="enableNotifications()" title="تفعيل الإشعارات">🔔</button>
+<button class="bellBtn" id="favTopBtn" onclick="showFavorites()" title="المفضلة">❤️</button>
+<button class="iconBtn" onclick="openAccount()" title="حسابي">👤<span id="adminChip" class="adminChip hidden">A</span></button>
+</div>
+<div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
 
 <div id="home">
-  <div class="searchWrap">
-    <div class="searchBox">
-      <span class="ic">🔎</span>
-      <input id="searchInput" placeholder="ابحث..." oninput="onSearchTyping()" onfocus="showSearchDropdown()">
-      <button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" style="display:none">✕</button>
-      <div id="searchDropdown" class="searchDropdown hidden"></div>
-    </div>
-    <select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
-  </div>
-  <div class="catsRow">
-    <button class="catChip active" data-cat="الكل" onclick="filterCategory('الكل')">✨ الكل</button>
-    <button class="catChip" data-cat="سيارات ومركبات" onclick="filterCategory('سيارات ومركبات')">🚗 سيارات ومركبات</button>
-    <button class="catChip" data-cat="دراجات نارية" onclick="filterCategory('دراجات نارية')">🏍️ دراجات نارية</button>
-    <button class="catChip" data-cat="دراجات هوائية" onclick="filterCategory('دراجات هوائية')">🚲 دراجات هوائية</button>
-    <button class="catChip" data-cat="الخدمات" onclick="filterCategory('الخدمات')">🛠️ الخدمات</button>
-    <button class="catChip" data-cat="عقارات للبيع" onclick="filterCategory('عقارات للبيع')">🏠 عقارات للبيع</button>
-    <button class="catChip" data-cat="عقارات للإيجار" onclick="filterCategory('عقارات للإيجار')">🔑 عقارات للإيجار</button>
-    <button class="catChip" data-cat="موبايل وتابلت" onclick="filterCategory('موبايل وتابلت')">📱 موبايل وتابلت</button>
-    <button class="catChip" data-cat="لابتوب وكمبيوتر" onclick="filterCategory('لابتوب وكمبيوتر')">💻 لابتوب وكمبيوتر</button>
-    <button class="catChip" data-cat="ألعاب وألعاب الفيديو" onclick="filterCategory('ألعاب وألعاب الفيديو')">🎮 ألعاب وألعاب الفيديو</button>
-    <button class="catChip" data-cat="أجهزة منزلية" onclick="filterCategory('أجهزة منزلية')">🧊 أجهزة منزلية</button>
-    <button class="catChip" data-cat="ملابس رجالية" onclick="filterCategory('ملابس رجالية')">👔 ملابس رجالية</button>
-    <button class="catChip" data-cat="ملابس نسائية" onclick="filterCategory('ملابس نسائية')">👗 ملابس نسائية</button>
-    <button class="catChip" data-cat="ملابس أطفال" onclick="filterCategory('ملابس أطفال')">👶 ملابس أطفال</button>
-    <button class="catChip" data-cat="جمال وصحة" onclick="filterCategory('جمال وصحة')">💆 جمال وصحة</button>
-    <button class="catChip" data-cat="مكياج" onclick="filterCategory('مكياج')">💄 مكياج</button>
-    <button class="catChip" data-cat="مطاعم وغداء" onclick="filterCategory('مطاعم وغداء')">🍽️ مطاعم وغداء</button>
-    <button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
-  </div>
-  <div id="subCatsRow" class="subCatsRow hidden"></div>
-  <div class="warnBanner">⚠️ <b>تنبيه للمشتري:</b> لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
-  <div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
-  <div class="grid" id="posts"></div>
+<div class="searchWrap">
+<div class="searchBox">
+<span class="ic">🔎</span>
+<input id="searchInput" placeholder="ابحث..." oninput="onSearchTyping()" onfocus="showSearchDropdown()">
+<button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" style="display:none">✕</button>
+<div id="searchDropdown" class="searchDropdown hidden"></div>
+</div>
+<select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
+</div>
+<div class="catsRow">
+<button class="catChip active" data-cat="الكل" onclick="filterCategory('الكل')">✨ الكل</button>
+<button class="catChip" data-cat="سيارات ومركبات" onclick="filterCategory('سيارات ومركبات')">🚗 سيارات ومركبات</button>
+<button class="catChip" data-cat="دراجات نارية" onclick="filterCategory('دراجات نارية')">🏍️ دراجات نارية</button>
+<button class="catChip" data-cat="دراجات هوائية" onclick="filterCategory('دراجات هوائية')">🚲 دراجات هوائية</button>
+<button class="catChip" data-cat="الخدمات" onclick="filterCategory('الخدمات')">🛠️ الخدمات</button>
+<button class="catChip" data-cat="عقارات للبيع" onclick="filterCategory('عقارات للبيع')">🏠 عقارات للبيع</button>
+<button class="catChip" data-cat="عقارات للإيجار" onclick="filterCategory('عقارات للإيجار')">🔑 عقارات للإيجار</button>
+<button class="catChip" data-cat="موبايل وتابلت" onclick="filterCategory('موبايل وتابلت')">📱 موبايل وتابلت</button>
+<button class="catChip" data-cat="لابتوب وكمبيوتر" onclick="filterCategory('لابتوب وكمبيوتر')">💻 لابتوب وكمبيوتر</button>
+<button class="catChip" data-cat="ألعاب وألعاب الفيديو" onclick="filterCategory('ألعاب وألعاب الفيديو')">🎮 ألعاب وألعاب الفيديو</button>
+<button class="catChip" data-cat="أجهزة منزلية" onclick="filterCategory('أجهزة منزلية')">🧊 أجهزة منزلية</button>
+<button class="catChip" data-cat="ملابس رجالية" onclick="filterCategory('ملابس رجالية')">👔 ملابس رجالية</button>
+<button class="catChip" data-cat="ملابس نسائية" onclick="filterCategory('ملابس نسائية')">👗 ملابس نسائية</button>
+<button class="catChip" data-cat="ملابس أطفال" onclick="filterCategory('ملابس أطفال')">👶 ملابس أطفال</button>
+<button class="catChip" data-cat="جمال وصحة" onclick="filterCategory('جمال وصحة')">💆 جمال وصحة</button>
+<button class="catChip" data-cat="مكياج" onclick="filterCategory('مكياج')">💄 مكياج</button>
+<button class="catChip" data-cat="مطاعم وغداء" onclick="filterCategory('مطاعم وغداء')">🍽️ مطاعم وغداء</button>
+<button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
+</div>
+<div id="subCatsRow" class="subCatsRow hidden"></div>
+<div class="warnBanner">⚠️ <b>تنبيه للمشتري:</b> لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
+<div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
+<div class="grid" id="posts"></div>
 </div>
 
 <div id="form" class="screen hidden">
-  <div class="screenHeader">
-    <button class="back" onclick="showHome()">→</button>
-    <h3 id="formHeaderTitle">إضافة إعلان</h3>
-  </div>
-  <div class="formArea">
-    <div class="field"><label>عنوان الإعلان</label><input id="title" placeholder="مثال: تويوتا كورولا 2018"></div>
-    <div class="field"><label>السعر (د.ل)</label><input id="price" type="number" placeholder="0"></div>
-    <div class="field"><label>التصنيف</label>
-      <select id="category" onchange="onCategoryChange()">
-        <option>سيارات ومركبات</option>
-        <option>دراجات نارية</option>
-        <option>دراجات هوائية</option>
-        <option>الخدمات</option>
-        <option>عقارات للبيع</option>
-        <option>عقارات للإيجار</option>
-        <option>موبايل وتابلت</option>
-        <option>لابتوب وكمبيوتر</option>
-        <option>ألعاب وألعاب الفيديو</option>
-        <option>أجهزة منزلية</option>
-        <option>ملابس رجالية</option>
-        <option>ملابس نسائية</option>
-        <option>ملابس أطفال</option>
-        <option>جمال وصحة</option>
-        <option>مكياج</option>
-        <option>مطاعم وغداء</option>
-        <option>إلكترونيات</option>
-      </select>
-    </div>
-    <div class="field hidden" id="brandField">
-      <label id="brandLabel">الماركة</label>
-      <select id="brand"></select>
-    </div>
-    <div class="field"><label>المدينة</label><select id="city"></select></div>
-    <div class="field"><label>الوصف (اختياري)</label>
-      <textarea id="description" maxlength="1000" rows="5" oninput="updateDescCount()" placeholder="اكتب تفاصيل الإعلان..."></textarea>
-      <div class="charCount"><span id="descCount">0</span>/1000 حرف</div>
-    </div>
-    <div class="field"><label>رقم الواتساب للتواصل</label><input id="phone" placeholder="218912345678"></div>
-    <div class="field">
-      <label>صور الإعلان (اختياري - حتى 5 صور)</label>
-      <div id="imgThumbs" class="imgThumbs"></div>
-      <div id="imgAddTile" class="imgAddTile" onclick="document.getElementById('imageFile').click()">📷 إضافة صورة</div>
-      <input id="imageFile" type="file" accept="image/*" multiple class="hidden" onchange="handleFilesSelected()">
-    </div>
-    <div id="termsBox" class="termsBox">
-      <div class="termsTitle">📋 شروط نشر الإعلان</div>
-      <ul>
-        <li>أتعهد بأن المعلومات والصور التي أنشرها صحيحة.</li>
-        <li>أتحمل كامل المسؤولية عن إعلاني.</li>
-        <li>لا أنشر إعلانات وهمية أو مضللة أو مخالفة.</li>
-      </ul>
-      <label class="termsCheck"><input type="checkbox" id="termsCheck"> قرأت الشروط وأوافق عليها</label>
-    </div>
-    <button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
-  </div>
+<div class="screenHeader">
+<button class="back" onclick="showHome()">→</button>
+<h3 id="formHeaderTitle">إضافة إعلان</h3>
+</div>
+<div class="formArea">
+<div class="field"><label>عنوان الإعلان</label><input id="title" placeholder="مثال: تويوتا كورولا 2018"></div>
+<div class="field"><label>السعر (د.ل)</label><input id="price" type="number" placeholder="0"></div>
+<div class="field"><label>التصنيف</label>
+<select id="category" onchange="onCategoryChange()">
+<option>سيارات ومركبات</option>
+<option>دراجات نارية</option>
+<option>دراجات هوائية</option>
+<option>الخدمات</option>
+<option>عقارات للبيع</option>
+<option>عقارات للإيجار</option>
+<option>موبايل وتابلت</option>
+<option>لابتوب وكمبيوتر</option>
+<option>ألعاب وألعاب الفيديو</option>
+<option>أجهزة منزلية</option>
+<option>ملابس رجالية</option>
+<option>ملابس نسائية</option>
+<option>ملابس أطفال</option>
+<option>جمال وصحة</option>
+<option>مكياج</option>
+<option>مطاعم وغداء</option>
+<option>إلكترونيات</option>
+</select>
+</div>
+<div class="field hidden" id="brandField">
+<label id="brandLabel">الماركة</label>
+<select id="brand"></select>
+</div>
+<div class="field"><label>المدينة</label><select id="city"></select></div>
+<div class="field"><label>الوصف (اختياري)</label>
+<textarea id="description" maxlength="1000" rows="5" oninput="updateDescCount()" placeholder="اكتب تفاصيل الإعلان..."></textarea>
+<div class="charCount"><span id="descCount">0</span>/1000 حرف</div>
+</div>
+<div class="field"><label>رقم الواتساب للتواصل</label><input id="phone" placeholder="218912345678"></div>
+<div class="field">
+<label>صور الإعلان (اختياري - حتى 5 صور)</label>
+<div id="imgThumbs" class="imgThumbs"></div>
+<div id="imgAddTile" class="imgAddTile" onclick="document.getElementById('imageFile').click()">📷 إضافة صورة</div>
+<input id="imageFile" type="file" accept="image/*" multiple class="hidden" onchange="handleFilesSelected()">
+</div>
+<div id="termsBox" class="termsBox">
+<div class="termsTitle">📋 شروط نشر الإعلان</div>
+<ul>
+<li>أتعهد بأن المعلومات والصور التي أنشرها صحيحة.</li>
+<li>أتحمل كامل المسؤولية عن إعلاني.</li>
+<li>لا أنشر إعلانات وهمية أو مضللة أو مخالفة.</li>
+</ul>
+<label class="termsCheck"><input type="checkbox" id="termsCheck"> قرأت الشروط وأوافق عليها</label>
+</div>
+<button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
+</div>
 </div>
 
 <div class="bottomNav">
-  <button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
-  <button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
-  <div class="fabWrap"><button class="fab" onclick="showForm()">+</button></div>
-  <button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
-  <button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon">👤</span><span id="navAccountLabel">حسابي</span></button>
+<button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
+<button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
+<div class="fabWrap"><button class="fab" onclick="showForm()">+</button></div>
+<button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
+<button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon">👤</span><span id="navAccountLabel">حسابي</span></button>
 </div>
 
 <div id="authOverlay" class="overlay hidden">
-  <div class="sheet">
-    <div id="authOptions">
-      <h3 style="text-align:center">تسجيل الدخول</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">سجّل دخولك بحساب Google للاستمرار</p>
-      <button class="authOption primary" onclick="loginWithGoogle()">
-        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.1-11.3-7.5l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C41 35.9 44 30.5 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
-        المتابعة باستخدام Google
-      </button>
-      <button class="authOption disabled" onclick="alert('📱 تسجيل الدخول برقم الهاتف قريباً جداً!\n\nحالياً استخدم حساب Google للتسجيل.')">
-        <span class="soonBadge">قريباً</span><span class="icon">📱</span> المتابعة برقم الهاتف
-      </button>
-      <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
-    </div>
-  </div>
+<div class="sheet">
+<div id="authOptions">
+<h3 style="text-align:center">تسجيل الدخول</h3>
+<p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">سجّل دخولك بحساب Google للاستمرار</p>
+<button class="authOption primary" onclick="loginWithGoogle()">🔵 المتابعة باستخدام Google</button>
+<button class="authOption disabled" onclick="alert('📱 تسجيل الدخول برقم الهاتف قريباً جداً!')"><span class="soonBadge">قريباً</span><span class="icon">📱</span> المتابعة برقم الهاتف</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
 </div>
 
 <div id="accountOverlay" class="overlay hidden">
-  <div class="sheet">
-    <h3>حسابي</h3>
-    <div class="accountEmail" id="accountEmail" style="display:none"></div>
-    <div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
-    <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر للآخرين</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
-    <button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
-    <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع (التقييمات)</button>
-    <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل إشعارات الموقع</button>
-    <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
-    <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
-    <button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
-    <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
+<div class="sheet">
+<h3>حسابي</h3>
+<div class="accountEmail" id="accountEmail" style="display:none"></div>
+<div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
+<div class="field" style="margin-bottom:8px"><label>اسمك الظاهر للآخرين</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
+<button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
+<button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع (التقييمات)</button>
+<button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل إشعارات الموقع</button>
+<button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
+<button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
+<button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
+<button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+</div>
 </div>
 
-<div id="reportsOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:80vh;overflow-y:auto">
-    <h3>🚩 الإبلاغات</h3>
-    <div id="reportsList"></div>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
-</div>
+<div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:80vh;overflow-y:auto"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+<div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:80vh;overflow-y:auto"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+<div id="limitsOverlay" class="overlay hidden"><div class="sheet" style="max-height:85vh;overflow-y:auto"><h3>⚙️ إدارة حدود المستخدمين</h3><div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد مستخدم</div><div class="field" style="margin-bottom:8px"><input id="limitEmail" placeholder="إيميل المستخدم" dir="ltr" style="text-align:left;font-size:13px"></div><div class="field" style="margin-bottom:8px"><input id="limitUid" placeholder="أو UID المستخدم (اختياري)" dir="ltr" style="text-align:left;font-size:12px"></div><div class="field" style="margin-bottom:8px"><input id="limitNumber" type="number" placeholder="الحد الجديد (مثلاً: 10)" min="1" max="999" style="text-align:center;font-weight:800"></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px"><button onclick="document.getElementById('limitNumber').value=5" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">5</button><button onclick="document.getElementById('limitNumber').value=10" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">10</button><button onclick="document.getElementById('limitNumber').value=20" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">20</button><button onclick="document.getElementById('limitNumber').value=50" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">50</button></div><button class="btnMain" onclick="applyUserLimit()" style="background:#3b82f6">💾 حفظ الحد</button></div><div style="font-weight:800;font-size:13.5px;margin-bottom:8px">📋 المستخدمون ذوو الحدود المخصصة</div><div id="limitsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<div id="moderationOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:80vh;overflow-y:auto">
-    <h3>⏳ الإعلانات قيد المراجعة</h3>
-    <div id="moderationList"></div>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
-</div>
-
-<div id="limitsOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:85vh;overflow-y:auto">
-    <h3>⚙️ إدارة حدود المستخدمين</h3>
-    <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
-      <div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد مستخدم</div>
-      <div class="field" style="margin-bottom:8px"><input id="limitEmail" placeholder="إيميل المستخدم" dir="ltr" style="text-align:left;font-size:13px"></div>
-      <div class="field" style="margin-bottom:8px"><input id="limitUid" placeholder="أو UID المستخدم (اختياري)" dir="ltr" style="text-align:left;font-size:12px"></div>
-      <div class="field" style="margin-bottom:8px"><input id="limitNumber" type="number" placeholder="الحد الجديد (مثلاً: 10)" min="1" max="999" style="text-align:center;font-weight:800"></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
-        <button onclick="document.getElementById('limitNumber').value=5" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">5</button>
-        <button onclick="document.getElementById('limitNumber').value=10" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">10</button>
-        <button onclick="document.getElementById('limitNumber').value=20" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">20</button>
-        <button onclick="document.getElementById('limitNumber').value=50" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">50</button>
-      </div>
-      <button class="btnMain" onclick="applyUserLimit()" style="background:#3b82f6">💾 حفظ الحد</button>
-    </div>
-    <div style="font-weight:800;font-size:13.5px;margin-bottom:8px;color:var(--text)">📋 المستخدمون ذوو الحدود المخصصة</div>
-    <div id="limitsList"></div>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
-</div>
-
-<div id="postOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:92vh;overflow-y:auto;padding-top:0"><div id="postContent"></div></div>
-</div>
+<div id="postOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh;overflow-y:auto;padding-top:0"><div id="postContent"></div></div></div>
 
 <div id="upgradeOverlay" class="overlay hidden">
-  <div class="sheet">
-    <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 16px 0;text-align:center;line-height:1.7">اختر الباقة التي تناسبك<br>سيظهر إعلانك <b>في الأعلى بلون ذهبي</b> طوال المدة</p>
-    <div class="planCard" onclick="selectPlan(7,'7 أيام',5)"><div class="planTitle"><span class="planDays">🥉 7 أيام</span><span class="planPrice">5 د.ل</span></div><div class="planDesc">إعلانك يظهر في الأعلى لمدة أسبوع كامل</div></div>
-    <div class="planCard best" onclick="selectPlan(15,'15 يوم',10)"><span class="bestBadge">الأكثر طلباً</span><div class="planTitle"><span class="planDays">🥈 15 يوم</span><span class="planPrice">10 د.ل</span></div><div class="planDesc">توفير 25% — إعلانك في الأعلى لنصف شهر</div></div>
-    <div class="planCard" onclick="selectPlan(30,'30 يوم',18)"><div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">18 د.ل</span></div><div class="planDesc">أفضل قيمة — إعلانك في الأعلى لشهر كامل</div></div>
-    <div style="background:var(--teal-light);border-radius:12px;padding:12px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;margin-top:8px;text-align:center">💬 عند اختيار الباقة، سيتم فتح واتساب مع الإدارة<br>لترتيب عملية الدفع</div>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
+<div class="sheet">
+<h3 style="text-align:center">⭐ ترقية الإعلان</h3>
+<p style="font-size:13px;color:var(--muted);margin:0 0 16px 0;text-align:center;line-height:1.7">اختر الباقة التي تناسبك<br>سيظهر إعلانك <b>في الأعلى بلون ذهبي</b></p>
+<div class="planCard" onclick="selectPlan(7,'7 أيام',5)"><div class="planTitle"><span class="planDays">🥉 7 أيام</span><span class="planPrice">5 د.ل</span></div><div class="planDesc">إعلانك يظهر في الأعلى لمدة أسبوع</div></div>
+<div class="planCard best" onclick="selectPlan(15,'15 يوم',10)"><span class="bestBadge">الأكثر طلباً</span><div class="planTitle"><span class="planDays">🥈 15 يوم</span><span class="planPrice">10 د.ل</span></div><div class="planDesc">إعلانك في الأعلى لنصف شهر</div></div>
+<div class="planCard" onclick="selectPlan(30,'30 يوم',18)"><div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">18 د.ل</span></div><div class="planDesc">إعلانك في الأعلى لشهر كامل</div></div>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+</div>
 </div>
 
-<div id="sellerOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:88vh;overflow-y:auto">
-    <div id="sellerContent"></div>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-  </div>
-</div>
+<div id="sellerOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh;overflow-y:auto"><div id="sellerContent"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="warnOverlay" class="overlay hidden">
-  <div class="sheet">
-    <h3>⚠️ تنبيه قبل التواصل</h3>
-    <div class="warnBox">لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
-    <a id="warnGo" class="btnMain" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" target="_blank" rel="noopener" onclick="closeOverlay()">متابعة إلى واتساب</a>
-    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
-  </div>
+<div class="sheet">
+<h3>⚠️ تنبيه قبل التواصل</h3>
+<div class="warnBox">لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
+<a id="warnGo" class="btnMain" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" target="_blank" rel="noopener" onclick="closeOverlay()">متابعة إلى واتساب</a>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
 </div>
 
 <div id="adPopup" class="adPopup hidden">
-  <div class="adPopupInner">
-    <button class="adClose" onclick="closeAd()" aria-label="إغلاق">✕</button>
-    <img id="adImage" src="" alt="إعلان">
-  </div>
+<div class="adPopupInner">
+<button class="adClose" onclick="closeAd()">✕</button>
+<img id="adImage" src="" alt="إعلان">
+</div>
 </div>
 
 <script type="module">
@@ -518,13 +460,10 @@ const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
 
-/* ===== ماركات السيارات ===== */
 const CAR_BRANDS = ["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 
-/* ===== ماركات الموبايلات ===== */
 const PHONE_BRANDS = ["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel / جوجل بيكسل","Sony / سوني","LG / إل جي","Motorola / موتورولا","HTC","Lenovo / لينوفو","Asus / أسوس","ZTE / زد تي إي","itel","Lava","Micromax","Wiko / ويكو","Alcatel / ألكاتيل","TCL","Blackberry / بلاك بيري","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 
-/* ===== ماركات اللابتوب والكمبيوتر ===== */
 const COMPUTER_BRANDS = ["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook / ماك بوك","MSI","Samsung / سامسونج","Microsoft Surface","Sony Vaio","Fujitsu / فوجيتسو","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Clevo","Panasonic","Gateway","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
 
 const SUB_CATEGORIES = {
@@ -533,7 +472,7 @@ const SUB_CATEGORIES = {
   "لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}
 };
 
-const FORBIDDEN_WORDS = ["إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس","عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا","شهواني","شهوانية","خليعة","خليع","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","قحب","زانية","زاني","فحل","فحول","للتعارف","تعارف جنسي","تعارف للزواج السريع","شات جنسي","مكالمات جنسية","فتاة ليل","بنت ليل","فراش","حشيش","كوكايين","هيروين","حبوب مخدرة","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","حشيشة","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","فلوس مزيفة","دينار مزيف","دولار مزيف","porn","porno","sex","nude","nudes","xxx","adult","erotic","escort","prostitute","prostitution","whore","slut","bitch","fuck","fucking","weed","cocaine","heroin","meth","cannabis","marijuana","scam","fake money","counterfeit","drugs"];
+const FORBIDDEN_WORDS = ["إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس","عارية","عاري","عريان","عريانة","ملط","ملطية","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","فحل","فحول","للتعارف","شات جنسي","مكالمات جنسية","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
 
 function detectForbidden(text){
 if(!text)return null;
@@ -549,10 +488,8 @@ if(d)return{word:d,field:"الوصف"};
 return null;
 }
 
-/* ===== حدود المستخدمين ===== */
 const userLimitsCache = {};
 const DEFAULT_LIMIT = 3;
-
 async function getUserLimit(uid){
   if(!uid) return DEFAULT_LIMIT;
   if(userLimitsCache[uid] !== undefined) return userLimitsCache[uid];
@@ -567,7 +504,6 @@ async function getUserLimit(uid){
   userLimitsCache[uid] = DEFAULT_LIMIT;
   return DEFAULT_LIMIT;
 }
-
 async function setUserLimit(uid, limit, extra={}){
   try{
     await setDoc(doc(db,"userLimits",uid), {limit: Number(limit),email: extra.email || "",name: extra.name || "",updatedAt: Date.now()});
@@ -620,24 +556,18 @@ const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
 const subCatsRow=document.getElementById("subCatsRow");
 
-/* ===== البحث + السجل + المقترحات ===== */
-function getSearchHistory(){
-  try{ return JSON.parse(localStorage.getItem('searchHistory')||'[]'); }
-  catch(e){ return []; }
-}
+function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
 function addToSearchHistory(term){
   if(!term || term.trim().length < 2) return;
   const t = term.trim();
-  let h = getSearchHistory();
-  h = h.filter(x => x !== t);
+  let h = getSearchHistory().filter(x => x !== t);
   h.unshift(t);
   if(h.length > 10) h = h.slice(0, 10);
   try{ localStorage.setItem('searchHistory', JSON.stringify(h)); }catch(e){}
 }
 function removeFromHistory(term, event){
   if(event) event.stopPropagation();
-  let h = getSearchHistory();
-  h = h.filter(x => x !== term);
+  let h = getSearchHistory().filter(x => x !== term);
   try{ localStorage.setItem('searchHistory', JSON.stringify(h)); }catch(e){}
   showSearchDropdown();
 }
@@ -689,7 +619,7 @@ window.showSearchDropdown = function(){
       <div class="sdItem" onclick="pickSearch('${h.replace(/'/g,"\\'")}')">
         <span class="sdIcon">🕐</span>
         <span class="sdText">${escapeHtml(h)}</span>
-        <button class="sdRemove" onclick="removeFromHistory('${h.replace(/'/g,"\\'")}',event)" title="حذف">✕</button>
+        <button class="sdRemove" onclick="removeFromHistory('${h.replace(/'/g,"\\'")}',event)">✕</button>
       </div>`).join("");
     html += `<div class="sdClearAll" onclick="clearSearchHistory(event)">🗑️ مسح كل السجل</div>`;
   }
@@ -761,24 +691,23 @@ document.addEventListener('visibilitychange', () => { if(document.hidden) saveSe
 window.addEventListener('pagehide', saveSearchNow);
 window.addEventListener('beforeunload', saveSearchNow);
 
-/* ===== بقية الدوال ===== */
 function isPostFeatured(p){return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());}
 function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.featuredUntil - Date.now()) / (24*60*60*1000));}
 function getStatus(p){return p.status || "approved";}
 function sortPosts(arr){return arr.slice().sort((a,b)=>{const af=isPostFeatured(a)?1:0;const bf=isPostFeatured(b)?1:0;if(af!==bf)return bf-af;return (b.createdAt||0)-(a.createdAt||0);});}
 
 function getFavorites(){try{return JSON.parse(localStorage.getItem('favorites')||'[]');}catch(e){return[];}}
-function saveFavorites(arr){try{localStorage.setItem('favorites',JSON.stringify(arr));}catch(e){console.error(e);}}
+function saveFavorites(arr){try{localStorage.setItem('favorites',JSON.stringify(arr));}catch(e){}}
 function isFavorite(id){return getFavorites().includes(id);}
 window.toggleFavorite = (id, event)=>{if(event)event.stopPropagation();let favs=getFavorites();if(favs.includes(id)){favs=favs.filter(x=>x!==id);}else{favs.push(id);}saveFavorites(favs);renderPosts();};
 
 function hasViewedOnDevice(postId){try{const viewed=JSON.parse(localStorage.getItem('viewedPosts')||'[]');return viewed.includes(postId);}catch(e){return false;}}
 function markViewedOnDevice(postId){try{let viewed=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!viewed.includes(postId)){viewed.push(postId);if(viewed.length>300)viewed=viewed.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(viewed));}}catch(e){}}
-async function incrementViews(postId){try{if(hasViewedOnDevice(postId))return;markViewedOnDevice(postId);await updateDoc(doc(db,"posts",postId),{views:increment(1)});}catch(e){console.error("views:",e);}}
+async function incrementViews(postId){try{if(hasViewedOnDevice(postId))return;markViewedOnDevice(postId);await updateDoc(doc(db,"posts",postId),{views:increment(1)});}catch(e){}}
 
 const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا";
 const AD_INTERVAL_DAYS = 30;
-function showAdIfDue(){try{const lastShown=localStorage.getItem('adLastShownAt');const now=Date.now();const interval=AD_INTERVAL_DAYS*24*60*60*1000;if(!lastShown||(now-parseInt(lastShown,10))>=interval){const img=document.getElementById('adImage');if(img)img.src=AD_IMAGE_URL;const popup=document.getElementById('adPopup');if(popup)popup.classList.remove('hidden');localStorage.setItem('adLastShownAt',String(now));}}catch(e){console.error(e);}}
+function showAdIfDue(){try{const lastShown=localStorage.getItem('adLastShownAt');const now=Date.now();const interval=AD_INTERVAL_DAYS*24*60*60*1000;if(!lastShown||(now-parseInt(lastShown,10))>=interval){const img=document.getElementById('adImage');if(img)img.src=AD_IMAGE_URL;const popup=document.getElementById('adPopup');if(popup)popup.classList.remove('hidden');localStorage.setItem('adLastShownAt',String(now));}}catch(e){}}
 window.closeAd = function(){const popup=document.getElementById('adPopup');if(popup)popup.classList.add('hidden');};
 setTimeout(showAdIfDue, 2600);
 
@@ -924,7 +853,7 @@ window.applyUserLimit = async () => {
       if(!snap.empty){ uid = snap.docs[0].data().uid; }
     }catch(e){}
   }
-  if(!uid){ alert("❌ لم يتم تحديد UID المستخدم\n\nالرجاء:\n1. اكتب UID المستخدم، أو\n2. تأكد أن المستخدم سجّل دخول من قبل وسمح بالإشعارات"); return; }
+  if(!uid){ alert("❌ لم يتم تحديد UID المستخدم"); return; }
   const ok = await setUserLimit(uid, limitNum, { email, name: "" });
   if(ok){
     alert(`✅ تم تحديد الحد لـ ${limitNum} إعلان`);
@@ -956,9 +885,9 @@ if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden"
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
 const limit=await getUserLimit(auth.currentUser.uid);
 if(myCount>=limit){
-  const msg=`🛒 طلب إعلانات إضافية\n\n`+`👤 الاسم: ${(myProfile&&myProfile.name)||auth.currentUser.displayName||'مستخدم'}\n`+`📧 الإيميل: ${auth.currentUser.email||''}\n`+`📊 عدد إعلاناتي الحالي: ${myCount}\n`+`⚙️ الحد المسموح: ${limit}\n\n`+`أرجو زيادة الحد المسموح.`;
+  const msg=`🛒 طلب إعلانات إضافية\n\n`+`👤 الاسم: ${(myProfile&&myProfile.name)||auth.currentUser.displayName||'مستخدم'}\n`+`📧 الإيميل: ${auth.currentUser.email||''}\n`+`📊 عدد إعلاناتي: ${myCount}\n`+`⚙️ الحد المسموح: ${limit}`;
   const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-  if(confirm(`⚠️ وصلت للحد الأقصى (${limit} إعلانات)\n\nهل تريد طلب زيادة الحد من الإدارة؟`)){ window.open(waUrl, '_blank'); }
+  if(confirm(`⚠️ وصلت للحد الأقصى (${limit})\n\nطلب زيادة الحد من الإدارة؟`)){ window.open(waUrl, '_blank'); }
   return;
 }
 editingPostId=null;
@@ -1042,8 +971,7 @@ window.onCategoryChange = () => {
   if(cat === "سيارات ومركبات" || cat === "موبايل وتابلت" || cat === "لابتوب وكمبيوتر"){
     brandField.classList.remove("hidden");
     if(cat === "سيارات ومركبات") brandLabel.textContent = "الماركة (نوع السيارة)";
-    else if(cat === "موبايل وتابلت") brandLabel.textContent = "الماركة (نوع الجهاز)";
-    else if(cat === "لابتوب وكمبيوتر") brandLabel.textContent = "الماركة (نوع الجهاز)";
+    else brandLabel.textContent = "الماركة (نوع الجهاز)";
     populateBrandSelect(cat);
   } else {
     brandField.classList.add("hidden");
@@ -1125,13 +1053,11 @@ if(term && !(p.title||"").toLowerCase().includes(term))return false;
 return true;
 });
 list=sortPosts(list);
-
 if(list.length===0){
-if(showOnlyFavorites){postsBox.innerHTML="<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.<br>اضغط على القلب في أي إعلان لإضافته هنا.</div>";}
+if(showOnlyFavorites){postsBox.innerHTML="<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.</div>";}
 else{postsBox.innerHTML="<div class='empty'>لا توجد إعلانات هنا حالياً</div>";}
 return;
 }
-
 postsBox.innerHTML=list.map(p=>{
 const status=getStatus(p);
 const isOwner=me && p.uid===me.uid;
@@ -1139,9 +1065,9 @@ const canDelete=isAdmin||isOwner;
 const images=getImages(p);
 const dots=dotsHtml(images);
 const wa=p.phone?`<button class="waBtn" onclick="contactSeller('${p.id}')">واتساب</button>`:"";
-const edit=canDelete?`<button class="iconBtn2 editBtn" title="تعديل" onclick="editPost('${p.id}')">✏️</button>`:"";
-const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="deletePost('${p.id}')">🗑️</button>`:"";
-const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" title="${isPostFeatured(p)?'إلغاء التمييز':'تمييز لمدة 30 يوم'}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
+const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id}')">✏️</button>`:"";
+const del=canDelete?`<button class="iconBtn2 delBtn" onclick="deletePost('${p.id}')">🗑️</button>`:"";
+const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
 let cardClass="";
@@ -1149,19 +1075,7 @@ if(status==="approved" && isPostFeatured(p))cardClass="featured";
 else if(status==="pending")cardClass="pending";
 else if(status==="rejected")cardClass="rejected";
 const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<span class="catTag">${escapeHtml(p.category||"")}</span>`;
-return `
-<div class="card ${cardClass}">
-<div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
-<div class="body">
-<h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
-<div class="price">${p.price!=null?p.price+" د.ل":""}</div>
-${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
-${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
-<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>
-${viewsLine}
-<div class="actions">${wa}${feat}${edit}${del}</div>
-</div>
-</div>`;
+return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}<div class="actions">${wa}${feat}${edit}${del}</div></div></div>`;
 }).join("");
 }
 
@@ -1267,28 +1181,13 @@ let rateHtml="";
 if(isMe){rateHtml="";}
 else if(!me){rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;}
 else{
-rateHtml=`
-<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div>
-<div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div>
-<textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea>
-<button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
+rateHtml=`<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div><div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div><textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea><button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
 }
 const reviewsHtml=count?ratings.map(r=>{
 const canDel=isAdmin||(me&&r.raterUid===me.uid);
-return `<div class="reviewItem">
-<div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span>
-<span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>
-${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}
-</div>`;
+return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;
 }).join(""):`<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
-box.innerHTML=`
-<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}</div>
-<div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div></div>
-<div class="sStats"><div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div>
-<div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div>
-<div class="sStat"><b>${count}</b><span>التقييمات</span></div></div>
-${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات حالياً</div>":""}
-${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
+box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}</div><div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div><div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div><div class="sStat"><b>${count}</b><span>التقييمات</span></div></div>${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات</div>":""}${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
 }
 
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
@@ -1353,7 +1252,7 @@ if(status!=="approved" && !isOwner && !isAdmin){alert("هذا الإعلان غ�
 if(!isOwner){incrementViews(id);}
 const images=getImages(p);
 const dots=dotsHtml(images);
-const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
+const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف.</div>`;
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 const shareBtn=(status==="approved")?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
@@ -1387,22 +1286,8 @@ adminPanel=`<div class="reviewBox" style="background:#fdeceb;border-color:#e5484
 adminPanel+=`<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div><div class="adminPlans"><button onclick="adminFeature('${p.id}',7)">7 أيام</button><button onclick="adminFeature('${p.id}',15)">15 يوم</button><button onclick="adminFeature('${p.id}',30)">30 يوم</button>${isPostFeatured(p)?`<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>`:""}</div></div>`;
 }
 const similar=allPosts.filter(x=>x.id!==p.id && x.category===p.category && getStatus(x)==="approved").slice(0,4);
-const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--text)">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const sImgs=getImages(s);const sThumb=sImgs[0]||"";return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${sThumb?`<img src="${escapeHtml(sThumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div>${s.city?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px">📍 ${escapeHtml(s.city)}</div>`:""}</div></div>`;}).join("")}</div></div>`:"";
-document.getElementById("postContent").innerHTML=`
-<div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
-<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
-<div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
-<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
-<div>${featBadge}${brandBadge}${statusBadge}${viewsBadge}</div>
-${seller}
-<div style="font-weight:800;margin:14px 0 4px">الوصف</div>
-${desc}
-<div style="height:14px"></div>
-${upgradeBtn}
-${wa}
-${shareBtn}
-${similarHtml}
-${adminPanel}`;
+const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const sImgs=getImages(s);const sThumb=sImgs[0]||"";return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${sThumb?`<img src="${escapeHtml(sThumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div></div></div>`;}).join("")}</div></div>`:"";
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="closeOnImg" onclick="closeOverlay()">✕</button><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div><div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div><div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div><div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${featBadge}${brandBadge}${statusBadge}${viewsBadge}</div>${seller}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${upgradeBtn}${wa}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
 
@@ -1445,13 +1330,13 @@ const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
 if(!title||!price){alert("الرجاء إدخال العنوان والسعر");return;}
 if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
-if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على شروط نشر الإعلان أولاً");return;}
+if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على الشروط أولاً");return;}
 const bad=checkContent(title,description);
-if(bad){alert(`❌ لا يمكن نشر الإعلان\n\nالسبب: يحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}\n\nالرجاء تعديل النص والمحاولة مرة أخرى.`);return;}
+if(bad){alert(`❌ لا يمكن نشر الإعلان\n\nيحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}`);return;}
 if(!wasEditing){
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
 const limit=await getUserLimit(auth.currentUser.uid);
-if(myCount>=limit){alert(`وصلت للحد الأقصى (${limit} إعلانات). تواصل مع الإدارة لزيادة الحد.`);return;}
+if(myCount>=limit){alert(`وصلت للحد الأقصى (${limit} إعلانات).`);return;}
 }
 saveBtn.disabled=true;
 saveBtn.textContent=wasEditing?"جاري الحفظ...":"جاري النشر...";
@@ -1486,7 +1371,7 @@ catch(e){alert("خطأ: "+e.message);}
 
 window.rejectPost = async (id) => {
 if(!isAdmin)return;
-const reason=prompt("سبب الرفض (سيظهر لصاحب الإعلان):","محتوى غير مناسب");
+const reason=prompt("سبب الرفض:","محتوى غير مناسب");
 if(reason===null)return;
 try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});alert("✅ تم رفض الإعلان");closeOverlay();}
 catch(e){alert("خطأ: "+e.message);}
@@ -1500,7 +1385,7 @@ if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا تو�
 const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
 const items=pending.map(p=>{
 const imgs=getImages(p);const thumb=imgs[0]||"";const desc=(p.description||"").trim();const descShort=desc.length>80?desc.slice(0,80)+"…":(desc||"لا يوجد وصف");
-return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">${thumb?`<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}</div><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14.5px;color:var(--text);margin-bottom:3px">${escapeHtml(p.title||"بدون عنوان")}</div><div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}</div><div style="font-size:11.5px;color:var(--muted);line-height:1.6">${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}</div><div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">${escapeHtml(descShort)}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px"><button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ موافقة</button><button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ رفض</button><button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض</button></div></div>`;
+return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">${thumb?`<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}</div><div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14.5px;margin-bottom:3px">${escapeHtml(p.title||"بدون عنوان")}</div><div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}</div><div style="font-size:11.5px;color:var(--muted);line-height:1.6">${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}</div><div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">${escapeHtml(descShort)}</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px"><button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ موافقة</button><button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ رفض</button><button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض</button></div></div>`;
 }).join("");
 list.innerHTML=toolbar+items;
 }
@@ -1509,9 +1394,9 @@ window.approveAllPending = async () => {
 if(!isAdmin)return;
 const pending=allPosts.filter(p=>getStatus(p)==="pending");
 if(pending.length===0){alert("لا توجد إعلانات بانتظار المراجعة");return;}
-if(!confirm(`هل تريد الموافقة على جميع الإعلانات (${pending.length} إعلان)؟`))return;
+if(!confirm(`هل تريد الموافقة على جميع الإعلانات (${pending.length})؟`))return;
 let ok=0,fail=0;
-for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null});ok++;}catch(e){fail++;console.error(e);}}
+for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null});ok++;}catch(e){fail++;}}
 alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
 renderModeration();
 };
@@ -1519,12 +1404,12 @@ renderModeration();
 window.deleteAllPending = async () => {
 if(!isAdmin)return;
 const pending=allPosts.filter(p=>getStatus(p)==="pending");
-if(pending.length===0){alert("لا توجد إعلانات بانتظار المراجعة");return;}
-if(!confirm(`⚠️ هل تريد رفض جميع الإعلانات (${pending.length} إعلان)؟`))return;
+if(pending.length===0){alert("لا توجد إعلانات");return;}
+if(!confirm(`⚠️ رفض جميع الإعلانات (${pending.length})؟`))return;
 const reason=prompt("سبب الرفض الجماعي:","محتوى غير مناسب");
 if(reason===null)return;
 let ok=0,fail=0;
-for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){fail++;console.error(e);}}
+for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){fail++;}}
 alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
 renderModeration();
 };
@@ -1553,12 +1438,144 @@ function renderReports(){
 const list=document.getElementById("reportsList");
 if(!list)return;
 if(allReports.length===0){list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات حالياً</div>";return;}
-const toolbar=`<div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">🚩 يوجد ${allReports.length} إبلاغ بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ تجاهل الكل</button><button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ حذف الكل</button></div></div>`;
-const items=allReports.map(r=>`<div class="reportItem" style="background:#fff"><div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div><div class="rMeta"><b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}</div><div class="rActions"><button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button><button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button></div></div>`).join("");
+const toolbar=`<div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">🚩 يوجد ${allReports.length} إبلاغ</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ تجاهل الكل</button><button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ حذف الكل</button></div></div>`;
+const items=allReports.map(r=>`<div class="reportItem" style="background:#fff"><div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div><div class="rMeta"><b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}</div><div class="rActions"><button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button><button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button></div></div>`).join("");
 list.innerHTML=toolbar+items;
 }
 
 window.dismissAllReports = async () => {
 if(!isAdmin)return;
 if(allReports.length===0){alert("لا توجد إبلاغات");return;}
-if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ
+if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length})؟`))return;
+let ok=0,fail=0;
+for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){fail++;}}
+alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+renderReports();
+};
+
+window.deleteAllReportedPosts = async () => {
+if(!isAdmin)return;
+if(allReports.length===0){alert("لا توجد إبلاغات");return;}
+const uniquePostIds=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];
+if(!confirm(`⚠️ حذف ${uniquePostIds.length} إعلان و ${allReports.length} إبلاغ نهائياً؟`))return;
+const confirmText=prompt(`اكتب "حذف" للتأكيد:`);
+if(confirmText!=="حذف"){alert("❌ تم الإلغاء");return;}
+let okPosts=0,okReports=0,fail=0;
+for(const pid of uniquePostIds){try{await deleteDoc(doc(db,"posts",pid));okPosts++;}catch(e){fail++;}}
+for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okReports++;}catch(e){fail++;}}
+alert(`✅ تم حذف ${okPosts} إعلان\n✅ تم إزالة ${okReports} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+renderReports();
+};
+
+window.dismissReport=async(reportId)=>{try{await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
+window.deleteReportedPost=async(postId,reportId)=>{if(!confirm("حذف الإعلان نهائياً؟"))return;try{await deleteDoc(doc(db,"posts",postId));await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
+window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ: "+e.message);}};
+
+window.toggleFeatured = async (id, event) => {
+if(event)event.stopPropagation();
+if(!isAdmin){alert("للمشرف فقط");return;}
+const post=allPosts.find(p=>p.id===id);
+if(!post)return;
+if(isPostFeatured(post)){
+if(!confirm("إلغاء تمييز هذا الإعلان؟"))return;
+try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){alert("خطأ: "+e.message);}
+}else{
+try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){alert("خطأ: "+e.message);}
+}
+};
+
+window.adminFeature = async (id, days) => {
+if(!isAdmin)return;
+try{
+if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}
+else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);}
+}catch(e){alert("خطأ: "+e.message);}
+};
+
+window.openUpgrade = (id) => {
+if(!auth.currentUser)return;
+postOverlay.classList.add("hidden");
+upgradeOverlay.classList.remove("hidden");
+window._upgradePostId=id;
+};
+
+window.selectPlan = (days, label, price) => {
+const id=window._upgradePostId;
+const p=allPosts.find(x=>x.id===id);
+if(!p)return;
+const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;
+const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\nأرجو ترتيب عملية الدفع والتفعيل.`;
+const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+window.open(waUrl,'_blank');
+setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط الذي وصلك في واتساب لتفعيل الترقية.");},400);
+};
+
+function tryApplyPendingUpgrade(){
+if(!pendingAutoUpgrade)return;
+if(!isAdmin)return;
+const data=pendingAutoUpgrade;
+pendingAutoUpgrade=null;
+setTimeout(()=>{
+const p=allPosts.find(x=>x.id===data.postId);
+if(!p){alert("⚠️ الإعلان غير موجود.");history.replaceState(null,'',window.location.pathname);return;}
+const confirmMsg=`⭐ تفعيل الترقية\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 المدة: ${data.days} يوم\n💵 المبلغ: ${data.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;
+if(confirm(confirmMsg)){adminFeature(data.postId,data.days);history.replaceState(null,'',window.location.pathname);}
+else{history.replaceState(null,'',window.location.pathname);}
+},1200);
+}
+
+document.addEventListener('click', (e) => {
+  const box = document.querySelector('.searchBox');
+  if(box && !box.contains(e.target)){
+    hideSearchDropdown();
+  }
+});
+
+(function(){
+  try{
+    let last = "";
+    try{ last = localStorage.getItem('lastSearch') || ""; }catch(e){}
+    if(!last){ try{ last = sessionStorage.getItem('lastSearch') || ""; }catch(e){} }
+    if(!last) return;
+    const input = document.getElementById("searchInput");
+    if(input && last){
+      input.value = last;
+      updateClearBtn();
+      let attempts = 0;
+      const tryRender = () => {
+        attempts++;
+        if(allPosts.length > 0 || attempts > 20){ renderPosts(); }
+        else{ setTimeout(tryRender, 300); }
+      };
+      tryRender();
+    }
+  }catch(e){}
+})();
+
+window.addEventListener('load', () => {
+const hash=window.location.hash;
+if(hash && hash.startsWith('#post-')){
+const [postPart, queryPart]=hash.split('?');
+const id=postPart.substring(6);
+const params=new URLSearchParams(queryPart||'');
+const planDays=parseInt(params.get('plan')||'0',10);
+const planPrice=parseInt(params.get('price')||'0',10);
+if(planDays>0){pendingAutoUpgrade={postId:id,days:planDays,price:planPrice};}
+let tries=0;
+const t=setInterval(()=>{
+tries++;
+if(allPosts.find(p=>p.id===id)){
+clearInterval(t);
+openPost(id);
+setTimeout(tryApplyPendingUpgrade,1500);
+}else if(tries>20){
+clearInterval(t);
+setTimeout(tryApplyPendingUpgrade,500);
+}
+},500);
+}
+});
+</script>
+
+</body>
+</html>
