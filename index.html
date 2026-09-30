@@ -156,7 +156,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
 
-/* ===== Featured Posts ===== */
 .card.featured{
   border:2px solid #f59e0b;
   box-shadow:0 4px 18px rgba(245,158,11,.35);
@@ -783,6 +782,7 @@ let profileCreateTried=false;
 let sellerPanelUid=null;
 let selectedStars=0;
 let selectedImages=[];
+let pendingAutoUpgrade = null;
 let allReports=[];
 let reportsListenerStarted=false;
 
@@ -899,6 +899,7 @@ navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 closeOverlay();
+if(isAdmin && pendingAutoUpgrade){ setTimeout(tryApplyPendingUpgrade, 1500); }
 if(pendingAction==="form"){pendingAction=null;showForm();}
 else if(pendingAction==="mine"){pendingAction=null;showMyPosts();}
 else if(pendingAction==="favorites"){pendingAction=null;showFavorites();}
@@ -1692,33 +1693,74 @@ window.selectPlan = (days, label, price) => {
   const id = window._upgradePostId;
   const p = allPosts.find(x=>x.id===id);
   if(!p) return;
+  const link = `${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;
   const msg = `🛒 طلب ترقية إعلان\n\n` +
               `📌 الإعلان: ${p.title||'بدون عنوان'}\n` +
               `💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n` +
               `📦 الباقة: ${label}\n` +
               `💵 المبلغ: ${price} د.ل\n` +
-              `🔗 الرابط: ${window.location.origin + window.location.pathname}#post-${id}\n\n` +
+              `🔗 الرابط: ${link}\n\n` +
+              `⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\n` +
               `أرجو ترتيب عملية الدفع والتفعيل.`;
   const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
   setTimeout(()=>{
     closeOverlay();
-    alert("✅ بعد إتمام الدفع مع الإدارة، سيتم تفعيل الترقية خلال دقائق.");
+    alert("✅ بعد إتمام الدفع، اضغط الرابط الذي وصلك في واتساب لتفعيل الترقية.");
   }, 400);
 };
+
+/* ================= Auto upgrade (deep link with plan) ================= */
+function tryApplyPendingUpgrade(){
+  if(!pendingAutoUpgrade) return;
+  if(!isAdmin) return;
+  const data = pendingAutoUpgrade;
+  pendingAutoUpgrade = null;
+  setTimeout(()=>{
+    const p = allPosts.find(x=>x.id===data.postId);
+    if(!p){
+      alert("⚠️ الإعلان غير موجود أو حُذف.");
+      history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+    const title = p.title || 'بدون عنوان';
+    const confirmMsg = `⭐ تفعيل الترقية\n\n` +
+      `📌 الإعلان: ${title}\n` +
+      `📦 المدة: ${data.days} يوم\n` +
+      `💵 المبلغ: ${data.price} د.ل\n\n` +
+      `هل تأكدت من استلام المبلغ؟`;
+    if(confirm(confirmMsg)){
+      adminFeature(data.postId, data.days);
+      history.replaceState(null, '', window.location.pathname);
+    } else {
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }, 1200);
+}
 
 window.addEventListener('load', () => {
   const hash = window.location.hash;
   if(hash && hash.startsWith('#post-')){
-    const id = hash.substring(6);
+    const [postPart, queryPart] = hash.split('?');
+    const id = postPart.substring(6);
+    const params = new URLSearchParams(queryPart || '');
+    const planDays = parseInt(params.get('plan') || '0', 10);
+    const planPrice = parseInt(params.get('price') || '0', 10);
+
+    if(planDays > 0){
+      pendingAutoUpgrade = { postId: id, days: planDays, price: planPrice };
+    }
+
     let tries = 0;
     const t = setInterval(()=>{
       tries++;
       if(allPosts.find(p=>p.id===id)){
         clearInterval(t);
         openPost(id);
+        setTimeout(tryApplyPendingUpgrade, 1500);
       } else if(tries > 20){
         clearInterval(t);
+        setTimeout(tryApplyPendingUpgrade, 500);
       }
     }, 500);
   }
