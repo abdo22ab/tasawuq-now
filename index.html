@@ -28,14 +28,17 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .topbar{
   position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;
   padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.topbarActions{
+  display:flex;align-items:center;gap:6px;flex:0 0 auto;
 }
 .bellBtn{
-  position:absolute;left:10px;top:calc(50% + env(safe-area-inset-top,0px)/2);transform:translateY(-50%);
-  width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,.15);
-  color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.75
+  width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
+  color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  padding:0
 }
-.topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px}
+.topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{
   width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);
@@ -236,17 +239,38 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .charCount{font-size:11.5px;color:var(--muted);text-align:left;margin-top:4px;direction:ltr}
 
 .hidden{display:none!important}
+
+/* ===== Ad popup ===== */
+.adPopup{
+  position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;
+  display:flex;align-items:center;justify-content:center;padding:20px
+}
+.adPopupInner{position:relative;max-width:92vw;max-height:85vh}
+.adPopupInner img{
+  max-width:100%;max-height:85vh;border-radius:14px;display:block;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff
+}
+.adClose{
+  position:absolute;top:10px;left:10px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.95);color:#1f2937;border:none;
+  font-size:16px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0
+}
 </style>
 </head>
 
 <body>
 
 <div class="topbar">
+  <div class="topbarActions">
+    <button class="bellBtn" onclick="enableNotifications()" title="تفعيل الإشعارات">🔔</button>
+    <button class="iconBtn" onclick="openAccount()" title="حسابي">
+      👤<span id="adminChip" class="adminChip hidden">A</span>
+    </button>
+  </div>
   <div class="brand"><span class="dot"></span>تسوق الآن</div>
-  <button class="bellBtn" onclick="enableNotifications()" title="تفعيل الإشعارات">🔔</button>
-  <button class="iconBtn" onclick="openAccount()" title="حسابي">
-    👤<span id="adminChip" class="adminChip hidden">A</span>
-  </button>
 </div>
 
 <!-- ===== HOME ===== -->
@@ -416,6 +440,14 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
+<!-- ===== AD POPUP ===== -->
+<div id="adPopup" class="adPopup hidden">
+  <div class="adPopupInner">
+    <button class="adClose" onclick="closeAd()" aria-label="إغلاق">✕</button>
+    <img id="adImage" src="" alt="إعلان">
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithRedirect,getRedirectResult } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
@@ -452,7 +484,6 @@ alert(title+(body?"\n"+body:""));
 }
 initMessaging();
 
-// تسجيل Service Worker مباشرة عند فتح الموقع (شرط أساسي عشان "تثبيت التطبيق" الحقيقي يشتغل)
 if("serviceWorker" in navigator){
 navigator.serviceWorker.register("firebase-messaging-sw.js").catch(e=>console.error(e));
 }
@@ -492,7 +523,7 @@ let profileCreateTried=false;
 let pendingRegisterName="";
 let sellerPanelUid=null;
 let selectedStars=0;
-let selectedImages=[]; // {type:'existing'|'new', url?, file?, previewUrl?}
+let selectedImages=[];
 let allReports=[];
 let reportsListenerStarted=false;
 
@@ -511,6 +542,32 @@ const adminChip=document.getElementById("adminChip");
 const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
 const navAccountLabel=document.getElementById("navAccountLabel");
+
+/* ================= Ad popup ================= */
+const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا"; // ← غيّر الرابط بصورة إعلانك
+const AD_INTERVAL_DAYS = 30;
+
+function showAdIfDue(){
+  try{
+    const lastShown = localStorage.getItem('adLastShownAt');
+    const now = Date.now();
+    const interval = AD_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+    if(!lastShown || (now - parseInt(lastShown,10)) >= interval){
+      const img = document.getElementById('adImage');
+      if(img) img.src = AD_IMAGE_URL;
+      const popup = document.getElementById('adPopup');
+      if(popup) popup.classList.remove('hidden');
+      localStorage.setItem('adLastShownAt', String(now));
+    }
+  }catch(e){ console.error(e); }
+}
+
+window.closeAd = function(){
+  const popup = document.getElementById('adPopup');
+  if(popup) popup.classList.add('hidden');
+};
+
+window.addEventListener('load', () => setTimeout(showAdIfDue, 900));
 
 startPostsListener();
 
@@ -913,7 +970,6 @@ if(images.length<=1)return "";
 return `<div class="dots">${images.map((_,i)=>`<span class="dot${i===0?" active":""}"></span>`).join("")}</div>`;
 }
 
-// تحديث ترقيم الصورة (1/5) أثناء السحب
 document.addEventListener("scroll",e=>{
 const el=e.target;
 if(!el||!el.classList||!el.classList.contains("carousel"))return;
