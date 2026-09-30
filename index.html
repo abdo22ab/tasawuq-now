@@ -775,6 +775,7 @@ if("serviceWorker" in navigator){
 navigator.serviceWorker.register("firebase-messaging-sw.js").catch(e=>console.error(e));
 }
 
+/* ================= تفعيل الإشعارات + حفظ الرمز ================= */
 window.enableNotifications=async()=>{
 try{
 if(!("Notification" in window)){alert("متصفحك لا يدعم الإشعارات");return;}
@@ -783,7 +784,20 @@ if(perm!=="granted"){alert("لم يتم منح إذن الإشعارات");retur
 if(!messaging){alert("الإشعارات غير مدعومة على هذا المتصفح");return;}
 const reg=await navigator.serviceWorker.register("firebase-messaging-sw.js");
 const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
-if(token)alert("تم تفعيل الإشعارات بنجاح ✅");
+if(token){
+  try{
+    await setDoc(doc(db,"tokens",token),{
+      token: token,
+      uid: auth.currentUser?.uid || "anonymous",
+      email: auth.currentUser?.email || "",
+      name: (myProfile && myProfile.name) || auth.currentUser?.displayName || "",
+      createdAt: Date.now(),
+      lastSeen: Date.now()
+    });
+    console.log("✅ Token محفوظ:", token.slice(0,25)+"...");
+  }catch(e){ console.error("token save:", e); }
+  alert("تم تفعيل الإشعارات بنجاح ✅");
+}
 }catch(e){
 alert("تعذر تفعيل الإشعارات: "+e.message);
 }
@@ -1727,7 +1741,6 @@ saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعل
 }
 };
 
-/* ================= Admin: Approve / Reject ================= */
 window.approvePost = async (id) => {
   if(!isAdmin) return;
   try{
@@ -1756,7 +1769,6 @@ window.rejectPost = async (id) => {
   }catch(e){ alert("خطأ: "+e.message); }
 };
 
-/* ================= شاشة المراجعة الجماعية ================= */
 function renderModeration(){
   const list = document.getElementById("moderationList");
   if(!list) return;
@@ -1874,7 +1886,6 @@ window.deleteAllPending = async () => {
   renderModeration();
 };
 
-/* ================= الإبلاغات ================= */
 window.reportPost=async(id)=>{
 if(!auth.currentUser){
   pendingAction = { type: "report", postId: id };
@@ -1948,7 +1959,6 @@ const items = allReports.map(r=>`
 list.innerHTML = toolbar + items;
 }
 
-/* ================= أزرار جماعية للإبلاغات ================= */
 window.dismissAllReports = async () => {
   if(!isAdmin) return;
   if(allReports.length === 0){ alert("لا توجد إبلاغات"); return; }
