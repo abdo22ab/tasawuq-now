@@ -13,153 +13,51 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --teal:#38bdf8; --teal-dark:#0284c7; --teal-light:#e6f6fe;
-  --amber:#f59e0b; --amber-light:#fef3c7;
-  --bg:#f5f6f8; --card:#ffffff; --text:#1f2937; --muted:#8a93a3; --border:#edeff2;
-  --danger:#e5484d;
-  --wa:#25d366;
-  --green:#16a34a;
-}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#ffffff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--green:#16a34a}
 *{box-sizing:border-box}
-body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);
-  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
-
-.dlBanner{
-  background:linear-gradient(135deg,#0284c7,#38bdf8);
-  color:#fff;padding:10px 14px;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:10px;font-size:13px;font-weight:700;
-  position:sticky;top:0;z-index:25;
-  box-shadow:0 2px 8px rgba(0,0,0,.15)
-}
+body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+.dlBanner{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;position:sticky;top:0;z-index:25;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .dlBanner .dlText{flex:1 1 auto;line-height:1.4}
-.dlBanner .dlBtn{
-  flex:0 0 auto;background:#fff;color:#0284c7;
-  border:none;border-radius:999px;padding:8px 16px;
-  font-family:inherit;font-size:13px;font-weight:800;
-  cursor:pointer;text-decoration:none;
-  display:flex;align-items:center;gap:5px;
-  box-shadow:0 3px 10px rgba(0,0,0,.2)
-}
-.dlBanner .dlClose{
-  flex:0 0 auto;background:transparent;color:#fff;
-  border:none;font-size:18px;cursor:pointer;padding:0;
-  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-  opacity:.8
-}
+.dlBanner .dlBtn{flex:0 0 auto;background:#fff;color:#0284c7;border:none;border-radius:999px;padding:8px 16px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.dlBanner .dlClose{flex:0 0 auto;background:transparent;color:#fff;border:none;font-size:18px;cursor:pointer;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;opacity:.8}
 .dlBanner.hidden{display:none!important}
-
-.topbar{
-  position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;
-  padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-}
+.topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbarActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-.bellBtn{
-  width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);
-  color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-  padding:0;position:relative
-}
+.bellBtn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1 1 auto;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
-.iconBtn{
-  width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);
-  color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative
-}
-.adminChip{
-  position:absolute;top:-4px;left:-4px;background:var(--amber);color:#3a2500;font-size:9px;
-  font-weight:800;padding:1px 5px;border-radius:6px
-}
-
+.iconBtn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.adminChip{position:absolute;top:-4px;left:-4px;background:var(--amber);color:#3a2500;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px}
 .searchWrap{padding:14px 16px 4px 16px;display:flex;gap:8px;align-items:stretch}
 .searchWrap .searchBox{flex:1;min-width:0}
-.cityFilter{
-  flex:0 0 auto;max-width:118px;border:1px solid var(--border);border-radius:14px;background:var(--card);
-  padding:0 8px;font-family:inherit;font-size:13px;font-weight:700;color:var(--text);
-  box-shadow:0 2px 8px rgba(15,23,42,.04)
-}
+.cityFilter{flex:0 0 auto;max-width:118px;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:0 8px;font-family:inherit;font-size:13px;font-weight:700;color:var(--text);box-shadow:0 2px 8px rgba(15,23,42,.04)}
 .cityLine{font-size:11.5px;color:var(--muted)}
-.searchBox{
-  display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:11px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04)
-}
+.searchBox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
 .searchBox input{border:none;outline:none;flex:1;font-family:inherit;font-size:15px;background:transparent}
 .searchBox .ic{color:var(--muted)}
-.clearSearchBtn{
-  flex:0 0 auto;
-  width:22px;height:22px;
-  border-radius:50%;
-  border:none;
-  background:#e5e7eb;
-  color:#4b5563;
-  font-size:11px;
-  font-weight:800;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  font-family:inherit;
-  transition:background .15s;
-}
+.clearSearchBtn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:none;background:#e5e7eb;color:#4b5563;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:background .15s}
 .clearSearchBtn:hover{background:#d1d5db}
 .clearSearchBtn:active{transform:scale(.9)}
-
 .catsRow{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px 16px;scrollbar-width:none}
 .catsRow::-webkit-scrollbar{display:none}
-.catChip{
-  flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
-  background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;
-  font-weight:600;cursor:pointer;white-space:nowrap
-}
+.catChip{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .catChip.active{background:var(--teal);border-color:var(--teal);color:#fff}
-
-/* شريط الأنواع الفرعية */
-.subCatsRow{
-  display:flex;gap:8px;overflow-x:auto;padding:8px 16px 4px 16px;
-  scrollbar-width:none;
-  background:#fffbf0;
-  border-top:1px solid #fde68a;
-  border-bottom:1px solid #fde68a;
-  margin-top:6px;
-  animation:slideDown .2s ease-out;
-}
+.subCatsRow{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 4px 16px;scrollbar-width:none;background:#fffbf0;border-top:1px solid #fde68a;border-bottom:1px solid #fde68a;margin-top:6px;animation:slideDown .2s ease-out}
 .subCatsRow::-webkit-scrollbar{display:none}
 .subCatsRow.hidden{display:none!important}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.subCatChip{
-  flex:0 0 auto;display:flex;align-items:center;gap:5px;
-  padding:7px 13px;border-radius:999px;
-  background:#fff;border:1px solid #fde68a;color:#92400e;
-  font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
-  transition:all .15s
-}
+.subCatChip{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid #fde68a;color:#92400e;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
 .subCatChip:hover{background:#fef3c7}
-.subCatChip.active{
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  border-color:#f59e0b;color:#fff;
-  box-shadow:0 2px 8px rgba(245,158,11,.3)
-}
-.subCatTitle{
-  flex:0 0 auto;padding:7px 4px;
-  font-size:12px;font-weight:800;color:#92400e;
-  display:flex;align-items:center;gap:4px
-}
-
+.subCatChip.active{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b;color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.3)}
+.subCatTitle{flex:0 0 auto;padding:7px 4px;font-size:12px;font-weight:800;color:#92400e;display:flex;align-items:center;gap:4px}
 .sectionTitle{padding:16px 16px 6px 16px;font-weight:800;font-size:15px;color:var(--text)}
-
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px 16px}
-.card{
-  background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);
-  box-shadow:0 2px 10px rgba(15,23,42,.05);display:flex;flex-direction:column
-}
+.card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 2px 10px rgba(15,23,42,.05);display:flex;flex-direction:column}
 .card .imgWrap{position:relative;width:100%;aspect-ratio:1/1;background:var(--teal-light);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .card .imgWrap img{width:100%;height:100%;object-fit:cover}
 .card .imgWrap .ph{font-size:28px;opacity:.5}
 .card .body{padding:11px 12px 13px 12px;display:flex;flex-direction:column;gap:5px}
-.card h4{margin:0;font-size:14.5px;font-weight:700;line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em}
+.card h4{margin:0;font-size:14.5px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8em}
 .card .price{color:var(--teal-dark);font-weight:800;font-size:16.5px}
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
 .card .catTag{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 9px;border-radius:7px}
@@ -167,125 +65,36 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .time{font-size:11px;color:var(--muted)}
 .card .cardViews{font-size:11.5px;color:var(--teal-dark);font-weight:700;margin-top:2px}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
-.card .actions .waBtn{
-  flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;
-  font-family:inherit;cursor:pointer;text-decoration:none;text-align:center;display:block
-}
+.card .actions .waBtn{flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;text-align:center;display:block}
 .waBtn{background:var(--wa);color:#fff}
-.iconBtn2{
-  width:32px;height:32px;flex:0 0 auto;border:none;border-radius:9px;cursor:pointer;
-  font-size:14.5px;display:flex;align-items:center;justify-content:center
-}
+.iconBtn2{width:32px;height:32px;flex:0 0 auto;border:none;border-radius:9px;cursor:pointer;font-size:14.5px;display:flex;align-items:center;justify-content:center}
 .editBtn{background:#eef2ff}
 .delBtn{background:#fdeceb}
 .featBtn{background:var(--amber-light);color:#92400e}
 .featBtn.on{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500}
-.reportOnImg{
-  position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border:none;border-radius:50%;
-  background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)
-}
+.reportOnImg{position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border:none;border-radius:50%;background:var(--danger);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .reportOnImg.right{left:auto;right:10px;top:10px;width:32px;height:32px;font-size:15px}
-.closeOnImg{
-  position:absolute;top:10px;left:10px;z-index:3;
-  width:32px;height:32px;border:none;border-radius:50%;
-  background:rgba(0,0,0,.65);color:#fff;font-size:16px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;padding:0
-}
-.favBtn{
-  position:absolute;top:8px;right:8px;z-index:3;
-  width:34px;height:34px;border-radius:50%;border:none;
-  background:rgba(255,255,255,.92);font-size:16px;line-height:1;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,.2);padding:0
-}
+.closeOnImg{position:absolute;top:10px;left:10px;z-index:3;width:32px;height:32px;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;padding:0}
+.favBtn{position:absolute;top:8px;right:8px;z-index:3;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.92);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);padding:0}
 .favBtn.active{background:#fff}
-.dots{
-  position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;
-  pointer-events:none;direction:ltr
-}
+.dots{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2;pointer-events:none;direction:ltr}
 .dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55);transition:width .15s,height .15s}
 .dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
-
-.card.featured{
-  border:2px solid #f59e0b;
-  box-shadow:0 4px 18px rgba(245,158,11,.35);
-  position:relative;
-}
-.card.featured::before{
-  content:"⭐ مميز";
-  position:absolute;top:0;right:0;
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  color:#3a2500;font-size:11px;font-weight:800;
-  padding:4px 10px;border-radius:0 14px 0 12px;
-  z-index:5;
-  box-shadow:0 2px 6px rgba(0,0,0,.15)
-}
-.card.pending{
-  border:2px dashed #f59e0b;
-  opacity:.9;
-  position:relative;
-}
-.card.pending::before{
-  content:"⏳ قيد المراجعة";
-  position:absolute;top:0;right:0;
-  background:linear-gradient(135deg,#fbbf24,#f59e0b);
-  color:#fff;font-size:10.5px;font-weight:800;
-  padding:4px 10px;border-radius:0 14px 0 12px;
-  z-index:5
-}
-.card.rejected{
-  border:2px solid var(--danger);
-  opacity:.8;
-  position:relative;
-}
-.card.rejected::before{
-  content:"❌ مرفوض";
-  position:absolute;top:0;right:0;
-  background:linear-gradient(135deg,#e5484d,#b91c1c);
-  color:#fff;font-size:10.5px;font-weight:800;
-  padding:4px 10px;border-radius:0 14px 0 12px;
-  z-index:5
-}
-
-.featBadge{
-  display:inline-flex;align-items:center;gap:5px;
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  color:#3a2500;font-size:12px;font-weight:800;
-  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px
-}
-.featBadgeOwner{
-  display:inline-flex;align-items:center;gap:5px;
-  background:linear-gradient(135deg,#fef3c7,#fde68a);
-  color:#92400e;font-size:12px;font-weight:800;
-  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;
-  border:1px solid #f59e0b
-}
-.statusBadge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:12px;font-weight:800;
-  padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px
-}
+.card.featured{border:2px solid #f59e0b;box-shadow:0 4px 18px rgba(245,158,11,.35);position:relative}
+.card.featured::before{content:"⭐ مميز";position:absolute;top:0;right:0;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-size:11px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.card.pending{border:2px dashed #f59e0b;opacity:.9;position:relative}
+.card.pending::before{content:"⏳ قيد المراجعة";position:absolute;top:0;right:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5}
+.card.rejected{border:2px solid var(--danger);opacity:.8;position:relative}
+.card.rejected::before{content:"❌ مرفوض";position:absolute;top:0;right:0;background:linear-gradient(135deg,#e5484d,#b91c1c);color:#fff;font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5}
+.featBadge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px}
+.featBadgeOwner{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;border:1px solid #f59e0b}
+.statusBadge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px}
 .statusBadge.pending{background:#fef3c7;color:#92400e;border:1px solid #f59e0b}
 .statusBadge.rejected{background:#fdeceb;color:#b91c1c;border:1px solid var(--danger)}
 .statusBadge.approved{background:#dcfce7;color:#166534;border:1px solid var(--green)}
-
-.upgradeBtn{
-  width:100%;padding:14px;border:none;border-radius:12px;
-  font-size:16px;font-weight:800;color:#3a2500;
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  cursor:pointer;margin-bottom:8px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 4px 12px rgba(245,158,11,.35)
-}
-
-.planCard{
-  border:2px solid var(--border);border-radius:14px;padding:16px 14px;
-  margin-bottom:12px;cursor:pointer;transition:all .2s;
-  background:#fff;position:relative;overflow:hidden
-}
+.upgradeBtn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#3a2500;background:linear-gradient(135deg,#f59e0b,#fbbf24);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(245,158,11,.35)}
+.planCard{border:2px solid var(--border);border-radius:14px;padding:16px 14px;margin-bottom:12px;cursor:pointer;transition:all .2s;background:#fff;position:relative;overflow:hidden}
 .planCard:hover{border-color:#f59e0b;background:#fffbf0}
 .planCard:active{transform:scale(.98)}
 .planCard.best{border-color:#f59e0b;background:linear-gradient(135deg,#fffbf0,#fef3c7)}
@@ -293,104 +102,44 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .planCard .planDays{font-size:17px;font-weight:800;color:var(--text)}
 .planCard .planPrice{font-size:20px;font-weight:900;color:#92400e}
 .planCard .planDesc{font-size:12px;color:var(--muted);line-height:1.6}
-.planCard .bestBadge{
-  position:absolute;top:10px;left:10px;
-  background:#f59e0b;color:#3a2500;
-  font-size:10px;font-weight:800;
-  padding:3px 8px;border-radius:999px
-}
-
-.adminPlans{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px
-}
-.adminPlans button{
-  padding:10px 4px;border:1px solid #f59e0b;border-radius:10px;
-  background:#fffbf0;color:#92400e;
-  font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer
-}
+.planCard .bestBadge{position:absolute;top:10px;left:10px;background:#f59e0b;color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
+.adminPlans{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.adminPlans button{padding:10px 4px;border:1px solid #f59e0b;border-radius:10px;background:#fffbf0;color:#92400e;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
 .adminPlans button:hover{background:#fef3c7}
-.adminPlans button.cancel{
-  grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)
-}
-
-.reviewBox{
-  background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;
-  padding:12px;margin-top:8px
-}
+.adminPlans button.cancel{grid-column:1/-1;background:#fdeceb;border-color:var(--danger);color:var(--danger)}
+.reviewBox{background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-top:8px}
 .reviewBox .rbTitle{font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13px}
 .reviewBox .rbBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.reviewBox .rbBtns button{
-  padding:10px 4px;border:none;border-radius:10px;
-  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer
-}
+.reviewBox .rbBtns button{padding:10px 4px;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .reviewBox .rbBtns .approve{background:#16a34a;color:#fff}
 .reviewBox .rbBtns .reject{background:#e5484d;color:#fff}
-
-.bottomNav{
-  position:fixed;bottom:0;right:0;left:0;z-index:30;background:#fff;border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-around;
-  padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));
-}
-.navItem{
-  background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;
-  color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;flex:1;padding:4px 0
-}
+.bottomNav{position:fixed;bottom:0;right:0;left:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px))}
+.navItem{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;flex:1;padding:4px 0}
 .navItem .navIcon{font-size:19px}
 .navItem.active{color:var(--teal)}
 .fabWrap{flex:1;display:flex;justify-content:center;margin-top:-26px}
-.fab{
-  width:52px;height:52px;border-radius:50%;background:var(--amber);color:#3a2500;
-  border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 6px 14px rgba(245,158,11,.4)
-}
-
+.fab{width:52px;height:52px;border-radius:50%;background:var(--amber);color:#3a2500;border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 14px rgba(245,158,11,.4)}
 .screen{background:var(--bg);min-height:100%}
-.screenHeader{
-  display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);
-  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15
-}
+.screenHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15}
 .screenHeader .back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text)}
 .screenHeader h3{margin:0;font-size:16px;font-weight:800}
 .formArea{padding:16px}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
-.field input,.field select{
-  width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);
-  font-family:inherit;font-size:15px;background:var(--card)
-}
+.field input,.field select{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;font-size:15px;background:var(--card)}
 .imgThumbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .imgThumb{position:relative;width:70px;height:70px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
 .imgThumb img{width:100%;height:100%;object-fit:cover}
-.imgThumb .rm{
-  position:absolute;top:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;border:none;
-  border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer
-}
-.imgAddTile{
-  border:2px dashed var(--border);border-radius:12px;padding:14px;text-align:center;
-  color:var(--muted);font-size:13.5px;cursor:pointer;background:var(--card)
-}
+.imgThumb .rm{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer}
+.imgAddTile{border:2px dashed var(--border);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13.5px;cursor:pointer;background:var(--card)}
 .imgAddTile.hidden{display:none}
-.btnMain{
-  width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;
-  color:#fff;background:var(--teal);cursor:pointer
-}
-.btnGhost{
-  width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;
-  color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px
-}
-
-.overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;
-  display:flex;align-items:flex-end;justify-content:center
-}
-.sheet{
-  background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));
-  animation:up .18s ease-out;max-height:88vh;overflow-y:auto
-}
+.btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer}
+.btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));animation:up .18s ease-out;max-height:88vh;overflow-y:auto}
 @keyframes up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 .sheet h3{margin:0 0 14px 0;font-size:17px;font-weight:800}
 .sheet .accountEmail{font-size:14px;color:var(--muted);margin-bottom:16px;word-break:break-all}
-
 .reportItem{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
 .reportItem .rTitle{font-weight:800;font-size:14px;margin-bottom:4px}
 .reportItem .rMeta{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.7}
@@ -399,7 +148,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .rDelete{background:#fdeceb;color:var(--danger)}
 .rDismiss{background:var(--bg);color:var(--muted)}
 .reportsEmpty{text-align:center;color:var(--muted);padding:30px 20px;font-size:14px;line-height:1.7}
-
 .warnBanner{margin:10px 16px 0;padding:9px 12px;background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;font-size:12.5px;color:#7a5c00;line-height:1.6}
 .sellerLine{font-size:11.5px;color:var(--teal-dark);font-weight:700;cursor:pointer}
 .termsBox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.8}
@@ -423,11 +171,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .starPick button.on{color:#f5a623}
 .sheet textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);font-family:inherit;font-size:14px;resize:none;margin-bottom:10px;box-sizing:border-box}
 .warnBox{background:#fff8e1;border:1px solid #ffe08a;border-radius:12px;padding:12px;font-size:14px;line-height:1.8;color:#7a5c00;margin-bottom:14px}
-
-.carousel{
-  position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;direction:ltr;
-  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain
-}
+.carousel{position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;direction:ltr;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
 .carousel::-webkit-scrollbar{display:none}
 .slide{flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
 .slide img{width:100%;height:100%;object-fit:cover}
@@ -436,86 +180,31 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .pTitle{font-size:18px;font-weight:800;line-height:1.5;margin-bottom:2px}
 .pMeta{font-size:12.5px;color:var(--muted);margin-top:2px}
 .pDesc{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.9}
-.pViewsBadge{
-  display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);
-  font-size:12px;font-weight:800;padding:5px 10px;border-radius:9px;margin-top:6px
-}
-.brandBadge{
-  display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;
-  font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;
-  border:1px solid #f59e0b
-}
-.field textarea{
-  width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;
-  font-size:15px;background:var(--card);resize:vertical;min-height:120px;box-sizing:border-box
-}
+.pViewsBadge{display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);font-size:12px;font-weight:800;padding:5px 10px;border-radius:9px;margin-top:6px}
+.brandBadge{display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;border:1px solid #f59e0b}
+.field textarea{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;font-size:15px;background:var(--card);resize:vertical;min-height:120px;box-sizing:border-box}
 .charCount{font-size:11.5px;color:var(--muted);text-align:left;margin-top:4px;direction:ltr}
-
 .hidden{display:none!important}
-
-.adPopup{
-  position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;
-  display:flex;align-items:center;justify-content:center;padding:20px
-}
+.adPopup{position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
 .adPopupInner{position:relative;max-width:92vw;max-height:85vh}
-.adPopupInner img{
-  max-width:100%;max-height:85vh;border-radius:14px;display:block;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff
-}
-.adClose{
-  position:absolute;top:10px;left:10px;
-  width:36px;height:36px;border-radius:50%;
-  background:rgba(255,255,255,.95);color:#1f2937;border:none;
-  font-size:16px;font-weight:800;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0
-}
-
-#splashScreen{
-  position:fixed;inset:0;z-index:99999;
-  background:linear-gradient(160deg,#38bdf8 0%,#0284c7 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;
-  transition:opacity .6s ease, visibility .6s ease;
-}
+.adPopupInner img{max-width:100%;max-height:85vh;border-radius:14px;display:block;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff}
+.adClose{position:absolute;top:10px;left:10px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.95);color:#1f2937;border:none;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.35);z-index:10;font-family:inherit;padding:0}
+#splashScreen{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#38bdf8 0%,#0284c7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s ease,visibility .6s ease}
 #splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none}
-#splashScreen .splashLogo{
-  width:120px;height:120px;border-radius:28px;
-  box-shadow:0 20px 50px rgba(0,0,0,.3);
-  background:#fff;padding:6px;
-  animation:popIn .5s ease-out;
-}
+#splashScreen .splashLogo{width:120px;height:120px;border-radius:28px;box-shadow:0 20px 50px rgba(0,0,0,.3);background:#fff;padding:6px;animation:popIn .5s ease-out}
 @keyframes popIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
-#splashScreen .splashName{
-  color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;
-  text-shadow:0 4px 12px rgba(0,0,0,.25);
-}
+#splashScreen .splashName{color:#fff;font-size:26px;font-weight:800;letter-spacing:1px;text-shadow:0 4px 12px rgba(0,0,0,.25)}
 #splashScreen .splashLoader{display:flex;gap:8px;margin-top:14px}
-#splashScreen .splashLoader span{
-  width:10px;height:10px;border-radius:50%;background:#fff;
-  animation:bounce 1.2s infinite ease-in-out;
-}
+#splashScreen .splashLoader span{width:10px;height:10px;border-radius:50%;background:#fff;animation:bounce 1.2s infinite ease-in-out}
 #splashScreen .splashLoader span:nth-child(2){animation-delay:.15s}
 #splashScreen .splashLoader span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
-
-.authOption{
-  width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;
-  background:#fff;font-family:inherit;font-size:15px;font-weight:700;
-  color:var(--text);cursor:pointer;margin-top:10px;
-  display:flex;align-items:center;justify-content:center;gap:10px
-}
+.authOption{width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-family:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px}
 .authOption:hover{background:var(--teal-light)}
 .authOption.primary{background:#fff}
 .authOption .icon{font-size:20px}
 .authOption.disabled{opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative}
-.authOption.disabled .soonBadge{
-  position:absolute;top:-8px;left:10px;
-  background:var(--amber);color:#3a2500;
-  font-size:10px;font-weight:800;
-  padding:3px 8px;border-radius:999px;
-  box-shadow:0 2px 6px rgba(0,0,0,.15)
-}
+.authOption.disabled .soonBadge{position:absolute;top:-8px;left:10px;background:var(--amber);color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 </style>
 </head>
 
@@ -553,7 +242,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     </div>
     <select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
   </div>
-
   <div class="catsRow">
     <button class="catChip active" data-cat="الكل" onclick="filterCategory('الكل')">✨ الكل</button>
     <button class="catChip" data-cat="سيارات ومركبات" onclick="filterCategory('سيارات ومركبات')">🚗 سيارات ومركبات</button>
@@ -574,12 +262,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <button class="catChip" data-cat="مطاعم وغداء" onclick="filterCategory('مطاعم وغداء')">🍽️ مطاعم وغداء</button>
     <button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
   </div>
-
-  <!-- شريط الأنواع الفرعية للسيارات -->
   <div id="subCatsRow" class="subCatsRow hidden"></div>
-
   <div class="warnBanner">⚠️ <b>تنبيه للمشتري:</b> لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
-
   <div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
   <div class="grid" id="posts"></div>
 </div>
@@ -617,9 +301,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
       <label>الماركة (نوع السيارة)</label>
       <select id="brand"></select>
     </div>
-    <div class="field"><label>المدينة</label>
-      <select id="city"></select>
-    </div>
+    <div class="field"><label>المدينة</label><select id="city"></select></div>
     <div class="field"><label>الوصف (اختياري)</label>
       <textarea id="description" maxlength="1000" rows="5" oninput="updateDescCount()" placeholder="اكتب تفاصيل الإعلان..."></textarea>
       <div class="charCount"><span id="descCount">0</span>/1000 حرف</div>
@@ -656,16 +338,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="sheet">
     <div id="authOptions">
       <h3 style="text-align:center">تسجيل الدخول</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">
-        سجّل دخولك بحساب Google للاستمرار
-      </p>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;text-align:center;line-height:1.7">سجّل دخولك بحساب Google للاستمرار</p>
       <button class="authOption primary" onclick="loginWithGoogle()">
-        <svg width="20" height="20" viewBox="0 0 48 48">
-          <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/>
-          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.1-11.3-7.5l-6.5 5C9.6 39.6 16.2 44 24 44z"/>
-          <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C41 35.9 44 30.5 44 24c0-1.3-.1-2.3-.4-3.5z"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.1-11.3-7.5l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C41 35.9 44 30.5 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
         المتابعة باستخدام Google
       </button>
       <button class="authOption disabled" onclick="alert('📱 تسجيل الدخول برقم الهاتف قريباً جداً!\n\nحالياً استخدم حساب Google للتسجيل.')">
@@ -689,6 +364,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل إشعارات الموقع</button>
     <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
     <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
+    <button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
     <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
@@ -710,6 +386,28 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   </div>
 </div>
 
+<div id="limitsOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto">
+    <h3>⚙️ إدارة حدود المستخدمين</h3>
+    <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد مستخدم</div>
+      <div class="field" style="margin-bottom:8px"><input id="limitEmail" placeholder="إيميل المستخدم" dir="ltr" style="text-align:left;font-size:13px"></div>
+      <div class="field" style="margin-bottom:8px"><input id="limitUid" placeholder="أو UID المستخدم (اختياري)" dir="ltr" style="text-align:left;font-size:12px"></div>
+      <div class="field" style="margin-bottom:8px"><input id="limitNumber" type="number" placeholder="الحد الجديد (مثلاً: 10)" min="1" max="999" style="text-align:center;font-weight:800"></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
+        <button onclick="document.getElementById('limitNumber').value=5" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">5</button>
+        <button onclick="document.getElementById('limitNumber').value=10" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">10</button>
+        <button onclick="document.getElementById('limitNumber').value=20" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">20</button>
+        <button onclick="document.getElementById('limitNumber').value=50" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer">50</button>
+      </div>
+      <button class="btnMain" onclick="applyUserLimit()" style="background:#3b82f6">💾 حفظ الحد</button>
+    </div>
+    <div style="font-weight:800;font-size:13.5px;margin-bottom:8px;color:var(--text)">📋 المستخدمون ذوو الحدود المخصصة</div>
+    <div id="limitsList"></div>
+    <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+  </div>
+</div>
+
 <div id="postOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:92vh;overflow-y:auto;padding-top:0">
     <div id="postContent"></div>
@@ -719,36 +417,21 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div id="upgradeOverlay" class="overlay hidden">
   <div class="sheet">
     <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 16px 0;text-align:center;line-height:1.7">
-      اختر الباقة التي تناسبك<br>
-      سيظهر إعلانك <b>في الأعلى بلون ذهبي</b> طوال المدة
-    </p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px 0;text-align:center;line-height:1.7">اختر الباقة التي تناسبك<br>سيظهر إعلانك <b>في الأعلى بلون ذهبي</b> طوال المدة</p>
     <div class="planCard" onclick="selectPlan(7,'7 أيام',5)">
-      <div class="planTitle">
-        <span class="planDays">🥉 7 أيام</span>
-        <span class="planPrice">5 د.ل</span>
-      </div>
+      <div class="planTitle"><span class="planDays">🥉 7 أيام</span><span class="planPrice">5 د.ل</span></div>
       <div class="planDesc">إعلانك يظهر في الأعلى لمدة أسبوع كامل</div>
     </div>
     <div class="planCard best" onclick="selectPlan(15,'15 يوم',10)">
       <span class="bestBadge">الأكثر طلباً</span>
-      <div class="planTitle">
-        <span class="planDays">🥈 15 يوم</span>
-        <span class="planPrice">10 د.ل</span>
-      </div>
+      <div class="planTitle"><span class="planDays">🥈 15 يوم</span><span class="planPrice">10 د.ل</span></div>
       <div class="planDesc">توفير 25% — إعلانك في الأعلى لنصف شهر</div>
     </div>
     <div class="planCard" onclick="selectPlan(30,'30 يوم',18)">
-      <div class="planTitle">
-        <span class="planDays">🥇 30 يوم</span>
-        <span class="planPrice">18 د.ل</span>
-      </div>
+      <div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">18 د.ل</span></div>
       <div class="planDesc">أفضل قيمة — إعلانك في الأعلى لشهر كامل</div>
     </div>
-    <div style="background:var(--teal-light);border-radius:12px;padding:12px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;margin-top:8px;text-align:center">
-      💬 عند اختيار الباقة، سيتم فتح واتساب مع الإدارة<br>
-      لترتيب عملية الدفع
-    </div>
+    <div style="background:var(--teal-light);border-radius:12px;padding:12px;font-size:12.5px;color:var(--teal-dark);line-height:1.7;margin-top:8px;text-align:center">💬 عند اختيار الباقة، سيتم فتح واتساب مع الإدارة<br>لترتيب عملية الدفع</div>
     <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
   </div>
 </div>
@@ -785,19 +468,12 @@ import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic
 window.addEventListener('load', () => {
   setTimeout(() => {
     const splash = document.getElementById('splashScreen');
-    if(splash){
-      splash.classList.add('hide');
-      setTimeout(() => splash.remove(), 700);
-    }
+    if(splash){splash.classList.add('hide');setTimeout(() => splash.remove(), 700);}
   }, 1800);
 });
 
 (function(){
-  const isStandalone =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.matchMedia('(display-mode: fullscreen)').matches ||
-    window.navigator.standalone === true ||
-    document.referrer.includes('android-app://');
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.navigator.standalone === true || document.referrer.includes('android-app://');
   if(isStandalone) return;
   const banner = document.getElementById('dlBanner');
   if(banner) banner.classList.remove('hidden');
@@ -808,15 +484,7 @@ window.closeDlBanner = function(){
   if(banner) banner.classList.add('hidden');
 };
 
-const firebaseConfig={
-apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",
-authDomain:"tasawuq-now-eb955.firebaseapp.com",
-projectId:"tasawuq-now-eb955",
-storageBucket:"tasawuq-now-eb955.firebasestorage.app",
-messagingSenderId:"786110830242",
-appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"
-};
-
+const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const VAPID_KEY="BHRF5HbhXf1jIUy61_SPuhlLWtWpn-zKMCe6l29rwPYHyLHDm_yoXohAG-Vp43zyfGnIJAjjdOSnGgej2XG7css";
 const app=initializeApp(firebaseConfig);
 const auth=getAuth();
@@ -827,18 +495,12 @@ async function initMessaging(){
 try{
 if(!(await isSupported()))return;
 messaging=getMessaging(app);
-onMessage(messaging,payload=>{
-const title=(payload.notification&&payload.notification.title)||"تسوق الآن";
-const body=(payload.notification&&payload.notification.body)||"";
-alert(title+(body?"\n"+body:""));
-});
+onMessage(messaging,payload=>{const title=(payload.notification&&payload.notification.title)||"تسوق الآن";const body=(payload.notification&&payload.notification.body)||"";alert(title+(body?"\n"+body:""));});
 }catch(e){console.error(e);}
 }
 initMessaging();
 
-if("serviceWorker" in navigator){
-navigator.serviceWorker.register("firebase-messaging-sw.js").catch(e=>console.error(e));
-}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("firebase-messaging-sw.js").catch(e=>console.error(e));}
 
 window.enableNotifications=async()=>{
 try{
@@ -849,77 +511,60 @@ if(!messaging){alert("الإشعارات غير مدعومة على هذا ال�
 const reg=await navigator.serviceWorker.register("firebase-messaging-sw.js");
 const token=await getToken(messaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
 if(token){
-  try{
-    await setDoc(doc(db,"tokens",token),{
-      token: token,
-      uid: auth.currentUser?.uid || "anonymous",
-      email: auth.currentUser?.email || "",
-      name: (myProfile && myProfile.name) || auth.currentUser?.displayName || "",
-      createdAt: Date.now(),
-      lastSeen: Date.now()
-    });
-  }catch(e){ console.error("token save:", e); }
-  alert("تم تفعيل الإشعارات بنجاح ✅");
+try{await setDoc(doc(db,"tokens",token),{token:token,uid:auth.currentUser?.uid||"anonymous",email:auth.currentUser?.email||"",name:(myProfile&&myProfile.name)||auth.currentUser?.displayName||"",createdAt:Date.now(),lastSeen:Date.now()});}catch(e){console.error("token save:",e);}
+alert("تم تفعيل الإشعارات بنجاح ✅");
 }
-}catch(e){
-alert("تعذر تفعيل الإشعارات: "+e.message);
-}
+}catch(e){alert("تعذر تفعيل الإشعارات: "+e.message);}
 };
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
 
-/* ================= 🚗 ماركات السيارات ================= */
-const CAR_BRANDS = [
-  "تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي",
-  "شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس",
-  "رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك",
-  "فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا",
-  "BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك",
-  "بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار",
-  "سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"
-];
+const CAR_BRANDS = ["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 
-const SUB_CATEGORIES = {
-  "سيارات ومركبات": {
-    title: "🚗 اختر الماركة:",
-    items: CAR_BRANDS
-  }
-};
+const SUB_CATEGORIES = {"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS}};
 
-const FORBIDDEN_WORDS = [
-  "إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس",
-  "عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا",
-  "شهواني","شهوانية","خليعة","خليع","دعارة","عاهر","عاهرة","شرموط","شرموطة",
-  "قحبة","قحب","زانية","زاني","فحل","فحول",
-  "للتعارف","تعارف جنسي","تعارف للزواج السريع","شات جنسي","مكالمات جنسية",
-  "فتاة ليل","بنت ليل","فراش",
-  "حشيش","كوكايين","هيروين","حبوب مخدرة","بانجو","ماريجوانا","ترامادول",
-  "كبتاجون","استروكس","حشيشة","مخدر",
-  "بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع",
-  "تهريب","نصب","غش","وهمي","مزيف","فلوس مزيفة","دينار مزيف","دولار مزيف",
-  "porn","porno","sex","nude","nudes","xxx","adult","erotic","escort",
-  "prostitute","prostitution","whore","slut","bitch","fuck","fucking",
-  "weed","cocaine","heroin","meth","cannabis","marijuana",
-  "scam","fake money","counterfeit","drugs"
-];
+const FORBIDDEN_WORDS = ["إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس","عارية","عاري","عريان","عريانة","ملط","ملطية","مثيرة جنسيا","مثير جنسيا","شهواني","شهوانية","خليعة","خليع","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","قحب","زانية","زاني","فحل","فحول","للتعارف","تعارف جنسي","تعارف للزواج السريع","شات جنسي","مكالمات جنسية","فتاة ليل","بنت ليل","فراش","حشيش","كوكايين","هيروين","حبوب مخدرة","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","حشيشة","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","فلوس مزيفة","دينار مزيف","دولار مزيف","porn","porno","sex","nude","nudes","xxx","adult","erotic","escort","prostitute","prostitution","whore","slut","bitch","fuck","fucking","weed","cocaine","heroin","meth","cannabis","marijuana","scam","fake money","counterfeit","drugs"];
 
 function detectForbidden(text){
-  if(!text) return null;
-  const t = String(text).toLowerCase();
-  for(const w of FORBIDDEN_WORDS){
-    if(t.includes(w.toLowerCase())) return w;
-  }
-  return null;
+if(!text)return null;
+const t=String(text).toLowerCase();
+for(const w of FORBIDDEN_WORDS){if(t.includes(w.toLowerCase()))return w;}
+return null;
+}
+function checkContent(title,description){
+const t=detectForbidden(title);
+if(t)return{word:t,field:"العنوان"};
+const d=detectForbidden(description);
+if(d)return{word:d,field:"الوصف"};
+return null;
 }
 
-function checkContent(title, description){
-  const t = detectForbidden(title);
-  if(t) return {word:t, field:"العنوان"};
-  const d = detectForbidden(description);
-  if(d) return {word:d, field:"الوصف"};
-  return null;
+const userLimitsCache = {};
+const DEFAULT_LIMIT = 3;
+
+async function getUserLimit(uid){
+  if(!uid) return DEFAULT_LIMIT;
+  if(userLimitsCache[uid] !== undefined) return userLimitsCache[uid];
+  try{
+    const snap = await getDoc(doc(db,"userLimits",uid));
+    if(snap.exists()){
+      const lim = snap.data().limit || DEFAULT_LIMIT;
+      userLimitsCache[uid] = lim;
+      return lim;
+    }
+  }catch(e){ console.error(e); }
+  userLimitsCache[uid] = DEFAULT_LIMIT;
+  return DEFAULT_LIMIT;
+}
+
+async function setUserLimit(uid, limit, extra={}){
+  try{
+    await setDoc(doc(db,"userLimits",uid), {limit: Number(limit),email: extra.email || "",name: extra.name || "",updatedAt: Date.now()});
+    userLimitsCache[uid] = Number(limit);
+    return true;
+  }catch(e){ console.error(e); return false; }
 }
 
 let isAdmin=false;
@@ -927,12 +572,7 @@ let showOnlyMine=false;
 let showOnlyFavorites=false;
 let currentCategory="الكل";
 let currentSubCategory="الكل";
-const LIBYA_CITIES={
-"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],
-"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],
-"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],
-"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]
-};
+const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
 let currentCity="الكل";
 let allPosts=[];
 let pendingAction=null;
@@ -946,6 +586,8 @@ let selectedImages=[];
 let pendingAutoUpgrade = null;
 let allReports=[];
 let reportsListenerStarted=false;
+let allLimits = [];
+let limitsListenerStarted = false;
 
 const home=document.getElementById("home");
 const form=document.getElementById("form");
@@ -957,6 +599,7 @@ const reportsOverlay=document.getElementById("reportsOverlay");
 const reportsBtn=document.getElementById("reportsBtn");
 const moderationBtn=document.getElementById("moderationBtn");
 const moderationOverlay=document.getElementById("moderationOverlay");
+const limitsOverlay=document.getElementById("limitsOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay");
 const postOverlay=document.getElementById("postOverlay");
 const warnOverlay=document.getElementById("warnOverlay");
@@ -968,92 +611,24 @@ const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
 const subCatsRow=document.getElementById("subCatsRow");
 
-function isPostFeatured(p){
-  return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());
-}
-function featuredDaysLeft(p){
-  if(!isPostFeatured(p)) return 0;
-  return Math.ceil((p.featuredUntil - Date.now()) / (24*60*60*1000));
-}
-function getStatus(p){
-  return p.status || "approved";
-}
-function sortPosts(arr){
-  return arr.slice().sort((a,b)=>{
-    const af = isPostFeatured(a) ? 1 : 0;
-    const bf = isPostFeatured(b) ? 1 : 0;
-    if(af !== bf) return bf - af;
-    return (b.createdAt||0) - (a.createdAt||0);
-  });
-}
+function isPostFeatured(p){return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());}
+function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.featuredUntil - Date.now()) / (24*60*60*1000));}
+function getStatus(p){return p.status || "approved";}
+function sortPosts(arr){return arr.slice().sort((a,b)=>{const af=isPostFeatured(a)?1:0;const bf=isPostFeatured(b)?1:0;if(af!==bf)return bf-af;return (b.createdAt||0)-(a.createdAt||0);});}
 
-function getFavorites(){
-  try{ return JSON.parse(localStorage.getItem('favorites')||'[]'); }
-  catch(e){ return []; }
-}
-function saveFavorites(arr){
-  try{ localStorage.setItem('favorites', JSON.stringify(arr)); }
-  catch(e){ console.error(e); }
-}
-function isFavorite(id){
-  return getFavorites().includes(id);
-}
-window.toggleFavorite = (id, event)=>{
-  if(event) event.stopPropagation();
-  let favs = getFavorites();
-  if(favs.includes(id)){ favs = favs.filter(x=>x!==id); }
-  else { favs.push(id); }
-  saveFavorites(favs);
-  renderPosts();
-};
+function getFavorites(){try{return JSON.parse(localStorage.getItem('favorites')||'[]');}catch(e){return[];}}
+function saveFavorites(arr){try{localStorage.setItem('favorites',JSON.stringify(arr));}catch(e){console.error(e);}}
+function isFavorite(id){return getFavorites().includes(id);}
+window.toggleFavorite = (id, event)=>{if(event)event.stopPropagation();let favs=getFavorites();if(favs.includes(id)){favs=favs.filter(x=>x!==id);}else{favs.push(id);}saveFavorites(favs);renderPosts();};
 
-function hasViewedOnDevice(postId){
-  try{
-    const viewed = JSON.parse(localStorage.getItem('viewedPosts')||'[]');
-    return viewed.includes(postId);
-  }catch(e){ return false; }
-}
-function markViewedOnDevice(postId){
-  try{
-    let viewed = JSON.parse(localStorage.getItem('viewedPosts')||'[]');
-    if(!viewed.includes(postId)){
-      viewed.push(postId);
-      if(viewed.length > 300) viewed = viewed.slice(-300);
-      localStorage.setItem('viewedPosts', JSON.stringify(viewed));
-    }
-  }catch(e){}
-}
-async function incrementViews(postId){
-  try{
-    if(hasViewedOnDevice(postId)) return;
-    markViewedOnDevice(postId);
-    await updateDoc(doc(db,"posts",postId), { views: increment(1) });
-  }catch(e){ console.error("views:", e); }
-}
+function hasViewedOnDevice(postId){try{const viewed=JSON.parse(localStorage.getItem('viewedPosts')||'[]');return viewed.includes(postId);}catch(e){return false;}}
+function markViewedOnDevice(postId){try{let viewed=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!viewed.includes(postId)){viewed.push(postId);if(viewed.length>300)viewed=viewed.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(viewed));}}catch(e){}}
+async function incrementViews(postId){try{if(hasViewedOnDevice(postId))return;markViewedOnDevice(postId);await updateDoc(doc(db,"posts",postId),{views:increment(1)});}catch(e){console.error("views:",e);}}
 
 const AD_IMAGE_URL = "https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا";
 const AD_INTERVAL_DAYS = 30;
-
-function showAdIfDue(){
-  try{
-    const lastShown = localStorage.getItem('adLastShownAt');
-    const now = Date.now();
-    const interval = AD_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
-    if(!lastShown || (now - parseInt(lastShown,10)) >= interval){
-      const img = document.getElementById('adImage');
-      if(img) img.src = AD_IMAGE_URL;
-      const popup = document.getElementById('adPopup');
-      if(popup) popup.classList.remove('hidden');
-      localStorage.setItem('adLastShownAt', String(now));
-    }
-  }catch(e){ console.error(e); }
-}
-
-window.closeAd = function(){
-  const popup = document.getElementById('adPopup');
-  if(popup) popup.classList.add('hidden');
-};
-
+function showAdIfDue(){try{const lastShown=localStorage.getItem('adLastShownAt');const now=Date.now();const interval=AD_INTERVAL_DAYS*24*60*60*1000;if(!lastShown||(now-parseInt(lastShown,10))>=interval){const img=document.getElementById('adImage');if(img)img.src=AD_IMAGE_URL;const popup=document.getElementById('adPopup');if(popup)popup.classList.remove('hidden');localStorage.setItem('adLastShownAt',String(now));}}catch(e){console.error(e);}}
+window.closeAd = function(){const popup=document.getElementById('adPopup');if(popup)popup.classList.add('hidden');};
 setTimeout(showAdIfDue, 2600);
 
 startPostsListener();
@@ -1066,17 +641,15 @@ navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(moderationBtn) moderationBtn.classList.toggle("hidden",!isAdmin);
+const limitsBtn=document.getElementById("limitsBtn");
+if(limitsBtn) limitsBtn.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
-if(isAdmin && pendingAutoUpgrade){ setTimeout(tryApplyPendingUpgrade, 1500); }
+if(isAdmin && pendingAutoUpgrade){setTimeout(tryApplyPendingUpgrade,1500);}
 if(pendingAction==="form"){pendingAction=null;showForm();}
 else if(pendingAction==="mine"){pendingAction=null;showMyPosts();}
 else if(pendingAction==="favorites"){pendingAction=null;showFavorites();}
-else if(pendingAction && typeof pendingAction === "object" && pendingAction.type==="report"){
-  const pid = pendingAction.postId;
-  pendingAction = null;
-  setTimeout(()=>{ reportPost(pid); }, 500);
-}
+else if(pendingAction && typeof pendingAction === "object" && pendingAction.type==="report"){const pid=pendingAction.postId;pendingAction=null;setTimeout(()=>{reportPost(pid);},500);}
 else{renderPosts();}
 }else{
 isAdmin=false;
@@ -1091,28 +664,24 @@ renderPosts();
 window.logout=()=>signOut(auth);
 
 const googleProvider=new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.setCustomParameters({prompt:'select_account'});
 
 window.loginWithGoogle=async()=>{
-  try{
-    const result = await signInWithPopup(auth, googleProvider);
-    console.log("✅ Google:", result.user.email);
-  }catch(e){
-    console.error("❌ خطأ Google:", e);
-    if(e.code === "auth/popup-closed-by-user"){
-    }else if(e.code === "auth/popup-blocked"){
-      alert("الرجاء السماح بالنوافذ المنبثقة ثم جرب مرة أخرى");
-    }else if(e.code === "auth/unauthorized-domain"){
-      alert("هذا النطاق غير مصرح به في Firebase.");
-    }else{
-      alert("تعذر تسجيل الدخول: " + e.code);
-    }
-  }
+try{
+const result=await signInWithPopup(auth,googleProvider);
+console.log("✅ Google:",result.user.email);
+}catch(e){
+console.error("❌ خطأ Google:",e);
+if(e.code==="auth/popup-closed-by-user"){}
+else if(e.code==="auth/popup-blocked"){alert("الرجاء السماح بالنوافذ المنبثقة ثم جرب مرة أخرى");}
+else if(e.code==="auth/unauthorized-domain"){alert("هذا النطاق غير مصرح به في Firebase.");}
+else{alert("تعذر تسجيل الدخول: "+e.code);}
+}
 };
 
 window.closeOverlay=()=>{
 authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
-moderationOverlay.classList.add("hidden");
+moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");
 sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");
 upgradeOverlay.classList.add("hidden");
 pendingAction=null;
@@ -1121,11 +690,13 @@ pendingAction=null;
 window.openAccount=()=>{
 if(auth.currentUser){
 document.getElementById("accountEmail").textContent="";
-const displayName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
-document.getElementById("accountName").textContent="👤 " + displayName;
+const displayName=(myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+document.getElementById("accountName").textContent="👤 "+displayName;
 document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
 reportsBtn.classList.toggle("hidden",!isAdmin);
-if(moderationBtn) moderationBtn.classList.toggle("hidden",!isAdmin);
+if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
+const limitsBtn=document.getElementById("limitsBtn");
+if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 accountOverlay.classList.remove("hidden");
 }else{
 pendingAction=null;
@@ -1133,66 +704,120 @@ authOverlay.classList.remove("hidden");
 }
 };
 
-window.openReports=()=>{
-renderReports();
-reportsOverlay.classList.remove("hidden");
-accountOverlay.classList.add("hidden");
+window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+
+window.openLimits = () => {
+  if(!isAdmin) return;
+  renderLimits();
+  if(!limitsListenerStarted){
+    limitsListenerStarted = true;
+    onSnapshot(collection(db,"userLimits"), snap => {
+      allLimits = snap.docs.map(d => ({uid: d.id, ...d.data()}));
+      allLimits.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+      renderLimits();
+    });
+  }
+  limitsOverlay.classList.remove("hidden");
+  accountOverlay.classList.add("hidden");
 };
 
-window.openModeration=()=>{
-renderModeration();
-moderationOverlay.classList.remove("hidden");
-accountOverlay.classList.add("hidden");
+function renderLimits(){
+  const list = document.getElementById("limitsList");
+  if(!list) return;
+  if(allLimits.length === 0){
+    list.innerHTML = "<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>كل المستخدمين على الحد الافتراضي (3)</span></div>";
+    return;
+  }
+  list.innerHTML = allLimits.map(l => `
+    <div class="reportItem" style="background:#f0f9ff;border-color:#0ea5e9">
+      <div class="rTitle">👤 ${escapeHtml(l.name||"مستخدم")}</div>
+      <div class="rMeta"><b>الحد:</b> <span style="color:#0284c7;font-weight:800;font-size:15px">${l.limit}</span> إعلان<br><b>الإيميل:</b> ${escapeHtml(l.email||"غير محدد")}<br><b>UID:</b> <span style="font-size:10px">${escapeHtml(l.uid||"")}</span></div>
+      <div class="rActions" style="grid-template-columns:1fr 1fr">
+        <button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="editLimit('${escapeHtml(l.uid)}')">✏️ تعديل</button>
+        <button class="rDelete" onclick="removeLimit('${escapeHtml(l.uid)}')">🗑️ إلغاء</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+window.editLimit = (uid) => {
+  const l = allLimits.find(x => x.uid === uid);
+  if(!l) return;
+  document.getElementById("limitEmail").value = l.email || "";
+  document.getElementById("limitUid").value = uid;
+  document.getElementById("limitNumber").value = l.limit || 3;
+  document.getElementById("limitNumber").focus();
+};
+
+window.removeLimit = async (uid) => {
+  if(!confirm("إلغاء الحد المخصص؟ سيرجع المستخدم للحد الافتراضي (3 إعلانات).")) return;
+  try{
+    await deleteDoc(doc(db,"userLimits",uid));
+    delete userLimitsCache[uid];
+    alert("✅ تم الإلغاء");
+  }catch(e){ alert("خطأ: " + e.message); }
+};
+
+window.applyUserLimit = async () => {
+  if(!isAdmin) return;
+  const email = document.getElementById("limitEmail").value.trim();
+  const uidInput = document.getElementById("limitUid").value.trim();
+  const limitNum = parseInt(document.getElementById("limitNumber").value, 10);
+  if(!limitNum || limitNum < 1 || limitNum > 999){ alert("❌ الرجاء إدخال رقم صحيح (1-999)"); return; }
+  let uid = uidInput;
+  if(!uid && email){
+    try{
+      const q = query(collection(db,"tokens"), where("email","==",email));
+      const snap = await getDocs(q);
+      if(!snap.empty){ uid = snap.docs[0].data().uid; }
+    }catch(e){}
+  }
+  if(!uid){ alert("❌ لم يتم تحديد UID المستخدم\n\nالرجاء:\n1. اكتب UID المستخدم، أو\n2. تأكد أن المستخدم سجّل دخول من قبل وسمح بالإشعارات"); return; }
+  const ok = await setUserLimit(uid, limitNum, { email, name: "" });
+  if(ok){
+    alert(`✅ تم تحديد الحد لـ ${limitNum} إعلان`);
+    document.getElementById("limitEmail").value = "";
+    document.getElementById("limitUid").value = "";
+    document.getElementById("limitNumber").value = "";
+  } else { alert("❌ فشل الحفظ"); }
 };
 
 function updateModBadge(){
-  if(!isAdmin || !moderationBtn) return;
-  const count = allPosts.filter(p=>getStatus(p)==="pending").length;
-  if(count > 0){
-    moderationBtn.textContent = `⏳ الإعلانات قيد المراجعة (${count})`;
-  } else {
-    moderationBtn.textContent = "⏳ الإعلانات قيد المراجعة";
-  }
+if(!isAdmin || !moderationBtn) return;
+const count=allPosts.filter(p=>getStatus(p)==="pending").length;
+if(count>0){moderationBtn.textContent=`⏳ الإعلانات قيد المراجعة (${count})`;}
+else{moderationBtn.textContent="⏳ الإعلانات قيد المراجعة";}
 }
 
-function setActiveNav(which){
-navHome.classList.toggle("active",which==="home");
-navMine.classList.toggle("active",which==="mine");
-navFav.classList.toggle("active",which==="fav");
-}
+function setActiveNav(which){navHome.classList.toggle("active",which==="home");navMine.classList.toggle("active",which==="mine");navFav.classList.toggle("active",which==="fav");}
 
 window.showHome=()=>{
-showOnlyMine=false;
-showOnlyFavorites=false;
-currentSubCategory="الكل";
-renderSubCats();
+showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();
 homeTitle.textContent="أحدث الإعلانات";
-home.classList.remove("hidden");
-form.classList.add("hidden");
-closeOverlay();
-setActiveNav("home");
-renderPosts();
+home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();
 };
 
-function openFormScreen(){
-home.classList.add("hidden");
-form.classList.remove("hidden");
-closeOverlay();
-}
+function openFormScreen(){home.classList.add("hidden");form.classList.remove("hidden");closeOverlay();}
 
-window.showForm=()=>{
+window.showForm=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
-if(myCount>=3){
-alert("وصلت للحد الأقصى المسموح به (3 إعلانات لكل عضو).");
-return;
+const limit=await getUserLimit(auth.currentUser.uid);
+if(myCount>=limit){
+  const msg=`🛒 طلب إعلانات إضافية\n\n`+`👤 الاسم: ${(myProfile&&myProfile.name)||auth.currentUser.displayName||'مستخدم'}\n`+`📧 الإيميل: ${auth.currentUser.email||''}\n`+`📊 عدد إعلاناتي الحالي: ${myCount}\n`+`⚙️ الحد المسموح: ${limit}\n\n`+`أرجو زيادة الحد المسموح.`;
+  const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+  if(confirm(`⚠️ وصلت للحد الأقصى (${limit} إعلانات)\n\nهل تريد طلب زيادة الحد من الإدارة؟`)){
+    window.open(waUrl, '_blank');
+  }
+  return;
 }
 editingPostId=null;
 document.getElementById("formHeaderTitle").textContent="إضافة إعلان";
 document.getElementById("saveBtn").textContent="نشر الإعلان";
 document.getElementById("title").value="";
 document.getElementById("price").value="";
-document.getElementById("phone").value= auth.currentUser.phoneNumber || "";
+document.getElementById("phone").value=auth.currentUser.phoneNumber||"";
 document.getElementById("city").value="";
 document.getElementById("description").value="";
 document.getElementById("category").value="سيارات ومركبات";
@@ -1231,135 +856,85 @@ openFormScreen();
 
 window.showMyPosts=()=>{
 if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}
-showOnlyMine=true;
-showOnlyFavorites=false;
-currentSubCategory="الكل";
-renderSubCats();
+showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();
 homeTitle.textContent="إعلاناتي";
-home.classList.remove("hidden");
-form.classList.add("hidden");
-closeOverlay();
-setActiveNav("mine");
-renderPosts();
+home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();
 };
 
 window.showFavorites=()=>{
-if(showOnlyFavorites && !showOnlyMine){
-  showHome();
-  return;
-}
-showOnlyFavorites=true;
-showOnlyMine=false;
-currentSubCategory="الكل";
-renderSubCats();
+if(showOnlyFavorites && !showOnlyMine){showHome();return;}
+showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";renderSubCats();
 homeTitle.textContent="❤️ المفضلة";
-home.classList.remove("hidden");
-form.classList.add("hidden");
-closeOverlay();
-setActiveNav("fav");
-renderPosts();
+home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();
 };
 
 function populateCitySelects(){
-const groups=Object.entries(LIBYA_CITIES).map(([region,cities])=>
-`<optgroup label="${region}">${cities.map(c=>`<option value="${c}">${c}</option>`).join("")}</optgroup>`
-).join("");
+const groups=Object.entries(LIBYA_CITIES).map(([region,cities])=>`<optgroup label="${region}">${cities.map(c=>`<option value="${c}">${c}</option>`).join("")}</optgroup>`).join("");
 document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 كل المدن</option>${groups}`;
 document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${groups}`;
 }
 populateCitySelects();
 
 function populateBrandSelect(){
-  const sel = document.getElementById("brand");
-  if(!sel) return;
-  sel.innerHTML = `<option value="">اختر الماركة (اختياري)</option>` +
-    CAR_BRANDS.map(b=>`<option value="${b}">${b}</option>`).join("");
+const sel=document.getElementById("brand");
+if(!sel)return;
+sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+CAR_BRANDS.map(b=>`<option value="${b}">${b}</option>`).join("");
 }
 populateBrandSelect();
 
 window.onCategoryChange = () => {
-  const cat = document.getElementById("category").value;
-  const brandField = document.getElementById("brandField");
-  if(cat === "سيارات ومركبات"){
-    brandField.classList.remove("hidden");
-  } else {
-    brandField.classList.add("hidden");
-    document.getElementById("brand").value = "";
-  }
+const cat=document.getElementById("category").value;
+const brandField=document.getElementById("brandField");
+if(cat==="سيارات ومركبات"){brandField.classList.remove("hidden");}
+else{brandField.classList.add("hidden");document.getElementById("brand").value="";}
 };
 
 setTimeout(updateClearBtn, 500);
 
-window.filterCity=()=>{
-currentCity=document.getElementById("cityFilter").value;
-renderPosts();
-};
+window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
 
 window.filterCategory=(cat)=>{
-  currentCategory=cat;
-  currentSubCategory="الكل";
-  document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));
-  renderSubCats();
-  renderPosts();
+currentCategory=cat;currentSubCategory="الكل";
+document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));
+renderSubCats();renderPosts();
 };
 
 function renderSubCats(){
-  if(!subCatsRow) return;
-  const subs = SUB_CATEGORIES[currentCategory];
-  if(!subs){
-    subCatsRow.classList.add("hidden");
-    subCatsRow.innerHTML = "";
-    return;
-  }
-  subCatsRow.classList.remove("hidden");
-  subCatsRow.innerHTML = `
-    <span class="subCatTitle">${subs.title}</span>
-    <button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>
-    ${subs.items.map(b=>`
-      <button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>
-    `).join("")}
-  `;
+if(!subCatsRow)return;
+const subs=SUB_CATEGORIES[currentCategory];
+if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}
+subCatsRow.classList.remove("hidden");
+subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span>
+<button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>
+${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;
 }
 
-window.filterSubCategory = (sub) => {
-  currentSubCategory = sub;
-  renderSubCats();
-  renderPosts();
-};
-
+window.filterSubCategory = (sub) => {currentSubCategory=sub;renderSubCats();renderPosts();};
 window.loadPosts=()=>renderPosts();
 
 window.saveSearch = () => {
-  const input = document.getElementById("searchInput");
-  if(!input) return;
-  const v = input.value || "";
-  try{ localStorage.setItem('lastSearch', v); }catch(e){}
-  try{ sessionStorage.setItem('lastSearch', v); }catch(e){}
-  updateClearBtn();
-  renderPosts();
+const input=document.getElementById("searchInput");
+if(!input)return;
+const v=input.value||"";
+try{localStorage.setItem('lastSearch',v);}catch(e){}
+try{sessionStorage.setItem('lastSearch',v);}catch(e){}
+updateClearBtn();renderPosts();
 };
 
 window.clearSearch = () => {
-  const input = document.getElementById("searchInput");
-  if(input){
-    input.value = "";
-    input.focus();
-  }
-  try{ localStorage.removeItem('lastSearch'); }catch(e){}
-  try{ sessionStorage.removeItem('lastSearch'); }catch(e){}
-  updateClearBtn();
-  renderPosts();
+const input=document.getElementById("searchInput");
+if(input){input.value="";input.focus();}
+try{localStorage.removeItem('lastSearch');}catch(e){}
+try{sessionStorage.removeItem('lastSearch');}catch(e){}
+updateClearBtn();renderPosts();
 };
 
 function updateClearBtn(){
-  const input = document.getElementById("searchInput");
-  const btn = document.getElementById("clearSearchBtn");
-  if(!input || !btn) return;
-  if(input.value && input.value.length > 0){
-    btn.style.display = "flex";
-  } else {
-    btn.style.display = "none";
-  }
+const input=document.getElementById("searchInput");
+const btn=document.getElementById("clearSearchBtn");
+if(!input||!btn)return;
+if(input.value && input.value.length>0){btn.style.display="flex";}
+else{btn.style.display="none";}
 }
 
 function startPostsListener(){
@@ -1368,10 +943,7 @@ allPosts=snapshot.docs.map(d=>({id:d.id,...d.data()}));
 allPosts=sortPosts(allPosts);
 renderPosts();
 updateModBadge();
-},err=>{
-console.error(err);
-postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";
-});
+},err=>{console.error(err);postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";});
 }
 
 function timeAgo(ts){
@@ -1386,33 +958,30 @@ return Math.floor(diff/86400)+" يوم";
 function renderPosts(){
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
-const me = auth.currentUser;
+const me=auth.currentUser;
 let list=allPosts.filter(p=>{
-  const status = getStatus(p);
-  const isOwner = me && p.uid === me.uid;
-  if(status !== "approved" && !isOwner && !isAdmin) return false;
-  if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
-  if(currentSubCategory!=="الكل" && p.brand !== currentSubCategory) return false;
-  if(currentCity!=="الكل" && p.city!==currentCity)return false;
-  if(showOnlyMine && p.uid!==me?.uid)return false;
-  if(showOnlyFavorites && !favs.includes(p.id))return false;
-  if(term && !(p.title||"").toLowerCase().includes(term))return false;
-  return true;
+const status=getStatus(p);
+const isOwner=me && p.uid===me.uid;
+if(status!=="approved" && !isOwner && !isAdmin)return false;
+if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
+if(currentSubCategory!=="الكل" && p.brand!==currentSubCategory)return false;
+if(currentCity!=="الكل" && p.city!==currentCity)return false;
+if(showOnlyMine && p.uid!==me?.uid)return false;
+if(showOnlyFavorites && !favs.includes(p.id))return false;
+if(term && !(p.title||"").toLowerCase().includes(term))return false;
+return true;
 });
-list = sortPosts(list);
+list=sortPosts(list);
 
 if(list.length===0){
-  if(showOnlyFavorites){
-    postsBox.innerHTML="<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.<br>اضغط على القلب في أي إعلان لإضافته هنا.</div>";
-  } else {
-    postsBox.innerHTML="<div class='empty'>لا توجد إعلانات هنا حالياً</div>";
-  }
-  return;
+if(showOnlyFavorites){postsBox.innerHTML="<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.<br>اضغط على القلب في أي إعلان لإضافته هنا.</div>";}
+else{postsBox.innerHTML="<div class='empty'>لا توجد إعلانات هنا حالياً</div>";}
+return;
 }
 
 postsBox.innerHTML=list.map(p=>{
-const status = getStatus(p);
-const isOwner = me && p.uid === me.uid;
+const status=getStatus(p);
+const isOwner=me && p.uid===me.uid;
 const canDelete=isAdmin||isOwner;
 const images=getImages(p);
 const dots=dotsHtml(images);
@@ -1422,40 +991,33 @@ const del=canDelete?`<button class="iconBtn2 delBtn" title="حذف" onclick="del
 const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" title="${isPostFeatured(p)?'إلغاء التمييز':'تمييز لمدة 30 يوم'}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
-
-let cardClass = "";
-if(status === "approved" && isPostFeatured(p)) cardClass = "featured";
-else if(status === "pending") cardClass = "pending";
-else if(status === "rejected") cardClass = "rejected";
-
-const brandTag = p.brand ? `<span class="brandTag">${escapeHtml(p.brand)}</span>` : `<span class="catTag">${escapeHtml(p.category||"")}</span>`;
-
+let cardClass="";
+if(status==="approved" && isPostFeatured(p))cardClass="featured";
+else if(status==="pending")cardClass="pending";
+else if(status==="rejected")cardClass="rejected";
+const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<span class="catTag">${escapeHtml(p.category||"")}</span>`;
 return `
 <div class="card ${cardClass}">
-  <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
-  <div class="body">
-    <h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
-    <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
-    ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
-    ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
-    <div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>
-    ${viewsLine}
-    <div class="actions">${wa}${feat}${edit}${del}</div>
-  </div>
+<div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
+<div class="body">
+<h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>
+<div class="price">${p.price!=null?p.price+" د.ل":""}</div>
+${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
+${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
+<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>
+${viewsLine}
+<div class="actions">${wa}${feat}${edit}${del}</div>
+</div>
 </div>`;
 }).join("");
 }
 
-
 function defaultName(user){
 const dn=(user.displayName||"").trim().slice(0,30);
-if(dn.length>=2) return dn;
-if(user.phoneNumber){
-  const last = user.phoneNumber.slice(-4);
-  return "مستخدم " + last;
-}
+if(dn.length>=2)return dn;
+if(user.phoneNumber){const last=user.phoneNumber.slice(-4);return "مستخدم "+last;}
 const emailName=(user.email||"").split("@")[0].slice(0,30);
-if(emailName.length>=2) return emailName;
+if(emailName.length>=2)return emailName;
 return "مستخدم "+user.uid.slice(0,4);
 }
 
@@ -1480,10 +1042,7 @@ setDoc(doc(db,"profiles",user.uid),{name,createdAt:profileCreatedAt(user)}).catc
 },err=>console.error(err));
 }
 
-function stopProfileListener(){
-if(unsubProfile){unsubProfile();unsubProfile=null;}
-myProfile=null;
-}
+function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
 window.saveMyName=async()=>{
 const me=auth.currentUser;
@@ -1491,17 +1050,12 @@ if(!me)return;
 const name=document.getElementById("myName").value.trim();
 if(name.length<2||name.length>30){alert("الاسم يجب أن يكون بين 2 و30 حرفاً");return;}
 try{
-if(myProfile){
-await updateDoc(doc(db,"profiles",me.uid),{name});
-}else{
-await setDoc(doc(db,"profiles",me.uid),{name,createdAt:profileCreatedAt(me)});
-}
+if(myProfile){await updateDoc(doc(db,"profiles",me.uid),{name});}
+else{await setDoc(doc(db,"profiles",me.uid),{name,createdAt:profileCreatedAt(me)});}
 const mine=allPosts.filter(p=>p.uid===me.uid);
 await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));
 alert("تم حفظ الاسم");
-}catch(e){
-alert("تعذر حفظ الاسم: "+e.message);
-}
+}catch(e){alert("تعذر حفظ الاسم: "+e.message);}
 };
 
 window.contactSeller=(id)=>{
@@ -1512,47 +1066,29 @@ warnOverlay.classList.remove("hidden");
 };
 
 window.sharePost = async (id)=>{
-  const p = allPosts.find(x=>x.id===id);
-  if(!p) return;
-  const url = window.location.origin + window.location.pathname + '#post-' + id;
-  const priceText = p.price!=null ? p.price + ' د.ل' : '';
-  const cityText = p.city ? '\n📍 ' + p.city : '';
-  const text = `🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;
-  const shareData = { title: p.title || 'تسوق الآن', text: text, url: url };
-  try{
-    if(navigator.share){
-      await navigator.share(shareData);
-    } else {
-      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
-      window.open(waUrl, '_blank');
-    }
-  }catch(e){
-    if(e && e.name !== 'AbortError'){
-      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
-      window.open(waUrl, '_blank');
-    }
-  }
-};
-
-function starsText(n){
-const r=Math.max(0,Math.min(5,Math.round(n)));
-return "★".repeat(r)+"☆".repeat(5-r);
+const p=allPosts.find(x=>x.id===id);
+if(!p)return;
+const url=window.location.origin + window.location.pathname + '#post-' + id;
+const priceText=p.price!=null?p.price+' د.ل':'';
+const cityText=p.city?'\n📍 '+p.city:'';
+const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;
+const shareData={title:p.title||'تسوق الآن',text:text,url:url};
+try{
+if(navigator.share){await navigator.share(shareData);}
+else{const waUrl='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(waUrl,'_blank');}
+}catch(e){
+if(e && e.name!=='AbortError'){const waUrl='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(waUrl,'_blank');}
 }
-
-window.loginToRate=()=>{
-closeOverlay();
-authOverlay.classList.remove("hidden");
 };
 
-window.openMySeller=()=>{
-if(auth.currentUser)openSeller(auth.currentUser.uid);
-};
+function starsText(n){const r=Math.max(0,Math.min(5,Math.round(n)));return "★".repeat(r)+"☆".repeat(5-r);}
+
+window.loginToRate=()=>{closeOverlay();authOverlay.classList.remove("hidden");};
+window.openMySeller=()=>{if(auth.currentUser)openSeller(auth.currentUser.uid);};
 
 window.openSeller=async(uid)=>{
 sellerPanelUid=uid;
-accountOverlay.classList.add("hidden");
-postOverlay.classList.add("hidden");
-sellerOverlay.classList.remove("hidden");
+accountOverlay.classList.add("hidden");postOverlay.classList.add("hidden");sellerOverlay.classList.remove("hidden");
 const box=document.getElementById("sellerContent");
 box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
 const profP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
@@ -1574,20 +1110,16 @@ const me=auth.currentUser;
 const isMe=!!me&&me.uid===uid;
 const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
 selectedStars=mine?(mine.stars||0):0;
-
 let rateHtml="";
-if(isMe){
-rateHtml="";
-}else if(!me){
-rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
-}else{
+if(isMe){rateHtml="";}
+else if(!me){rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;}
+else{
 rateHtml=`
 <div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div>
 <div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div>
 <textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea>
 <button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
 }
-
 const reviewsHtml=count?ratings.map(r=>{
 const canDel=isAdmin||(me&&r.raterUid===me.uid);
 return `<div class="reviewItem">
@@ -1596,27 +1128,17 @@ return `<div class="reviewItem">
 ${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}
 </div>`;
 }).join(""):`<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
-
 box.innerHTML=`
-<div class="sHead">
-<div class="sName">👤 ${escapeHtml(name)}</div>
-<div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div>
-</div>
-<div class="sStats">
-<div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div>
+<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}</div>
+<div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div></div>
+<div class="sStats"><div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div>
 <div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div>
-<div class="sStat"><b>${count}</b><span>التقييمات</span></div>
-</div>
+<div class="sStat"><b>${count}</b><span>التقييمات</span></div></div>
 ${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات حالياً</div>":""}
-${rateHtml}
-<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>
-${reviewsHtml}`;
+${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
 }
 
-window.setStars=(n)=>{
-selectedStars=n;
-document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));
-};
+window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
 
 window.submitRating=async()=>{
 const me=auth.currentUser;
@@ -1629,34 +1151,21 @@ const raterName=(myProfile&&myProfile.name)||defaultName(me);
 try{
 await setDoc(doc(db,"ratings",uid+"_"+me.uid),{sellerUid:uid,raterUid:me.uid,raterName,stars:selectedStars,comment,createdAt:Date.now()});
 await openSeller(uid);
-}catch(e){
-alert("تعذر إرسال التقييم: "+e.message);
-}
+}catch(e){alert("تعذر إرسال التقييم: "+e.message);}
 };
 
 window.deleteRating=async(id)=>{
 if(!confirm("حذف هذا التقييم؟"))return;
-try{
-await deleteDoc(doc(db,"ratings",id));
-await openSeller(sellerPanelUid);
-}catch(e){
-alert("خطأ: "+e.message);
-}
+try{await deleteDoc(doc(db,"ratings",id));await openSeller(sellerPanelUid);}
+catch(e){alert("خطأ: "+e.message);}
 };
 
-function getImages(p){
-return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);
-}
-
+function getImages(p){return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);}
 function carouselHtml(images){
 if(!images.length)return `<div class="carousel"><div class="slide"><span class="ph">🖼️</span></div></div>`;
 return `<div class="carousel">${images.map(u=>`<div class="slide"><img src="${escapeHtml(u)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=ph>🖼️</span>'"></div>`).join("")}</div>`;
 }
-
-function dotsHtml(images){
-if(images.length<=1)return "";
-return `<div class="dots">${images.map((_,i)=>`<span class="dot${i===0?" active":""}"></span>`).join("")}</div>`;
-}
+function dotsHtml(images){if(images.length<=1)return"";return `<div class="dots">${images.map((_,i)=>`<span class="dot${i===0?" active":""}"></span>`).join("")}</div>`;}
 
 document.addEventListener("scroll",e=>{
 const el=e.target;
@@ -1667,10 +1176,7 @@ const i=Math.round(el.scrollLeft/(el.clientWidth||1));
 Array.from(dotsBox.children).forEach((d,idx)=>d.classList.toggle("active",idx===i));
 },true);
 
-window.updateDescCount=()=>{
-const d=document.getElementById("description");
-document.getElementById("descCount").textContent=d?d.value.length:0;
-};
+window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 
 async function compressImage(file,maxSize=1280,quality=0.82){
 try{
@@ -1682,134 +1188,53 @@ canvas.width=w;canvas.height=h;
 canvas.getContext("2d").drawImage(bmp,0,0,w,h);
 const blob=await new Promise(res=>canvas.toBlob(res,"image/jpeg",quality));
 return blob||file;
-}catch(e){
-return file;
-}
+}catch(e){return file;}
 }
 
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);
 if(!p)return;
-
-const status = getStatus(p);
-const isOwner = auth.currentUser && auth.currentUser.uid === p.uid;
-
-if(status !== "approved" && !isOwner && !isAdmin){
-  alert("هذا الإعلان غير متاح حالياً.");
-  return;
-}
-
-if(!isOwner){
-  incrementViews(id);
-}
-
+const status=getStatus(p);
+const isOwner=auth.currentUser && auth.currentUser.uid===p.uid;
+if(status!=="approved" && !isOwner && !isAdmin){alert("هذا الإعلان غير متاح حالياً.");return;}
+if(!isOwner){incrementViews(id);}
 const images=getImages(p);
 const dots=dotsHtml(images);
-const desc=p.description
-?`<div class="pDesc">${escapeHtml(p.description)}</div>`
-:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
+const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف لهذا الإعلان.</div>`;
 const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 const shareBtn=(status==="approved")?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
-
-const viewsBadge = (isOwner || isAdmin) ? `<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>` : "";
-
-let statusBadge = "";
-if(isOwner || isAdmin){
-  if(status === "pending"){
-    statusBadge = `<span class="statusBadge pending">⏳ قيد المراجعة</span>`;
-  } else if(status === "rejected"){
-    statusBadge = `<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;
-  }
+const viewsBadge=(isOwner||isAdmin)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
+let statusBadge="";
+if(isOwner||isAdmin){
+if(status==="pending"){statusBadge=`<span class="statusBadge pending">⏳ قيد المراجعة</span>`;}
+else if(status==="rejected"){statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
 }
-
-let brandBadge = "";
-if(p.brand){
-  brandBadge = `<span class="brandBadge">🚗 ${escapeHtml(p.brand)}</span>`;
+let brandBadge="";
+if(p.brand){brandBadge=`<span class="brandBadge">🚗 ${escapeHtml(p.brand)}</span>`;}
+let featBadge="";
+if(status==="approved" && isPostFeatured(p)){
+const days=featuredDaysLeft(p);
+if(isOwner){featBadge=`<span class="featBadgeOwner">⭐ مميز — ${days} ${days===1?'يوم':'أيام'} متبقية</span>`;}
+else if(isAdmin){featBadge=`<span class="featBadge">⭐ مميز — ${days} ${days===1?'يوم':'أيام'}</span>`;}
+else{featBadge=`<span class="featBadge">⭐ إعلان مميز</span>`;}
 }
-
-let featBadge = "";
-if(status === "approved" && isPostFeatured(p)){
-  const days = featuredDaysLeft(p);
-  if(isOwner){
-    featBadge = `<span class="featBadgeOwner">⭐ مميز — ${days} ${days===1?'يوم':'أيام'} متبقية</span>`;
-  } else if(isAdmin){
-    featBadge = `<span class="featBadge">⭐ مميز — ${days} ${days===1?'يوم':'أيام'}</span>`;
-  } else {
-    featBadge = `<span class="featBadge">⭐ إعلان مميز</span>`;
-  }
+let upgradeBtn="";
+if(isOwner && status==="approved"){
+if(isPostFeatured(p)){upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;}
+else{upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;}
 }
-
-let upgradeBtn = "";
-if(isOwner && status === "approved"){
-  if(isPostFeatured(p)){
-    upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;
-  } else {
-    upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;
-  }
-}
-
-let adminPanel = "";
+let adminPanel="";
 if(isAdmin){
-  if(status === "pending"){
-    adminPanel = `
-      <div class="reviewBox">
-        <div class="rbTitle">⏳ هذا الإعلان بانتظار المراجعة</div>
-        <div class="rbBtns">
-          <button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button>
-          <button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button>
-        </div>
-      </div>`;
-  } else if(status === "rejected"){
-    adminPanel = `
-      <div class="reviewBox" style="background:#fdeceb;border-color:#e5484d">
-        <div class="rbTitle" style="color:#b91c1c">❌ إعلان مرفوض</div>
-        <div class="rbBtns">
-          <button class="approve" onclick="approvePost('${p.id}')">✅ قبول الإعلان</button>
-        </div>
-      </div>`;
-  }
-  adminPanel += `
-    <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px">
-      <div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div>
-      <div class="adminPlans">
-        <button onclick="adminFeature('${p.id}',7)">7 أيام</button>
-        <button onclick="adminFeature('${p.id}',15)">15 يوم</button>
-        <button onclick="adminFeature('${p.id}',30)">30 يوم</button>
-        ${isPostFeatured(p)?`<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>`:""}
-      </div>
-    </div>`;
+if(status==="pending"){
+adminPanel=`<div class="reviewBox"><div class="rbTitle">⏳ هذا الإعلان بانتظار المراجعة</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button><button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button></div></div>`;
+}else if(status==="rejected"){
+adminPanel=`<div class="reviewBox" style="background:#fdeceb;border-color:#e5484d"><div class="rbTitle" style="color:#b91c1c">❌ إعلان مرفوض</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ قبول الإعلان</button></div></div>`;
 }
-
-/* إعلانات مشابهة */
-const similar = allPosts
-  .filter(x => x.id !== p.id && x.category === p.category && getStatus(x) === "approved")
-  .slice(0, 4);
-
-const similarHtml = similar.length ? `
-  <div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2">
-    <div style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--text)">
-      🔄 إعلانات مشابهة
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      ${similar.map(s => {
-        const sImgs = getImages(s);
-        const sThumb = sImgs[0] || "";
-        return `
-          <div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer">
-            <div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">
-              ${sThumb ? `<img src="${escapeHtml(sThumb)}" style="width:100%;height:100%;object-fit:cover">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}
-            </div>
-            <div style="padding:8px 10px">
-              <div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div>
-              <div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div>
-              ${s.city?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px">📍 ${escapeHtml(s.city)}</div>`:""}
-            </div>
-          </div>`;
-      }).join("")}
-    </div>
-  </div>` : "";
-
+adminPanel+=`<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div><div class="adminPlans"><button onclick="adminFeature('${p.id}',7)">7 أيام</button><button onclick="adminFeature('${p.id}',15)">15 يوم</button><button onclick="adminFeature('${p.id}',30)">30 يوم</button>${isPostFeatured(p)?`<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>`:""}</div></div>`;
+}
+const similar=allPosts.filter(x=>x.id!==p.id && x.category===p.category && getStatus(x)==="approved").slice(0,4);
+const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--text)">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const sImgs=getImages(s);const sThumb=sImgs[0]||"";return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${sThumb?`<img src="${escapeHtml(sThumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div>${s.city?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px">📍 ${escapeHtml(s.city)}</div>`:""}</div></div>`;}).join("")}</div></div>`:"";
 document.getElementById("postContent").innerHTML=`
 <div class="pImg"><button class="closeOnImg" title="إغلاق" onclick="closeOverlay()">✕</button><button class="reportOnImg right" title="إبلاغ" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div>
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
@@ -1828,9 +1253,7 @@ ${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
 
-function escapeHtml(str){
-return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
+function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 
 function renderImagePicker(){
 const box=document.getElementById("imgThumbs");
@@ -1841,30 +1264,14 @@ return `<div class="imgThumb"><img src="${escapeHtml(src)}"><button class="rm" o
 document.getElementById("imgAddTile").classList.toggle("hidden",selectedImages.length>=5);
 }
 
-window.removeImage=(i)=>{
-selectedImages.splice(i,1);
-renderImagePicker();
-};
-
-window.handleFilesSelected=()=>{
-const input=document.getElementById("imageFile");
-const files=Array.from(input.files);
-const remaining=5-selectedImages.length;
-files.slice(0,remaining).forEach(file=>{
-selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});
-});
-input.value="";
-renderImagePicker();
-};
+window.removeImage=(i)=>{selectedImages.splice(i,1);renderImagePicker();};
+window.handleFilesSelected=()=>{const input=document.getElementById("imageFile");const files=Array.from(input.files);const remaining=5-selectedImages.length;files.slice(0,remaining).forEach(file=>{selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});});input.value="";renderImagePicker();};
 
 async function uploadToImgBB(file){
 const formData=new FormData();
 const toSend=await compressImage(file);
 formData.append("image",toSend,"photo.jpg");
-const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{
-method:"POST",
-body:formData
-});
+const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:formData});
 const data=await res.json();
 if(!data.success)throw new Error("فشل رفع الصورة");
 return data.data.url;
@@ -1875,67 +1282,38 @@ if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden"
 const title=document.getElementById("title").value.trim();
 const price=document.getElementById("price").value;
 const category=document.getElementById("category").value;
-const brand=document.getElementById("brand").value || "";
+const brand=document.getElementById("brand").value||"";
 const city=document.getElementById("city").value;
 const phone=document.getElementById("phone").value.trim();
 const description=document.getElementById("description").value.trim().slice(0,1000);
 const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
-
 if(!title||!price){alert("الرجاء إدخال العنوان والسعر");return;}
 if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على شروط نشر الإعلان أولاً");return;}
-
-const bad = checkContent(title, description);
-if(bad){
-  alert(`❌ لا يمكن نشر الإعلان\n\nالسبب: يحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}\n\nالرجاء تعديل النص والمحاولة مرة أخرى.`);
-  return;
-}
-
+const bad=checkContent(title,description);
+if(bad){alert(`❌ لا يمكن نشر الإعلان\n\nالسبب: يحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}\n\nالرجاء تعديل النص والمحاولة مرة أخرى.`);return;}
 if(!wasEditing){
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
-if(myCount>=3){
-alert("وصلت للحد الأقصى المسموح به (3 إعلانات لكل حساب).");
-return;
+const limit=await getUserLimit(auth.currentUser.uid);
+if(myCount>=limit){alert(`وصلت للحد الأقصى (${limit} إعلانات). تواصل مع الإدارة لزيادة الحد.`);return;}
 }
-}
-
 saveBtn.disabled=true;
 saveBtn.textContent=wasEditing?"جاري الحفظ...":"جاري النشر...";
-
 try{
 const images=[];
 for(const item of selectedImages){
 if(item.type==="existing"){images.push(item.url);}
-else{
-saveBtn.textContent="جاري رفع الصور...";
-images.push(await uploadToImgBB(item.file));
+else{saveBtn.textContent="جاري رفع الصور...";images.push(await uploadToImgBB(item.file));}
 }
-}
-
 if(wasEditing){
-  await updateDoc(doc(db,"posts",editingPostId),{
-    title,price:Number(price),category,brand,city,description,phone,images,sellerName,
-    status:"pending",
-    rejectReason:null
-  });
+await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,status:"pending",rejectReason:null});
 }else{
-await addDoc(collection(db,"posts"),{
-title,price:Number(price),category,brand,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
-uid:auth.currentUser.uid,
-email:auth.currentUser.email||"",
-views:0,
-featured:false,
-featuredUntil:0,
-featuredPlan:null,
-status:"pending",
-createdAt:Date.now()
-});
+await addDoc(collection(db,"posts"),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),uid:auth.currentUser.uid,email:auth.currentUser.email||"",views:0,featured:false,featuredUntil:0,featuredPlan:null,status:"pending",createdAt:Date.now()});
 alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");
 }
-
 editingPostId=null;
 document.getElementById("title").value="";
 document.getElementById("price").value="";
@@ -1943,181 +1321,90 @@ document.getElementById("phone").value="";
 selectedImages=[];
 renderImagePicker();
 showHome();
-}catch(e){
-alert("خطأ أثناء الحفظ: "+e.message);
-}finally{
-saveBtn.disabled=false;
-saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";
-}
+}catch(e){alert("خطأ أثناء الحفظ: "+e.message);}
+finally{saveBtn.disabled=false;saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";}
 };
 
 window.approvePost = async (id) => {
-  if(!isAdmin) return;
-  try{
-    await updateDoc(doc(db,"posts",id), {
-      status:"approved",
-      approvedAt: Date.now(),
-      rejectReason: null
-    });
-    alert("✅ تم قبول الإعلان");
-    closeOverlay();
-  }catch(e){ alert("خطأ: "+e.message); }
+if(!isAdmin)return;
+try{await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null});alert("✅ تم قبول الإعلان");closeOverlay();}
+catch(e){alert("خطأ: "+e.message);}
 };
 
 window.rejectPost = async (id) => {
-  if(!isAdmin) return;
-  const reason = prompt("سبب الرفض (سيظهر لصاحب الإعلان):", "محتوى غير مناسب");
-  if(reason === null) return;
-  try{
-    await updateDoc(doc(db,"posts",id), {
-      status:"rejected",
-      rejectReason: reason || "محتوى غير مناسب",
-      rejectedAt: Date.now()
-    });
-    alert("✅ تم رفض الإعلان");
-    closeOverlay();
-  }catch(e){ alert("خطأ: "+e.message); }
+if(!isAdmin)return;
+const reason=prompt("سبب الرفض (سيظهر لصاحب الإعلان):","محتوى غير مناسب");
+if(reason===null)return;
+try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});alert("✅ تم رفض الإعلان");closeOverlay();}
+catch(e){alert("خطأ: "+e.message);}
 };
 
 function renderModeration(){
-  const list = document.getElementById("moderationList");
-  if(!list) return;
-  const pending = allPosts.filter(p => getStatus(p) === "pending");
-
-  if(pending.length === 0){
-    list.innerHTML = "<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة حالياً</div>";
-    return;
-  }
-
-  const toolbar = `
-    <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
-      <div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">
-        📊 يوجد ${pending.length} إعلان بانتظار المراجعة
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">
-          ✅ موافقة على الكل
-        </button>
-        <button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">
-          ❌ رفض الكل
-        </button>
-      </div>
-    </div>`;
-
-  const items = pending.map(p=>{
-    const imgs = getImages(p);
-    const thumb = imgs[0] || "";
-    const desc = (p.description||"").trim();
-    const descShort = desc.length > 80 ? desc.slice(0,80) + "…" : (desc || "لا يوجد وصف");
-
-    return `
-      <div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0">
-        <div style="display:flex;gap:10px;align-items:flex-start">
-          <div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">
-            ${thumb
-              ? `<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover">`
-              : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:800;font-size:14.5px;color:var(--text);margin-bottom:3px">
-              ${escapeHtml(p.title||"بدون عنوان")}
-            </div>
-            <div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">
-              ${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}
-            </div>
-            <div style="font-size:11.5px;color:var(--muted);line-height:1.6">
-              ${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>
-              👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
-            </div>
-            <div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">
-              ${escapeHtml(descShort)}
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
-          <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
-            ✅ موافقة
-          </button>
-          <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
-            ❌ رفض
-          </button>
-          <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">
-            👁️ عرض
-          </button>
-        </div>
-      </div>`;
-  }).join("");
-
-  list.innerHTML = toolbar + items;
+const list=document.getElementById("moderationList");
+if(!list)return;
+const pending=allPosts.filter(p=>getStatus(p)==="pending");
+if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة حالياً</div>";return;}
+const toolbar=`
+<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
+<div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button>
+<button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button>
+</div></div>`;
+const items=pending.map(p=>{
+const imgs=getImages(p);const thumb=imgs[0]||"";const desc=(p.description||"").trim();const descShort=desc.length>80?desc.slice(0,80)+"…":(desc||"لا يوجد وصف");
+return `
+<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:12px;background:#fffbf0">
+<div style="display:flex;gap:10px;align-items:flex-start">
+<div style="width:80px;height:80px;border-radius:10px;overflow:hidden;flex:0 0 auto;background:#e6f6fe">${thumb?`<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:26px">🖼️</div>`}</div>
+<div style="flex:1;min-width:0">
+<div style="font-weight:800;font-size:14.5px;color:var(--text);margin-bottom:3px">${escapeHtml(p.title||"بدون عنوان")}</div>
+<div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}</div>
+<div style="font-size:11.5px;color:var(--muted);line-height:1.6">${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}</div>
+<div style="font-size:12px;color:#555;margin-top:5px;line-height:1.6;background:#fff;padding:8px;border-radius:8px;border:1px solid #edeff2">${escapeHtml(descShort)}</div>
+</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+<button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ موافقة</button>
+<button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ رفض</button>
+<button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض</button>
+</div></div>`;
+}).join("");
+list.innerHTML=toolbar+items;
 }
 
 window.approveAllPending = async () => {
-  if(!isAdmin) return;
-  const pending = allPosts.filter(p => getStatus(p) === "pending");
-  if(pending.length === 0){ alert("لا توجد إعلانات بانتظار المراجعة"); return; }
-  if(!confirm(`هل تريد الموافقة على جميع الإعلانات (${pending.length} إعلان)؟`)) return;
-
-  let ok = 0, fail = 0;
-  for(const p of pending){
-    try{
-      await updateDoc(doc(db,"posts",p.id), {
-        status:"approved",
-        approvedAt: Date.now(),
-        rejectReason: null
-      });
-      ok++;
-    }catch(e){ fail++; console.error(e); }
-  }
-  alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
-  renderModeration();
+if(!isAdmin)return;
+const pending=allPosts.filter(p=>getStatus(p)==="pending");
+if(pending.length===0){alert("لا توجد إعلانات بانتظار المراجعة");return;}
+if(!confirm(`هل تريد الموافقة على جميع الإعلانات (${pending.length} إعلان)؟`))return;
+let ok=0,fail=0;
+for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null});ok++;}catch(e){fail++;console.error(e);}}
+alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
+renderModeration();
 };
 
 window.deleteAllPending = async () => {
-  if(!isAdmin) return;
-  const pending = allPosts.filter(p => getStatus(p) === "pending");
-  if(pending.length === 0){ alert("لا توجد إعلانات بانتظار المراجعة"); return; }
-  if(!confirm(`⚠️ هل تريد رفض جميع الإعلانات (${pending.length} إعلان)؟`)) return;
-
-  const reason = prompt("سبب الرفض الجماعي:", "محتوى غير مناسب");
-  if(reason === null) return;
-
-  let ok = 0, fail = 0;
-  for(const p of pending){
-    try{
-      await updateDoc(doc(db,"posts",p.id), {
-        status:"rejected",
-        rejectReason: reason || "محتوى غير مناسب",
-        rejectedAt: Date.now()
-      });
-      ok++;
-    }catch(e){ fail++; console.error(e); }
-  }
-  alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
-  renderModeration();
+if(!isAdmin)return;
+const pending=allPosts.filter(p=>getStatus(p)==="pending");
+if(pending.length===0){alert("لا توجد إعلانات بانتظار المراجعة");return;}
+if(!confirm(`⚠️ هل تريد رفض جميع الإعلانات (${pending.length} إعلان)؟`))return;
+const reason=prompt("سبب الرفض الجماعي:","محتوى غير مناسب");
+if(reason===null)return;
+let ok=0,fail=0;
+for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){fail++;console.error(e);}}
+alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);
+renderModeration();
 };
 
 window.reportPost=async(id)=>{
-if(!auth.currentUser){
-  pendingAction = { type: "report", postId: id };
-  authOverlay.classList.remove("hidden");
-  return;
-}
+if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}
 const reason=prompt("سبب الإبلاغ (اختياري):");
 if(reason===null)return;
 try{
 const post=allPosts.find(p=>p.id===id);
-await addDoc(collection(db,"reports"),{
-postId:id,
-postTitle:post?post.title:"",
-reason:reason||"",
-reporterEmail:auth.currentUser.email||"",
-reporterUid:auth.currentUser.uid,
-createdAt:Date.now()
-});
+await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});
 alert("تم إرسال الإبلاغ، شكراً لك");
-}catch(e){
-alert("تعذر إرسال الإبلاغ: "+e.message);
-}
+}catch(e){alert("تعذر إرسال الإبلاغ: "+e.message);}
 };
 
 function startReportsListener(){
@@ -2132,255 +1419,147 @@ reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.
 function renderReports(){
 const list=document.getElementById("reportsList");
 if(!list)return;
-if(allReports.length===0){
-list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات حالياً</div>";
-return;
-}
-
-const toolbar = `
-  <div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px">
-    <div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">
-      🚩 يوجد ${allReports.length} إبلاغ بانتظار المراجعة
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">
-        🗑️ تجاهل الكل
-      </button>
-      <button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">
-        ❌ حذف الكل
-      </button>
-    </div>
-  </div>`;
-
-const items = allReports.map(r=>`
+if(allReports.length===0){list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات حالياً</div>";return;}
+const toolbar=`
+<div style="background:#fdeceb;border:1px solid #e5484d;border-radius:12px;padding:12px;margin-bottom:12px">
+<div style="font-weight:800;color:#b91c1c;margin-bottom:10px;font-size:14px">🚩 يوجد ${allReports.length} إبلاغ بانتظار المراجعة</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<button onclick="dismissAllReports()" style="padding:11px 4px;border:none;border-radius:10px;background:#8a93a3;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ تجاهل الكل</button>
+<button onclick="deleteAllReportedPosts()" style="padding:11px 4px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ حذف الكل</button>
+</div></div>`;
+const items=allReports.map(r=>`
 <div class="reportItem" style="background:#fff">
-  <div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div>
-  <div class="rMeta">
-    <b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br>
-    <b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}
-  </div>
-  <div class="rActions">
-    <button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button>
-    <button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button>
-    <button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button>
-  </div>
-</div>`).join("");
-
-list.innerHTML = toolbar + items;
+<div class="rTitle">${escapeHtml(r.postTitle||"إعلان محذوف")}</div>
+<div class="rMeta"><b>السبب:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} — ${timeAgo(r.createdAt)}</div>
+<div class="rActions">
+<button class="rDelete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button>
+<button class="rDismiss" onclick="dismissReport('${r.id}')">👁️ تجاهل</button>
+<button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button>
+</div></div>`).join("");
+list.innerHTML=toolbar+items;
 }
 
 window.dismissAllReports = async () => {
-  if(!isAdmin) return;
-  if(allReports.length === 0){ alert("لا توجد إبلاغات"); return; }
-  if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ)؟\n\nلن يتم حذف أي إعلان، فقط مسح الإبلاغات.`)) return;
-
-  let ok = 0, fail = 0;
-  for(const r of allReports){
-    try{
-      await deleteDoc(doc(db,"reports",r.id));
-      ok++;
-    }catch(e){ fail++; console.error(e); }
-  }
-  alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
-  renderReports();
+if(!isAdmin)return;
+if(allReports.length===0){alert("لا توجد إبلاغات");return;}
+if(!confirm(`⚠️ تجاهل جميع الإبلاغات (${allReports.length} إبلاغ)؟\n\nلن يتم حذف أي إعلان، فقط مسح الإبلاغات.`))return;
+let ok=0,fail=0;
+for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){fail++;console.error(e);}}
+alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+renderReports();
 };
 
 window.deleteAllReportedPosts = async () => {
-  if(!isAdmin) return;
-  if(allReports.length === 0){ alert("لا توجد إبلاغات"); return; }
-
-  const uniquePostIds = [...new Set(allReports.map(r=>r.postId).filter(x=>x))];
-
-  if(!confirm(`⚠️ تحذير!\n\nسيتم حذف ${uniquePostIds.length} إعلان نهائياً\nوإزالة ${allReports.length} إبلاغ.\n\nهل أنت متأكد؟`)) return;
-
-  const confirmText = prompt(`اكتب "حذف" للتأكيد:`);
-  if(confirmText !== "حذف"){
-    alert("❌ تم إلغاء العملية");
-    return;
-  }
-
-  let okPosts = 0, okReports = 0, fail = 0;
-
-  for(const pid of uniquePostIds){
-    try{
-      await deleteDoc(doc(db,"posts",pid));
-      okPosts++;
-    }catch(e){ fail++; console.error(e); }
-  }
-
-  for(const r of allReports){
-    try{
-      await deleteDoc(doc(db,"reports",r.id));
-      okReports++;
-    }catch(e){ fail++; console.error(e); }
-  }
-
-  alert(`✅ تم حذف ${okPosts} إعلان\n✅ تم إزالة ${okReports} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
-  renderReports();
+if(!isAdmin)return;
+if(allReports.length===0){alert("لا توجد إبلاغات");return;}
+const uniquePostIds=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];
+if(!confirm(`⚠️ تحذير!\n\nسيتم حذف ${uniquePostIds.length} إعلان نهائياً\nوإزالة ${allReports.length} إبلاغ.\n\nهل أنت متأكد؟`))return;
+const confirmText=prompt(`اكتب "حذف" للتأكيد:`);
+if(confirmText!=="حذف"){alert("❌ تم إلغاء العملية");return;}
+let okPosts=0,okReports=0,fail=0;
+for(const pid of uniquePostIds){try{await deleteDoc(doc(db,"posts",pid));okPosts++;}catch(e){fail++;console.error(e);}}
+for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okReports++;}catch(e){fail++;console.error(e);}}
+alert(`✅ تم حذف ${okPosts} إعلان\n✅ تم إزالة ${okReports} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);
+renderReports();
 };
 
-window.dismissReport=async(reportId)=>{
-try{await deleteDoc(doc(db,"reports",reportId));}
-catch(e){alert("خطأ: "+e.message);}
-};
-
-window.deleteReportedPost=async(postId,reportId)=>{
-if(!confirm("حذف الإعلان المبلّغ عنه نهائياً؟"))return;
-try{
-await deleteDoc(doc(db,"posts",postId));
-await deleteDoc(doc(db,"reports",reportId));
-}catch(e){alert("خطأ: "+e.message);}
-};
-
-window.deletePost=async(id)=>{
-if(!confirm("هل تريد حذف هذا الإعلان؟"))return;
-try{
-await deleteDoc(doc(db,"posts",id));
-}catch(e){
-alert("خطأ أثناء الحذف: "+e.message);
-}
-};
+window.dismissReport=async(reportId)=>{try{await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
+window.deleteReportedPost=async(postId,reportId)=>{if(!confirm("حذف الإعلان المبلّغ عنه نهائياً؟"))return;try{await deleteDoc(doc(db,"posts",postId));await deleteDoc(doc(db,"reports",reportId));}catch(e){alert("خطأ: "+e.message);}};
+window.deletePost=async(id)=>{if(!confirm("هل تريد حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ أثناء الحذف: "+e.message);}};
 
 window.toggleFeatured = async (id, event) => {
-  if(event) event.stopPropagation();
-  if(!isAdmin){ alert("هذي الميزة للمشرف فقط"); return; }
-  const post = allPosts.find(p => p.id === id);
-  if(!post) return;
-  if(isPostFeatured(post)){
-    if(!confirm("إلغاء تمييز هذا الإعلان؟")) return;
-    try{
-      await updateDoc(doc(db,"posts",id), {featured:false, featuredUntil:0, featuredPlan:null});
-    }catch(e){ alert("خطأ: " + e.message); }
-  } else {
-    try{
-      const until = Date.now() + 30*24*60*60*1000;
-      await updateDoc(doc(db,"posts",id), {featured:true, featuredUntil:until, featuredPlan:30});
-    }catch(e){ alert("خطأ: " + e.message); }
-  }
+if(event)event.stopPropagation();
+if(!isAdmin){alert("هذي الميزة للمشرف فقط");return;}
+const post=allPosts.find(p=>p.id===id);
+if(!post)return;
+if(isPostFeatured(post)){
+if(!confirm("إلغاء تمييز هذا الإعلان؟"))return;
+try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){alert("خطأ: "+e.message);}
+}else{
+try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){alert("خطأ: "+e.message);}
+}
 };
 
 window.adminFeature = async (id, days) => {
-  if(!isAdmin) return;
-  try{
-    if(days === 0){
-      await updateDoc(doc(db,"posts",id), {featured:false, featuredUntil:0, featuredPlan:null});
-      alert("✅ تم إلغاء التمييز");
-    } else {
-      const until = Date.now() + days*24*60*60*1000;
-      await updateDoc(doc(db,"posts",id), {featured:true, featuredUntil:until, featuredPlan:days});
-      alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);
-    }
-  }catch(e){ alert("خطأ: " + e.message); }
+if(!isAdmin)return;
+try{
+if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}
+else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);}
+}catch(e){alert("خطأ: "+e.message);}
 };
 
 window.openUpgrade = (id) => {
-  if(!auth.currentUser) return;
-  postOverlay.classList.add("hidden");
-  upgradeOverlay.classList.remove("hidden");
-  window._upgradePostId = id;
+if(!auth.currentUser)return;
+postOverlay.classList.add("hidden");
+upgradeOverlay.classList.remove("hidden");
+window._upgradePostId=id;
 };
 
 window.selectPlan = (days, label, price) => {
-  const id = window._upgradePostId;
-  const p = allPosts.find(x=>x.id===id);
-  if(!p) return;
-  const link = `${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;
-  const msg = `🛒 طلب ترقية إعلان\n\n` +
-              `📌 الإعلان: ${p.title||'بدون عنوان'}\n` +
-              `💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n` +
-              `📦 الباقة: ${label}\n` +
-              `💵 المبلغ: ${price} د.ل\n` +
-              `🔗 الرابط: ${link}\n\n` +
-              `⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\n` +
-              `أرجو ترتيب عملية الدفع والتفعيل.`;
-  const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, '_blank');
-  setTimeout(()=>{
-    closeOverlay();
-    alert("✅ بعد إتمام الدفع، اضغط الرابط الذي وصلك في واتساب لتفعيل الترقية.");
-  }, 400);
+const id=window._upgradePostId;
+const p=allPosts.find(x=>x.id===id);
+if(!p)return;
+const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;
+const msg=`🛒 طلب ترقية إعلان\n\n`+`📌 الإعلان: ${p.title||'بدون عنوان'}\n`+`💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n`+`📦 الباقة: ${label}\n`+`💵 المبلغ: ${price} د.ل\n`+`🔗 الرابط: ${link}\n\n`+`⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\n`+`أرجو ترتيب عملية الدفع والتفعيل.`;
+const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+window.open(waUrl,'_blank');
+setTimeout(()=>{closeOverlay();alert("✅ بعد إتمام الدفع، اضغط الرابط الذي وصلك في واتساب لتفعيل الترقية.");},400);
 };
 
 function tryApplyPendingUpgrade(){
-  if(!pendingAutoUpgrade) return;
-  if(!isAdmin) return;
-  const data = pendingAutoUpgrade;
-  pendingAutoUpgrade = null;
-  setTimeout(()=>{
-    const p = allPosts.find(x=>x.id===data.postId);
-    if(!p){
-      alert("⚠️ الإعلان غير موجود أو حُذف.");
-      history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-    const title = p.title || 'بدون عنوان';
-    const confirmMsg = `⭐ تفعيل الترقية\n\n` +
-      `📌 الإعلان: ${title}\n` +
-      `📦 المدة: ${data.days} يوم\n` +
-      `💵 المبلغ: ${data.price} د.ل\n\n` +
-      `هل تأكدت من استلام المبلغ؟`;
-    if(confirm(confirmMsg)){
-      adminFeature(data.postId, data.days);
-      history.replaceState(null, '', window.location.pathname);
-    } else {
-      history.replaceState(null, '', window.location.pathname);
-    }
-  }, 1200);
+if(!pendingAutoUpgrade)return;
+if(!isAdmin)return;
+const data=pendingAutoUpgrade;
+pendingAutoUpgrade=null;
+setTimeout(()=>{
+const p=allPosts.find(x=>x.id===data.postId);
+if(!p){alert("⚠️ الإعلان غير موجود أو حُذف.");history.replaceState(null,'',window.location.pathname);return;}
+const title=p.title||'بدون عنوان';
+const confirmMsg=`⭐ تفعيل الترقية\n\n`+`📌 الإعلان: ${title}\n`+`📦 المدة: ${data.days} يوم\n`+`💵 المبلغ: ${data.price} د.ل\n\n`+`هل تأكدت من استلام المبلغ؟`;
+if(confirm(confirmMsg)){adminFeature(data.postId,data.days);history.replaceState(null,'',window.location.pathname);}
+else{history.replaceState(null,'',window.location.pathname);}
+},1200);
 }
 
-/* ===== استرجاع آخر بحث ===== */
 (function(){
-  try{
-    let last = "";
-    try{ last = localStorage.getItem('lastSearch') || ""; }catch(e){}
-    if(!last){
-      try{ last = sessionStorage.getItem('lastSearch') || ""; }catch(e){}
-    }
-    if(!last) return;
-    const input = document.getElementById("searchInput");
-    if(input && last){
-      input.value = last;
-      updateClearBtn();
-      let attempts = 0;
-      const tryRender = () => {
-        attempts++;
-        if(allPosts.length > 0 || attempts > 20){
-          renderPosts();
-        } else {
-          setTimeout(tryRender, 300);
-        }
-      };
-      tryRender();
-    }
-  }catch(e){ console.error(e); }
+try{
+let last="";
+try{last=localStorage.getItem('lastSearch')||"";}catch(e){}
+if(!last){try{last=sessionStorage.getItem('lastSearch')||"";}catch(e){}}
+if(!last)return;
+const input=document.getElementById("searchInput");
+if(input && last){
+input.value=last;
+updateClearBtn();
+let attempts=0;
+const tryRender=()=>{attempts++;if(allPosts.length>0||attempts>20){renderPosts();}else{setTimeout(tryRender,300);}};
+tryRender();
+}
+}catch(e){console.error(e);}
 })();
 
 window.addEventListener('load', () => {
-  const hash = window.location.hash;
-  if(hash && hash.startsWith('#post-')){
-    const [postPart, queryPart] = hash.split('?');
-    const id = postPart.substring(6);
-    const params = new URLSearchParams(queryPart || '');
-    const planDays = parseInt(params.get('plan') || '0', 10);
-    const planPrice = parseInt(params.get('price') || '0', 10);
-
-    if(planDays > 0){
-      pendingAutoUpgrade = { postId: id, days: planDays, price: planPrice };
-    }
-
-    let tries = 0;
-    const t = setInterval(()=>{
-      tries++;
-      if(allPosts.find(p=>p.id===id)){
-        clearInterval(t);
-        openPost(id);
-        setTimeout(tryApplyPendingUpgrade, 1500);
-      } else if(tries > 20){
-        clearInterval(t);
-        setTimeout(tryApplyPendingUpgrade, 500);
-      }
-    }, 500);
-  }
+const hash=window.location.hash;
+if(hash && hash.startsWith('#post-')){
+const [postPart, queryPart]=hash.split('?');
+const id=postPart.substring(6);
+const params=new URLSearchParams(queryPart||'');
+const planDays=parseInt(params.get('plan')||'0',10);
+const planPrice=parseInt(params.get('price')||'0',10);
+if(planDays>0){pendingAutoUpgrade={postId:id,days:planDays,price:planPrice};}
+let tries=0;
+const t=setInterval(()=>{
+tries++;
+if(allPosts.find(p=>p.id===id)){
+clearInterval(t);
+openPost(id);
+setTimeout(tryApplyPendingUpgrade,1500);
+}else if(tries>20){
+clearInterval(t);
+setTimeout(tryApplyPendingUpgrade,500);
+}
+},500);
+}
 });
 </script>
 
