@@ -569,7 +569,6 @@ window.addEventListener('load', () => {
 
 /* ===== Download App Banner ===== */
 (function(){
-  // لا تظهر الشريط إذا كان التطبيق مثبت (TWA أو PWA standalone)
   const isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.matchMedia('(display-mode: fullscreen)').matches ||
@@ -577,10 +576,9 @@ window.addEventListener('load', () => {
     document.referrer.includes('android-app://');
 
   if(isStandalone){
-    return; // لا تظهر الشريط داخل التطبيق
+    return;
   }
 
-  // إظهار الشريط كل مرة يتم فتح الموقع من المتصفح
   const banner = document.getElementById('dlBanner');
   if(banner) banner.classList.remove('hidden');
 })();
@@ -760,11 +758,17 @@ navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 closeOverlay();
-if(pendingAction==="form"){showForm();}
-else if(pendingAction==="mine"){showMyPosts();}
-else if(pendingAction==="favorites"){showFavorites();}
+
+// معالجة الإجراءات المعلقة بعد تسجيل الدخول
+if(pendingAction==="form"){pendingAction=null;showForm();}
+else if(pendingAction==="mine"){pendingAction=null;showMyPosts();}
+else if(pendingAction==="favorites"){pendingAction=null;showFavorites();}
+else if(pendingAction && typeof pendingAction === "object" && pendingAction.type==="report"){
+  const pid = pendingAction.postId;
+  pendingAction = null;
+  setTimeout(()=>{ reportPost(pid); }, 500);
+}
 else{renderPosts();}
-pendingAction=null;
 }else{
 isAdmin=false;
 adminChip.classList.add("hidden");
@@ -1394,7 +1398,11 @@ saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعل
 };
 
 window.reportPost=async(id)=>{
-if(!auth.currentUser){pendingAction=null;authOverlay.classList.remove("hidden");return;}
+if(!auth.currentUser){
+  pendingAction = { type: "report", postId: id };
+  authOverlay.classList.remove("hidden");
+  return;
+}
 const reason=prompt("سبب الإبلاغ (اختياري):");
 if(reason===null)return;
 try{
