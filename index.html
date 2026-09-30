@@ -198,6 +198,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .authOption .icon{font-size:20px}
 .authOption.disabled{opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative}
 .authOption.disabled .soonBadge{position:absolute;top:-8px;left:10px;background:var(--amber);color:#3a2500;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
+.memberNoBadge{display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:7px;border:1px solid #bae6fd}
 </style>
 </head>
 <body>
@@ -301,6 +302,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <h3>حسابي</h3>
 <div class="accountEmail" id="accountEmail" style="display:none"></div>
 <div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
+<div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
 <button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
 <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع</button>
@@ -352,11 +354,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
 <div id="adPopup" class="adPopup hidden"><div class="adPopupInner"><button class="adClose" onclick="closeAd()">✕</button><img id="adImage" src="" alt="إعلان"></div></div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getMessaging,getToken,onMessage,isSupported } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-messaging.js";
 
 setTimeout(()=>{const s=document.getElementById('splashScreen');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),700);}},1800);
@@ -478,7 +479,7 @@ googleProvider.setCustomParameters({prompt:'select_account'});
 window.loginWithGoogle=async()=>{try{const r=await signInWithPopup(auth,googleProvider);console.log("✅",r.user.email);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")alert("الرجاء السماح بالنوافذ المنبثقة");else if(e.code==="auth/unauthorized-domain")alert("هذا النطاق غير مصرح به");else alert("تعذر تسجيل الدخول: "+e.code);}};
 
 window.closeOverlay=()=>{authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");pendingAction=null;};
-window.openAccount=()=>{if(auth.currentUser){document.getElementById("accountEmail").textContent="";const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";document.getElementById("accountName").textContent="👤 "+dn;document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";reportsBtn.classList.toggle("hidden",!isAdmin);if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);accountOverlay.classList.remove("hidden");}else{pendingAction=null;authOverlay.classList.remove("hidden");}};
+window.openAccount=()=>{if(auth.currentUser){document.getElementById("accountEmail").textContent="";const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";document.getElementById("accountName").textContent="👤 "+dn;document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";const mnEl=document.getElementById("accountMemberNo");if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}reportsBtn.classList.toggle("hidden",!isAdmin);if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);accountOverlay.classList.remove("hidden");}else{pendingAction=null;authOverlay.classList.remove("hidden");}};
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
@@ -564,15 +565,56 @@ const fav=isFavorite(p.id);
 const viewsLine=(isOwner||isAdmin)?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
 let cardClass="";if(status==="approved" && isPostFeatured(p))cardClass="featured";else if(status==="pending")cardClass="pending";else if(status==="rejected")cardClass="rejected";
 const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<span class="catTag">${escapeHtml(p.category||"")}</span>`;
-return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}<div class="actions">${wa}${feat}${edit}${del}</div></div></div>`;
+const memberTag=p.sellerMemberNo?`<span class="memberNoBadge" style="margin-left:6px">#${p.sellerMemberNo}</span>`:"";
+return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ›</div>`:""}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}<div class="actions">${wa}${feat}${edit}${del}</div></div></div>`;
 }).join("");
 }
 
 function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
 function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
-function startProfileListener(user){stopProfileListener();profileCreateTried=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";}else if(!profileCreateTried){profileCreateTried=true;const n=defaultName(user);setDoc(doc(db,"profiles",user.uid),{name:n,createdAt:profileCreatedAt(user)}).catch(e=>{});}},err=>{});}
+
+async function assignMemberNumber(user,customName){
+if(!user)return null;
+const counterRef=doc(db,"counters","users");
+const profileRef=doc(db,"profiles",user.uid);
+try{
+const memberNo=await runTransaction(db,async(transaction)=>{
+const profileSnap=await transaction.get(profileRef);
+const counterSnap=await transaction.get(counterRef);
+if(profileSnap.exists() && profileSnap.data().memberNo!=null){
+return profileSnap.data().memberNo;
+}
+let currentNumber=1000;
+if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){
+currentNumber=counterSnap.data().lastNumber;
+}
+const newNumber=currentNumber+1;
+if(counterSnap.exists()){
+transaction.update(counterRef,{lastNumber:newNumber});
+}else{
+transaction.set(counterRef,{lastNumber:newNumber});
+}
+if(profileSnap.exists()){
+const updates={memberNo:newNumber};
+if(customName)updates.name=customName;
+transaction.update(profileRef,updates);
+}else{
+const name=customName||defaultName(user);
+transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber});
+}
+return newNumber;
+});
+console.log("✅ Member #",memberNo);
+return memberNo;
+}catch(e){
+console.error("❌ assignMemberNumber failed:",e);
+return null;
+}
+}
+
+function startProfileListener(user){stopProfileListener();profileCreateTried=false;let assignAttempted=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}}else if(!profileCreateTried){profileCreateTried=true;assignMemberNumber(user).catch(e=>{});}},err=>{});}
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
-window.saveMyName=async()=>{const me=auth.currentUser;if(!me)return;const name=document.getElementById("myName").value.trim();if(name.length<2||name.length>30){alert("الاسم بين 2 و30 حرفاً");return;}try{if(myProfile)await updateDoc(doc(db,"profiles",me.uid),{name});else await setDoc(doc(db,"profiles",me.uid),{name,createdAt:profileCreatedAt(me)});const mine=allPosts.filter(p=>p.uid===me.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));alert("تم حفظ الاسم");}catch(e){alert("تعذر حفظ الاسم: "+e.message);}};
+window.saveMyName=async()=>{const me=auth.currentUser;if(!me)return;const name=document.getElementById("myName").value.trim();if(name.length<2||name.length>30){alert("الاسم بين 2 و30 حرفاً");return;}try{if(myProfile && myProfile.memberNo!=null)await updateDoc(doc(db,"profiles",me.uid),{name});else await assignMemberNumber(me,name);const mine=allPosts.filter(p=>p.uid===me.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));alert("تم حفظ الاسم");}catch(e){alert("تعذر حفظ الاسم: "+e.message);}};
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;document.getElementById("warnGo").href="https://wa.me/"+encodeURIComponent(p.phone.replace(/[^0-9]/g,""));warnOverlay.classList.remove("hidden");};
 window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.price!=null?p.price+' د.ل':'';const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
 function starsText(n){const r=Math.max(0,Math.min(5,Math.round(n)));return "★".repeat(r)+"☆".repeat(5-r);}
@@ -583,6 +625,7 @@ function renderSeller(uid,prof,ratings,ratingsFailed){
 const box=document.getElementById("sellerContent");
 const posts=allPosts.filter(p=>p.uid===uid && getStatus(p)==="approved");
 const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"بائع";
+const memberNo=prof&&prof.memberNo;
 const since=(prof&&prof.createdAt)?new Date(prof.createdAt).toLocaleDateString("ar",{year:"numeric",month:"long"}):"غير متوفر";
 const count=ratings.length;const avg=count?ratings.reduce((s,r)=>s+(r.stars||0),0)/count:0;
 const me=auth.currentUser;const isMe=!!me&&me.uid===uid;const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
@@ -592,7 +635,8 @@ if(isMe)rateHtml="";
 else if(!me)rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
 else rateHtml=`<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div><div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div><textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea><button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
 const reviewsHtml=count?ratings.map(r=>{const canDel=isAdmin||(me&&r.raterUid===me.uid);return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;}).join(""):`<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
-box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}</div><div class="starsRow" style="font-size:18px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div><div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div><div class="sStat"><b>${count}</b><span>التقييمات</span></div></div>${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات</div>":""}${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
+const memberLine=memberNo?`<div class="memberNoBadge" style="margin-top:8px;font-size:13px;padding:5px 12px">🔢 رقم العضوية: #${memberNo}</div>`:"";
+box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}</div><div>${memberLine}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>عدد الإعلانات</span></div><div class="sStat"><b>${escapeHtml(since)}</b><span>عضو منذ</span></div><div class="sStat"><b>${count}</b><span>التقييمات</span></div></div>${ratingsFailed?"<div class='reportsEmpty'>تعذر تحميل التقييمات</div>":""}${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
 }
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
 window.submitRating=async()=>{const me=auth.currentUser;if(!me){loginToRate();return;}const uid=sellerPanelUid;if(!uid||uid===me.uid)return;if(!selectedStars){alert("اختر النجوم");return;}const comment=(document.getElementById("ratingComment").value||"").trim().slice(0,300);const raterName=(myProfile&&myProfile.name)||defaultName(me);try{await setDoc(doc(db,"ratings",uid+"_"+me.uid),{sellerUid:uid,raterUid:me.uid,raterName,stars:selectedStars,comment,createdAt:Date.now()});await openSeller(uid);}catch(e){alert("تعذر إرسال التقييم: "+e.message);}};
@@ -612,7 +656,8 @@ if(status!=="approved" && !isOwner && !isAdmin){alert("هذا الإعلان غ�
 if(!isOwner)incrementViews(id);
 const images=getImages(p);const dots=dotsHtml(images);
 const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف.</div>`;
-const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:"";
+const memberTagPost=p.sellerMemberNo?` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`:"";
+const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")}${memberTagPost} ›</div>`:"";
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 const shareBtn=(status==="approved")?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
 const viewsBadge=(isOwner||isAdmin)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
@@ -654,6 +699,7 @@ const description=document.getElementById("description").value.trim().slice(0,10
 const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
+const sellerMemberNo=(myProfile&&myProfile.memberNo)||null;
 if(!title||!price){alert("الرجاء إدخال العنوان والسعر");return;}
 if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
@@ -668,9 +714,9 @@ for(const item of selectedImages){if(item.type==="existing")images.push(item.url
 if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
-await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now()});
+await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,sellerMemberNo,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now()});
 }
-else{await addDoc(collection(db,"posts"),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),uid:auth.currentUser.uid,email:auth.currentUser.email||"",views:0,featured:false,featuredUntil:0,featuredPlan:null,status:"pending",createdAt:Date.now()});alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");}
+else{await addDoc(collection(db,"posts"),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,sellerMemberNo,termsAcceptedAt:Date.now(),uid:auth.currentUser.uid,email:auth.currentUser.email||"",views:0,featured:false,featuredUntil:0,featuredPlan:null,status:"pending",createdAt:Date.now()});alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");}
 editingPostId=null;
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
 selectedImages=[];renderImagePicker();showHome();
@@ -713,7 +759,7 @@ ${imgsHtml}
 <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
 📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
 📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
-👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
+👤 ${escapeHtml(p.sellerName||"البائع")} ${p.sellerMemberNo?"· #"+p.sellerMemberNo:""} · ☎️ ${escapeHtml(p.phone||"")}
 </div>
 ${editNote}
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
@@ -747,7 +793,7 @@ ${imgsHtml}
 <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
 📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
 📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
-👤 ${escapeHtml(p.sellerName||"البائع")} · ☎️ ${escapeHtml(p.phone||"")}
+👤 ${escapeHtml(p.sellerName||"البائع")} ${p.sellerMemberNo?"· #"+p.sellerMemberNo:""} · ☎️ ${escapeHtml(p.phone||"")}
 </div>`:`<div style="text-align:center;padding:20px;color:var(--muted);background:#fdeceb;border-radius:10px;font-size:13.5px">⚠️ الإعلان لم يعد موجوداً</div>`;
 return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff">
 <div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">
