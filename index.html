@@ -115,6 +115,38 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 }
 .catChip.active{background:var(--teal);border-color:var(--teal);color:#fff}
 
+/* شريط الأنواع الفرعية */
+.subCatsRow{
+  display:flex;gap:8px;overflow-x:auto;padding:8px 16px 4px 16px;
+  scrollbar-width:none;
+  background:#fffbf0;
+  border-top:1px solid #fde68a;
+  border-bottom:1px solid #fde68a;
+  margin-top:6px;
+  animation:slideDown .2s ease-out;
+}
+.subCatsRow::-webkit-scrollbar{display:none}
+.subCatsRow.hidden{display:none!important}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.subCatChip{
+  flex:0 0 auto;display:flex;align-items:center;gap:5px;
+  padding:7px 13px;border-radius:999px;
+  background:#fff;border:1px solid #fde68a;color:#92400e;
+  font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
+  transition:all .15s
+}
+.subCatChip:hover{background:#fef3c7}
+.subCatChip.active{
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  border-color:#f59e0b;color:#fff;
+  box-shadow:0 2px 8px rgba(245,158,11,.3)
+}
+.subCatTitle{
+  flex:0 0 auto;padding:7px 4px;
+  font-size:12px;font-weight:800;color:#92400e;
+  display:flex;align-items:center;gap:4px
+}
+
 .sectionTitle{padding:16px 16px 6px 16px;font-weight:800;font-size:15px;color:var(--text)}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px 16px}
@@ -131,6 +163,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .price{color:var(--teal-dark);font-weight:800;font-size:16.5px}
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:2px}
 .card .catTag{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 9px;border-radius:7px}
+.card .brandTag{font-size:11px;color:#92400e;background:#fef3c7;padding:3px 9px;border-radius:7px;font-weight:700}
 .card .time{font-size:11px;color:var(--muted)}
 .card .cardViews{font-size:11.5px;color:var(--teal-dark);font-weight:700;margin-top:2px}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
@@ -407,6 +440,11 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);
   font-size:12px;font-weight:800;padding:5px 10px;border-radius:9px;margin-top:6px
 }
+.brandBadge{
+  display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;
+  font-size:12px;font-weight:800;padding:5px 12px;border-radius:9px;margin-top:6px;margin-left:6px;
+  border:1px solid #f59e0b
+}
 .field textarea{
   width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font-family:inherit;
   font-size:15px;background:var(--card);resize:vertical;min-height:120px;box-sizing:border-box
@@ -510,7 +548,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
   <div class="searchWrap">
     <div class="searchBox">
       <span class="ic">🔎</span>
-      <input id="searchInput" placeholder="ابحث..." oninput="saveSearch()">
+      <input id="searchInput" placeholder="ابحث..." oninput="saveSearch()" onchange="saveSearch()" onblur="saveSearch()">
       <button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" style="display:none">✕</button>
     </div>
     <select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
@@ -537,6 +575,9 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <button class="catChip" data-cat="إلكترونيات" onclick="filterCategory('إلكترونيات')">🔌 إلكترونيات</button>
   </div>
 
+  <!-- شريط الأنواع الفرعية للسيارات -->
+  <div id="subCatsRow" class="subCatsRow hidden"></div>
+
   <div class="warnBanner">⚠️ <b>تنبيه للمشتري:</b> لا ترسل أي دفعات مقدماً، وتأكد من البائع والمنتج قبل الدفع.</div>
 
   <div class="sectionTitle" id="homeTitle">أحدث الإعلانات</div>
@@ -552,7 +593,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
     <div class="field"><label>عنوان الإعلان</label><input id="title" placeholder="مثال: تويوتا كورولا 2018"></div>
     <div class="field"><label>السعر (د.ل)</label><input id="price" type="number" placeholder="0"></div>
     <div class="field"><label>التصنيف</label>
-      <select id="category">
+      <select id="category" onchange="onCategoryChange()">
         <option>سيارات ومركبات</option>
         <option>دراجات نارية</option>
         <option>دراجات هوائية</option>
@@ -571,6 +612,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
         <option>مطاعم وغداء</option>
         <option>إلكترونيات</option>
       </select>
+    </div>
+    <div class="field hidden" id="brandField">
+      <label>الماركة (نوع السيارة)</label>
+      <select id="brand"></select>
     </div>
     <div class="field"><label>المدينة</label>
       <select id="city"></select>
@@ -813,7 +858,6 @@ if(token){
       createdAt: Date.now(),
       lastSeen: Date.now()
     });
-    console.log("✅ Token محفوظ:", token.slice(0,25)+"...");
   }catch(e){ console.error("token save:", e); }
   alert("تم تفعيل الإشعارات بنجاح ✅");
 }
@@ -825,6 +869,24 @@ alert("تعذر تفعيل الإشعارات: "+e.message);
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
+
+/* ================= 🚗 ماركات السيارات ================= */
+const CAR_BRANDS = [
+  "تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي",
+  "شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس",
+  "رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك",
+  "فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا",
+  "BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك",
+  "بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار",
+  "سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"
+];
+
+const SUB_CATEGORIES = {
+  "سيارات ومركبات": {
+    title: "🚗 اختر الماركة:",
+    items: CAR_BRANDS
+  }
+};
 
 const FORBIDDEN_WORDS = [
   "إباحي","اباحي","إباحية","اباحية","جنس","جنسي","جنسية","سكس","سيكس",
@@ -864,6 +926,7 @@ let isAdmin=false;
 let showOnlyMine=false;
 let showOnlyFavorites=false;
 let currentCategory="الكل";
+let currentSubCategory="الكل";
 const LIBYA_CITIES={
 "الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],
 "الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],
@@ -903,6 +966,7 @@ const navHome=document.getElementById("navHome");
 const navMine=document.getElementById("navMine");
 const navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel");
+const subCatsRow=document.getElementById("subCatsRow");
 
 function isPostFeatured(p){
   return !!(p && p.featured && p.featuredUntil && p.featuredUntil > Date.now());
@@ -1100,6 +1164,8 @@ navFav.classList.toggle("active",which==="fav");
 window.showHome=()=>{
 showOnlyMine=false;
 showOnlyFavorites=false;
+currentSubCategory="الكل";
+renderSubCats();
 homeTitle.textContent="أحدث الإعلانات";
 home.classList.remove("hidden");
 form.classList.add("hidden");
@@ -1118,7 +1184,7 @@ window.showForm=()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
 if(myCount>=3){
-alert("وصلت للحد الأقصى المسموح به (3 إعلانات لكل حساب).");
+alert("وصلت للحد الأقصى المسموح به (3 إعلانات لكل عضو).");
 return;
 }
 editingPostId=null;
@@ -1129,11 +1195,14 @@ document.getElementById("price").value="";
 document.getElementById("phone").value= auth.currentUser.phoneNumber || "";
 document.getElementById("city").value="";
 document.getElementById("description").value="";
+document.getElementById("category").value="سيارات ومركبات";
+document.getElementById("brand").value="";
 updateDescCount();
 document.getElementById("termsCheck").checked=false;
 document.getElementById("termsBox").classList.remove("hidden");
 selectedImages=[];
 renderImagePicker();
+onCategoryChange();
 openFormScreen();
 };
 
@@ -1152,6 +1221,8 @@ document.getElementById("phone").value=post.phone||"";
 document.getElementById("description").value=post.description||"";
 updateDescCount();
 document.getElementById("termsBox").classList.add("hidden");
+onCategoryChange();
+if(post.brand) document.getElementById("brand").value=post.brand;
 const existing=(post.images && post.images.length)?post.images:(post.imageUrl?[post.imageUrl]:[]);
 selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();
@@ -1162,6 +1233,8 @@ window.showMyPosts=()=>{
 if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}
 showOnlyMine=true;
 showOnlyFavorites=false;
+currentSubCategory="الكل";
+renderSubCats();
 homeTitle.textContent="إعلاناتي";
 home.classList.remove("hidden");
 form.classList.add("hidden");
@@ -1177,6 +1250,8 @@ if(showOnlyFavorites && !showOnlyMine){
 }
 showOnlyFavorites=true;
 showOnlyMine=false;
+currentSubCategory="الكل";
+renderSubCats();
 homeTitle.textContent="❤️ المفضلة";
 home.classList.remove("hidden");
 form.classList.add("hidden");
@@ -1193,6 +1268,26 @@ document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 �
 document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${groups}`;
 }
 populateCitySelects();
+
+function populateBrandSelect(){
+  const sel = document.getElementById("brand");
+  if(!sel) return;
+  sel.innerHTML = `<option value="">اختر الماركة (اختياري)</option>` +
+    CAR_BRANDS.map(b=>`<option value="${b}">${b}</option>`).join("");
+}
+populateBrandSelect();
+
+window.onCategoryChange = () => {
+  const cat = document.getElementById("category").value;
+  const brandField = document.getElementById("brandField");
+  if(cat === "سيارات ومركبات"){
+    brandField.classList.remove("hidden");
+  } else {
+    brandField.classList.add("hidden");
+    document.getElementById("brand").value = "";
+  }
+};
+
 setTimeout(updateClearBtn, 500);
 
 window.filterCity=()=>{
@@ -1201,16 +1296,45 @@ renderPosts();
 };
 
 window.filterCategory=(cat)=>{
-currentCategory=cat;
-document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));
-renderPosts();
+  currentCategory=cat;
+  currentSubCategory="الكل";
+  document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));
+  renderSubCats();
+  renderPosts();
+};
+
+function renderSubCats(){
+  if(!subCatsRow) return;
+  const subs = SUB_CATEGORIES[currentCategory];
+  if(!subs){
+    subCatsRow.classList.add("hidden");
+    subCatsRow.innerHTML = "";
+    return;
+  }
+  subCatsRow.classList.remove("hidden");
+  subCatsRow.innerHTML = `
+    <span class="subCatTitle">${subs.title}</span>
+    <button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>
+    ${subs.items.map(b=>`
+      <button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>
+    `).join("")}
+  `;
+}
+
+window.filterSubCategory = (sub) => {
+  currentSubCategory = sub;
+  renderSubCats();
+  renderPosts();
 };
 
 window.loadPosts=()=>renderPosts();
 
 window.saveSearch = () => {
-  const v = document.getElementById("searchInput").value;
+  const input = document.getElementById("searchInput");
+  if(!input) return;
+  const v = input.value || "";
   try{ localStorage.setItem('lastSearch', v); }catch(e){}
+  try{ sessionStorage.setItem('lastSearch', v); }catch(e){}
   updateClearBtn();
   renderPosts();
 };
@@ -1222,6 +1346,7 @@ window.clearSearch = () => {
     input.focus();
   }
   try{ localStorage.removeItem('lastSearch'); }catch(e){}
+  try{ sessionStorage.removeItem('lastSearch'); }catch(e){}
   updateClearBtn();
   renderPosts();
 };
@@ -1267,6 +1392,7 @@ let list=allPosts.filter(p=>{
   const isOwner = me && p.uid === me.uid;
   if(status !== "approved" && !isOwner && !isAdmin) return false;
   if(currentCategory!=="الكل" && p.category!==currentCategory)return false;
+  if(currentSubCategory!=="الكل" && p.brand !== currentSubCategory) return false;
   if(currentCity!=="الكل" && p.city!==currentCity)return false;
   if(showOnlyMine && p.uid!==me?.uid)return false;
   if(showOnlyFavorites && !favs.includes(p.id))return false;
@@ -1302,6 +1428,8 @@ if(status === "approved" && isPostFeatured(p)) cardClass = "featured";
 else if(status === "pending") cardClass = "pending";
 else if(status === "rejected") cardClass = "rejected";
 
+const brandTag = p.brand ? `<span class="brandTag">${escapeHtml(p.brand)}</span>` : `<span class="catTag">${escapeHtml(p.category||"")}</span>`;
+
 return `
 <div class="card ${cardClass}">
   <div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" title="المفضلة" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div>
@@ -1310,7 +1438,7 @@ return `
     <div class="price">${p.price!=null?p.price+" د.ل":""}</div>
     ${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}
     ${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ›</div>`:""}
-    <div class="meta"><span class="catTag">${escapeHtml(p.category||"")}</span><span class="time">${timeAgo(p.createdAt)}</span></div>
+    <div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>
     ${viewsLine}
     <div class="actions">${wa}${feat}${edit}${del}</div>
   </div>
@@ -1595,6 +1723,11 @@ if(isOwner || isAdmin){
   }
 }
 
+let brandBadge = "";
+if(p.brand){
+  brandBadge = `<span class="brandBadge">🚗 ${escapeHtml(p.brand)}</span>`;
+}
+
 let featBadge = "";
 if(status === "approved" && isPostFeatured(p)){
   const days = featuredDaysLeft(p);
@@ -1648,7 +1781,7 @@ if(isAdmin){
     </div>`;
 }
 
-/* ===== إعلانات مشابهة ===== */
+/* إعلانات مشابهة */
 const similar = allPosts
   .filter(x => x.id !== p.id && x.category === p.category && getStatus(x) === "approved")
   .slice(0, 4);
@@ -1682,7 +1815,7 @@ document.getElementById("postContent").innerHTML=`
 <div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>
 <div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div>
-<div>${featBadge}${statusBadge}${viewsBadge}</div>
+<div>${featBadge}${brandBadge}${statusBadge}${viewsBadge}</div>
 ${seller}
 <div style="font-weight:800;margin:14px 0 4px">الوصف</div>
 ${desc}
@@ -1742,6 +1875,7 @@ if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden"
 const title=document.getElementById("title").value.trim();
 const price=document.getElementById("price").value;
 const category=document.getElementById("category").value;
+const brand=document.getElementById("brand").value || "";
 const city=document.getElementById("city").value;
 const phone=document.getElementById("phone").value.trim();
 const description=document.getElementById("description").value.trim().slice(0,1000);
@@ -1783,13 +1917,13 @@ images.push(await uploadToImgBB(item.file));
 
 if(wasEditing){
   await updateDoc(doc(db,"posts",editingPostId),{
-    title,price:Number(price),category,city,description,phone,images,sellerName,
+    title,price:Number(price),category,brand,city,description,phone,images,sellerName,
     status:"pending",
     rejectReason:null
   });
 }else{
 await addDoc(collection(db,"posts"),{
-title,price:Number(price),category,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
+title,price:Number(price),category,brand,city,description,phone,images,sellerName,termsAcceptedAt:Date.now(),
 uid:auth.currentUser.uid,
 email:auth.currentUser.email||"",
 views:0,
@@ -1889,7 +2023,7 @@ function renderModeration(){
               ${escapeHtml(p.title||"بدون عنوان")}
             </div>
             <div style="font-size:12.5px;color:var(--teal-dark);font-weight:800;margin-bottom:3px">
-              ${p.price!=null?p.price+" د.ل":""}
+              ${p.price!=null?p.price+" د.ل":""} ${p.brand?`· ${escapeHtml(p.brand)}`:""}
             </div>
             <div style="font-size:11.5px;color:var(--muted);line-height:1.6">
               ${escapeHtml(p.category||"")} · ${escapeHtml(p.city||"")} · ${timeAgo(p.createdAt)}<br>
@@ -2197,12 +2331,26 @@ function tryApplyPendingUpgrade(){
 /* ===== استرجاع آخر بحث ===== */
 (function(){
   try{
-    const last = localStorage.getItem('lastSearch') || '';
+    let last = "";
+    try{ last = localStorage.getItem('lastSearch') || ""; }catch(e){}
+    if(!last){
+      try{ last = sessionStorage.getItem('lastSearch') || ""; }catch(e){}
+    }
+    if(!last) return;
     const input = document.getElementById("searchInput");
     if(input && last){
       input.value = last;
       updateClearBtn();
-      setTimeout(()=>{ renderPosts(); }, 1500);
+      let attempts = 0;
+      const tryRender = () => {
+        attempts++;
+        if(allPosts.length > 0 || attempts > 20){
+          renderPosts();
+        } else {
+          setTimeout(tryRender, 300);
+        }
+      };
+      tryRender();
     }
   }catch(e){ console.error(e); }
 })();
