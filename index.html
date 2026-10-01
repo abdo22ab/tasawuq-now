@@ -485,8 +485,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
 <div id="adPopup" class="adPopup hidden"><div class="adPopupInner"><button class="adClose" onclick="closeAd()">✕</button><img id="adImage" src="" alt="إعلان"></div></div>
-</body>
-</html>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
@@ -820,7 +818,6 @@ window._isStorePost=isStore;
 document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+myStore.name):"إضافة إعلان";
 document.getElementById("saveBtn").textContent="نشر الإعلان";
 document.getElementById("title").value="";document.getElementById("price").value="";
-// الرقم من الملف الشخصي (مقفل)
 const userPhone=(myProfile&&myProfile.phone)||"";
 document.getElementById("phone").value=userPhone||"⚠️ لم تسجل رقمك بعد";
 document.getElementById("phone").setAttribute("readonly","readonly");
@@ -842,7 +839,7 @@ document.getElementById("saveBtn").textContent="حفظ التعديلات";
 document.getElementById("title").value=post.title||"";document.getElementById("price").value=post.price||"";
 document.getElementById("category").value=post.category||"سيارات ومركبات";
 document.getElementById("city").value=post.city||"";
-const userPhone=(myProfile&&myProfile.phone)||"";
+const userPhone=(myProfile&&myProfile.phone)||post.phone||"";
 document.getElementById("phone").value=userPhone||"⚠️ لم تسجل رقمك بعد";
 document.getElementById("phone").setAttribute("readonly","readonly");
 document.getElementById("description").value=post.description||"";
@@ -1006,10 +1003,8 @@ window.saveMyPhone=async()=>{
   if(!confirm(msg))return;
   try{
     await updateDoc(doc(db,"profiles",me.uid),{phone:v.value});
-    // حدّث الإعلانات
     const mine=allPosts.filter(p=>p.uid===me.uid);
     await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:v.value})));
-    // حدّث المتجر
     if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{phone:v.value});}catch(e){}}
     if(input)input.value=v.value;
     alert("✅ تم حفظ رقم الواتساب: "+v.value+"\n\nسيظهر في كل إعلاناتك.");
@@ -1117,7 +1112,6 @@ const city=document.getElementById("city").value;
 const description=document.getElementById("description").value.trim().slice(0,1000);
 const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
-// رقم الواتساب من الملف الشخصي (إلزامي)
 const userPhone=(myProfile&&myProfile.phone)||"";
 if(!userPhone){alert("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.\n\nاذهب إلى: حسابي → رقم الواتساب");return;}
 const phone=userPhone;
@@ -1274,6 +1268,23 @@ window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catc
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){alert("خطأ: "+e.message);}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ: "+e.message);}};
 
+// ===== حذف منتج من داخل المتجر (أدمن أو صاحب المتجر) =====
+window.deleteStoreProduct=async(id)=>{
+  const p=allPosts.find(x=>x.id===id);
+  if(!p){alert("المنتج غير موجود");return;}
+  const me=auth.currentUser;
+  if(!me){alert("سجّل دخولك أولاً");return;}
+  const store=allStores.find(s=>s.id===p.storeId);
+  const isStoreOwner=store&&store.ownerUid===me.uid;
+  if(!isAdmin && !isStoreOwner){alert("❌ لا تملك صلاحية الحذف");return;}
+  if(!confirm(`⚠️ حذف هذا المنتج نهائيًا؟\n\n📌 ${p.title||"بدون عنوان"}\n💰 ${p.price!=null?p.price+" د.ل":"—"}`))return;
+  try{
+    await deleteDoc(doc(db,"posts",id));
+    alert("✅ تم حذف المنتج");
+    if(p.storeId)setTimeout(()=>openStore(p.storeId),300);
+  }catch(e){alert("خطأ: "+e.message);}
+};
+
 window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin){alert("للمشرف فقط");return;}const post=allPosts.find(p=>p.id===id);if(!post)return;if(isPostFeatured(post)){if(!confirm("إلغاء التمييز؟"))return;try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){}}else{try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){}}};
 window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم التمييز لمدة ${days} يوم`);}}catch(e){alert("خطأ: "+e.message);}};
 
@@ -1312,11 +1323,15 @@ window.openStore=async(storeId)=>{
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
   const waBtn=store.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="openStoreWhatsapp('${escapeHtml(store.phone)}')">💬 تواصل عبر واتساب</button>`:"";
+  // ============ هنا التعديل: أزرار تعديل وحذف للأدمن وصاحب المتجر ============
+  const canManageItems=isAdmin||isOwnerStore;
   const itemsHtml=items.length?`<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
     const imgs=getImages(p);const th=imgs[0]||"";
     const expired=isExpired(p);
-    return `<div class="card ${expired?'expired':''}" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer"><div class="imgWrap">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="body"><h4>${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div></div></div>`;
+    const actionsHtml=canManageItems?`<div style="display:flex;gap:4px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="flex:1;padding:8px;border:none;border-radius:8px;background:#eef2ff;color:#0284c7;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:#fdeceb;color:#e5484d;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>`:"";
+    return `<div class="card ${expired?'expired':''}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${actionsHtml}</div></div>`;
   }).join("")}</div>`:`<div class="reportsEmpty">لا توجد منتجات بعد</div>`;
+  // ============ نهاية التعديل ============
   const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة</div>`:"";
   const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
   box.innerHTML=`
@@ -1376,7 +1391,6 @@ window.submitStore=async()=>{
   const category=document.getElementById("storeCategory").value;
   const city=document.getElementById("storeCity").value;
   const description=document.getElementById("storeDescription").value.trim().slice(0,500);
-  // رقم المتجر من الملف الشخصي
   const userPhone=(myProfile&&myProfile.phone)||"";
   if(!userPhone){alert("❌ يجب تسجيل رقم الواتساب أولاً في حسابك");return;}
   const phone=userPhone;
