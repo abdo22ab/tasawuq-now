@@ -47,6 +47,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .catsRow::-webkit-scrollbar{display:none}
 .catChip{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .catChip.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.storeChip{background:linear-gradient(135deg,#f59e0b,#fbbf24)!important;border-color:#f59e0b!important;color:#3a2500!important;font-weight:800!important}
+.storeChip.active{background:linear-gradient(135deg,#d97706,#f59e0b)!important;color:#fff!important}
 .subCatsRow{display:flex;gap:8px;overflow-x:auto;padding:8px 16px 4px;scrollbar-width:none;background:#fffbf0;border-top:1px solid #fde68a;border-bottom:1px solid #fde68a;margin-top:6px}
 .subCatsRow::-webkit-scrollbar{display:none}
 .subCatsRow.hidden{display:none!important}
@@ -201,6 +203,31 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .memberNoBadge{display:inline-flex;align-items:center;gap:5px;background:var(--teal-light);color:var(--teal-dark);font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:7px;border:1px solid #bae6fd}
 .usernameBadge{display:inline-flex;align-items:center;gap:3px;background:#f0fdf4;color:#166534;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:7px;border:1px solid #bbf7d0;direction:ltr}
 .usernameInput{direction:ltr;text-align:left;font-family:monospace}
+.storeBadge{display:inline-flex;align-items:center;gap:3px;background:#fff7e6;color:#92400e;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;border:1px solid #f59e0b}
+.storeCard{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;cursor:pointer;display:flex;gap:12px;align-items:center}
+.storeCard:active{background:#f9fafb}
+.storeCard .storeLogo{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--teal-light);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;border:1px solid var(--border)}
+.storeCard .storeLogo img{width:100%;height:100%;object-fit:cover}
+.storeCard .storeInfo{flex:1;min-width:0}
+.storeCard .storeName{font-weight:800;font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.storeCard .storeMeta{font-size:12px;color:var(--muted);margin-bottom:3px}
+.storeCard .storeStats{font-size:12px;color:var(--teal-dark);font-weight:700}
+.storeHeader{position:relative;margin-bottom:44px}
+.storeHeader .cover{width:100%;aspect-ratio:3/1;border-radius:14px;overflow:hidden;background:var(--teal-light);display:flex;align-items:center;justify-content:center;font-size:36px;opacity:.6}
+.storeHeader .cover img{width:100%;height:100%;object-fit:cover}
+.storeHeader .logoWrap{position:absolute;bottom:-34px;right:16px;width:80px;height:80px;border-radius:16px;border:4px solid #fff;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.storeHeader .logoWrap img{width:100%;height:100%;object-fit:cover}
+.storeHeader .logoWrap .placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--teal-light);font-size:32px}
+.storeTitle{font-weight:800;font-size:20px;margin:0 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.storeMetaLine{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.9}
+.storeDesc{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13.5px;line-height:1.9;margin:10px 0;white-space:pre-wrap;word-break:break-word}
+.postTypeBtn{width:100%;padding:16px;border:2px solid var(--border);border-radius:14px;background:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:10px;text-align:right;transition:all .2s;color:var(--text)}
+.postTypeBtn:active{border-color:var(--teal);background:#f0f9ff}
+.postTypeBtn .ptIcon{font-size:28px}
+.postTypeBtn .ptText{flex:1}
+.postTypeBtn .ptTitle{display:block;color:var(--text);margin-bottom:2px}
+.postTypeBtn .ptDesc{font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5}
+.postTypeBtn.disabled{opacity:.55;cursor:not-allowed;background:#f9fafb}
 </style>
 </head>
 <body>
@@ -282,7 +309,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="bottomNav">
 <button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
 <button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
-<div class="fabWrap"><button class="fab" onclick="showForm()">+</button></div>
+<div class="fabWrap"><button class="fab" onclick="startAddPost()">+</button></div>
 <button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
 <button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon">👤</span><span id="navAccountLabel">حسابي</span></button>
 </div>
@@ -306,19 +333,86 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
 <div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
+<div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
 <button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
 <div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
 <button class="btnGhost" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
+<button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
+<button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
 <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع</button>
 <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
 <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
 <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
+<button id="storesModerationBtn" class="btnGhost hidden" onclick="openStoresModeration()" style="background:#fff7e6;color:#92400e">🏪 طلبات فتح المتاجر</button>
 <button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
 <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div>
 </div>
+
+<div id="postTypeOverlay" class="overlay hidden">
+<div class="sheet">
+<h3 style="text-align:center">ماذا تريد أن تنشر؟</h3>
+<p style="font-size:13px;color:var(--muted);margin:0 0 16px;text-align:center">اختر نوع الإعلان</p>
+<button class="postTypeBtn" onclick="chooseIndividualPost()">
+<span class="ptIcon">👤</span>
+<span class="ptText"><span class="ptTitle">إعلان فردي</span><span class="ptDesc">لأي شخص - حد 3 إعلانات</span></span>
+</button>
+<button class="postTypeBtn" id="storePostBtn" onclick="chooseStorePost()">
+<span class="ptIcon">🏪</span>
+<span class="ptText"><span class="ptTitle">إعلان متجر</span><span class="ptDesc">للمتاجر المعتمدة فقط - حد 20 إعلان</span></span>
+</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
+
+<div id="storesOverlay" class="overlay hidden">
+<div class="sheet" style="max-height:92vh">
+<h3 style="text-align:center">🏪 المتاجر والشركات</h3>
+<div class="field" style="margin:10px 0"><input id="storeSearch" placeholder="🔍 ابحث عن متجر..." oninput="renderStoresList()"></div>
+<div id="storesList"></div>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+</div>
+</div>
+
+<div id="storeOverlay" class="overlay hidden">
+<div class="sheet" style="max-height:92vh;padding-top:0">
+<div id="storeContent"></div>
+</div>
+</div>
+
+<div id="openStoreOverlay" class="overlay hidden">
+<div class="sheet" style="max-height:92vh">
+<h3 style="text-align:center">🏪 فتح متجر جديد</h3>
+<p style="font-size:12.5px;color:#92400e;background:#fff7e6;padding:10px;border-radius:10px;line-height:1.8;margin-bottom:14px;text-align:center">⚠️ لا يمكن أن يكون لديك إعلانات فردية عند فتح المتجر — يجب حذفها أولاً.</p>
+<div class="field"><label>اسم المتجر</label><input id="storeName" maxlength="40" placeholder="مثال: قراند الخراز"></div>
+<div class="field"><label>التصنيف</label>
+<select id="storeCategory">
+<option>سيارات ومركبات</option><option>دراجات نارية</option><option>دراجات هوائية</option>
+<option>الخدمات</option><option>عقارات للبيع</option><option>عقارات للإيجار</option>
+<option>موبايل وتابلت</option><option>لابتوب وكمبيوتر</option><option>ألعاب وألعاب الفيديو</option>
+<option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
+<option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
+<option>مطاعم وغداء</option><option>إلكترونيات</option>
+</select></div>
+<div class="field"><label>المدينة</label><select id="storeCity"></select></div>
+<div class="field"><label>رقم الواتساب</label><input id="storePhone" placeholder="218912345678"></div>
+<div class="field"><label>الوصف</label><textarea id="storeDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
+<div class="field"><label>شعار المتجر</label>
+<div id="storeLogoThumbs" class="imgThumbs"></div>
+<div id="storeLogoAddTile" class="imgAddTile" onclick="document.getElementById('storeLogoFile').click()">📷 إضافة شعار</div>
+<input id="storeLogoFile" type="file" accept="image/*" class="hidden" onchange="handleStoreLogoSelected()"></div>
+<div class="field"><label>صورة الغلاف (اختياري)</label>
+<div id="storeCoverThumbs" class="imgThumbs"></div>
+<div id="storeCoverAddTile" class="imgAddTile" onclick="document.getElementById('storeCoverFile').click()">🖼️ إضافة غلاف</div>
+<input id="storeCoverFile" type="file" accept="image/*" class="hidden" onchange="handleStoreCoverSelected()"></div>
+<button class="btnMain" id="storeSubmitBtn" onclick="submitStore()">📤 إرسال طلب الفتح</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
+
+<div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>🏪 طلبات فتح المتاجر</h3><div id="storesModerationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 <div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
@@ -326,7 +420,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
 <div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد</div>
 <div class="field" style="margin-bottom:8px"><input id="limitSearch" placeholder="اسم المستخدم أو الرقم أو الإيميل" dir="ltr" style="text-align:left"></div>
-<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">💡 اكتب مثلاً: <b>ahmed</b> أو <b>1001</b> أو <b>user@gmail.com</b></div>
+<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">💡 اكتب مثلاً: <b>ahmed</b> أو <b>1001</b></div>
 <div class="field" style="margin-bottom:8px"><input id="limitNumber" type="number" placeholder="الحد الجديد" min="1" max="999" style="text-align:center;font-weight:800"></div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
 <button onclick="document.getElementById('limitNumber').value=5" style="padding:8px;border:1px solid #3b82f6;border-radius:8px;background:#fff;color:#1e40af;font-family:inherit;font-weight:800;cursor:pointer">5</button>
@@ -391,13 +485,12 @@ const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاواز�
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
 const SUB_CATEGORIES={"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},"دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},"موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},"لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}};
-const CATEGORIES=[{name:"الكل",icon:"✨"},{name:"سيارات ومركبات",icon:"🚗"},{name:"دراجات نارية",icon:"🏍️"},{name:"دراجات هوائية",icon:"🚲"},{name:"الخدمات",icon:"🛠️"},{name:"عقارات للبيع",icon:"🏠"},{name:"عقارات للإيجار",icon:"🔑"},{name:"موبايل وتابلت",icon:"📱"},{name:"لابتوب وكمبيوتر",icon:"💻"},{name:"ألعاب وألعاب الفيديو",icon:"🎮"},{name:"أجهزة منزلية",icon:"🧊"},{name:"ملابس رجالية",icon:"👔"},{name:"ملابس نسائية",icon:"👗"},{name:"ملابس أطفال",icon:"👶"},{name:"جمال وصحة",icon:"💆"},{name:"مكياج",icon:"💄"},{name:"مطاعم وغداء",icon:"🍽️"},{name:"إلكترونيات",icon:"🔌"}];
+const CATEGORIES=[{name:"الكل",icon:"✨"},{name:"🏪 المتاجر",icon:"",isStore:true},{name:"سيارات ومركبات",icon:"🚗"},{name:"دراجات نارية",icon:"🏍️"},{name:"دراجات هوائية",icon:"🚲"},{name:"الخدمات",icon:"🛠️"},{name:"عقارات للبيع",icon:"🏠"},{name:"عقارات للإيجار",icon:"🔑"},{name:"موبايل وتابلت",icon:"📱"},{name:"لابتوب وكمبيوتر",icon:"💻"},{name:"ألعاب وألعاب الفيديو",icon:"🎮"},{name:"أجهزة منزلية",icon:"🧊"},{name:"ملابس رجالية",icon:"👔"},{name:"ملابس نسائية",icon:"👗"},{name:"ملابس أطفال",icon:"👶"},{name:"جمال وصحة",icon:"💆"},{name:"مكياج",icon:"💄"},{name:"مطاعم وغداء",icon:"🍽️"},{name:"إلكترونيات",icon:"🔌"}];
 
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
 function detectForbidden(t){if(!t)return null;const s=String(t).toLowerCase();for(const w of FORBIDDEN_WORDS){if(s.includes(w.toLowerCase()))return w;}return null;}
 function checkContent(t,d){const a=detectForbidden(t);if(a)return{word:a,field:"العنوان"};const b=detectForbidden(d);if(b)return{word:b,field:"الوصف"};return null;}
 
-// ===== التحقق من اسم المستخدم =====
 const RESERVED_USERNAMES=["admin","administrator","root","support","help","tasawuq","tasawuqnow","owner","moderator","mod","official","system","api","www","mail","email"];
 function validateUsername(u){
   if(!u)return{ok:false,msg:"اكتب اسم المستخدم"};
@@ -412,12 +505,13 @@ window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername")
 
 const userLimitsCache={};
 const DEFAULT_LIMIT=3;
+const STORE_DEFAULT_LIMIT=20;
 async function getUserLimit(uid){if(!uid)return DEFAULT_LIMIT;if(userLimitsCache[uid]!==undefined)return userLimitsCache[uid];try{const snap=await getDoc(doc(db,"userLimits",uid));if(snap.exists()){const l=snap.data().limit||DEFAULT_LIMIT;userLimitsCache[uid]=l;return l;}}catch(e){}userLimitsCache[uid]=DEFAULT_LIMIT;return DEFAULT_LIMIT;}
 async function setUserLimit(uid,limit,extra={}){try{await setDoc(doc(db,"userLimits",uid),{limit:Number(limit),email:extra.email||"",name:extra.name||"",username:extra.username||"",memberNo:extra.memberNo||null,updatedAt:Date.now()});userLimitsCache[uid]=Number(limit);return true;}catch(e){return false;}}
 
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
-let currentCity="الكل",allPosts=[],pendingAction=null,editingPostId=null,myProfile=null,unsubProfile=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false;
+let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModerationListenerStarted=false;
 
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
 const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
@@ -425,6 +519,7 @@ const moderationBtn=document.getElementById("moderationBtn"),moderationOverlay=d
 const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=document.getElementById("postOverlay"),warnOverlay=document.getElementById("warnOverlay"),upgradeOverlay=document.getElementById("upgradeOverlay");
 const adminChip=document.getElementById("adminChip"),navHome=document.getElementById("navHome"),navMine=document.getElementById("navMine"),navFav=document.getElementById("navFav");
 const navAccountLabel=document.getElementById("navAccountLabel"),subCatsRow=document.getElementById("subCatsRow");
+const postTypeOverlay=document.getElementById("postTypeOverlay"),storesOverlay=document.getElementById("storesOverlay"),storeOverlay=document.getElementById("storeOverlay"),openStoreOverlay=document.getElementById("openStoreOverlay"),storesModerationOverlay=document.getElementById("storesModerationOverlay");
 
 const searchInputEl=document.getElementById("searchInput");
 const clearSearchBtnEl=document.getElementById("clearSearchBtn");
@@ -462,6 +557,7 @@ function showAdIfDue(){try{const last=localStorage.getItem('adLastShownAt');cons
 window.closeAd=function(){const p=document.getElementById('adPopup');if(p)p.classList.add('hidden');};
 setTimeout(showAdIfDue,2600);
 startPostsListener();
+startStoresListener();
 
 onAuthStateChanged(auth,user=>{
 if(user){
@@ -470,7 +566,9 @@ adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
+if(isAdmin && !storesModerationListenerStarted){storesModerationListenerStarted=true;startStoresModerationListener();}
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
+const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
 const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 updateModBadge();
@@ -486,6 +584,7 @@ isAdmin=false;
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
 stopProfileListener();
+stopStoreListener();
 if(showOnlyMine)showHome();
 renderPosts();
 }
@@ -496,70 +595,71 @@ const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
 window.loginWithGoogle=async()=>{try{const r=await signInWithPopup(auth,googleProvider);console.log("✅",r.user.email);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")alert("الرجاء السماح بالنوافذ المنبثقة");else if(e.code==="auth/unauthorized-domain")alert("هذا النطاق غير مصرح به");else alert("تعذر تسجيل الدخول: "+e.code);}};
 
-window.closeOverlay=()=>{authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");pendingAction=null;};
+window.closeOverlay=()=>{authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");postTypeOverlay.classList.add("hidden");storesOverlay.classList.add("hidden");storeOverlay.classList.add("hidden");openStoreOverlay.classList.add("hidden");storesModerationOverlay.classList.add("hidden");pendingAction=null;};
+
 window.openAccount=()=>{if(auth.currentUser){document.getElementById("accountEmail").textContent="";const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";document.getElementById("accountName").textContent="👤 "+dn;document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
 const mnEl=document.getElementById("accountMemberNo");if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}
 const unEl=document.getElementById("accountUsername");if(unEl){if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}}
+const stEl=document.getElementById("accountStore");if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
 const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
-reportsBtn.classList.toggle("hidden",!isAdmin);if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);accountOverlay.classList.remove("hidden");}else{pendingAction=null;authOverlay.classList.remove("hidden");}};
+const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
+if(myStore){if(openBtn)openBtn.style.display="none";if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}}
+else{if(openBtn)openBtn.style.display="block";if(myBtn)myBtn.style.display="none";}
+reportsBtn.classList.toggle("hidden",!isAdmin);if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);accountOverlay.classList.remove("hidden");}else{pendingAction=null;authOverlay.classList.remove("hidden");}};
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
+// ===== إدارة حدود المستخدمين =====
 window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){const list=document.getElementById("limitsList");if(!list)return;if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3</span></div>";return;}list.innerHTML=allLimits.map(l=>`<div class="reportItem" style="background:#f0f9ff;border-color:#0ea5e9"><div class="rTitle">👤 ${escapeHtml(l.name||"مستخدم")} ${l.username?`<span class="usernameBadge" style="margin-right:6px">@${escapeHtml(l.username)}</span>`:""} ${l.memberNo?`<span class="memberNoBadge" style="margin-right:6px">#${l.memberNo}</span>`:""}</div><div class="rMeta"><b>الحد:</b> <span style="color:#0284c7;font-weight:800;font-size:15px">${l.limit}</span> إعلان<br><b>الإيميل:</b> ${escapeHtml(l.email||"غير محدد")}<br><b>UID:</b> <span style="font-size:10px">${escapeHtml(l.uid||"")}</span></div><div class="rActions" style="grid-template-columns:1fr 1fr"><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="editLimit('${escapeHtml(l.uid)}')">✏️ تعديل</button><button class="rDelete" onclick="removeLimit('${escapeHtml(l.uid)}')">🗑️ إلغاء</button></div></div>`).join("");}
 window.editLimit=(uid)=>{const l=allLimits.find(x=>x.uid===uid);if(!l)return;document.getElementById("limitSearch").value=l.username?l.username:(l.memberNo?String(l.memberNo):(l.email||""));document.getElementById("limitNumber").value=l.limit||3;};
 window.removeLimit=async(uid)=>{if(!confirm("إلغاء الحد المخصص؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));delete userLimitsCache[uid];alert("✅ تم الإلغاء");}catch(e){alert("خطأ: "+e.message);}};
-
-async function findUserByAny(search){
-  const s=String(search||"").trim();
-  if(!s)return null;
-  const clean=s.replace(/^@/,"").toLowerCase();
-  // 1) بحث بـ username
-  try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid,matchedBy:"username"};}catch(e){}
-  // 2) بحث بـ memberNo (رقم)
-  const num=parseInt(s,10);
-  if(!isNaN(num)){
-    try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id,matchedBy:"memberNo"};}catch(e){}
-  }
-  // 3) بحث بالإيميل (من tokens)
-  if(s.includes("@")){
-    try{const q=query(collection(db,"tokens"),where("email","==",s));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].data().uid,matchedBy:"email"};}catch(e){}
-  }
-  return null;
-}
-
-window.applyUserLimit=async()=>{
-  if(!isAdmin)return;
-  const search=document.getElementById("limitSearch").value.trim();
-  const limitNum=parseInt(document.getElementById("limitNumber").value,10);
-  if(!search){alert("❌ اكتب اسم المستخدم أو الرقم أو الإيميل");return;}
-  if(!limitNum||limitNum<1||limitNum>999){alert("❌ رقم غير صحيح (1-999)");return;}
-  const found=await findUserByAny(search);
-  if(!found){alert("❌ لم يتم العثور على المستخدم");return;}
-  // جلب بيانات الملف الشخصي لحفظها مع الحد
-  let prof=null;try{const p=await getDoc(doc(db,"profiles",found.uid));if(p.exists())prof=p.data();}catch(e){}
-  const ok=await setUserLimit(found.uid,limitNum,{email:"",name:(prof&&prof.name)||"",username:(prof&&prof.username)||"",memberNo:(prof&&prof.memberNo)||null});
-  if(ok){alert(`✅ تم تحديد الحد لـ ${limitNum} إعلان\n(تم العثور عليه بواسطة: ${found.matchedBy})`);document.getElementById("limitSearch").value="";document.getElementById("limitNumber").value="";}
-  else alert("❌ فشل الحفظ");
-};
+async function findUserByAny(search){const s=String(search||"").trim();if(!s)return null;const clean=s.replace(/^@/,"").toLowerCase();try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid,matchedBy:"username"};}catch(e){}const num=parseInt(s,10);if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id,matchedBy:"memberNo"};}catch(e){}}if(s.includes("@")){try{const q=query(collection(db,"tokens"),where("email","==",s));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].data().uid,matchedBy:"email"};}catch(e){}}return null;}
+window.applyUserLimit=async()=>{if(!isAdmin)return;const search=document.getElementById("limitSearch").value.trim();const limitNum=parseInt(document.getElementById("limitNumber").value,10);if(!search){alert("❌ اكتب اسم المستخدم أو الرقم أو الإيميل");return;}if(!limitNum||limitNum<1||limitNum>999){alert("❌ رقم غير صحيح (1-999)");return;}const found=await findUserByAny(search);if(!found){alert("❌ لم يتم العثور على المستخدم");return;}let prof=null;try{const p=await getDoc(doc(db,"profiles",found.uid));if(p.exists())prof=p.data();}catch(e){}const ok=await setUserLimit(found.uid,limitNum,{email:"",name:(prof&&prof.name)||"",username:(prof&&prof.username)||"",memberNo:(prof&&prof.memberNo)||null});if(ok){alert(`✅ تم تحديد الحد لـ ${limitNum} إعلان\n(تم العثور عليه بواسطة: ${found.matchedBy})`);document.getElementById("limitSearch").value="";document.getElementById("limitNumber").value="";}else alert("❌ فشل الحفظ");};
 
 function updateModBadge(){if(!isAdmin||!moderationBtn)return;const c=allPosts.filter(p=>getStatus(p)==="pending").length;moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";}
 function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
-window.showHome=()=>{showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();homeTitle.textContent="أحدث الإعلانات";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();};
+
+window.showHome=()=>{showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="أحدث الإعلانات";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();};
 function openFormScreen(){home.classList.add("hidden");form.classList.remove("hidden");closeOverlay();}
 
-window.showForm=async()=>{
+// ===== نافذة اختيار نوع الإعلان =====
+window.startAddPost=async()=>{
+  if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
+  // إذا عنده متجر معتمد، نخليه يختار. وإلا يروح مباشرة للفردي.
+  if(myStore && myStore.status==="approved"){
+    const btn=document.getElementById("storePostBtn");
+    postTypeOverlay.classList.remove("hidden");
+  } else {
+    showForm();
+  }
+};
+window.chooseIndividualPost=()=>{closeOverlay();showForm();};
+window.chooseStorePost=()=>{closeOverlay();showForm(true);};
+
+// ===== نموذج إضافة إعلان =====
+window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
-const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;
-const limit=await getUserLimit(auth.currentUser.uid);
-if(myCount>=limit){const msg=`🛒 طلب إعلانات إضافية\n\n👤 الاسم: ${(myProfile&&myProfile.name)||auth.currentUser.displayName||'مستخدم'}\n🏷️ اسم المستخدم: ${(myProfile&&myProfile.username)?'@'+myProfile.username:'—'}\n🔢 رقم العضوية: ${(myProfile&&myProfile.memberNo)?'#'+myProfile.memberNo:'—'}\n📧 الإيميل: ${auth.currentUser.email||''}\n📊 عدد إعلاناتي: ${myCount}\n⚙️ الحد: ${limit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${limit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+const isStore=!!isStorePost;
+if(isStore && (!myStore || myStore.status!=="approved")){alert("⚠️ لا يمكنك النشر كمتجر — متجرك غير معتمد");return;}
+if(!isStore){
+  const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
+  const limit=await getUserLimit(auth.currentUser.uid);
+  if(myCount>=limit){const msg=`🛒 طلب إعلانات إضافية\n\n👤 الاسم: ${(myProfile&&myProfile.name)||auth.currentUser.displayName||'مستخدم'}\n📧 الإيميل: ${auth.currentUser.email||''}\n📊 عدد إعلاناتي: ${myCount}\n⚙️ الحد: ${limit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${limit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+}else{
+  const stCount=allPosts.filter(p=>p.storeId===myStore.id).length;
+  if(stCount>=STORE_DEFAULT_LIMIT){const msg=`🛒 طلب إعلانات إضافية للمتجر\n\n🏪 المتجر: ${myStore.name}\n📊 عدد الإعلانات: ${stCount}\n⚙️ الحد: ${STORE_DEFAULT_LIMIT}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${STORE_DEFAULT_LIMIT})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+}
 editingPostId=null;
-document.getElementById("formHeaderTitle").textContent="إضافة إعلان";
+window._isStorePost=isStore;
+document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+myStore.name):"إضافة إعلان";
 document.getElementById("saveBtn").textContent="نشر الإعلان";
 document.getElementById("title").value="";document.getElementById("price").value="";
-document.getElementById("phone").value=auth.currentUser.phoneNumber||"";
-document.getElementById("city").value="";document.getElementById("description").value="";
-document.getElementById("category").value="سيارات ومركبات";document.getElementById("brand").value="";
+document.getElementById("phone").value=(isStore?myStore.phone:(auth.currentUser.phoneNumber||""));
+document.getElementById("city").value=(isStore?myStore.city:"");
+document.getElementById("description").value="";
+document.getElementById("category").value=(isStore?myStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
 updateDescCount();document.getElementById("termsCheck").checked=false;
 document.getElementById("termsBox").classList.remove("hidden");
 selectedImages=[];renderImagePicker();onCategoryChange();openFormScreen();
@@ -569,7 +669,8 @@ window.editPost=(id)=>{
 if(!auth.currentUser)return;
 const post=allPosts.find(p=>p.id===id);if(!post)return;
 editingPostId=id;
-document.getElementById("formHeaderTitle").textContent="تعديل الإعلان";
+window._isStorePost=!!post.storeId;
+document.getElementById("formHeaderTitle").textContent=post.storeId?"تعديل إعلان المتجر":"تعديل الإعلان";
 document.getElementById("saveBtn").textContent="حفظ التعديلات";
 document.getElementById("title").value=post.title||"";document.getElementById("price").value=post.price||"";
 document.getElementById("category").value=post.category||"سيارات ومركبات";
@@ -582,18 +683,18 @@ selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();openFormScreen();
 };
 
-window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();homeTitle.textContent="إعلاناتي";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();};
-window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showHome();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";renderSubCats();hideSearchDropdown();homeTitle.textContent="❤️ المفضلة";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();};
+window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="إعلاناتي";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();};
+window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showHome();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="❤️ المفضلة";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();};
 
-function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;}
+function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;}
 populateCitySelects();
 function populateBrandSelect(cat){const sel=document.getElementById("brand");if(!sel)return;let brands=[];if(cat==="سيارات ومركبات")brands=CAR_BRANDS;else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");}
 populateBrandSelect("سيارات ومركبات");
 window.onCategoryChange=()=>{const cat=document.getElementById("category").value;const bf=document.getElementById("brandField");const bl=document.getElementById("brandLabel");if(cat==="سيارات ومركبات"||cat==="دراجات نارية"||cat==="موبايل وتابلت"||cat==="لابتوب وكمبيوتر"){bf.classList.remove("hidden");if(cat==="سيارات ومركبات")bl.textContent="الماركة (نوع السيارة)";else if(cat==="دراجات نارية")bl.textContent="الماركة (نوع الدراجة)";else bl.textContent="الماركة (نوع الجهاز)";populateBrandSelect(cat);}else{bf.classList.add("hidden");document.getElementById("brand").value="";}};
-(function(){const cr=document.getElementById("catsRow");if(!cr)return;cr.innerHTML=CATEGORIES.map((c,i)=>`<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`).join("");})();
+(function(){const cr=document.getElementById("catsRow");if(!cr)return;cr.innerHTML=CATEGORIES.map((c,i)=>{if(c.isStore){return `<button class="catChip storeChip" data-cat="${c.name}" onclick="openStores()">🏪 ${c.name.replace('🏪 ','')}</button>`;}return `<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`;}).join("");})();
 setTimeout(updateClearBtn,500);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
-window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat));renderSubCats();renderPosts();};
+window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")));renderSubCats();renderPosts();};
 function renderSubCats(){if(!subCatsRow)return;const subs=SUB_CATEGORIES[currentCategory];if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}subCatsRow.classList.remove("hidden");subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;}
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 window.loadPosts=()=>renderPosts();
@@ -605,7 +706,7 @@ function renderPosts(){
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
 const me=auth.currentUser;
-let list=allPosts.filter(p=>{const status=getStatus(p);const isOwner=me&&p.uid===me.uid;if(status!=="approved" && !isOwner && !isAdmin)return false;if(currentCategory!=="الكل" && p.category!==currentCategory)return false;if(currentSubCategory!=="الكل" && p.brand!==currentSubCategory)return false;if(currentCity!=="الكل" && p.city!==currentCity)return false;if(showOnlyMine && p.uid!==me?.uid)return false;if(showOnlyFavorites && !favs.includes(p.id))return false;if(term && !(p.title||"").toLowerCase().includes(term))return false;return true;});
+let list=allPosts.filter(p=>{const status=getStatus(p);const isOwner=me&&p.uid===me.uid;if(status!=="approved" && !isOwner && !isAdmin)return false;if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;if(!currentStoreFilter && currentCategory!=="الكل" && p.category!==currentCategory)return false;if(currentSubCategory!=="الكل" && p.brand!==currentSubCategory)return false;if(currentCity!=="الكل" && p.city!==currentCity)return false;if(showOnlyMine && p.uid!==me?.uid)return false;if(showOnlyFavorites && !favs.includes(p.id))return false;if(term && !(p.title||"").toLowerCase().includes(term))return false;return true;});
 list=sortPosts(list);
 if(list.length===0){postsBox.innerHTML=showOnlyFavorites?"<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.</div>":"<div class='empty'>لا توجد إعلانات هنا حالياً</div>";return;}
 postsBox.innerHTML=list.map(p=>{
@@ -621,7 +722,8 @@ let cardClass="";if(status==="approved" && isPostFeatured(p))cardClass="featured
 const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<span class="catTag">${escapeHtml(p.category||"")}</span>`;
 const memberTag=p.sellerMemberNo?`<span class="memberNoBadge" style="margin-left:6px">#${p.sellerMemberNo}</span>`:"";
 const userTag=p.sellerUsername?`<span class="usernameBadge" style="margin-left:6px">@${escapeHtml(p.sellerUsername)}</span>`:"";
-return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ${userTag} ›</div>`:""}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}<div class="actions">${wa}${feat}${edit}${del}</div></div></div>`;
+const storeTag=p.storeId?`<span class="storeBadge" style="margin-left:6px">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`:"";
+return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${p.storeId?`<div class="sellerLine" onclick="event.stopPropagation();openStore('${p.storeId}')">${storeTag} ›</div>`:(p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ${userTag} ›</div>`:"")}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}<div class="actions">${wa}${feat}${edit}${del}</div></div></div>`;
 }).join("");
 }
 
@@ -636,35 +738,17 @@ try{
 const memberNo=await runTransaction(db,async(transaction)=>{
 const profileSnap=await transaction.get(profileRef);
 const counterSnap=await transaction.get(counterRef);
-if(profileSnap.exists() && profileSnap.data().memberNo!=null){
-return profileSnap.data().memberNo;
-}
+if(profileSnap.exists() && profileSnap.data().memberNo!=null){return profileSnap.data().memberNo;}
 let currentNumber=1000;
-if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){
-currentNumber=counterSnap.data().lastNumber;
-}
+if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){currentNumber=counterSnap.data().lastNumber;}
 const newNumber=currentNumber+1;
-if(counterSnap.exists()){
-transaction.update(counterRef,{lastNumber:newNumber});
-}else{
-transaction.set(counterRef,{lastNumber:newNumber});
-}
-if(profileSnap.exists()){
-const updates={memberNo:newNumber};
-if(customName)updates.name=customName;
-transaction.update(profileRef,updates);
-}else{
-const name=customName||defaultName(user);
-transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber,username:""});
-}
+if(counterSnap.exists()){transaction.update(counterRef,{lastNumber:newNumber});}else{transaction.set(counterRef,{lastNumber:newNumber});}
+if(profileSnap.exists()){const updates={memberNo:newNumber};if(customName)updates.name=customName;transaction.update(profileRef,updates);}else{const name=customName||defaultName(user);transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber,username:"",storeId:null});}
 return newNumber;
 });
 console.log("✅ Member #",memberNo);
 return memberNo;
-}catch(e){
-console.error("❌ assignMemberNumber failed:",e);
-return null;
-}
+}catch(e){console.error("❌ assignMemberNumber failed:",e);return null;}
 }
 
 async function reserveUsername(user,newUsername,oldUsername){
@@ -678,37 +762,24 @@ try{
 await runTransaction(db,async(transaction)=>{
 const uSnap=await transaction.get(usernameRef);
 const pSnap=await transaction.get(profileRef);
-if(uSnap.exists() && uSnap.data().uid!==user.uid){
-throw new Error("TAKEN");
-}
+if(uSnap.exists() && uSnap.data().uid!==user.uid){throw new Error("TAKEN");}
 const now=Date.now();
-if(!uSnap.exists()){
-transaction.set(usernameRef,{uid:user.uid,createdAt:now});
-}
-if(pSnap.exists()){
-transaction.update(profileRef,{username:u});
-}else{
-transaction.set(profileRef,{name:defaultName(user),createdAt:profileCreatedAt(user),memberNo:1001,username:u});
-}
+if(!uSnap.exists()){transaction.set(usernameRef,{uid:user.uid,createdAt:now});}
+if(pSnap.exists()){transaction.update(profileRef,{username:u});}else{transaction.set(profileRef,{name:defaultName(user),createdAt:profileCreatedAt(user),memberNo:1001,username:u,storeId:null});}
 });
-// احذف الاسم القديم إن وُجد وكان مختلفًا
-if(oldUsername && oldUsername!==u){
-try{const oldRef=doc(db,"usernames",oldUsername);const oldSnap=await getDoc(oldRef);if(oldSnap.exists() && oldSnap.data().uid===user.uid){await deleteDoc(oldRef);}}catch(e){}
-}
-// حدّث الإعلانات القديمة
+if(oldUsername && oldUsername!==u){try{const oldRef=doc(db,"usernames",oldUsername);const oldSnap=await getDoc(oldRef);if(oldSnap.exists() && oldSnap.data().uid===user.uid){await deleteDoc(oldRef);}}catch(e){}}
 try{const mine=allPosts.filter(p=>p.uid===user.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:u})));}catch(e){}
 return{ok:true,value:u};
-}catch(e){
-if(e.message==="TAKEN")return{ok:false,msg:"هذا الاسم محجوز، جرّب اسم ثاني"};
-console.error("reserveUsername:",e);
-return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};
-}
+}catch(e){if(e.message==="TAKEN")return{ok:false,msg:"هذا الاسم محجوز، جرّب اسم ثاني"};console.error("reserveUsername:",e);return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};}
 }
 
-function startProfileListener(user){stopProfileListener();profileCreateTried=false;let assignAttempted=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}}else if(!profileCreateTried){profileCreateTried=true;assignMemberNumber(user).catch(e=>{});}},err=>{});}
+function startProfileListener(user){stopProfileListener();profileCreateTried=false;let assignAttempted=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}if(myProfile.storeId && !unsubStore){startStoreListener(user.uid);}}else if(!profileCreateTried){profileCreateTried=true;assignMemberNumber(user).catch(e=>{});}},err=>{});}
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
-window.saveMyName=async()=>{const me=auth.currentUser;if(!me)return;const name=document.getElementById("myName").value.trim();if(name.length<2||name.length>30){alert("الاسم بين 2 و30 حرفاً");return;}try{if(myProfile && myProfile.memberNo!=null)await updateDoc(doc(db,"profiles",me.uid),{name});else await assignMemberNumber(me,name);const mine=allPosts.filter(p=>p.uid===me.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));alert("تم حفظ الاسم");}catch(e){alert("تعذر حفظ الاسم: "+e.message);}};
+function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
+function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
+
+window.saveMyName=async()=>{const me=auth.currentUser;if(!me)return;const name=document.getElementById("myName").value.trim();if(name.length<2||name.length>30){alert("الاسم بين 2 و30 حرفاً");return;}try{if(myProfile && myProfile.memberNo!=null)await updateDoc(doc(db,"profiles",me.uid),{name});else await assignMemberNumber(me,name);const mine=allPosts.filter(p=>p.uid===me.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));if(myStore){await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""});}alert("تم حفظ الاسم");}catch(e){alert("تعذر حفظ الاسم: "+e.message);}};
 
 window.saveMyUsername=async()=>{
 const me=auth.currentUser;
@@ -723,9 +794,9 @@ const res=await reserveUsername(me,raw,oldUsername);
 if(res.ok){
 alert("✅ تم حفظ اسم المستخدم: @"+res.value);
 if(input)input.value=res.value;
-}else{
-alert("❌ "+res.msg);
-}
+// حدّث الاسم في المتجر لو موجود
+if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
+}else{alert("❌ "+res.msg);}
 };
 
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;document.getElementById("warnGo").href="https://wa.me/"+encodeURIComponent(p.phone.replace(/[^0-9]/g,""));warnOverlay.classList.remove("hidden");};
@@ -773,9 +844,10 @@ if(!isOwner)incrementViews(id);
 const images=getImages(p);const dots=dotsHtml(images);
 const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف.</div>`;
 let sellerTags="";
-if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
-if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;
-const seller=p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"";
+if(p.storeId){sellerTags+=` <span class="storeBadge">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`;}
+else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
+if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
+const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openStore('${p.storeId}')">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
 const wa=p.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="contactSeller('${p.id}')">💬 تواصل عبر واتساب</button>`:"";
 const shareBtn=(status==="approved")?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
 const viewsBadge=(isOwner||isAdmin)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
@@ -794,7 +866,7 @@ adminPanel+=`<div style="background:#fff8e1;border:1px solid #f59e0b;border-radi
 }
 const similar=allPosts.filter(x=>x.id!==p.id && x.category===p.category && getStatus(x)==="approved").slice(0,4);
 const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const imgs=getImages(s);const th=imgs[0]||"";return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th?`<img src="${escapeHtml(th)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.price!=null?s.price+" د.ل":""}</div></div></div>`;}).join("")}</div></div>`:"";
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="closeOnImg" onclick="closeOverlay()">✕</button><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div><div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div><div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div><div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${featBadge}${brandBadge}${statusBadge}${viewsBadge}</div>${seller}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${upgradeBtn}${wa}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="closeOnImg" onclick="closeOverlay()">✕</button><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div><div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div><div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div><div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${featBadge}${brandBadge}${statusBadge}${viewsBadge}</div>${sellerHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${upgradeBtn}${wa}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
 
@@ -807,6 +879,7 @@ async function uploadToImgBB(file){const fd=new FormData();const toSend=await co
 
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
+const isStore=!!window._isStorePost;
 const title=document.getElementById("title").value.trim();
 const price=document.getElementById("price").value;
 const category=document.getElementById("category").value;
@@ -825,7 +898,17 @@ if(!phone){alert("الرجاء إدخال رقم الواتساب");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){alert("الرجاء الموافقة على الشروط");return;}
 const bad=checkContent(title,description);
 if(bad){alert(`❌ لا يمكن نشر الإعلان\n\nيحتوي على كلمة ممنوعة (${bad.word})\nالمكان: ${bad.field}`);return;}
-if(!wasEditing){const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid).length;const limit=await getUserLimit(auth.currentUser.uid);if(myCount>=limit){alert(`وصلت للحد الأقصى (${limit})`);return;}}
+if(!wasEditing){
+  if(isStore){
+    if(!myStore||myStore.status!=="approved"){alert("❌ متجرك غير معتمد");return;}
+    const stCount=allPosts.filter(p=>p.storeId===myStore.id).length;
+    if(stCount>=STORE_DEFAULT_LIMIT){alert(`⚠️ وصلت للحد الأقصى للمتجر (${STORE_DEFAULT_LIMIT})`);return;}
+  }else{
+    const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
+    const limit=await getUserLimit(auth.currentUser.uid);
+    if(myCount>=limit){alert(`وصلت للحد الأقصى (${limit})`);return;}
+  }
+}
 saveBtn.disabled=true;saveBtn.textContent=wasEditing?"جاري الحفظ...":"جاري النشر...";
 try{
 const images=[];
@@ -833,9 +916,28 @@ for(const item of selectedImages){if(item.type==="existing")images.push(item.url
 if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
-await updateDoc(doc(db,"posts",editingPostId),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,sellerMemberNo,sellerUsername,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now()});
+const upd={title,price:Number(price),category,brand,city,description,phone,images,sellerName,sellerMemberNo,sellerUsername,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now()};
+await updateDoc(doc(db,"posts",editingPostId),upd);
 }
-else{await addDoc(collection(db,"posts"),{title,price:Number(price),category,brand,city,description,phone,images,sellerName,sellerMemberNo,sellerUsername,termsAcceptedAt:Date.now(),uid:auth.currentUser.uid,email:auth.currentUser.email||"",views:0,featured:false,featuredUntil:0,featuredPlan:null,status:"pending",createdAt:Date.now()});alert("✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");}
+else{
+  const base={title,price:Number(price),category,brand,city,description,phone,images,status:"pending",createdAt:Date.now(),views:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:Date.now()};
+  if(isStore){
+    base.storeId=myStore.id;
+    base.storeName=myStore.name;
+    base.storeCategory=myStore.category;
+    base.uid=auth.currentUser.uid;
+    base.email=auth.currentUser.email||"";
+    base.phone=phone||myStore.phone;
+  }else{
+    base.uid=auth.currentUser.uid;
+    base.email=auth.currentUser.email||"";
+    base.sellerName=sellerName;
+    base.sellerMemberNo=sellerMemberNo;
+    base.sellerUsername=sellerUsername;
+  }
+  await addDoc(collection(db,"posts"),base);
+  alert(isStore?"✅ تم إرسال إعلان المتجر بنجاح\n\nسيظهر بعد موافقة الإدارة.":"✅ تم إرسال إعلانك بنجاح\n\nسيظهر بعد موافقة الإدارة.");
+}
 editingPostId=null;
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
 selectedImages=[];renderImagePicker();showHome();
@@ -864,13 +966,9 @@ if((p.originalData.category||"")!==(p.category||""))changes.push(`<div><b>📁 �
 if((p.originalData.brand||"")!==(p.brand||""))changes.push(`<div><b>🏷️ الماركة:</b> ${escapeHtml(p.originalData.brand||"")} → ${escapeHtml(p.brand||"")}</div>`);
 if((p.originalData.city||"")!==(p.city||""))changes.push(`<div><b>📍 المدينة:</b> ${escapeHtml(p.originalData.city||"")} → ${escapeHtml(p.city||"")}</div>`);
 if((p.originalData.phone||"")!==(p.phone||""))changes.push(`<div><b>☎️ الواتساب:</b> ${escapeHtml(p.originalData.phone||"")} → ${escapeHtml(p.phone||"")}</div>`);
-if(changes.length){
-editNote=`<div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;line-height:1.9"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13.5px">✏️ هذا الإعلان تم تعديله — التغييرات:</div>${changes.join("")}</div>`;
-}else if(p.wasEdited){
-editNote=`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;color:#92400e;font-weight:700">✏️ تم تعديل الإعلان (بدون تغيير في البيانات)</div>`;
+if(changes.length){editNote=`<div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;line-height:1.9"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13.5px">✏️ هذا الإعلان تم تعديله — التغييرات:</div>${changes.join("")}</div>`;}else if(p.wasEdited){editNote=`<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:10px;margin-top:10px;font-size:12.5px;color:#92400e;font-weight:700">✏️ تم تعديل الإعلان (بدون تغيير في البيانات)</div>`;}
 }
-}
-const tags=(p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"");
+const tags=(p.storeId?("🏪 "+escapeHtml(p.storeName||"متجر")):((p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"")));
 return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
 <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${p.price!=null?p.price+" د.ل":""}</div>
@@ -879,7 +977,7 @@ ${imgsHtml}
 <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
 📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
 📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
-👤 ${escapeHtml(p.sellerName||"البائع")} ${tags} · ☎️ ${escapeHtml(p.phone||"")}
+${p.storeId?"🏪":""} ${p.storeId?escapeHtml(p.storeName||"متجر"):escapeHtml(p.sellerName||"البائع")} ${tags} · ☎️ ${escapeHtml(p.phone||"")}
 </div>
 ${editNote}
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
@@ -894,6 +992,7 @@ list.innerHTML=toolbar+items;
 window.approveAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){alert("لا توجد إعلانات");return;}if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});ok++;}catch(e){fail++;}}alert(`✅ تم قبول ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);renderModeration();};
 window.deleteAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){alert("لا توجد إعلانات");return;}if(!confirm(`رفض ${pending.length} إعلان؟`))return;const reason=prompt("سبب الرفض الجماعي:","محتوى غير مناسب");if(reason===null)return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){fail++;}}alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ فشل ${fail}`:''}`);renderModeration();};
 
+// ===== الإبلاغات =====
 window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});alert("تم إرسال الإبلاغ، شكراً لك");}catch(e){alert("تعذر إرسال الإبلاغ: "+e.message);}};
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
 
@@ -904,45 +1003,176 @@ const toolbar=`<div style="background:#fdeceb;border:1px solid #e5484d;border-ra
 const items=allReports.map(r=>{
 const p=allPosts.find(x=>x.id===r.postId);
 const imgs=p?getImages(p):[];
-const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور أو الإعلان محذوف</div>`;
-const postInfo=p?`
-<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
-<div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${p.price!=null?p.price+" د.ل":""}</div>
-${imgsHtml}
-<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
-<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">
-📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>
-📍 ${escapeHtml(p.city||"")} · ⏰ ${timeAgo(p.createdAt)}<br>
-👤 ${escapeHtml(p.sellerName||"البائع")} ${p.sellerMemberNo?"· #"+p.sellerMemberNo:""}${p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):""} · ☎️ ${escapeHtml(p.phone||"")}
-</div>`:`<div style="text-align:center;padding:20px;color:var(--muted);background:#fdeceb;border-radius:10px;font-size:13.5px">⚠️ الإعلان لم يعد موجوداً</div>`;
-return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff">
-<div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">
-🚩 <b>سبب الإبلاغ:</b> ${escapeHtml(r.reason||"بدون سبب محدد")}<br>
-<b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}
-</div>
-${postInfo}
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
-<button style="padding:12px 4px;border:none;border-radius:9px;background:#fdeceb;color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف</button>
-<button style="padding:12px 4px;border:none;border-radius:9px;background:var(--bg);color:var(--muted);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="dismissReport('${r.id}')">👁️ تجاهل</button>
-<button style="padding:12px 4px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button>
-</div></div>`;
+const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
+const postInfo=p?`<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div><div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${p.price!=null?p.price+" د.ل":""}</div>${imgsHtml}<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>`:`<div style="text-align:center;padding:20px;color:var(--muted);background:#fdeceb;border-radius:10px">⚠️ الإعلان غير موجود</div>`;
+return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff"><div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">🚩 <b>سبب:</b> ${escapeHtml(r.reason||"بدون سبب")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}</div>${postInfo}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px"><button style="padding:12px 4px;border:none;border-radius:9px;background:#fdeceb;color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف</button><button style="padding:12px 4px;border:none;border-radius:9px;background:var(--bg);color:var(--muted);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="dismissReport('${r.id}')">👁️ تجاهل</button><button style="padding:12px 4px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${r.postId}'),300)">📄 عرض</button></div></div>`;
 }).join("");
 list.innerHTML=toolbar+items;
 }
 
-window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){alert("لا توجد إبلاغات");return;}if(!confirm(`تجاهل ${allReports.length} إبلاغ؟`))return;let ok=0,fail=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){fail++;}}alert(`✅ تم تجاهل ${ok} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);renderReports();};
-window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){alert("لا توجد إبلاغات");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان و ${allReports.length} إبلاغ نهائياً؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){alert("❌ تم الإلغاء");return;}let okP=0,okR=0,fail=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){fail++;}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){fail++;}}alert(`✅ تم حذف ${okP} إعلان\n✅ تم إزالة ${okR} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);renderReports();};
+window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){alert("لا توجد إبلاغات");return;}if(!confirm(`تجاهل ${allReports.length} إبلاغ؟`))return;let ok=0,fail=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){fail++;}}alert(`✅ تم تجاهل ${ok}${fail?`\n❌ فشل ${fail}`:''}`);renderReports();};
+window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){alert("لا توجد إبلاغات");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان و ${allReports.length} إبلاغ؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){alert("❌ تم الإلغاء");return;}let okP=0,okR=0,fail=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){fail++;}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){fail++;}}alert(`✅ حذف ${okP} إعلان\n✅ إزالة ${okR} إبلاغ${fail?`\n❌ فشل ${fail}`:''}`);renderReports();};
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){alert("خطأ: "+e.message);}};
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){alert("خطأ: "+e.message);}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ: "+e.message);}};
 
+// ===== التمييز =====
 window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin){alert("للمشرف فقط");return;}const post=allPosts.find(p=>p.id===id);if(!post)return;if(isPostFeatured(post)){if(!confirm("إلغاء التمييز؟"))return;try{await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}catch(e){}}else{try{const until=Date.now()+30*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:30});}catch(e){}}};
-window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم تمييز الإعلان لمدة ${days} يوم`);}}catch(e){alert("خطأ: "+e.message);}};
-window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
-window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)\nأرجو ترتيب عملية الدفع والتفعيل.`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط الذي وصلك في واتساب");},400);};
+window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});alert("✅ تم إلغاء التمييز");}else{const until=Date.now()+days*24*60*60*1000;await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:days});alert(`✅ تم التمييز لمدة ${days} يوم`);}}catch(e){alert("خطأ: "+e.message);}};
 
+// ===== الترقية =====
+window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
+window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط");},400);};
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){alert("⚠️ الإعلان غير موجود");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 المدة: ${d.days} يوم\n💵 المبلغ: ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
 
+// ===== المتاجر =====
+function startStoresListener(){if(unsubStores)return;unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStores=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();},err=>{});}
+function startStoresModerationListener(){/* nothing extra */}
+
+window.openStores=()=>{document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));storesOverlay.classList.remove("hidden");renderStoresList();};
+function renderStoresList(){
+  const list=document.getElementById("storesList");if(!list)return;
+  const term=(document.getElementById("storeSearch")?.value||"").trim().toLowerCase();
+  const approved=allStores.filter(s=>s.status==="approved").filter(s=>!term || (s.name||"").toLowerCase().includes(term) || (s.category||"").toLowerCase().includes(term) || (s.city||"").toLowerCase().includes(term));
+  if(approved.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد متاجر معتمدة بعد</div>";return;}
+  list.innerHTML=approved.map(s=>{
+    const logo=s.logo?`<img src="${escapeHtml(s.logo)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
+    const count=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved").length;
+    return `<div class="storeCard" onclick="openStore('${s.id}')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} <span class="storeBadge">🏪 متجر</span></div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
+  }).join("");
+}
+
+window.openStore=async(storeId)=>{
+  closeOverlay();
+  storeOverlay.classList.remove("hidden");
+  const box=document.getElementById("storeContent");
+  box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
+  const store=allStores.find(s=>s.id===storeId)|| (await getDoc(doc(db,"stores",storeId))).data();
+  if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
+  if(store.status!=="approved" && !(auth.currentUser && (auth.currentUser.uid===store.ownerUid || isAdmin))){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
+  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdmin))));
+  const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
+  const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
+  const isOwner=auth.currentUser && auth.currentUser.uid===store.ownerUid;
+  const waBtn=store.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="openStoreWhatsapp('${escapeHtml(store.phone)}')">💬 تواصل عبر واتساب</button>`:"";
+  const itemsHtml=items.length?`<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
+    const imgs=getImages(p);const th=imgs[0]||"";
+    return `<div class="card" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer"><div class="imgWrap">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="body"><h4>${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div></div></div>`;
+  }).join("")}</div>`:`<div class="reportsEmpty">لا توجد منتجات بعد</div>`;
+  const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة — لن يظهر للزوار حتى الموافقة</div>`:"";
+  const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
+  box.innerHTML=`
+    <button class="closeOnImg" style="position:static;margin-bottom:8px" onclick="closeOverlay()">✕ إغلاق</button>
+    ${statusNote}${statusNote2}
+    <div class="storeHeader">
+      <div class="cover">${coverHtml}</div>
+      <div class="logoWrap">${logoHtml}</div>
+    </div>
+    <div class="storeTitle">${escapeHtml(store.name||"متجر")} <span class="storeBadge">🏪 متجر</span></div>
+    <div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div>
+    ${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}
+    ${waBtn}
+    ${isOwner?`<button class="btnGhost" onclick="goAddStorePost('${store.id}')" style="background:#fff7e6;color:#92400e">➕ إضافة منتج للمتجر</button>`:""}
+    <div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>
+    ${itemsHtml}
+  `;
+};
+
+window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(phone.replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
+window.goAddStorePost=(storeId)=>{closeOverlay();if(myStore && myStore.id===storeId && myStore.status==="approved"){setTimeout(()=>showForm(true),200);}else{alert("❌ متجرك غير معتمد");}};
+window.openMyStore=()=>{if(!myStore){alert("لا يوجد متجر");return;}openStore(myStore.id);};
+
+// ===== فتح متجر =====
+window.startOpenStore=async()=>{
+  if(!auth.currentUser){authOverlay.classList.remove("hidden");return;}
+  if(myStore){alert("⚠️ لديك متجر بالفعل");return;}
+  const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
+  if(myCount>0){
+    if(!confirm(`⚠️ لديك ${myCount} إعلان فردي.\n\nيجب حذفها كلها قبل فتح المتجر.\n\nهل تريد حذفها الآن؟`))return;
+    let ok=0;
+    for(const p of allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId)){
+      try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}
+    }
+    alert(`✅ تم حذف ${ok} إعلان`);
+  }
+  accountOverlay.classList.add("hidden");
+  openStoreOverlay.classList.remove("hidden");
+  storeLogoImage=null;storeCoverImage=null;
+  document.getElementById("storeName").value="";
+  document.getElementById("storeCategory").value="سيارات ومركبات";
+  document.getElementById("storeCity").value="";
+  document.getElementById("storePhone").value="";
+  document.getElementById("storeDescription").value="";
+  renderStoreLogo();renderStoreCover();
+};
+
+window.handleStoreLogoSelected=()=>{const input=document.getElementById("storeLogoFile");const f=input.files[0];if(!f)return;storeLogoImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderStoreLogo();};
+window.handleStoreCoverSelected=()=>{const input=document.getElementById("storeCoverFile");const f=input.files[0];if(!f)return;storeCoverImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderStoreCover();};
+function renderStoreLogo(){const box=document.getElementById("storeLogoThumbs");box.innerHTML=storeLogoImage?`<div class="imgThumb"><img src="${storeLogoImage.previewUrl}"><button class="rm" onclick="storeLogoImage=null;renderStoreLogo()">×</button></div>`:"";document.getElementById("storeLogoAddTile").classList.toggle("hidden",!!storeLogoImage);}
+function renderStoreCover(){const box=document.getElementById("storeCoverThumbs");box.innerHTML=storeCoverImage?`<div class="imgThumb"><img src="${storeCoverImage.previewUrl}"><button class="rm" onclick="storeCoverImage=null;renderStoreCover()">×</button></div>`:"";document.getElementById("storeCoverAddTile").classList.toggle("hidden",!!storeCoverImage);}
+
+window.submitStore=async()=>{
+  if(!auth.currentUser)return;
+  const name=document.getElementById("storeName").value.trim();
+  const category=document.getElementById("storeCategory").value;
+  const city=document.getElementById("storeCity").value;
+  const phone=document.getElementById("storePhone").value.trim();
+  const description=document.getElementById("storeDescription").value.trim().slice(0,500);
+  if(name.length<2||name.length>40){alert("اسم المتجر بين 2 و40 حرف");return;}
+  if(!city){alert("اختر المدينة");return;}
+  if(!phone){alert("أدخل رقم الواتساب");return;}
+  if(!storeLogoImage){alert("أضف شعار المتجر");return;}
+  const bad=checkContent(name,description);
+  if(bad){alert("❌ يحتوي على كلمة ممنوعة: "+bad.word);return;}
+  const btn=document.getElementById("storeSubmitBtn");btn.disabled=true;btn.textContent="جاري الإرسال...";
+  try{
+    const logoUrl=await uploadToImgBB(storeLogoImage.file);
+    let coverUrl="";
+    if(storeCoverImage)coverUrl=await uploadToImgBB(storeCoverImage.file);
+    const storeData={
+      ownerUid:auth.currentUser.uid,
+      ownerUsername:(myProfile&&myProfile.username)||"",
+      ownerMemberNo:(myProfile&&myProfile.memberNo)||null,
+      name, category, city, phone, description,
+      logo:logoUrl, cover:coverUrl,
+      status:"pending",
+      rejectReason:"",
+      createdAt:Date.now(),
+      approvedAt:null
+    };
+    const ref=await addDoc(collection(db,"stores"),storeData);
+    // ربط المتجر بالملف الشخصي
+    try{await updateDoc(doc(db,"profiles",auth.currentUser.uid),{storeId:ref.id});}catch(e){}
+    alert("✅ تم إرسال طلب فتح المتجر\n\nسيظهر بعد موافقة الإدارة");
+    closeOverlay();
+  }catch(e){alert("خطأ: "+e.message);}
+  finally{btn.disabled=false;btn.textContent="📤 إرسال طلب الفتح";}
+};
+
+// ===== مراجعة المتاجر (أدمن) =====
+function renderStoresModeration(){
+  const list=document.getElementById("storesModerationList");if(!list)return;
+  const pending=allStores.filter(s=>s.status==="pending");
+  if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد طلبات</div>";return;}
+  list.innerHTML=pending.map(s=>{
+    const logo=s.logo?`<img src="${escapeHtml(s.logo)}" style="width:70px;height:70px;border-radius:12px;object-fit:cover;border:1px solid var(--border)">`:`<div style="width:70px;height:70px;border-radius:12px;background:#e6f6fe;display:flex;align-items:center;justify-content:center;font-size:30px">🏪</div>`;
+    const cover=s.cover?`<img src="${escapeHtml(s.cover)}" style="width:100%;height:100px;border-radius:10px;object-fit:cover;margin-top:8px">`:"";
+    return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
+      <div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div>
+      ${cover}
+      <div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · ☎️ ${escapeHtml(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">
+        <button onclick="approveStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة</button>
+        <button onclick="rejectStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});alert("✅ تم قبول المتجر");renderStoresModeration();}catch(e){alert("خطأ: "+e.message);}};
+window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","معلومات غير كافية");if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});alert("✅ تم رفض المتجر");renderStoresModeration();}catch(e){alert("خطأ: "+e.message);}};
+
+// ===== تحميل عند البدء =====
 window.addEventListener('load',()=>{const hash=window.location.hash;if(hash&&hash.startsWith('#post-')){const [pp,qp]=hash.split('?');const id=pp.substring(6);const params=new URLSearchParams(qp||'');const pd=parseInt(params.get('plan')||'0',10);const pr=parseInt(params.get('price')||'0',10);if(pd>0){pendingAutoUpgrade={postId:id,days:pd,price:pr};}let t=0;const iv=setInterval(()=>{t++;if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}},500);}});
 </script>
 </body>
