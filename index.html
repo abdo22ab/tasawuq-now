@@ -485,7 +485,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
 <div id="adPopup" class="adPopup hidden"><div class="adPopupInner"><button class="adClose" onclick="closeAd()">✕</button><img id="adImage" src="" alt="إعلان"></div></div>
-<script type="module">
+  <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -538,7 +538,6 @@ function validateUsername(u){
 }
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
 
-// ===== رقم الهاتف =====
 function validatePhone(p){
   if(!p)return{ok:false,msg:"اكتب رقم الواتساب"};
   const s=String(p).replace(/[^0-9]/g,"");
@@ -682,7 +681,6 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
-// ===== الإعلانات المنتهية =====
 async function autoDeleteOldExpired(){
   if(!isAdmin)return;
   try{
@@ -779,7 +777,6 @@ window.deleteAutoReadyExpired=async()=>{
   renderExpiredList();
 };
 
-// ===== إدارة حدود المستخدمين =====
 window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){const list=document.getElementById("limitsList");if(!list)return;if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3</span></div>";return;}list.innerHTML=allLimits.map(l=>`<div class="reportItem" style="background:#f0f9ff;border-color:#0ea5e9"><div class="rTitle">👤 ${escapeHtml(l.name||"مستخدم")} ${l.username?`<span class="usernameBadge" style="margin-right:6px">@${escapeHtml(l.username)}</span>`:""} ${l.memberNo?`<span class="memberNoBadge" style="margin-right:6px">#${l.memberNo}</span>`:""}</div><div class="rMeta"><b>الحد:</b> <span style="color:#0284c7;font-weight:800;font-size:15px">${l.limit}</span> إعلان<br><b>الإيميل:</b> ${escapeHtml(l.email||"غير محدد")}<br><b>UID:</b> <span style="font-size:10px">${escapeHtml(l.uid||"")}</span></div><div class="rActions" style="grid-template-columns:1fr 1fr"><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="editLimit('${escapeHtml(l.uid)}')">✏️ تعديل</button><button class="rDelete" onclick="removeLimit('${escapeHtml(l.uid)}')">🗑️ إلغاء</button></div></div>`).join("");}
 window.editLimit=(uid)=>{const l=allLimits.find(x=>x.uid===uid);if(!l)return;document.getElementById("limitSearch").value=l.username?l.username:(l.memberNo?String(l.memberNo):(l.email||""));document.getElementById("limitNumber").value=l.limit||3;};
@@ -921,7 +918,6 @@ if((isOwner||isAdmin||isMyStorePost)&&days!=null){
 return `<div class="card ${cardClass}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}<button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${wa}${feat}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
-
 function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
 function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 
@@ -938,7 +934,7 @@ let currentNumber=1000;
 if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){currentNumber=counterSnap.data().lastNumber;}
 const newNumber=currentNumber+1;
 if(counterSnap.exists()){transaction.update(counterRef,{lastNumber:newNumber});}else{transaction.set(counterRef,{lastNumber:newNumber});}
-if(profileSnap.exists()){const updates={memberNo:newNumber};if(customName)updates.name=customName;transaction.update(profileRef,updates);}else{const name=customName||defaultName(user);transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber,username:"",storeId:null,phone:""});}
+if(profileSnap.exists()){const updates={memberNo:newNumber};if(customName)updates.name=customName;transaction.update(profileRef,updates);}else{const name=customName||defaultName(user);transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber,username:"",storeId:null,phone:"",phoneEditsCount:0});}
 return newNumber;
 });
 console.log("✅ Member #",memberNo);
@@ -960,7 +956,7 @@ const pSnap=await transaction.get(profileRef);
 if(uSnap.exists() && uSnap.data().uid!==user.uid){throw new Error("TAKEN");}
 const now=Date.now();
 if(!uSnap.exists()){transaction.set(usernameRef,{uid:user.uid,createdAt:now});}
-if(pSnap.exists()){transaction.update(profileRef,{username:u});}else{transaction.set(profileRef,{name:defaultName(user),createdAt:profileCreatedAt(user),memberNo:1001,username:u,storeId:null,phone:""});}
+if(pSnap.exists()){transaction.update(profileRef,{username:u});}else{transaction.set(profileRef,{name:defaultName(user),createdAt:profileCreatedAt(user),memberNo:1001,username:u,storeId:null,phone:"",phoneEditsCount:0});}
 });
 if(oldUsername && oldUsername!==u){try{const oldRef=doc(db,"usernames",oldUsername);const oldSnap=await getDoc(oldRef);if(oldSnap.exists() && oldSnap.data().uid===user.uid){await deleteDoc(oldRef);}}catch(e){}}
 try{const mine=allPosts.filter(p=>p.uid===user.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:u})));}catch(e){}
@@ -990,7 +986,7 @@ if(res.ok){alert("✅ تم حفظ اسم المستخدم: @"+res.value);if(inpu
 else{alert("❌ "+res.msg);}
 };
 
-// ===== حفظ رقم الواتساب =====
+// ===== حفظ رقم الواتساب (مع حماية: فرصة تعديل واحدة فقط) =====
 window.saveMyPhone=async()=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
@@ -998,16 +994,35 @@ window.saveMyPhone=async()=>{
   const v=validatePhone(input.value);
   if(!v.ok){alert("❌ "+v.msg);return;}
   const oldPhone=(myProfile&&myProfile.phone)||"";
+  const editsCount=(myProfile&&myProfile.phoneEditsCount)||0;
+
   if(v.value===oldPhone){alert("هذا رقمك الحالي بالفعل");return;}
-  const msg=oldPhone?`هل تريد تغيير رقم الواتساب من ${oldPhone} إلى ${v.value}؟\n\n⚠️ سيتم تحديث الرقم في كل إعلاناتك.`:`هل تريد حفظ رقم الواتساب: ${v.value}؟\n\n⚠️ سيظهر في كل إعلاناتك.`;
-  if(!confirm(msg))return;
+
+  if(oldPhone && editsCount>=1){
+    const msg=`📱 طلب تعديل رقم واتساب\n\n👤 الاسم: ${(myProfile&&myProfile.name)||''}\n🔢 رقم العضوية: #${(myProfile&&myProfile.memberNo)||''}\n🏷️ اسم المستخدم: @${(myProfile&&myProfile.username)||'—'}\n📱 الرقم الحالي: ${oldPhone}\n📱 الرقم الجديد: ${v.value}`;
+    if(confirm(`⚠️ لقد استخدمت فرصتك الوحيدة لتعديل الرقم.\n\n💬 للتواصل مع الإدارة عبر واتساب؟`)){
+      window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank');
+    }
+    return;
+  }
+
+  let confirmMsg, updates;
+  if(!oldPhone){
+    confirmMsg=`هل تريد حفظ رقم الواتساب: ${v.value}؟\n\n⚠️ سيظهر في كل إعلاناتك.\n\nℹ️ عندك فرصة واحدة لتعديل الرقم لاحقًا.`;
+    updates={phone:v.value};
+  } else {
+    confirmMsg=`هل تريد تغيير رقم الواتساب من ${oldPhone} إلى ${v.value}؟\n\n⚠️ هذه فرصتك الوحيدة للتعديل!\n⚠️ سيتم تحديث الرقم في كل إعلاناتك.\n\nهل أنت متأكد؟`;
+    updates={phone:v.value, phoneEditsCount:1};
+  }
+
+  if(!confirm(confirmMsg))return;
   try{
-    await updateDoc(doc(db,"profiles",me.uid),{phone:v.value});
+    await updateDoc(doc(db,"profiles",me.uid),updates);
     const mine=allPosts.filter(p=>p.uid===me.uid);
     await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:v.value})));
     if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{phone:v.value});}catch(e){}}
     if(input)input.value=v.value;
-    alert("✅ تم حفظ رقم الواتساب: "+v.value+"\n\nسيظهر في كل إعلاناتك.");
+    alert("✅ تم حفظ رقم الواتساب: "+v.value+"\n\nسيظهر في كل إعلاناتك."+(oldPhone?"\n\n⚠️ استخدمت فرصتك الوحيدة للتعديل.":""));
   }catch(e){alert("❌ خطأ: "+e.message);}
 };
 
@@ -1172,7 +1187,6 @@ selectedImages=[];renderImagePicker();showHome();
 finally{saveBtn.disabled=false;saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";}
 };
 
-// ===== تجديد الإعلان =====
 window.renewPost=async(id,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===id);
@@ -1268,7 +1282,6 @@ window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catc
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){alert("خطأ: "+e.message);}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));}catch(e){alert("خطأ: "+e.message);}};
 
-// ===== حذف منتج من داخل المتجر (أدمن أو صاحب المتجر) =====
 window.deleteStoreProduct=async(id)=>{
   const p=allPosts.find(x=>x.id===id);
   if(!p){alert("المنتج غير موجود");return;}
@@ -1292,7 +1305,6 @@ window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add(
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط");},400);};
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){alert("⚠️ الإعلان غير موجود");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 المدة: ${d.days} يوم\n💵 المبلغ: ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
 
-// ===== المتاجر =====
 function startStoresListener(){if(unsubStores)return;unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStores=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();if(storesModerationOverlay && !storesModerationOverlay.classList.contains("hidden"))renderStoresModeration();},err=>{});}
 
 window.openStores=()=>{document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));storesOverlay.classList.remove("hidden");renderStoresList();};
@@ -1323,7 +1335,6 @@ window.openStore=async(storeId)=>{
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
   const waBtn=store.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="openStoreWhatsapp('${escapeHtml(store.phone)}')">💬 تواصل عبر واتساب</button>`:"";
-  // ============ هنا التعديل: أزرار تعديل وحذف للأدمن وصاحب المتجر ============
   const canManageItems=isAdmin||isOwnerStore;
   const itemsHtml=items.length?`<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
     const imgs=getImages(p);const th=imgs[0]||"";
@@ -1331,7 +1342,6 @@ window.openStore=async(storeId)=>{
     const actionsHtml=canManageItems?`<div style="display:flex;gap:4px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="flex:1;padding:8px;border:none;border-radius:8px;background:#eef2ff;color:#0284c7;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:#fdeceb;color:#e5484d;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>`:"";
     return `<div class="card ${expired?'expired':''}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4><div class="price">${p.price!=null?p.price+" د.ل":""}</div>${actionsHtml}</div></div>`;
   }).join("")}</div>`:`<div class="reportsEmpty">لا توجد منتجات بعد</div>`;
-  // ============ نهاية التعديل ============
   const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة</div>`:"";
   const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
   box.innerHTML=`
@@ -1423,7 +1433,6 @@ window.submitStore=async()=>{
   finally{btn.disabled=false;btn.textContent="📤 إرسال طلب الفتح";}
 };
 
-// ===== إدارة المتاجر (أدمن) =====
 window.switchStoresTab=(tab)=>{storesModTab=tab;renderStoresModeration();};
 
 function renderStoresModeration(){
@@ -1487,4 +1496,4 @@ window.deleteStore=async(id)=>{
 window.addEventListener('load',()=>{const hash=window.location.hash;if(hash&&hash.startsWith('#post-')){const [pp,qp]=hash.split('?');const id=pp.substring(6);const params=new URLSearchParams(qp||'');const pd=parseInt(params.get('plan')||'0',10);const pr=parseInt(params.get('price')||'0',10);if(pd>0){pendingAutoUpgrade={postId:id,days:pd,price:pr};}let t=0;const iv=setInterval(()=>{t++;if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}},500);}});
 </script>
 </body>
-</html>
+</html>    
