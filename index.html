@@ -21,6 +21,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .dlBanner .dlClose{flex:0 0 auto;background:transparent;color:#fff;border:none;font-size:18px;cursor:pointer;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
 .dlBanner.hidden{display:none!important}
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
+.topbar.scrollAway{position:relative}
 .topbarActions{display:flex;align-items:center;gap:6px}
 .bellBtn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1;justify-content:flex-end}
@@ -28,6 +29,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .iconBtn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .adminChip{position:absolute;top:-4px;left:-4px;background:var(--amber);color:#3a2500;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px}
 .searchWrap{padding:14px 16px 4px;display:flex;gap:8px;position:relative;z-index:15}
+#categoriesScreen .searchWrap{position:sticky;top:66px;z-index:19;background:var(--bg)}
 .searchWrap .searchBox{flex:1;min-width:0}
 .cityFilter{flex:0 0 auto;max-width:118px;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:0 8px;font-family:inherit;font-size:13px;font-weight:700}
 .cityLine{font-size:11.5px;color:var(--muted)}
@@ -240,7 +242,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .expiryOk{color:#16a34a}
 .expirySoon{color:#f59e0b}
 .expiryEnded{color:#e5484d}
-/* ===== شاشة الأقسام الجديدة ===== */
 #categoriesScreen{padding:0 0 100px}
 #categoriesScreen .catHeader{padding:18px 16px 10px;font-size:20px;font-weight:800;color:var(--text)}
 #categoriesScreen .catSubtitle{padding:0 16px 14px;font-size:13px;color:var(--muted)}
@@ -253,7 +254,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .catBox.storeBox .catName{color:#3a2500}
 .catBox.allBox{background:linear-gradient(135deg,#38bdf8,#0284c7);border-color:#0284c7}
 .catBox.allBox .catName{color:#fff}
-.addPostFloat{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:none;padding:14px 32px;border-radius:999px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.45);z-index:15;display:flex;align-items:center;gap:8px}
+.bannerBox{margin:14px 16px 8px;height:130px;border-radius:14px;background:linear-gradient(135deg,#e6f6fe,#f0f9ff);border:2px dashed #38bdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--teal-dark);font-size:14px;font-weight:800;text-align:center;padding:10px;gap:4px}
+.bannerBox .bannerSub{font-size:11.5px;font-weight:600;color:var(--muted)}
 .categoryHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
 .categoryHeader .backBtn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--teal-dark);padding:4px 8px;font-family:inherit}
 .categoryHeader h3{margin:0;font-size:16px;font-weight:800;flex:1;text-align:center;padding-left:30px}
@@ -273,7 +275,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <button class="dlClose" onclick="closeDlBanner()">✕</button>
 </div>
 
-<div class="topbar">
+<div class="topbar" id="mainTopbar">
 <div class="topbarActions">
 <button class="bellBtn" onclick="enableNotifications()">🔔</button>
 <button class="bellBtn" onclick="showFavorites()">❤️</button>
@@ -282,7 +284,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
 
-<!-- ===== شاشة الأقسام الجديدة (تظهر أول) ===== -->
+<!-- ===== شاشة الأقسام (الرئيسية) ===== -->
 <div id="categoriesScreen">
 <div class="searchWrap">
 <div class="searchBox">
@@ -291,15 +293,21 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 </div>
 <select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
 </div>
+
+<!-- ===== مربع البانر الإعلاني (فارغ — للمستقبل) ===== -->
+<div class="bannerBox" id="bannerBox">
+<div>📢 مكان مخصص للإعلانات</div>
+<div class="bannerSub">(مساحة فارغة — قابلة للتخصيص مستقبلاً)</div>
+</div>
+
 <div class="catHeader">الأقسام</div>
 <div class="catSubtitle">اختر القسم لعرض الإعلانات</div>
 <div class="categoriesGrid" id="categoriesGrid"></div>
-<button class="addPostFloat" onclick="startAddPost()">➕ أضف إعلان</button>
 </div>
 
-<!-- ===== شاشة الإعلانات (تظهر بعد اختيار قسم) ===== -->
+<!-- ===== شاشة الإعلانات (بعد اختيار قسم) ===== -->
 <div id="home" class="hidden">
-<div class="categoryHeader">
+<div class="categoryHeader" id="categoryHeader">
 <button class="backBtn" onclick="showCategoriesScreen()">→</button>
 <h3 id="categoryTitle">الإعلانات</h3>
 </div>
@@ -597,6 +605,8 @@ let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pend
 
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
 const categoriesScreen=document.getElementById("categoriesScreen");
+const mainTopbar=document.getElementById("mainTopbar");
+const categoryHeaderEl=document.getElementById("categoryHeader");
 const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
 const moderationBtn=document.getElementById("moderationBtn"),moderationOverlay=document.getElementById("moderationOverlay"),limitsOverlay=document.getElementById("limitsOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=document.getElementById("postOverlay"),warnOverlay=document.getElementById("warnOverlay"),upgradeOverlay=document.getElementById("upgradeOverlay");
@@ -621,6 +631,17 @@ function buildCategoriesGrid(){
 }
 buildCategoriesGrid();
 
+// ===== إظهار/إخفاء الهيدر حسب الشاشة =====
+function setTopbarMode(mode){
+  // mode = "sticky" (ثابت) أو "scroll" (يتحرك مع المحتوى)
+  if(!mainTopbar)return;
+  if(mode==="scroll"){
+    mainTopbar.classList.add("scrollAway");
+  }else{
+    mainTopbar.classList.remove("scrollAway");
+  }
+}
+
 // ===== شاشة الأقسام =====
 window.showCategoriesScreen=()=>{
   showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
@@ -629,6 +650,7 @@ window.showCategoriesScreen=()=>{
   form.classList.add("hidden");
   closeOverlay();
   setActiveNav("home");
+  setTopbarMode("sticky");
   window.scrollTo(0,0);
 };
 
@@ -646,7 +668,7 @@ window.openCategory=(cat)=>{
   form.classList.add("hidden");
   closeOverlay();
   setActiveNav("home");
-  // فعّل الـ chip المناسب
+  setTopbarMode("scroll");
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
   renderSubCats();
   renderPosts();
@@ -661,7 +683,6 @@ window.backFromForm=()=>{
 };
 
 window.focusSearchInHome=()=>{
-  // يفتح شاشة الكل ويوديه للبحث
   openCategory("الكل");
   setTimeout(()=>{const i=document.getElementById("searchInput");if(i)i.focus();},200);
 };
@@ -954,8 +975,8 @@ selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();openFormScreen();
 };
 
-window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();window.scrollTo(0,0);};
-window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();window.scrollTo(0,0);};
+window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");setTopbarMode("scroll");renderPosts();window.scrollTo(0,0);};
+window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");setTopbarMode("scroll");renderPosts();window.scrollTo(0,0);};
 
 function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");const cf=document.getElementById("cityFilter");if(cf)cf.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;const cfc=document.getElementById("cityFilterCat");if(cfc)cfc.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;}
 populateCitySelects();
