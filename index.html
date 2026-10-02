@@ -240,6 +240,23 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .expiryOk{color:#16a34a}
 .expirySoon{color:#f59e0b}
 .expiryEnded{color:#e5484d}
+/* ===== شاشة الأقسام الجديدة ===== */
+#categoriesScreen{padding:0 0 100px}
+#categoriesScreen .catHeader{padding:18px 16px 10px;font-size:20px;font-weight:800;color:var(--text)}
+#categoriesScreen .catSubtitle{padding:0 16px 14px;font-size:13px;color:var(--muted)}
+.categoriesGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 12px}
+.catBox{background:#fff;border-radius:14px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);cursor:pointer;transition:transform .15s;aspect-ratio:1/1;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.catBox:active{transform:scale(.94);background:#f9fafb}
+.catBox .catIcon{font-size:30px;line-height:1}
+.catBox .catName{font-size:11px;font-weight:700;text-align:center;color:var(--text);line-height:1.3;padding:0 2px}
+.catBox.storeBox{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b}
+.catBox.storeBox .catName{color:#3a2500}
+.catBox.allBox{background:linear-gradient(135deg,#38bdf8,#0284c7);border-color:#0284c7}
+.catBox.allBox .catName{color:#fff}
+.addPostFloat{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:none;padding:14px 32px;border-radius:999px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.45);z-index:15;display:flex;align-items:center;gap:8px}
+.categoryHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.categoryHeader .backBtn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--teal-dark);padding:4px 8px;font-family:inherit}
+.categoryHeader h3{margin:0;font-size:16px;font-weight:800;flex:1;text-align:center;padding-left:30px}
 </style>
 </head>
 <body>
@@ -265,7 +282,27 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
 
-<div id="home">
+<!-- ===== شاشة الأقسام الجديدة (تظهر أول) ===== -->
+<div id="categoriesScreen">
+<div class="searchWrap">
+<div class="searchBox">
+<span class="ic">🔎</span>
+<input id="searchInputCat" placeholder="ابحث عن إعلان..." readonly onclick="focusSearchInHome()">
+</div>
+<select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
+</div>
+<div class="catHeader">الأقسام</div>
+<div class="catSubtitle">اختر القسم لعرض الإعلانات</div>
+<div class="categoriesGrid" id="categoriesGrid"></div>
+<button class="addPostFloat" onclick="startAddPost()">➕ أضف إعلان</button>
+</div>
+
+<!-- ===== شاشة الإعلانات (تظهر بعد اختيار قسم) ===== -->
+<div id="home" class="hidden">
+<div class="categoryHeader">
+<button class="backBtn" onclick="showCategoriesScreen()">→</button>
+<h3 id="categoryTitle">الإعلانات</h3>
+</div>
 <div class="searchWrap">
 <div class="searchBox">
 <span class="ic">🔎</span>
@@ -284,7 +321,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 
 <div id="form" class="screen hidden">
 <div class="screenHeader">
-<button class="back" onclick="showHome()">→</button>
+<button class="back" onclick="backFromForm()">→</button>
 <h3 id="formHeaderTitle">إضافة إعلان</h3>
 </div>
 <div class="formArea">
@@ -319,7 +356,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 </div>
 
 <div class="bottomNav">
-<button class="navItem active" id="navHome" onclick="showHome()"><span class="navIcon">🏠</span>الرئيسية</button>
+<button class="navItem active" id="navHome" onclick="showCategoriesScreen()"><span class="navIcon">🏠</span>الرئيسية</button>
 <button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
 <div class="fabWrap"><button class="fab" onclick="startAddPost()">+</button></div>
 <button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
@@ -485,7 +522,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
 <div id="adPopup" class="adPopup hidden"><div class="adPopupInner"><button class="adClose" onclick="closeAd()">✕</button><img id="adImage" src="" alt="إعلان"></div></div>
-  <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -559,6 +596,7 @@ const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","
 let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
 
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
+const categoriesScreen=document.getElementById("categoriesScreen");
 const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
 const moderationBtn=document.getElementById("moderationBtn"),moderationOverlay=document.getElementById("moderationOverlay"),limitsOverlay=document.getElementById("limitsOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=document.getElementById("postOverlay"),warnOverlay=document.getElementById("warnOverlay"),upgradeOverlay=document.getElementById("upgradeOverlay");
@@ -566,6 +604,75 @@ const adminChip=document.getElementById("adminChip"),navHome=document.getElement
 const navAccountLabel=document.getElementById("navAccountLabel"),subCatsRow=document.getElementById("subCatsRow");
 const postTypeOverlay=document.getElementById("postTypeOverlay"),storesOverlay=document.getElementById("storesOverlay"),storeOverlay=document.getElementById("storeOverlay"),openStoreOverlay=document.getElementById("openStoreOverlay"),storesModerationOverlay=document.getElementById("storesModerationOverlay");
 const expiredOverlay=document.getElementById("expiredOverlay");
+
+// ===== بناء شبكة الأقسام =====
+function buildCategoriesGrid(){
+  const grid=document.getElementById("categoriesGrid");
+  if(!grid)return;
+  grid.innerHTML=CATEGORIES.map(c=>{
+    if(c.isStore){
+      return `<div class="catBox storeBox" onclick="openStores()"><div class="catIcon">🏪</div><div class="catName">المتاجر</div></div>`;
+    }
+    if(c.name==="الكل"){
+      return `<div class="catBox allBox" onclick="openCategory('الكل')"><div class="catIcon">✨</div><div class="catName">الكل</div></div>`;
+    }
+    return `<div class="catBox" onclick="openCategory('${c.name.replace(/'/g,"\\'")}')"><div class="catIcon">${c.icon}</div><div class="catName">${c.name}</div></div>`;
+  }).join("");
+}
+buildCategoriesGrid();
+
+// ===== شاشة الأقسام =====
+window.showCategoriesScreen=()=>{
+  showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
+  categoriesScreen.classList.remove("hidden");
+  home.classList.add("hidden");
+  form.classList.add("hidden");
+  closeOverlay();
+  setActiveNav("home");
+  window.scrollTo(0,0);
+};
+
+// ===== فتح قسم =====
+window.openCategory=(cat)=>{
+  currentCategory=cat;
+  currentSubCategory="الكل";
+  currentStoreFilter=null;
+  showOnlyMine=false;
+  showOnlyFavorites=false;
+  const titleEl=document.getElementById("categoryTitle");
+  if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;
+  categoriesScreen.classList.add("hidden");
+  home.classList.remove("hidden");
+  form.classList.add("hidden");
+  closeOverlay();
+  setActiveNav("home");
+  // فعّل الـ chip المناسب
+  document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
+  renderSubCats();
+  renderPosts();
+  window.scrollTo(0,0);
+};
+
+window.backFromForm=()=>{
+  if(showOnlyMine){showMyPosts();}
+  else if(showOnlyFavorites){showFavorites();}
+  else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}
+  else{showCategoriesScreen();}
+};
+
+window.focusSearchInHome=()=>{
+  // يفتح شاشة الكل ويوديه للبحث
+  openCategory("الكل");
+  setTimeout(()=>{const i=document.getElementById("searchInput");if(i)i.focus();},200);
+};
+
+window.filterCityCat=()=>{
+  const v=document.getElementById("cityFilterCat").value;
+  document.getElementById("cityFilter").value=v;
+  currentCity=v;
+  openCategory("الكل");
+  setTimeout(()=>{document.getElementById("cityFilter").value=v;currentCity=v;renderPosts();},100);
+};
 
 const searchInputEl=document.getElementById("searchInput");
 const clearSearchBtnEl=document.getElementById("clearSearchBtn");
@@ -787,8 +894,8 @@ window.applyUserLimit=async()=>{if(!isAdmin)return;const search=document.getElem
 function updateModBadge(){if(!isAdmin||!moderationBtn)return;const c=allPosts.filter(p=>getStatus(p)==="pending").length;moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";}
 function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
 
-window.showHome=()=>{showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="أحدث الإعلانات";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("home");renderPosts();};
-function openFormScreen(){home.classList.add("hidden");form.classList.remove("hidden");closeOverlay();}
+window.showHome=()=>{showCategoriesScreen();};
+function openFormScreen(){home.classList.add("hidden");form.classList.remove("hidden");categoriesScreen.classList.add("hidden");closeOverlay();}
 
 window.startAddPost=async()=>{
   if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
@@ -847,10 +954,10 @@ selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();openFormScreen();
 };
 
-window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="إعلاناتي";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();};
-window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showHome();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();homeTitle.textContent="❤️ المفضلة";home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();};
+window.showMyPosts=()=>{if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("mine");renderPosts();window.scrollTo(0,0);};
+window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");closeOverlay();setActiveNav("fav");renderPosts();window.scrollTo(0,0);};
 
-function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");document.getElementById("cityFilter").innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;}
+function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");const cf=document.getElementById("cityFilter");if(cf)cf.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;const cfc=document.getElementById("cityFilterCat");if(cfc)cfc.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;}
 populateCitySelects();
 function populateBrandSelect(cat){const sel=document.getElementById("brand");if(!sel)return;let brands=[];if(cat==="سيارات ومركبات")brands=CAR_BRANDS;else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");}
 populateBrandSelect("سيارات ومركبات");
@@ -858,7 +965,7 @@ window.onCategoryChange=()=>{const cat=document.getElementById("category").value
 (function(){const cr=document.getElementById("catsRow");if(!cr)return;cr.innerHTML=CATEGORIES.map((c,i)=>{if(c.isStore){return `<button class="catChip storeChip" onclick="openStores()">🏪 المتاجر</button>`;}return `<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')">${c.icon} ${c.name}</button>`;}).join("");})();
 setTimeout(updateClearBtn,500);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
-window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")));renderSubCats();renderPosts();};
+window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")));renderSubCats();renderPosts();};
 function renderSubCats(){if(!subCatsRow)return;const subs=SUB_CATEGORIES[currentCategory];if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}subCatsRow.classList.remove("hidden");subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;}
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 window.loadPosts=()=>renderPosts();
@@ -1182,7 +1289,8 @@ else{
 }
 editingPostId=null;
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
-selectedImages=[];renderImagePicker();showHome();
+selectedImages=[];renderImagePicker();
+if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
 }catch(e){alert("خطأ أثناء الحفظ: "+e.message);}
 finally{saveBtn.disabled=false;saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";}
 };
@@ -1307,7 +1415,11 @@ function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)retu
 
 function startStoresListener(){if(unsubStores)return;unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStores=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();if(storesModerationOverlay && !storesModerationOverlay.classList.contains("hidden"))renderStoresModeration();},err=>{});}
 
-window.openStores=()=>{document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));storesOverlay.classList.remove("hidden");renderStoresList();};
+window.openStores=()=>{
+  document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
+  storesOverlay.classList.remove("hidden");
+  renderStoresList();
+};
 
 function renderStoresList(){
   const list=document.getElementById("storesList");if(!list)return;
@@ -1496,4 +1608,4 @@ window.deleteStore=async(id)=>{
 window.addEventListener('load',()=>{const hash=window.location.hash;if(hash&&hash.startsWith('#post-')){const [pp,qp]=hash.split('?');const id=pp.substring(6);const params=new URLSearchParams(qp||'');const pd=parseInt(params.get('plan')||'0',10);const pr=parseInt(params.get('price')||'0',10);if(pd>0){pendingAutoUpgrade={postId:id,days:pd,price:pr};}let t=0;const iv=setInterval(()=>{t++;if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}},500);}});
 </script>
 </body>
-</html>    
+</html>
