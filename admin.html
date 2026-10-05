@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الأدمن — تسوق الآن</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Cairo',sans-serif;background:#f5f6f8;color:#1f2937;padding:16px;line-height:1.7}
+.header{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:18px;border-radius:14px;margin-bottom:16px;text-align:center}
+.header h1{margin:0;font-size:20px;font-weight:800}
+.header p{margin:6px 0 0;font-size:13px;opacity:.9}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{font-size:16px;margin:0 0 12px;font-weight:800;color:#0284c7}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:700;color:#6b7280;margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border:1px solid #edeff2;border-radius:10px;font-family:inherit;font-size:15px}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px}
+.btn-primary{background:#38bdf8;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.btn-danger{background:#fdeceb;color:#e5484d}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.imgRow{display:flex;gap:10px;align-items:center;padding:12px;background:#f9fafb;border-radius:10px;margin-bottom:10px}
+.imgRow img{width:80px;height:80px;object-fit:cover;border-radius:8px;flex:0 0 auto;background:#e6f6fe}
+.imgRow .info{flex:1;min-width:0}
+.imgRow .info input{font-size:13px;padding:8px 10px}
+.imgRow .rm{width:38px;height:38px;border-radius:50%;background:#fdeceb;border:none;color:#e5484d;font-size:16px;cursor:pointer;flex:0 0 auto;font-family:inherit}
+.uploadArea{border:2px dashed #38bdf8;border-radius:12px;padding:22px;text-align:center;color:#0284c7;cursor:pointer;background:#f0f9ff;font-weight:700}
+.uploadArea.disabled{opacity:.5;pointer-events:none}
+.status{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;display:none}
+.status.show{display:block}
+.status.ok{background:#dcfce7;color:#166534}
+.status.err{background:#fdeceb;color:#b91c1c}
+.status.info{background:#e0f2fe;color:#0369a1}
+.loginBox{text-align:center;padding:30px 20px}
+.loginBox .icon{font-size:60px;margin-bottom:10px}
+.loginBox p{color:#6b7280;margin-bottom:20px}
+.loading{text-align:center;padding:30px;color:#6b7280}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>🎛️ لوحة الأدمن</h1>
+<p>إدارة البانر الإعلاني — تسوق الآن</p>
+</div>
+
+<div id="loadingScreen" class="loading">⏳ جاري التحميل...</div>
+
+<div id="loginScreen" class="card loginBox" style="display:none">
+<div class="icon">🔒</div>
+<h2 style="color:#1f2937">يجب تسجيل الدخول كأدمن</h2>
+<p>سجّل دخولك بحساب Google الإداري للمتابعة</p>
+<button class="btn btn-primary" onclick="loginWithGoogle()">🔵 تسجيل الدخول بـ Google</button>
+</div>
+
+<div id="deniedScreen" class="card loginBox" style="display:none">
+<div class="icon">⛔</div>
+<h2 style="color:#b91c1c">غير مصرح لك</h2>
+<p>هذا الحساب ليس حساباً إدارياً</p>
+<button class="btn btn-danger" onclick="logout()">تسجيل الخروج</button>
+</div>
+
+<div id="mainScreen" style="display:none">
+
+<div class="card">
+<h2>➕ إضافة صورة جديدة</h2>
+<div class="uploadArea" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+📷 اضغط لاختيار صورة من جهازك
+<div style="font-size:12px;font-weight:400;margin-top:6px;color:#6b7280">يفضّل صورة أفقية — عرض 1200px على الأقل</div>
+</div>
+<input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(event)">
+</div>
+
+<div class="card">
+<h2>🖼️ الصور الحالية (<span id="imgCount">0</span>/5)</h2>
+<div id="imagesList"></div>
+<button class="btn btn-success" id="saveBtn" onclick="saveBanner()" disabled>💾 حفظ التغييرات</button>
+<button class="btn btn-danger" onclick="clearAll()">🗑️ حذف كل الصور</button>
+</div>
+
+<div class="card" style="background:#fef3c7;color:#92400e;font-size:13px">
+<b>💡 ملاحظات:</b>
+<ul style="margin:8px 0;padding:0 18px 0 0">
+<li>يمكنك رفع حتى <b>5 صور</b></li>
+<li>إذا كانت صورة واحدة → تظهر <b>ثابتة</b></li>
+<li>إذا كانت 2-5 صور → تظهر <b>متحركة (Carousel)</b></li>
+<li>حقل "الرابط" اختياري — الرابط اللي يفتح عند الضغط على الصورة</li>
+</ul>
+</div>
+
+<div class="status" id="statusMsg"></div>
+
+<button class="btn btn-danger" onclick="logout()">🚪 تسجيل الخروج</button>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore,doc,getDoc,setDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
+const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
+const ADMIN_EMAIL="abdoalk73@gmail.com";
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth();
+const db=getFirestore();
+
+let currentImages=[];
+let hasChanges=false;
+
+window.loginWithGoogle=async()=>{
+  try{
+    const provider=new GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
+    await signInWithPopup(auth,provider);
+  }catch(e){alert("خطأ في تسجيل الدخول: "+e.message);}
+};
+
+window.logout=()=>signOut(auth);
+
+onAuthStateChanged(auth,async(user)=>{
+  document.getElementById("loadingScreen").style.display="none";
+  if(!user){
+    document.getElementById("loginScreen").style.display="block";
+    document.getElementById("deniedScreen").style.display="none";
+    document.getElementById("mainScreen").style.display="none";
+    return;
+  }
+  if(user.email!==ADMIN_EMAIL){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("deniedScreen").style.display="block";
+    document.getElementById("mainScreen").style.display="none";
+    return;
+  }
+  document.getElementById("loginScreen").style.display="none";
+  document.getElementById("deniedScreen").style.display="none";
+  document.getElementById("mainScreen").style.display="block";
+  await loadBanner();
+});
+
+async function loadBanner(){
+  try{
+    const snap=await getDoc(doc(db,"settings","banner"));
+    if(snap.exists() && Array.isArray(snap.data().images)){
+      currentImages=snap.data().images.map(x=>({url:x.url||"",link:x.link||"",isNew:false}));
+    }else{
+      currentImages=[];
+    }
+    hasChanges=false;
+    renderImages();
+  }catch(e){showStatus("err","خطأ في التحميل: "+e.message);}
+}
+
+function renderImages(){
+  const list=document.getElementById("imagesList");
+  const count=document.getElementById("imgCount");
+  const saveBtn=document.getElementById("saveBtn");
+  const uploadArea=document.getElementById("uploadArea");
+  count.textContent=currentImages.length;
+  if(currentImages.length>=5){
+    uploadArea.classList.add("disabled");
+  }else{
+    uploadArea.classList.remove("disabled");
+  }
+  if(currentImages.length===0){
+    list.innerHTML='<div style="text-align:center;color:#6b7280;padding:20px">لا توجد صور بعد — ارفع أول صورة</div>';
+  }else{
+    list.innerHTML=currentImages.map((img,i)=>`
+      <div class="imgRow">
+        <img src="${img.isNew?img.previewUrl:img.url}" onerror="this.style.background='#e6f6fe';this.src=''">
+        <div class="info">
+          <input type="text" placeholder="🔗 رابط اختياري (يفتح عند الضغط)" value="${escapeHtml(img.link||'')}" onchange="updateLink(${i},this.value)">
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;word-break:break-all">${escapeHtml((img.url||img.previewUrl||'').slice(0,60))}${(img.url||img.previewUrl||'').length>60?'...':''}</div>
+        </div>
+        <button class="rm" onclick="removeImage(${i})">🗑️</button>
+      </div>
+    `).join("");
+  }
+  saveBtn.disabled=!hasChanges || currentImages.length===0;
+  if(currentImages.length===0)saveBtn.disabled=true;
+}
+
+function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+window.updateLink=(i,val)=>{currentImages[i].link=val.trim();hasChanges=true;document.getElementById("saveBtn").disabled=false;};
+window.removeImage=(i)=>{
+  if(!confirm("حذف هذه الصورة؟"))return;
+  currentImages.splice(i,1);
+  hasChanges=true;
+  renderImages();
+};
+
+window.handleFile=(event)=>{
+  const file=event.target.files[0];
+  if(!file)return;
+  if(currentImages.length>=5){alert("الحد الأقصى 5 صور");event.target.value="";return;}
+  if(!file.type.startsWith("image/")){alert("الرجاء اختيار صورة");event.target.value="";return;}
+  const previewUrl=URL.createObjectURL(file);
+  currentImages.push({url:"",link:"",isNew:true,file,previewUrl});
+  hasChanges=true;
+  renderImages();
+  event.target.value="";
+};
+
+async function compressImage(file,maxSize=1400,quality=0.85){
+  try{
+    const bmp=await createImageBitmap(file);
+    const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));
+    const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
+    const c=document.createElement("canvas");
+    c.width=w;c.height=h;
+    c.getContext("2d").drawImage(bmp,0,0,w,h);
+    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));
+    return b||file;
+  }catch(e){return file;}
+}
+
+async function uploadToImgBB(file){
+  const fd=new FormData();
+  const toSend=await compressImage(file);
+  fd.append("image",toSend,"banner.jpg");
+  const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:fd});
+  const data=await res.json();
+  if(!data.success)throw new Error("فشل الرفع");
+  return data.data.url;
+}
+
+window.saveBanner=async()=>{
+  if(currentImages.length===0){showStatus("err","لا توجد صور");return;}
+  const btn=document.getElementById("saveBtn");
+  btn.disabled=true;
+  btn.textContent="⏳ جاري الحفظ...";
+  try{
+    showStatus("info","⏳ جاري رفع الصور...");
+    const finalImages=[];
+    for(let i=0;i<currentImages.length;i++){
+      const img=currentImages[i];
+      if(img.isNew){
+        btn.textContent=`⏳ رفع صورة ${i+1}/${currentImages.length}...`;
+        const url=await uploadToImgBB(img.file);
+        finalImages.push({url,link:img.link||""});
+      }else{
+        finalImages.push({url:img.url,link:img.link||""});
+      }
+    }
+    btn.textContent="⏳ جاري الحفظ في Firebase...";
+    await setDoc(doc(db,"settings","banner"),{images:finalImages,updatedAt:Date.now()});
+    currentImages=finalImages.map(x=>({url:x.url,link:x.link,isNew:false}));
+    hasChanges=false;
+    renderImages();
+    showStatus("ok","✅ تم حفظ البانر بنجاح! سيظهر خلال دقائق على الموقع.");
+    btn.textContent="💾 حفظ التغييرات";
+  }catch(e){
+    showStatus("err","❌ خطأ: "+e.message);
+    btn.disabled=false;
+    btn.textContent="💾 حفظ التغييرات";
+  }
+};
+
+window.clearAll=async()=>{
+  if(currentImages.length===0)return;
+  if(!confirm("حذف كل الصور؟ سيتم مسح البانر من الموقع."))return;
+  if(!confirm("هل أنت متأكد؟ لا يمكن التراجع."))return;
+  try{
+    await setDoc(doc(db,"settings","banner"),{images:[],updatedAt:Date.now()});
+    currentImages=[];
+    hasChanges=false;
+    renderImages();
+    showStatus("ok","✅ تم حذف كل الصور");
+  }catch(e){showStatus("err","خطأ: "+e.message);}
+};
+
+function showStatus(type,msg){
+  const el=document.getElementById("statusMsg");
+  el.className="status show "+type;
+  el.textContent=msg;
+  if(type==="ok")setTimeout(()=>el.classList.remove("show"),4000);
+}
+
+window.addEventListener('beforeunload',(e)=>{
+  if(hasChanges){e.preventDefault();e.returnValue="";}
+});
+</script>
+
+</body>
+</html>
