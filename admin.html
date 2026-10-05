@@ -104,14 +104,12 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div id="mainScreen" class="container" style="display:none">
 
-<!-- الإحصائيات -->
-<div class="statsGrid" id="statsGrid">
+<div class="statsGrid">
 <div class="statCard"><div class="sIcon">📋</div><div class="sVal" id="statPosts">—</div><div class="sLabel">إعلان</div></div>
 <div class="statCard"><div class="sIcon">🏪</div><div class="sVal" id="statStores">—</div><div class="sLabel">متجر</div></div>
 <div class="statCard"><div class="sIcon">🚩</div><div class="sVal" id="statReports">—</div><div class="sLabel">إبلاغ</div></div>
 </div>
 
-<!-- 1. البانر -->
 <div class="section" id="secBanner">
 <div class="sectionHeader" onclick="toggleSection('secBanner')">
 <div class="secTitle"><span class="secIcon">📢</span> البانر الإعلاني</div>
@@ -131,54 +129,41 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 </div>
 </div>
 
-<!-- 2. الإبلاغات -->
 <div class="section" id="secReports">
 <div class="sectionHeader" onclick="toggleSection('secReports')">
 <div class="secTitle"><span class="secIcon">🚩</span> الإبلاغات</div>
 <span class="badge" id="reportsBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
-<div class="sectionBody">
-<div id="reportsList"><div class="listEmpty">اضغط لتحميل الإبلاغات</div></div>
-</div>
+<div class="sectionBody"><div id="reportsList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
-<!-- 3. قيد المراجعة -->
 <div class="section" id="secModeration">
 <div class="sectionHeader" onclick="toggleSection('secModeration')">
 <div class="secTitle"><span class="secIcon">⏳</span> الإعلانات قيد المراجعة</div>
 <span class="badge" id="moderationBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
-<div class="sectionBody">
-<div id="moderationList"><div class="listEmpty">اضغط لتحميل الإعلانات</div></div>
-</div>
+<div class="sectionBody"><div id="moderationList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
-<!-- 4. إدارة المتاجر -->
 <div class="section" id="secStores">
 <div class="sectionHeader" onclick="toggleSection('secStores')">
 <div class="secTitle"><span class="secIcon">🏪</span> إدارة المتاجر</div>
 <span class="badge" id="storesBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
-<div class="sectionBody">
-<div id="storesList"><div class="listEmpty">اضغط لتحميل المتاجر</div></div>
-</div>
+<div class="sectionBody"><div id="storesList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
-<!-- 5. الإعلانات المنتهية -->
 <div class="section" id="secExpired">
 <div class="sectionHeader" onclick="toggleSection('secExpired')">
 <div class="secTitle"><span class="secIcon">⏰</span> الإعلانات المنتهية</div>
 <div class="arrow">▼</div>
 </div>
-<div class="sectionBody">
-<div id="expiredList"><div class="listEmpty">اضغط لتحميل الإعلانات المنتهية</div></div>
-</div>
+<div class="sectionBody"><div id="expiredList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
-<!-- 6. حدود المستخدمين -->
 <div class="section" id="secLimits">
 <div class="sectionHeader" onclick="toggleSection('secLimits')">
 <div class="secTitle"><span class="secIcon">⚙️</span> حدود المستخدمين</div>
@@ -200,11 +185,10 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 </div>
 </div>
 <button class="btn btn-success" onclick="applyUserLimit()">💾 حفظ الحد</button>
-<div id="limitsList" style="margin-top:12px"><div class="listEmpty">لا توجد حدود مخصصة</div></div>
+<div id="limitsList" style="margin-top:12px"><div class="listEmpty">لا توجد حدود</div></div>
 </div>
 </div>
 
-<!-- 7. إدارة الأدمنز -->
 <div class="section" id="secAdmins">
 <div class="sectionHeader" onclick="toggleSection('secAdmins')">
 <div class="secTitle"><span class="secIcon">👥</span> إدارة الأدمنز</div>
@@ -212,7 +196,7 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 </div>
 <div class="sectionBody">
 <div style="background:#fef3c7;border:1px solid var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#92400e;margin-bottom:12px;line-height:1.7">
-💡 <b>ملاحظة:</b> الأدمن الجديد يسجّل دخول بحساب Google الخاص به من نفس رابط اللوحة.
+💡 <b>ملاحظة:</b> الأدمن الجديد يسجّل دخول بحساب Google من نفس رابط اللوحة.
 </div>
 <div id="adminsList"><div class="listEmpty">جاري التحميل...</div></div>
 <div class="field" style="margin-top:14px">
@@ -231,7 +215,7 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,query,where,onSnapshot,updateDoc,addDoc,orderBy,limit } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,query,where,onSnapshot,updateDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
@@ -244,21 +228,10 @@ const db=getFirestore();
 let currentUser=null;
 let currentImages=[];
 let hasBannerChanges=false;
-let unsubPosts=null;
-let unsubReports=null;
-let unsubStores=null;
-let unsubAdmins=null;
-let allPostsCache=[];
-let allStoresCache=[];
-let allReportsCache=[];
-let allAdminsCache=[];
+let unsubPosts=null,unsubReports=null,unsubStores=null;
+let allPostsCache=[],allStoresCache=[],allReportsCache=[],limitsCache=[],adminsCache=[];
 
-window.toggleSection=(id)=>{
-  const sec=document.getElementById(id);
-  if(!sec)return;
-  sec.classList.toggle("open");
-};
-
+window.toggleSection=(id)=>{document.getElementById(id).classList.toggle("open");};
 window.loginWithGoogle=async()=>{
   try{
     const provider=new GoogleAuthProvider();
@@ -266,7 +239,6 @@ window.loginWithGoogle=async()=>{
     await signInWithPopup(auth,provider);
   }catch(e){alert("خطأ: "+e.message);}
 };
-
 window.logout=()=>signOut(auth);
 
 onAuthStateChanged(auth,async(user)=>{
@@ -277,14 +249,10 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById("mainScreen").style.display="none";
     return;
   }
-  // فحص هل هو أدمن
   const email=user.email.toLowerCase();
   let isAdmin=email===MAIN_ADMIN.toLowerCase();
   if(!isAdmin){
-    try{
-      const adminSnap=await getDoc(doc(db,"admins",email));
-      if(adminSnap.exists())isAdmin=true;
-    }catch(e){}
+    try{const s=await getDoc(doc(db,"admins",email));if(s.exists())isAdmin=true;}catch(e){}
   }
   if(!isAdmin){
     document.getElementById("loginScreen").style.display="none";
@@ -300,51 +268,32 @@ onAuthStateChanged(auth,async(user)=>{
   document.getElementById("userEmail").textContent=user.email;
   await loadBanner();
   startLiveListeners();
-  loadAdmins();
+  await loadLimits();
+  await loadAdmins();
 });
 
-/* ===== Live Listeners ===== */
 function startLiveListeners(){
-  if(!unsubPosts){
-    unsubPosts=onSnapshot(collection(db,"posts"),snap=>{
-      allPostsCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderModerationList();
-      renderExpiredList();
-      updateStats();
-    });
-  }
-  if(!unsubReports){
-    unsubReports=onSnapshot(collection(db,"reports"),snap=>{
-      allReportsCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderReportsList();
-      updateStats();
-    });
-  }
-  if(!unsubStores){
-    unsubStores=onSnapshot(collection(db,"stores"),snap=>{
-      allStoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderStoresList();
-      updateStats();
-    });
-  }
+  if(!unsubPosts){unsubPosts=onSnapshot(collection(db,"posts"),snap=>{allPostsCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderModerationList();renderExpiredList();updateStats();});}
+  if(!unsubReports){unsubReports=onSnapshot(collection(db,"reports"),snap=>{allReportsCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderReportsList();updateStats();});}
+  if(!unsubStores){unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();updateStats();});}
 }
 
 function updateStats(){
-  const posts=allPostsCache.filter(p=>(p.status||"approved")==="approved").length;
-  const stores=allStoresCache.filter(s=>s.status==="approved").length;
-  const reports=allReportsCache.length;
-  document.getElementById("statPosts").textContent=posts;
-  document.getElementById("statStores").textContent=stores;
-  document.getElementById("statReports").textContent=reports;
+  document.getElementById("statPosts").textContent=allPostsCache.filter(p=>(p.status||"approved")==="approved").length;
+  document.getElementById("statStores").textContent=allStoresCache.filter(s=>s.status==="approved").length;
+  document.getElementById("statReports").textContent=allReportsCache.length;
   const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending").length;
-  const repBadge=document.getElementById("reportsBadge");
-  if(reports>0){repBadge.textContent=reports;repBadge.style.display="flex";}else{repBadge.style.display="none";}
-  const modBadge=document.getElementById("moderationBadge");
-  if(pending>0){modBadge.textContent=pending;modBadge.style.display="flex";}else{modBadge.style.display="none";}
-  const pendingStores=allStoresCache.filter(s=>s.status==="pending").length;
-  const stBadge=document.getElementById("storesBadge");
-  if(pendingStores>0){stBadge.textContent=pendingStores;stBadge.style.display="flex";}else{stBadge.style.display="none";}
+  const repB=document.getElementById("reportsBadge");
+  if(allReportsCache.length>0){repB.textContent=allReportsCache.length;repB.style.display="flex";}else{repB.style.display="none";}
+  const modB=document.getElementById("moderationBadge");
+  if(pending>0){modB.textContent=pending;modB.style.display="flex";}else{modB.style.display="none";}
+  const pStores=allStoresCache.filter(s=>s.status==="pending").length;
+  const stB=document.getElementById("storesBadge");
+  if(pStores>0){stB.textContent=pStores;stB.style.display="flex";}else{stB.style.display="none";}
 }
+
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
 
 /* ===== Banner ===== */
 async function loadBanner(){
@@ -357,97 +306,78 @@ async function loadBanner(){
     renderBannerImages();
   }catch(e){showBannerStatus("err","خطأ: "+e.message);}
 }
-
 function renderBannerImages(){
   const list=document.getElementById("imagesList");
-  const count=document.getElementById("imgCount");
+  document.getElementById("imgCount").textContent=currentImages.length;
   const saveBtn=document.getElementById("saveBannerBtn");
-  const uploadArea=document.getElementById("uploadArea");
-  count.textContent=currentImages.length;
-  uploadArea.classList.toggle("disabled",currentImages.length>=5);
-  if(currentImages.length===0){
-    list.innerHTML='<div class="listEmpty">لا توجد صور — ارفع أول صورة</div>';
-  }else{
+  document.getElementById("uploadArea").classList.toggle("disabled",currentImages.length>=5);
+  if(currentImages.length===0){list.innerHTML='<div class="listEmpty">لا توجد صور</div>';}
+  else{
     list.innerHTML=currentImages.map((img,i)=>`
       <div class="imgRow">
         <img src="${img.isNew?img.previewUrl:img.url}" onerror="this.style.background='#e6f6fe';this.src=''">
-        <div class="info">
-          <input type="text" placeholder="🔗 رابط اختياري" value="${esc(img.link||'')}" onchange="updateBannerLink(${i},this.value)">
-        </div>
+        <div class="info"><input type="text" placeholder="🔗 رابط اختياري" value="${esc(img.link||'')}" onchange="updateBannerLink(${i},this.value)"></div>
         <button class="rm" onclick="removeBannerImage(${i})">🗑️</button>
       </div>
     `).join("");
   }
   saveBtn.disabled=!hasBannerChanges || currentImages.length===0;
 }
-
-function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-
 window.updateBannerLink=(i,val)=>{currentImages[i].link=val.trim();hasBannerChanges=true;document.getElementById("saveBannerBtn").disabled=false;};
-window.removeBannerImage=(i)=>{if(!confirm("حذف هذه الصورة؟"))return;currentImages.splice(i,1);hasBannerChanges=true;renderBannerImages();};
-window.handleFile=(event)=>{
-  const file=event.target.files[0];
+window.removeBannerImage=(i)=>{if(!confirm("حذف الصورة؟"))return;currentImages.splice(i,1);hasBannerChanges=true;renderBannerImages();};
+window.handleFile=(e)=>{
+  const file=e.target.files[0];
   if(!file)return;
-  if(currentImages.length>=5){alert("الحد الأقصى 5 صور");event.target.value="";return;}
-  if(!file.type.startsWith("image/")){alert("الرجاء اختيار صورة");event.target.value="";return;}
+  if(currentImages.length>=5){alert("الحد 5 صور");e.target.value="";return;}
+  if(!file.type.startsWith("image/")){alert("اختر صورة");e.target.value="";return;}
   currentImages.push({url:"",link:"",isNew:true,file,previewUrl:URL.createObjectURL(file)});
   hasBannerChanges=true;
   renderBannerImages();
-  event.target.value="";
+  e.target.value="";
 };
-
 async function compressImage(file,maxSize=1400,quality=0.85){
   try{
     const bmp=await createImageBitmap(file);
     const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));
     const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
-    const c=document.createElement("canvas");
-    c.width=w;c.height=h;c.getContext("2d").drawImage(bmp,0,0,w,h);
-    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));
-    return b||file;
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    c.getContext("2d").drawImage(bmp,0,0,w,h);
+    return await new Promise(r=>c.toBlob(r,"image/jpeg",quality))||file;
   }catch(e){return file;}
 }
-
 async function uploadToImgBB(file){
   const fd=new FormData();
-  const toSend=await compressImage(file);
-  fd.append("image",toSend,"banner.jpg");
+  fd.append("image",await compressImage(file),"banner.jpg");
   const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:fd});
   const data=await res.json();
   if(!data.success)throw new Error("فشل الرفع");
   return data.data.url;
 }
-
 window.saveBanner=async()=>{
   if(currentImages.length===0){showBannerStatus("err","لا توجد صور");return;}
   const btn=document.getElementById("saveBannerBtn");
   btn.disabled=true;btn.textContent="⏳ جاري الحفظ...";
   try{
     showBannerStatus("info","⏳ جاري رفع الصور...");
-    const finalImages=[];
+    const final=[];
     for(let i=0;i<currentImages.length;i++){
       const img=currentImages[i];
       if(img.isNew){
         btn.textContent=`⏳ رفع ${i+1}/${currentImages.length}...`;
-        const url=await uploadToImgBB(img.file);
-        finalImages.push({url,link:img.link||""});
-      }else{
-        finalImages.push({url:img.url,link:img.link||""});
-      }
+        final.push({url:await uploadToImgBB(img.file),link:img.link||""});
+      }else{final.push({url:img.url,link:img.link||""});}
     }
-    btn.textContent="⏳ جاري الحفظ...";
-    await setDoc(doc(db,"settings","banner"),{images:finalImages,updatedAt:Date.now()});
-    currentImages=finalImages.map(x=>({url:x.url,link:x.link,isNew:false}));
+    await setDoc(doc(db,"settings","banner"),{images:final,updatedAt:Date.now()});
+    currentImages=final.map(x=>({url:x.url,link:x.link,isNew:false}));
     hasBannerChanges=false;
     renderBannerImages();
-    showBannerStatus("ok","✅ تم حفظ البانر بنجاح!");
+    showBannerStatus("ok","✅ تم حفظ البانر!");
     btn.textContent="💾 حفظ البانر";
   }catch(e){
     showBannerStatus("err","❌ خطأ: "+e.message);
     btn.disabled=false;btn.textContent="💾 حفظ البانر";
   }
 };
-
 window.clearAllBanner=async()=>{
   if(currentImages.length===0)return;
   if(!confirm("حذف كل الصور؟"))return;
@@ -459,26 +389,347 @@ window.clearAllBanner=async()=>{
     showBannerStatus("ok","✅ تم الحذف");
   }catch(e){showBannerStatus("err","خطأ: "+e.message);}
 };
-
 function showBannerStatus(type,msg){
   const el=document.getElementById("bannerStatus");
-  el.className="status show "+type;
-  el.textContent=msg;
+  el.className="status show "+type;el.textContent=msg;
   if(type==="ok")setTimeout(()=>el.classList.remove("show"),4000);
 }
 
-/* ===== Placeholders (لنكملها في الجزء 2) ===== */
-function renderReportsList(){}
-function renderModerationList(){}
-function renderStoresList(){}
-function renderExpiredList(){}
-window.applyUserLimit=()=>{alert("سيكتمل في الجزء 2");};
-window.addAdmin=()=>{alert("سيكتمل في الجزء 3");};
-async function loadAdmins(){}
+/* ===== Reports ===== */
+function renderReportsList(){
+  const box=document.getElementById("reportsList");
+  if(!box)return;
+  const reports=allReportsCache.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(reports.length===0){box.innerHTML='<div class="listEmpty">✅ لا توجد إبلاغات</div>';return;}
+  const toolbar=`<div style="background:#fdeceb;border:1px solid var(--danger);border-radius:10px;padding:10px;margin-bottom:10px;font-size:12.5px;font-weight:800;color:#b91c1c;text-align:center">⚠️ يوجد ${reports.length} إبلاغ</div>`;
+  const items=reports.map(r=>{
+    const post=allPostsCache.find(p=>p.id===r.postId);
+    const imgs=post?(post.images&&post.images.length?post.images:(post.imageUrl?[post.imageUrl]:[])):[];
+    const imgsHtml=imgs.length?`<div class="imgs">${imgs.map(u=>`<img src="${esc(u)}">`).join("")}</div>`:"";
+    const postInfo=post?`<div style="font-weight:800;font-size:14px;margin-bottom:4px">${esc(post.title||"بدون عنوان")}</div>${imgsHtml}`:`<div style="color:var(--danger);font-weight:700;font-size:13px">⚠️ الإعلان محذوف</div>`;
+    return `<div class="item" style="border-color:var(--danger);background:#fff5f5">
+      <div style="background:#fdeceb;color:#b91c1c;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:800;margin-bottom:10px;line-height:1.7">
+        🚩 <b>سبب:</b> ${esc(r.reason||"بدون سبب")}<br>
+        <b>من:</b> ${esc(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}
+      </div>
+      ${postInfo}
+      <div class="itActions">
+        <button class="delete" onclick="deleteReportedPost('${r.postId}','${r.id}')">🗑️ حذف الإعلان</button>
+        <button class="view" onclick="dismissOneReport('${r.id}')">👁️ تجاهل</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.innerHTML=toolbar+items;
+}
+window.deleteReportedPost=async(pid,rid)=>{
+  if(!confirm("حذف الإعلان والإبلاغ؟"))return;
+  try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));alert("✅ تم");}catch(e){alert("خطأ: "+e.message);}
+};
+window.dismissOneReport=async(rid)=>{
+  if(!confirm("تجاهل هذا الإبلاغ؟"))return;
+  try{await deleteDoc(doc(db,"reports",rid));}catch(e){alert("خطأ: "+e.message);}
+};
 
-window.addEventListener('beforeunload',(e)=>{
-  if(hasBannerChanges){e.preventDefault();e.returnValue="";}
-});
+/* ===== Moderation ===== */
+function renderModerationList(){
+  const box=document.getElementById("moderationList");
+  if(!box)return;
+  const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(pending.length===0){box.innerHTML='<div class="listEmpty">🎉 لا توجد إعلانات قيد المراجعة</div>';return;}
+  const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12.5px;font-weight:800;color:#1e40af;text-align:center">📊 يوجد ${pending.length} إعلان</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+    <button class="btn btn-success" style="margin:0;padding:10px;font-size:13px" onclick="approveAllPending()">✅ موافقة على الكل</button>
+    <button class="btn btn-danger" style="margin:0;padding:10px;font-size:13px" onclick="rejectAllPending()">❌ رفض الكل</button>
+  </div>`;
+  const items=pending.map(p=>{
+    const imgs=p.images&&p.images.length?p.images:(p.imageUrl?[p.imageUrl]:[]);
+    const imgsHtml=imgs.length?`<div class="imgs">${imgs.map(u=>`<img src="${esc(u)}">`).join("")}</div>`:`<div class="listEmpty" style="padding:12px">🖼️ لا توجد صور</div>`;
+    const adTypeBadge=p.adType==="wanted"?`<span class="miniStat" style="background:#fff7ed;color:#9a3412">🎯 مطلوب</span>`:`<span class="miniStat" style="background:#e6f6fe;color:#0284c7">🛒 معروض</span>`;
+    const storeTag=p.storeId?`<span class="miniStat" style="background:#fff7e6;color:#92400e">🏪 ${esc(p.storeName||"متجر")}</span>`:"";
+    return `<div class="item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${adTypeBadge}${storeTag}<span style="font-size:11px;color:var(--muted)">${timeAgo(p.createdAt)}</span></div>
+      <div class="itTitle">${esc(p.title||"بدون عنوان")}</div>
+      <div style="font-weight:800;font-size:16px;color:var(--teal-dark);margin-bottom:8px">${p.price!=null?p.price+" د.ل":""}</div>
+      ${imgsHtml}
+      <div class="itMeta">📁 ${esc(p.category||"")}<br>📍 ${esc(p.city||"")}<br>👤 ${esc(p.storeId?p.storeName||"متجر":p.sellerName||"البائع")} · ☎️ ${esc(p.phone||"")}</div>
+      <div style="background:#fff;padding:10px;border-radius:8px;font-size:13px;line-height:1.8;border:1px solid var(--border);margin-bottom:10px;white-space:pre-wrap;word-break:break-word">${esc(p.description||"لا يوجد وصف")}</div>
+      <div class="itActions">
+        <button class="approve" onclick="approveOnePost('${p.id}')">✅ موافقة</button>
+        <button class="reject" onclick="rejectOnePost('${p.id}')">❌ رفض</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.innerHTML=toolbar+items;
+}
+window.approveOnePost=async(id)=>{try{await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});alert("✅");}catch(e){alert("خطأ: "+e.message);}};
+window.rejectOnePost=async(id)=>{
+  const reason=prompt("سبب الرفض:","محتوى غير مناسب");
+  if(reason===null)return;
+  try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});alert("✅");}catch(e){alert("خطأ: "+e.message);}
+};
+window.approveAllPending=async()=>{
+  const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending");
+  if(pending.length===0){alert("لا توجد");return;}
+  if(!confirm(`موافقة على ${pending.length}؟`))return;
+  let ok=0,fail=0;
+  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});ok++;}catch(e){fail++;}}
+  alert(`✅ ${ok}${fail?`\n❌ ${fail}`:''}`);
+};
+window.rejectAllPending=async()=>{
+  const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending");
+  if(pending.length===0){alert("لا توجد");return;}
+  if(!confirm(`رفض ${pending.length}؟`))return;
+  const reason=prompt("السبب:","محتوى غير مناسب");
+  if(reason===null)return;
+  let ok=0,fail=0;
+  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});ok++;}catch(e){fail++;}}
+  alert(`✅ ${ok}${fail?`\n❌ ${fail}`:''}`);
+};
+
+/* ===== Stores ===== */
+let storeTab="pending";
+function renderStoresList(){
+  const box=document.getElementById("storesList");
+  if(!box)return;
+  const allStores=allStoresCache.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const pending=allStores.filter(s=>s.status==="pending");
+  const approved=allStores.filter(s=>s.status==="approved");
+  const rejected=allStores.filter(s=>s.status==="rejected");
+  const tabsHtml=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px">
+    <button class="btn ${storeTab==='all'?'btn-primary':'btn-blue'}" style="margin:0;padding:8px;font-size:12px" onclick="setStoreTab('all')">الكل</button>
+    <button class="btn ${storeTab==='pending'?'btn-primary':'btn-warning'}" style="margin:0;padding:8px;font-size:12px" onclick="setStoreTab('pending')">قيد (${pending.length})</button>
+    <button class="btn ${storeTab==='approved'?'btn-primary':'btn-success'}" style="margin:0;padding:8px;font-size:12px" onclick="setStoreTab('approved')">معتمد (${approved.length})</button>
+    <button class="btn ${storeTab==='rejected'?'btn-primary':'btn-danger'}" style="margin:0;padding:8px;font-size:12px" onclick="setStoreTab('rejected')">مرفوض (${rejected.length})</button>
+  </div>`;
+  let filtered=allStores;
+  if(storeTab==="pending")filtered=pending;
+  else if(storeTab==="approved")filtered=approved;
+  else if(storeTab==="rejected")filtered=rejected;
+  if(filtered.length===0){box.innerHTML=tabsHtml+'<div class="listEmpty">لا توجد</div>';return;}
+  const items=filtered.map(s=>{
+    const logoHtml=s.logo?`<img src="${esc(s.logo)}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;border:1px solid var(--border)">`:"<div style='width:60px;height:60px;border-radius:10px;background:#e6f6fe;display:flex;align-items:center;justify-content:center;font-size:24px'>🏪</div>";
+    const count=allPostsCache.filter(p=>p.storeId===s.id).length;
+    let statusLabel="⏳ قيد",statusBg="#fef3c7",statusColor="#92400e";
+    if(s.status==="approved"){statusLabel="✅ معتمد";statusBg="#dcfce7";statusColor="#166534";}
+    else if(s.status==="rejected"){statusLabel="❌ مرفوض";statusBg="#fdeceb";statusColor="#b91c1c";}
+    return `<div class="item">
+      <div style="background:${statusBg};color:${statusColor};padding:6px 10px;border-radius:8px;font-size:11.5px;font-weight:800;margin-bottom:10px;display:inline-block">${statusLabel}</div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        ${logoHtml}
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:15px">${esc(s.name||"متجر")}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">📁 ${esc(s.category||"")} · 📍 ${esc(s.city||"")}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">📦 ${count} منتج</div>
+        </div>
+      </div>
+      <div class="itMeta">☎️ ${esc(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}${s.rejectReason?"<br>📝 "+esc(s.rejectReason):""}</div>
+      <div class="itActions" style="grid-template-columns:1fr 1fr">
+        ${s.status!=="approved"?`<button class="approve" onclick="approveOneStore('${s.id}')">✅ موافقة</button>`:""}
+        ${s.status!=="rejected"?`<button class="reject" onclick="rejectOneStore('${s.id}')">🚫 رفض</button>`:""}
+        <button class="view" onclick="window.open('https://abdo22ab.github.io/tasawuq-now/#store-${s.id}','_blank')">👁️ عرض</button>
+        <button class="delete" onclick="deleteOneStore('${s.id}')">🗑️ حذف</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.innerHTML=tabsHtml+items;
+}
+window.setStoreTab=(tab)=>{storeTab=tab;renderStoresList();};
+window.approveOneStore=async(id)=>{try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});alert("✅");}catch(e){alert("خطأ: "+e.message);}};
+window.rejectOneStore=async(id)=>{
+  const reason=prompt("السبب:","معلومات غير كافية");
+  if(reason===null)return;
+  try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});alert("✅");}catch(e){alert("خطأ: "+e.message);}
+};
+window.deleteOneStore=async(id)=>{
+  const store=allStoresCache.find(s=>s.id===id);
+  if(!store)return;
+  if(!confirm(`⚠️ حذف نهائي\n\n🏪 ${store.name}\nلا يمكن التراجع!`))return;
+  const c=prompt('اكتب "حذف" للتأكيد:');
+  if(c!=="حذف"){alert("تم الإلغاء");return;}
+  try{
+    let ok=0;
+    for(const p of allPostsCache.filter(p=>p.storeId===id)){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}
+    await deleteDoc(doc(db,"stores",id));
+    if(store.ownerUid){try{await updateDoc(doc(db,"profiles",store.ownerUid),{storeId:null});}catch(e){}}
+    alert(`✅ تم الحذف + ${ok} منتج`);
+  }catch(e){alert("خطأ: "+e.message);}
+};
+
+/* ===== Expired ===== */
+function isPostExpired(p){
+  const exp=p.expiresAt || (p.createdAt?p.createdAt+30*24*60*60*1000:null);
+  if(!exp)return false;
+  return exp<Date.now();
+}
+function renderExpiredList(){
+  const box=document.getElementById("expiredList");
+  if(!box)return;
+  const expired=allPostsCache.filter(isPostExpired).sort((a,b)=>(a.expiresAt||0)-(b.expiresAt||0));
+  if(expired.length===0){box.innerHTML='<div class="listEmpty">✅ لا توجد منتهية</div>';return;}
+  const autoReady=expired.filter(p=>{
+    const exp=p.expiresAt || (p.createdAt+30*24*60*60*1000);
+    return Date.now()>exp+7*24*60*60*1000;
+  }).length;
+  const toolbar=`<div style="background:#fdeceb;border:1px solid var(--danger);border-radius:10px;padding:10px;margin-bottom:10px;font-size:12.5px;font-weight:800;color:#b91c1c;text-align:center;line-height:1.7">⏰ يوجد ${expired.length}${autoReady>0?`<br><span style="font-size:11.5px">منها ${autoReady} جاهز للحذف التلقائي</span>`:""}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+    <button class="btn btn-danger" style="margin:0;padding:10px;font-size:13px" onclick="deleteAllExpiredPosts()">🗑️ حذف الكل</button>
+    <button class="btn btn-warning" style="margin:0;padding:10px;font-size:13px" onclick="deleteAutoReady()">⏰ حذف 7+ أيام</button>
+  </div>`;
+  const items=expired.map(p=>{
+    const days=Math.floor((Date.now()-(p.expiresAt||0))/(24*60*60*1000));
+    const imgs=p.images&&p.images.length?p.images:(p.imageUrl?[p.imageUrl]:[]);
+    const th=imgs[0]||"";
+    return `<div class="item" style="background:#fffbf0;border-color:var(--amber)">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--teal-light);flex:0 0 auto">
+          ${th?`<img src="${esc(th)}" style="width:100%;height:100%;object-fit:cover">`:"<div style='display:flex;align-items:center;justify-content:center;height:100%;font-size:20px'>🖼️</div>"}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:13.5px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title||"بدون عنوان")}</div>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.7">👤 ${esc(p.storeName||p.sellerName||"بائع")}<br>⏰ منتهي منذ ${days} يوم</div>
+        </div>
+        <button class="delete" style="padding:8px 12px;border:none;border-radius:8px;background:#fdeceb;color:var(--danger);font-family:inherit;font-weight:800;font-size:12px;cursor:pointer" onclick="deleteExpiredOne('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.innerHTML=toolbar+items;
+}
+window.deleteExpiredOne=async(id)=>{if(!confirm("حذف نهائي؟"))return;try{await deleteDoc(doc(db,"posts",id));alert("✅");}catch(e){alert("خطأ: "+e.message);}};
+window.deleteAllExpiredPosts=async()=>{
+  const expired=allPostsCache.filter(isPostExpired);
+  if(expired.length===0){alert("لا توجد");return;}
+  if(!confirm(`حذف ${expired.length}؟`))return;
+  const c=prompt('اكتب "حذف":');
+  if(c!=="حذف"){alert("تم الإلغاء");return;}
+  let ok=0;
+  for(const p of expired){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}
+  alert(`✅ ${ok}`);
+};
+window.deleteAutoReady=async()=>{
+  const ready=allPostsCache.filter(p=>{const exp=p.expiresAt||(p.createdAt+30*24*60*60*1000);return Date.now()>exp+7*24*60*60*1000;});
+  if(ready.length===0){alert("لا توجد");return;}
+  if(!confirm(`حذف ${ready.length}؟`))return;
+  let ok=0;
+  for(const p of ready){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}
+  alert(`✅ ${ok}`);
+};
+
+/* ===== Limits ===== */
+async function loadLimits(){
+  try{
+    const snap=await getDocs(collection(db,"userLimits"));
+    limitsCache=snap.docs.map(d=>({uid:d.id,...d.data()})).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    renderLimitsList();
+  }catch(e){}
+}
+function renderLimitsList(){
+  const box=document.getElementById("limitsList");
+  if(!box)return;
+  if(limitsCache.length===0){box.innerHTML='<div class="listEmpty">لا توجد حدود</div>';return;}
+  box.innerHTML=limitsCache.map(l=>`
+    <div class="item" style="background:#f0f9ff;border-color:#0ea5e9">
+      <div class="itTitle">👤 ${esc(l.name||"مستخدم")} ${l.username?`<span class="miniStat" style="background:#f0fdf4;color:#166534">@${esc(l.username)}</span>`:""} ${l.memberNo?`<span class="miniStat" style="background:#e6f6fe;color:#0284c7">#${l.memberNo}</span>`:""}</div>
+      <div class="itMeta"><b>📋 فردي:</b> ${l.limit} · <b>🏪 متجر:</b> ${l.storeLimit||20}</div>
+      <div class="itActions">
+        <button class="edit" onclick="editLimitRow('${esc(l.uid)}')">✏️ تعديل</button>
+        <button class="delete" onclick="removeLimitRow('${esc(l.uid)}')">🗑️ إلغاء</button>
+      </div>
+    </div>
+  `).join("");
+}
+window.editLimitRow=(uid)=>{
+  const l=limitsCache.find(x=>x.uid===uid);
+  if(!l)return;
+  document.getElementById("limitSearch").value=l.username||l.memberNo||l.email||"";
+  document.getElementById("limitNumber").value=l.limit||3;
+  document.getElementById("storeLimitNumber").value=l.storeLimit||20;
+  document.getElementById("secLimits").classList.add("open");
+  window.scrollTo({top:document.getElementById("secLimits").offsetTop-80,behavior:"smooth"});
+};
+window.removeLimitRow=async(uid)=>{if(!confirm("إلغاء الحد؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));await loadLimits();alert("✅");}catch(e){alert("خطأ: "+e.message);}};
+async function findUserByAny(search){
+  const s=String(search||"").trim();
+  if(!s)return null;
+  const clean=s.replace(/^@/,"").toLowerCase();
+  try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}
+  const num=parseInt(s,10);
+  if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}
+  return null;
+}
+window.applyUserLimit=async()=>{
+  const search=document.getElementById("limitSearch").value.trim();
+  const limitNum=parseInt(document.getElementById("limitNumber").value,10);
+  const storeLimitNum=parseInt(document.getElementById("storeLimitNumber").value,10);
+  if(!search){alert("اكتب بحث");return;}
+  if(!limitNum||limitNum<1){alert("حد فردي غير صحيح");return;}
+  if(!storeLimitNum||storeLimitNum<1){alert("حد متجر غير صحيح");return;}
+  const found=await findUserByAny(search);
+  if(!found){alert("❌ لم يُعثر على المستخدم");return;}
+  let prof=null;
+  try{const p=await getDoc(doc(db,"profiles",found.uid));if(p.exists())prof=p.data();}catch(e){}
+  try{
+    await setDoc(doc(db,"userLimits",found.uid),{limit:Number(limitNum),storeLimit:Number(storeLimitNum),name:(prof&&prof.name)||"",username:(prof&&prof.username)||"",memberNo:(prof&&prof.memberNo)||null,email:"",updatedAt:Date.now()},{merge:true});
+    alert(`✅ فردي: ${limitNum}\n🏪 متجر: ${storeLimitNum}`);
+    document.getElementById("limitSearch").value="";
+    document.getElementById("limitNumber").value="";
+    document.getElementById("storeLimitNumber").value="";
+    await loadLimits();
+  }catch(e){alert("خطأ: "+e.message);}
+};
+
+/* ===== Admins ===== */
+async function loadAdmins(){
+  try{
+    const snap=await getDocs(collection(db,"admins"));
+    adminsCache=snap.docs.map(d=>({email:d.id,...d.data()}));
+    renderAdminsList();
+  }catch(e){}
+}
+function renderAdminsList(){
+  const box=document.getElementById("adminsList");
+  if(!box)return;
+  const mainRow=`<div class="adminRow" style="background:#fef3c7">
+    <div class="email">${esc(MAIN_ADMIN)}</div>
+    <span class="tag main">أدمن رئيسي</span>
+  </div>`;
+  const others=adminsCache.filter(a=>a.email.toLowerCase()!==MAIN_ADMIN.toLowerCase());
+  if(others.length===0){
+    box.innerHTML=mainRow+'<div class="listEmpty" style="padding:12px">لا يوجد أدمنز إضافيون</div>';
+    return;
+  }
+  box.innerHTML=mainRow+others.map(a=>`
+    <div class="adminRow">
+      <div class="email">${esc(a.email)}</div>
+      <span class="tag">أدمن</span>
+      <button class="rm" onclick="removeAdmin('${esc(a.email)}')">🗑️</button>
+    </div>
+  `).join("");
+}
+window.addAdmin=async()=>{
+  const email=document.getElementById("newAdminEmail").value.trim().toLowerCase();
+  if(!email){alert("اكتب الإيميل");return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert("إيميل غير صحيح");return;}
+  if(email===MAIN_ADMIN.toLowerCase()){alert("هذا الأدمن الرئيسي");return;}
+  if(adminsCache.some(a=>a.email.toLowerCase()===email)){alert("موجود مسبقاً");return;}
+  if(!confirm(`إضافة:\n${email}\nكأدمن جديد؟`))return;
+  try{
+    await setDoc(doc(db,"admins",email),{email,addedAt:Date.now(),addedBy:currentUser.email});
+    document.getElementById("newAdminEmail").value="";
+    showAdminStatus("ok","✅ تم إضافة الأدمن: "+email);
+    await loadAdmins();
+  }catch(e){showAdminStatus("err","❌ خطأ: "+e.message);}
+};
+window.removeAdmin=async(email)=>{
+  if(!confirm(`حذف الأدمن:\n${email}?`))return;
+  try{await deleteDoc(doc(db,"admins",email));showAdminStatus("ok","✅ تم الحذف");await loadAdmins();}catch(e){showAdminStatus("err","خطأ: "+e.message);}
+};
+function showAdminStatus(type,msg){
+  const el=document.getElementById("adminStatus");
+  el.className="status show "+type;el.textContent=msg;
+  if(type==="ok")setTimeout(()=>el.classList.remove("show"),4000);
+}
+
+window.addEventListener('beforeunload',(e)=>{if(hasBannerChanges){e.preventDefault();e.returnValue="";}});
 </script>
 
 </body>
