@@ -703,7 +703,6 @@ html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 </select></div>
 <div class="field"><label>المدينة</label><select id="storeCity"></select></div>
 <div class="field"><label>رقم الواتساب (من حسابك)</label><input id="storePhone" class="phoneInput" readonly placeholder="—"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يظهر تلقائيًا من حسابك</div></div>
-
 <div class="field">
 <label>🕐 ساعات العمل</label>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
@@ -714,7 +713,6 @@ html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 <input type="checkbox" id="storeAlwaysOpen"> 🕐 مفتوح 24 ساعة
 </label>
 </div>
-
 <div class="field"><label>الوصف</label><textarea id="storeDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
 <div class="field"><label>شعار المتجر</label>
 <div id="storeLogoThumbs" class="imgThumbs"></div>
@@ -726,6 +724,40 @@ html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 <input id="storeCoverFile" type="file" accept="image/*" class="hidden" onchange="handleStoreCoverSelected()"></div>
 <button class="btnMain" id="storeSubmitBtn" onclick="submitStore()">📤 إرسال طلب الفتح</button>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
+
+<div id="editStoreOverlay" class="overlay hidden">
+<div class="sheet" style="max-height:92vh">
+<h3 style="text-align:center">⚙️ تعديل بيانات المتجر</h3>
+<div class="field"><label>📝 اسم المتجر</label><input id="editStoreName" maxlength="40" placeholder="اسم المتجر"></div>
+<div class="field"><label>📁 التصنيف</label>
+<select id="editStoreCategory">
+<option>سيارات ومركبات</option><option>دراجات نارية</option><option>دراجات هوائية</option>
+<option>الخدمات</option><option>عقارات للبيع</option><option>عقارات للإيجار</option>
+<option>موبايل وتابلت</option><option>لابتوب وكمبيوتر</option><option>ألعاب وألعاب الفيديو</option>
+<option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
+<option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
+<option>مطاعم وغداء</option><option>إلكترونيات</option>
+</select></div>
+<div class="field"><label>📍 المدينة</label><select id="editStoreCity"></select></div>
+<div class="field"><label>📄 الوصف</label><textarea id="editStoreDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
+<div class="field">
+<label>🕐 ساعات العمل</label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+<div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">من</div><input type="time" id="editStoreOpenTime" value="09:00" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px"></div>
+<div><div style="font-size:11.5px;color:var(--muted);margin-bottom:4px">إلى</div><input type="time" id="editStoreCloseTime" value="23:00" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:15px"></div>
+</div>
+<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer;background:#f0f9ff;padding:10px;border-radius:10px">
+<input type="checkbox" id="editStoreAlwaysOpen"> 🕐 مفتوح 24 ساعة
+</label>
+</div>
+<div class="field"><label>🖼️ شعار جديد (اختياري)</label>
+<div id="editStoreLogoThumbs" class="imgThumbs"></div>
+<div id="editStoreLogoAddTile" class="imgAddTile" onclick="document.getElementById('editStoreLogoFile').click()">📷 تغيير الشعار</div>
+<input id="editStoreLogoFile" type="file" accept="image/*" class="hidden" onchange="handleEditStoreLogo()"></div>
+<button class="btnMain" id="editStoreSubmitBtn" onclick="saveStoreEdits()" style="background:#16a34a">💾 حفظ التعديلات</button>
+<button class="btnGhost" onclick="closeOverlay()">إلغاء</button>
 </div>
 </div>
 
@@ -954,6 +986,8 @@ let allStoreRatings={};
 let currentStoreSort="newest";
 let currentStoreSearch="";
 let currentStoreItems=[];
+let editStoreLogoImage=null;
+let editStoreCurrentId=null;
 
 /* ===== 🌙 Dark Mode ===== */
 (function initDarkMode(){
@@ -1015,6 +1049,7 @@ const postTypeOverlay=document.getElementById("postTypeOverlay"),storesOverlay=d
 const expiredOverlay=document.getElementById("expiredOverlay");
 const cartOverlay=document.getElementById("cartOverlay");
 const termsOverlay=document.getElementById("termsOverlay"),privacyOverlay=document.getElementById("privacyOverlay");
+const editStoreOverlay=document.getElementById("editStoreOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
@@ -1296,36 +1331,13 @@ function renderStoreProducts(){
   }).join("")}</div>`;
 }
 
-/* ===== 📱 QR Code ===== */
+/* ===== 📱 QR Code (QuickChart) ===== */
 window.generateStoreQR=async(storeId)=>{
   const box=document.getElementById("storeQRBox");
   if(!box) return;
   const url=`${window.location.origin}${window.location.pathname}#store-${storeId}`;
-  box.innerHTML='<div style="padding:20px">⏳ جاري توليد QR...</div>';
-  try{
-    if(!window.QRCode){
-      await new Promise((res,rej)=>{
-        const s=document.createElement("script");
-        s.src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
-        s.onload=res; s.onerror=rej;
-        document.head.appendChild(s);
-      });
-    }
-    const canvas=document.createElement("canvas");
-    await window.QRCode.toCanvas(canvas,url,{width:220,margin:1});
-    box.innerHTML="";
-    box.appendChild(canvas);
-    const p=document.createElement("div");
-    p.style.cssText="font-size:11.5px;color:var(--muted);margin-top:8px;word-break:break-all";
-    p.textContent=url;
-    box.appendChild(p);
-    const dl=document.createElement("button");
-    dl.textContent="⬇️ تحميل QR";
-    dl.className="storeQRBtn";
-    dl.style.marginTop="10px";
-    dl.onclick=()=>{const a=document.createElement("a");a.download="store-qr.png";a.href=canvas.toDataURL("image/png");a.click();};
-    box.appendChild(dl);
-  }catch(e){ box.innerHTML='<div style="color:#e5484d">تعذر توليد QR</div>'; }
+  const qrImageUrl=`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=300&margin=1&ecLevel=M`;
+  box.innerHTML=`<img src="${qrImageUrl}" alt="QR Code" style="max-width:220px;margin:8px auto;display:block;border-radius:8px" onerror="this.parentElement.innerHTML='<div style=color:#e5484d;padding:20px>تعذر تحميل QR — تحقق من الإنترنت</div>'"><div style="font-size:11.5px;color:var(--muted);margin-top:8px;word-break:break-all;direction:ltr">${url}</div><a download="store-qr-${storeId}.png" href="${qrImageUrl}" target="_blank" rel="noopener" class="storeQRBtn" style="margin-top:10px;text-decoration:none;display:inline-block">⬇️ تحميل QR</a>`;
 };
 window.toggleStoreQR=()=>{
   const box=document.getElementById("storeQRBox");
@@ -1608,9 +1620,7 @@ function canHaveCart(post){
   if(post.category==="دراجات نارية")return false;
   return CART_ALLOWED_CATEGORIES.includes(post.category);
 }
-
 window.openCart=()=>{renderCartUI();cartOverlay.classList.remove("hidden");};
-
 function renderCartUI(){
   const box=document.getElementById("cartItemsBox");
   const storeLine=document.getElementById("cartStoreLine");
@@ -1642,7 +1652,6 @@ function renderCartUI(){
   if(sendBtn)sendBtn.classList.remove("hidden");
   if(clearBtn)clearBtn.classList.remove("hidden");
 }
-
 window.addToCart=async(postId,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===postId);
@@ -1663,11 +1672,9 @@ window.addToCart=async(postId,event)=>{
   saveCart();updateCartUI();renderCartUI();
   showCartToast(`✅ أُضيف: ${p.title||"منتج"}`);
 };
-
 window.removeFromCart=(postId)=>{cart.items=cart.items.filter(i=>i.postId!==postId);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();renderCartUI();};
 window.changeQty=(postId,delta)=>{const item=cart.items.find(i=>i.postId===postId);if(!item)return;const newQty=(item.qty||1)+delta;if(newQty<1)return;item.qty=newQty;saveCart();updateCartUI();renderCartUI();};
 window.clearCart=()=>{if(cart.items.length===0)return;if(!confirm("إفراغ السلة بالكامل؟"))return;cart={storeId:null,storeName:"",storePhone:"",items:[]};saveCart();updateCartUI();renderCartUI();};
-
 window.sendCartToWhats=()=>{
   if(cart.items.length===0){alert("السلة فاضية!");return;}
   if(!cart.storePhone){alert("⚠️ لا يوجد رقم واتساب للمتجر");return;}
@@ -1679,7 +1686,6 @@ window.sendCartToWhats=()=>{
   const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   window.open(url,"_blank");
 };
-
 function showCartToast(text){
   const t=document.createElement("div");
   t.textContent=text;
@@ -1688,7 +1694,6 @@ function showCartToast(text){
   setTimeout(()=>{t.style.transition="opacity .3s";t.style.opacity="0";},900);
   setTimeout(()=>t.remove(),1300);
 }
-
 window.toggleSold=async(id,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===id);
@@ -1763,7 +1768,6 @@ const priceHtml=discPct>0?`<div style="margin:6px 0"><span class="originalPrice"
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="closeOnImg" onclick="closeOverlay()">✕</button><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images)}${dots}</div><div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${wa}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 };
-
 /* ===== Save Post ===== */
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
@@ -1994,6 +1998,94 @@ window.deleteAutoReadyExpired=async()=>{if(!isAdmin)return;const ready=allPosts.
 window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n💰 السعر: ${p.price!=null?p.price+' د.ل':''}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}\n\n⚠️ اضغط الرابط لتفعيل الترقية فوراً (للأدمن فقط)`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();alert("✅ بعد الدفع، اضغط الرابط");},400);};
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){alert("⚠️ الإعلان غير موجود");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 المدة: ${d.days} يوم\n💵 المبلغ: ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
+
+/* ===== ⚙️ Edit Store ===== */
+window.openEditStore=(storeId)=>{
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const store=allStores.find(s=>s.id===storeId);
+  if(!store){alert("❌ المتجر غير موجود");return;}
+  const isOwnerStore=me.uid===store.ownerUid;
+  if(!isOwnerStore && !isAdmin){alert("❌ هذا المتجر ليس لك");return;}
+  editStoreCurrentId=storeId;
+  editStoreLogoImage=null;
+  document.getElementById("editStoreName").value=store.name||"";
+  document.getElementById("editStoreCategory").value=store.category||"سيارات ومركبات";
+  document.getElementById("editStoreCity").value=store.city||"";
+  document.getElementById("editStoreDescription").value=store.description||"";
+  const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};
+  document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";
+  document.getElementById("editStoreCloseTime").value=wh.closeTime||"23:00";
+  document.getElementById("editStoreAlwaysOpen").checked=!!wh.alwaysOpen;
+  renderEditStoreLogo();
+  closeOverlay();
+  editStoreOverlay.classList.remove("hidden");
+};
+window.handleEditStoreLogo=()=>{
+  const input=document.getElementById("editStoreLogoFile");
+  const f=input.files[0];
+  if(!f)return;
+  editStoreLogoImage={file:f,previewUrl:URL.createObjectURL(f)};
+  input.value="";
+  renderEditStoreLogo();
+};
+function renderEditStoreLogo(){
+  const box=document.getElementById("editStoreLogoThumbs");
+  if(!box)return;
+  box.innerHTML=editStoreLogoImage?`<div class="imgThumb"><img src="${editStoreLogoImage.previewUrl}"><button class="rm" onclick="editStoreLogoImage=null;renderEditStoreLogo()">×</button></div>`:"";
+  const tile=document.getElementById("editStoreLogoAddTile");
+  if(tile)tile.classList.toggle("hidden",!!editStoreLogoImage);
+}
+window.saveStoreEdits=async()=>{
+  if(!editStoreCurrentId){alert("خطأ");return;}
+  const store=allStores.find(s=>s.id===editStoreCurrentId);
+  if(!store){alert("❌ المتجر غير موجود");return;}
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const isOwnerStore=me.uid===store.ownerUid;
+  if(!isOwnerStore && !isAdmin){alert("❌ غير مصرح");return;}
+  const newName=document.getElementById("editStoreName").value.trim();
+  const newCategory=document.getElementById("editStoreCategory").value;
+  const newCity=document.getElementById("editStoreCity").value;
+  const newDescription=document.getElementById("editStoreDescription").value.trim().slice(0,500);
+  const openTime=document.getElementById("editStoreOpenTime").value||"09:00";
+  const closeTime=document.getElementById("editStoreCloseTime").value||"23:00";
+  const alwaysOpen=document.getElementById("editStoreAlwaysOpen").checked;
+  if(newName.length<2||newName.length>40){alert("اسم المتجر بين 2 و40 حرف");return;}
+  if(!newCity){alert("اختر المدينة");return;}
+  const bad=checkContent(newName,newDescription);
+  if(bad){alert("❌ كلمة ممنوعة: "+bad.word);return;}
+  const btn=document.getElementById("editStoreSubmitBtn");
+  btn.disabled=true;
+  btn.textContent="⏳ جاري الحفظ...";
+  try{
+    const updates={name:newName,category:newCategory,city:newCity,description:newDescription,workingHours:{openTime,closeTime,alwaysOpen}};
+    if(editStoreLogoImage){
+      btn.textContent="⏳ جاري رفع الشعار...";
+      updates.logo=await uploadToImgBB(editStoreLogoImage.file);
+    }
+    btn.textContent="⏳ جاري الحفظ في Firebase...";
+    await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
+    if(store.name!==newName){
+      try{
+        const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);
+        for(const p of storePosts){
+          try{await updateDoc(doc(db,"posts",p.id),{storeName:newName});}catch(e){}
+        }
+      }catch(e){}
+    }
+    alert("✅ تم حفظ التعديلات بنجاح");
+    closeOverlay();
+    if(window._currentStoreId===editStoreCurrentId){
+      setTimeout(()=>openStore(editStoreCurrentId,true),300);
+    }
+  }catch(e){
+    alert("❌ خطأ: "+e.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent="💾 حفظ التعديلات";
+  }
+};
 /* ===== Stores ===== */
 function startStoresListener(){if(unsubStores)return;unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStores=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();if(storesModerationOverlay && !storesModerationOverlay.classList.contains("hidden"))renderStoresModeration();if(storeOverlay && !storeOverlay.classList.contains("hidden")){const openStoreId=window._currentStoreId;if(openStoreId)setTimeout(()=>refreshOpenStore(openStoreId),300);}},err=>{});}
 window.openStores=()=>{document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));storesOverlay.classList.remove("hidden");renderStoresList();};
@@ -2054,6 +2146,7 @@ window.openStore=async(storeId,keepScroll)=>{
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
     <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button>
     <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>
+    ${isOwnerStore||isAdmin?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}
     ${isOwnerStore&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}
     </div>
     <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
@@ -2295,11 +2388,20 @@ window.closeOverlay=()=>{
   if(cartOverlay)cartOverlay.classList.add("hidden");
   if(termsOverlay)termsOverlay.classList.add("hidden");
   if(privacyOverlay)privacyOverlay.classList.add("hidden");
+  const eso=document.getElementById("editStoreOverlay");
+  if(eso)eso.classList.add("hidden");
   pendingAction=null;
 };
 
 /* ===== Category Chips + Cities + Brands ===== */
-function populateCitySelects(){const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");const cf=document.getElementById("cityFilter");if(cf)cf.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;const cfc=document.getElementById("cityFilterCat");if(cfc)cfc.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;}
+function populateCitySelects(){
+  const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");
+  const cf=document.getElementById("cityFilter");if(cf)cf.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;
+  const cfc=document.getElementById("cityFilterCat");if(cfc)cfc.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;
+  document.getElementById("city").innerHTML=`<option value="">اختر المدينة</option>${g}`;
+  const sc=document.getElementById("storeCity");if(sc)sc.innerHTML=`<option value="">اختر المدينة</option>${g}`;
+  const esc=document.getElementById("editStoreCity");if(esc)esc.innerHTML=`<option value="">اختر المدينة</option>${g}`;
+}
 populateCitySelects();
 function populateBrandSelect(cat){const sel=document.getElementById("brand");if(!sel)return;let brands=[];if(cat==="سيارات ومركبات")brands=CAR_BRANDS;else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");}
 populateBrandSelect("سيارات ومركبات");
@@ -2391,6 +2493,24 @@ window.showFavorites=()=>{if(showOnlyFavorites && !showOnlyMine){showCategoriesS
 function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
 window.showHome=()=>{showCategoriesScreen();};
 
+window.showFollowingPosts=()=>{
+  const me=auth.currentUser;
+  if(!me){pendingAction="following";authOverlay.classList.remove("hidden");return;}
+  if(myFollowing.length===0){alert("👥 لم تتابع أي بائع بعد\n\nافتح أي إعلان واضغط متابعة على البائع");return;}
+  const ids=myFollowing.map(f=>f.uid);
+  showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
+  const titleEl=document.getElementById("categoryTitle");
+  if(titleEl)titleEl.textContent="👥 إعلانات متابَعينك";
+  categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");
+  closeOverlay();setActiveNav("home");setTopbarMode("scroll");
+  renderSubCats();
+  const originalList=allPosts;
+  const posts=allPosts.filter(p=>ids.includes(p.uid) && getStatus(p)==="approved" && !isExpired(p) && !p.sold);
+  if(posts.length===0){postsBox.innerHTML="<div class='empty'>لا توجد إعلانات من متابَعيك</div>";}
+  else{allPosts=sortPosts(posts);renderPosts();allPosts=originalList;}
+  updateCartUI();window.scrollTo(0,0);
+};
+
 /* ===== Auth Listener ===== */
 onAuthStateChanged(auth,user=>{
 if(user){
@@ -2429,24 +2549,6 @@ if(showOnlyMine)showHome();
 renderPosts();
 }
 });
-
-window.showFollowingPosts=()=>{
-  const me=auth.currentUser;
-  if(!me){pendingAction="following";authOverlay.classList.remove("hidden");return;}
-  if(myFollowing.length===0){alert("👥 لم تتابع أي بائع بعد\n\nافتح أي إعلان واضغط متابعة على البائع");return;}
-  const ids=myFollowing.map(f=>f.uid);
-  showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
-  const titleEl=document.getElementById("categoryTitle");
-  if(titleEl)titleEl.textContent="👥 إعلانات متابَعينك";
-  categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");
-  closeOverlay();setActiveNav("home");setTopbarMode("scroll");
-  renderSubCats();
-  const originalList=allPosts;
-  const posts=allPosts.filter(p=>ids.includes(p.uid) && getStatus(p)==="approved" && !isExpired(p) && !p.sold);
-  if(posts.length===0){postsBox.innerHTML="<div class='empty'>لا توجد إعلانات من متابَعيك</div>";}
-  else{allPosts=sortPosts(posts);renderPosts();allPosts=originalList;}
-  updateCartUI();window.scrollTo(0,0);
-};
 
 window.logout=()=>signOut(auth);
 const googleProvider=new GoogleAuthProvider();
