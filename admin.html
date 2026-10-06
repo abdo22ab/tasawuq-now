@@ -76,6 +76,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 .adminRow .tag{font-size:10.5px;font-weight:800;background:var(--teal-light);color:var(--teal-dark);padding:3px 8px;border-radius:6px}
 .adminRow .tag.main{background:var(--amber-light);color:#92400e}
 .adminRow .rm{width:34px;height:34px;border-radius:50%;background:#fdeceb;border:none;color:var(--danger);font-size:15px;cursor:pointer;flex:0 0 auto}
+.verifiedBadge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1877F2;color:#fff;font-size:10px;font-weight:900;margin-right:5px;vertical-align:middle;flex:0 0 auto;line-height:1;box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+.verifiedBadge::before{content:"✓";font-weight:900;transform:translateY(-.5px);line-height:1}
 </style>
 </head>
 <body>
@@ -517,7 +519,7 @@ function renderStoresList(){
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
         ${logoHtml}
         <div style="flex:1">
-          <div style="font-weight:800;font-size:15px">${esc(s.name||"متجر")}</div>
+          <div style="font-weight:800;font-size:15px">${esc(s.name||"متجر")} ${s.verified?'<span class="verifiedBadge" title="متجر موثق"></span>':''}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px">📁 ${esc(s.category||"")} · 📍 ${esc(s.city||"")}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">📦 ${count} منتج</div>
         </div>
@@ -526,8 +528,11 @@ function renderStoresList(){
       <div class="itActions" style="grid-template-columns:1fr 1fr">
         ${s.status!=="approved"?`<button class="approve" onclick="approveOneStore('${s.id}')">✅ موافقة</button>`:""}
         ${s.status!=="rejected"?`<button class="reject" onclick="rejectOneStore('${s.id}')">🚫 رفض</button>`:""}
-        <button class="view" onclick="window.open('https://abdo22ab.github.io/tasawuq-now/#store-${s.id}','_blank')">👁️ عرض</button>
+        <button class="view" onclick="window.open('https://tasawuqnow.com/#store-${s.id}','_blank')">👁️ عرض</button>
         <button class="delete" onclick="deleteOneStore('${s.id}')">🗑️ حذف</button>
+      </div>
+      <div style="margin-top:6px">
+        ${s.verified?`<button class="btn btn-warning" style="width:100%;padding:10px;font-size:12.5px;margin:0" onclick="unverifyStore('${s.id}')">❌ إلغاء التوثيق</button>`:`<button class="btn btn-primary" style="width:100%;padding:10px;font-size:12.5px;margin:0;background:#1877F2" onclick="verifyStore('${s.id}')">🔵 توثيق المتجر</button>`}
       </div>
     </div>`;
   }).join("");
@@ -553,6 +558,34 @@ window.deleteOneStore=async(id)=>{
     if(store.ownerUid){try{await updateDoc(doc(db,"profiles",store.ownerUid),{storeId:null});}catch(e){}}
     alert(`✅ تم الحذف + ${ok} منتج`);
   }catch(e){alert("خطأ: "+e.message);}
+};
+
+/* ===== Verify Store (شارة موثوق) ===== */
+window.verifyStore=async(id)=>{
+  const store=allStoresCache.find(s=>s.id===id);
+  if(!store)return;
+  if(!confirm(`🔵 منح شارة "موثوق" لـ:\n${store.name}؟`))return;
+  try{
+    await updateDoc(doc(db,"stores",id),{
+      verified:true,
+      verifiedAt:Date.now(),
+      verifiedBy:currentUser.email
+    });
+    alert("✅ تم توثيق المتجر\n\nستظهر الشارة الزرقاء على الموقع.");
+  }catch(e){alert("❌ خطأ: "+e.message);}
+};
+
+window.unverifyStore=async(id)=>{
+  const store=allStoresCache.find(s=>s.id===id);
+  if(!store)return;
+  if(!confirm(`❌ إلغاء توثيق:\n${store.name}؟`))return;
+  try{
+    await updateDoc(doc(db,"stores",id),{
+      verified:false,
+      verifiedAt:null
+    });
+    alert("✅ تم إلغاء التوثيق");
+  }catch(e){alert("❌ خطأ: "+e.message);}
 };
 
 /* ===== Expired ===== */
