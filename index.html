@@ -979,6 +979,7 @@ let currentStoreSearch="";
 let currentStoreItems=[];
 let editStoreLogoImage=null;
 let editStoreCurrentId=null;
+let _tempStoreData=null;
 
 (function initDarkMode(){
   try{
@@ -1311,7 +1312,7 @@ window.generateStoreQR=async(storeId)=>{
   if(!box) return;
   const url=`${window.location.origin}${window.location.pathname}#store-${storeId}`;
   const qrImageUrl=`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=300&margin=1&ecLevel=M`;
-  box.innerHTML=`<img src="${qrImageUrl}" alt="QR Code" style="max-width:220px;margin:8px auto;display:block;border-radius:8px" onerror="this.parentElement.innerHTML='<div style=color:#e5484d;padding:20px>تعذر تحميل QR — تحقق من الإنترنت</div>'"><div style="font-size:11.5px;color:var(--muted);margin-top:8px;word-break:break-all;direction:ltr">${url}</div><a download="store-qr-${storeId}.png" href="${qrImageUrl}" target="_blank" rel="noopener" class="storeQRBtn" style="margin-top:10px;text-decoration:none;display:inline-block">⬇️ تحميل QR</a>`;
+  box.innerHTML=`<img src="${qrImageUrl}" alt="QR Code" style="max-width:220px;margin:8px auto;display:block;border-radius:8px" onerror="this.parentElement.innerHTML='<div style=color:#e5484d;padding:20px>تعذر تحميل QR</div>'"><div style="font-size:11.5px;color:var(--muted);margin-top:8px;word-break:break-all;direction:ltr">${url}</div><a download="store-qr-${storeId}.png" href="${qrImageUrl}" target="_blank" rel="noopener" class="storeQRBtn" style="margin-top:10px;text-decoration:none;display:inline-block">⬇️ تحميل QR</a>`;
 };
 window.toggleStoreQR=()=>{
   const box=document.getElementById("storeQRBox");
@@ -1389,7 +1390,6 @@ return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><
 }).join("");
 }
 
-/* ===== Profile ===== */
 function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
 function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 
@@ -1410,7 +1410,7 @@ if(profileSnap.exists()){const updates={memberNo:newNumber};if(customName)update
 return newNumber;
 });
 return memberNo;
-}catch(e){console.error("❌ assignMemberNumber failed:",e);return null;}
+}catch(e){return null;}
 }
 
 async function reserveUsername(user,newUsername,oldUsername){
@@ -1438,7 +1438,9 @@ return{ok:true,value:u};
 function startProfileListener(user){stopProfileListener();profileCreateTried=false;let assignAttempted=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone||"";if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}if(!unsubStore){startStoreListener(user.uid);}}else if(!profileCreateTried){profileCreateTried=true;assignMemberNumber(user).catch(e=>{});}},err=>{});}
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
-/* ===== Following ===== */
+function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
+function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
+
 function startFollowingListener(user){
   stopFollowingListener();
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
@@ -1767,10 +1769,11 @@ if(!city){alert("الرجاء اختيار المدينة");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){alert("⚠️ يجب الموافقة على الشروط والتعهد القانوني قبل النشر");return;}
 const bad=checkContent(title,description);
 if(bad){alert(`❌ لا يمكن نشر الإعلان\n\nيحتوي على كلمة ممنوعة (${bad.word})`);return;}
+const storeToUse = isStore && _tempStoreData ? _tempStoreData : myStore;
 if(!wasEditing){
   if(isStore){
-    if(!myStore||myStore.status!=="approved"){alert("❌ متجرك غير معتمد");return;}
-    const stCount=allPosts.filter(p=>p.storeId===myStore.id).length;
+    if(!storeToUse||storeToUse.status!=="approved"){alert("❌ المتجر غير معتمد");return;}
+    const stCount=allPosts.filter(p=>p.storeId===storeToUse.id).length;
     const storeLimit=await getUserStoreLimit(auth.currentUser.uid);
     if(stCount>=storeLimit){alert(`⚠️ وصلت للحد الأقصى للمتجر (${storeLimit})`);return;}
   }else{
@@ -1795,12 +1798,13 @@ await updateDoc(doc(db,"posts",editingPostId),upd);
 else{
   const now=Date.now();
   const base={title,price:Number(price),originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
-  if(isStore){base.storeId=myStore.id;base.storeName=myStore.name;base.storeCategory=myStore.category;base.storePhone=(myProfile&&myProfile.phone)||myStore.phone||"";base.uid=auth.currentUser.uid;base.email=auth.currentUser.email||"";}
+  if(isStore){base.storeId=storeToUse.id;base.storeName=storeToUse.name;base.storeCategory=storeToUse.category;base.storePhone=storeToUse.phone||"";base.uid=auth.currentUser.uid;base.email=auth.currentUser.email||"";}
   else{base.uid=auth.currentUser.uid;base.email=auth.currentUser.email||"";base.sellerName=sellerName;base.sellerMemberNo=sellerMemberNo;base.sellerUsername=sellerUsername;}
   await addDoc(collection(db,"posts"),base);
   alert(isStore?"✅ تم إرسال إعلان المتجر بنجاح":"✅ تم إرسال إعلانك بنجاح");
 }
 editingPostId=null;
+_tempStoreData=null;
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
 if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
 if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
@@ -1980,10 +1984,11 @@ window.openStore=async(storeId,keepScroll)=>{
   if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
   window._currentStoreId=storeId;
   const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
-  if(store.status!=="approved" && !isOwnerStore && !isAdmin){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
-  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdmin))) && (!isExpired(p) || isOwnerStore || isAdmin));
+  const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
+  if(store.status!=="approved" && !isOwnerStore && !isAdminUser){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
+  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser))) && (!isExpired(p) || isOwnerStore || isAdminUser));
   currentStoreItems=items.slice();
-  window._canManageStoreItems=isAdmin||isOwnerStore;
+  window._canManageStoreItems=isAdminUser||isOwnerStore;
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
   const waBtn=store.phone?`<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="openStoreWhatsapp('${escapeHtml(store.phone)}')">💬 تواصل عبر واتساب</button>`:"";
@@ -2013,8 +2018,8 @@ window.openStore=async(storeId,keepScroll)=>{
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
     <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button>
     <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>
-    ${isOwnerStore||isAdmin?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}
-    ${isOwnerStore&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}
+    ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}
+    ${(isOwnerStore||isAdminUser)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}
     </div>
     <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
     <div class="storeRatingSection" id="storeRatingSection"></div>
@@ -2039,7 +2044,19 @@ window.openStore=async(storeId,keepScroll)=>{
   });
 };
 window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(phone.replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
-window.goAddStorePost=(storeId)=>{closeOverlay();if(myStore && myStore.id===storeId && myStore.status==="approved"){setTimeout(()=>showForm(true),200);}else{alert("❌ متجرك غير معتمد");}};
+window.goAddStorePost=(storeId)=>{
+  closeOverlay();
+  const store=allStores.find(s=>s.id===storeId);
+  if(!store){alert("❌ المتجر غير موجود");return;}
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const isOwner=me.uid===store.ownerUid;
+  const isAdminUser=me.email===ADMIN_EMAIL;
+  if(!isOwner && !isAdminUser){alert("❌ هذا المتجر ليس لك");return;}
+  if(store.status!=="approved"){alert("❌ المتجر غير معتمد");return;}
+  _tempStoreData={id:store.id,name:store.name||"",category:store.category||"سيارات ومركبات",city:store.city||"",phone:store.phone||store.storePhone||"",status:store.status};
+  setTimeout(()=>showForm(true),200);
+};
 window.openMyStore=()=>{if(!myStore){alert("لا يوجد متجر");return;}openStore(myStore.id);};
 window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId);},300);}catch(e){alert("خطأ: "+e.message);}};
 
@@ -2370,25 +2387,27 @@ window.startAddPost=async()=>{
   if(myStore && myStore.status==="approved"){postTypeOverlay.classList.remove("hidden");}
   else{showForm();}
 };
-window.chooseIndividualPost=()=>{closeOverlay();showForm();};
-window.chooseStorePost=()=>{closeOverlay();showForm(true);};
+window.chooseIndividualPost=()=>{closeOverlay();_tempStoreData=null;showForm();};
+window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="approved"){_tempStoreData={id:myStore.id,name:myStore.name,category:myStore.category,city:myStore.city,phone:myStore.phone||"",status:myStore.status};}showForm(true);};
 
 window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!isStorePost;
-if(isStore && (!myStore || myStore.status!=="approved")){alert("⚠️ لا يمكنك النشر كمتجر — متجرك غير معتمد");return;}
+const storeForPost = isStore && _tempStoreData ? _tempStoreData : myStore;
+if(isStore && (!storeForPost || storeForPost.status!=="approved")){alert("⚠️ لا يمكنك النشر كمتجر — المتجر غير معتمد");return;}
 if(!isStore){
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
   const limit=await getUserLimit(auth.currentUser.uid);
   if(myCount>=limit){const msg=`🛒 طلب إعلانات إضافية\n\n👤 ${(myProfile&&myProfile.name)||'مستخدم'}\n📊 ${myCount}\n⚙️ ${limit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${limit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
 }else{
-  const stCount=allPosts.filter(p=>p.storeId===myStore.id).length;
+  const stCount=allPosts.filter(p=>p.storeId===storeForPost.id).length;
   const storeLimit=await getUserStoreLimit(auth.currentUser.uid);
-  if(stCount>=storeLimit){const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${myStore.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${storeLimit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+  if(stCount>=storeLimit){const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${storeLimit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
 }
 editingPostId=null;
 window._isStorePost=isStore;
-document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+myStore.name):"إضافة إعلان";
+const activeStore = isStore ? storeForPost : null;
+document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+activeStore.name):"إضافة إعلان";
 document.getElementById("saveBtn").textContent="نشر الإعلان";
 document.getElementById("title").value="";document.getElementById("price").value="";
 document.getElementById("originalPrice").value="";
@@ -2397,9 +2416,9 @@ document.getElementById("discountField").style.display="block";
 const userPhone=(myProfile&&myProfile.phone)||"";
 document.getElementById("phone").value=userPhone||"⚠️ لم تسجل رقمك بعد";
 document.getElementById("phone").setAttribute("readonly","readonly");
-document.getElementById("city").value=(isStore?myStore.city:"");
+document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
-document.getElementById("category").value=(isStore?myStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
+document.getElementById("category").value=(isStore?activeStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
 updateDescCount();document.getElementById("termsCheck").checked=false;
 document.getElementById("termsBox").classList.remove("hidden");
 const offerRadio=document.querySelector('input[name="adType"][value="offer"]');
@@ -2414,6 +2433,7 @@ if(!auth.currentUser)return;
 const post=allPosts.find(p=>p.id===id);if(!post)return;
 editingPostId=id;
 window._isStorePost=!!post.storeId;
+if(post.storeId){_tempStoreData={id:post.storeId,name:post.storeName||"",category:post.storeCategory||post.category||"سيارات ومركبات",city:post.city||"",phone:post.storePhone||post.phone||"",status:"approved"};}
 document.getElementById("formHeaderTitle").textContent=post.storeId?"تعديل إعلان المتجر":"تعديل الإعلان";
 document.getElementById("saveBtn").textContent="حفظ التعديلات";
 document.getElementById("title").value=post.title||"";document.getElementById("price").value=post.price||"";
@@ -2502,7 +2522,7 @@ renderPosts();
 window.logout=()=>signOut(auth);
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
-window.loginWithGoogle=async()=>{try{const r=await signInWithPopup(auth,googleProvider);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")alert("الرجاء السماح بالنوافذ المنبثقة");else if(e.code==="auth/unauthorized-domain")alert("هذا النطاق غير مصرح به");else alert("تعذر تسجيل الدخول: "+e.code);}};
+window.loginWithGoogle=async()=>{try{await signInWithPopup(auth,googleProvider);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")alert("الرجاء السماح بالنوافذ المنبثقة");else if(e.code==="auth/unauthorized-domain")alert("هذا النطاق غير مصرح به");else alert("تعذر تسجيل الدخول: "+e.code);}};
 
 startPostsListener();
 startStoresListener();
