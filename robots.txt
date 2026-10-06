@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /.well-known/
+Disallow: /firebase-messaging-sw.js
+
+Sitemap: https://tasawuqnow.com/sitemap.xml
