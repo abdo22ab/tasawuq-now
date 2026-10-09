@@ -283,18 +283,16 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 #categoriesScreen .catHeader{padding:18px 16px 10px;font-size:20px;font-weight:800;color:var(--text)}
 #categoriesScreen .catSubtitle{padding:0 16px 14px;font-size:13px;color:var(--muted)}
 .categoriesGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 12px;width:100%;max-width:100%}
-@media (max-width:360px){.categoriesGrid{grid-template-columns:repeat(3,1fr);gap:8px;padding:0 8px}}
+@media (max-width:400px){.categoriesGrid{grid-template-columns:repeat(3,1fr);gap:8px;padding:0 8px}.catBox .catIconWrap{width:40px;height:40px}.catBox .catIconWrap svg{width:20px;height:20px}.catBox .catName{font-size:10.5px}}
 @media (min-width:600px){.categoriesGrid{grid-template-columns:repeat(6,1fr);gap:14px;padding:0 20px;max-width:900px;margin:0 auto}}
 @media (min-width:1000px){.categoriesGrid{grid-template-columns:repeat(8,1fr);gap:16px;padding:0 40px;max-width:1100px;margin:0 auto}}
-.catBox{background:#fff;border-radius:14px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);cursor:pointer;aspect-ratio:1/1;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.catBox:active{transform:scale(.94);background:#f9fafb}
+.catBox{background:#fff;border-radius:14px;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);cursor:pointer;aspect-ratio:1/1;box-shadow:0 1px 3px rgba(0,0,0,.04);min-width:0;overflow:hidden}.catBox:active{transform:scale(.94);background:#f9fafb}
 .catBox .catIcon{font-size:30px;line-height:1}
 .catBox .catIconWrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .15s ease}
 .catBox:active .catIconWrap{transform:scale(.9)}
 .catBox .catIconWrap svg{width:22px;height:22px;stroke-width:2.2;color:#fff}
 .catBox.storeBox .catIconWrap,.catBox.allBox .catIconWrap{box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.catBox .catName{font-size:11px;font-weight:700;text-align:center;color:var(--text);line-height:1.3;padding:0 2px}
-.catBox.storeBox{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b}
+.catBox .catName{font-size:11px;font-weight:700;text-align:center;color:var(--text);line-height:1.3;padding:0 2px;word-break:break-word;overflow-wrap:anywhere;max-width:100%}.catBox.storeBox{background:linear-gradient(135deg,#f59e0b,#fbbf24);border-color:#f59e0b}
 .catBox.storeBox .catName{color:#3a2500}
 .catBox.allBox{background:linear-gradient(135deg,#38bdf8,#0284c7);border-color:#0284c7}
 .catBox.allBox .catName{color:#fff}
