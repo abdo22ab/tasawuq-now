@@ -181,6 +181,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;font-family:inherit}
 .btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px;font-family:inherit}
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.overlay.fullscreen{background:var(--bg);align-items:stretch;overflow-y:auto}
+.overlay.fullscreen .sheet{max-width:none;border-radius:0;max-height:none;padding:0;overflow-y:visible;display:flex;flex-direction:column;min-height:100%}
 .sheet{background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0));max-height:88vh;overflow-y:auto}
 .sheet h3{margin:0 0 14px;font-size:17px;font-weight:800}
 .sheet .accountEmail{font-size:14px;color:var(--muted);margin-bottom:16px;word-break:break-all}
@@ -404,7 +406,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 @keyframes popIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
 @keyframes cardAppear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .overlay:not(.hidden){animation:fadeIn .2s ease-out}
-.overlay:not(.hidden) .sheet{animation:slideUp .3s cubic-bezier(.22,1,.36,1)}
+.overlay:not(.hidden):not(.fullscreen) .sheet{animation:slideUp .3s cubic-bezier(.22,1,.36,1)}
 .card{animation:cardAppear .35s ease-out backwards}
 .card:nth-child(1){animation-delay:0s}
 .card:nth-child(2){animation-delay:.03s}
@@ -535,6 +537,8 @@ html.dark-mode .followBtn{background:var(--teal);color:#0f1420}
 html.dark-mode .followBtn.following{background:#232d42;color:#8b95a7}
 html.dark-mode .bannerEmpty{background:linear-gradient(135deg,#0c2942,#131a28);color:#7cc0f0}
 html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
+html.dark-mode .overlay.fullscreen{background:var(--bg)}
+html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-bottom-color:var(--border)}
 </style>
 <body>
 
@@ -907,7 +911,16 @@ html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 <div id="limitsList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<div id="postOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh;padding-top:0"><div id="postContent"></div></div></div>
+<!-- ✅ صفحة تفاصيل الإعلان كصفحة كاملة -->
+<div id="postOverlay" class="overlay fullscreen hidden">
+<div class="sheet">
+<div class="screenHeader" style="position:sticky;top:0;z-index:20">
+<button class="back" onclick="closeOverlay()">→</button>
+<h3 style="flex:1;text-align:center;padding-left:30px">تفاصيل الإعلان</h3>
+</div>
+<div style="padding:16px;flex:1"><div id="postContent"></div></div>
+</div>
+</div>
 
 <div id="cartOverlay" class="overlay hidden"><div class="sheet">
 <h3 style="text-align:center">🛒 سلتك</h3>
@@ -1362,7 +1375,6 @@ function hasViewedOnDevice(id){try{const v=JSON.parse(localStorage.getItem('view
 function markViewedOnDevice(id){try{let v=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!v.includes(id)){v.push(id);if(v.length>300)v=v.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(v));}}catch(e){}}
 async function incrementViews(id){try{if(hasViewedOnDevice(id))return;markViewedOnDevice(id);await updateDoc(doc(db,"posts",id),{views:increment(1)});}catch(e){}}
 
-/* ===== ✅ إصلاح: incrementWhatsappClick يدعم المتاجر والإعلانات ===== */
 async function incrementWhatsappClick(id, type){
   if(!id)return;
   type = type || 'post';
@@ -1429,13 +1441,6 @@ async function loadStoreRatings(storeId){
     allStoreRatings[storeId]=ratings;
     return ratings;
   }catch(e){allStoreRatings[storeId]=[];return [];}
-}
-function storeRatingHTML(storeId){
-  const ratings=allStoreRatings[storeId];
-  if(!ratings || ratings.length===0) return "";
-  const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
-  const count=ratings.length;
-  return `<span class="storeRatingBadge">⭐ ${avg.toFixed(1)} (${count})</span>`;
 }
 window.openStoreRating=async(storeId)=>{
   const me=auth.currentUser;
@@ -1708,7 +1713,6 @@ const images=getImages(p);const dots=dotsHtml(images);
 const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
 const isRestaurantPost = postStore ? isRestaurantStore(postStore) : (p.category === RESTAURANT_CATEGORY);
 
-/* ===== ✅ أزرار الإعلان: واتساب أخضر + اتصال أحمر + <a href> ===== */
 const cleanPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn = (p.phone && !isSold)
   ? (isRestaurantPost
@@ -1751,7 +1755,8 @@ const priceHTML=discPct>0?`<div class="price"><span class="originalPrice">${p.or
 return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
-  /* ===== Post Detail ===== */
+
+/* ===== Post Detail (صفحة كاملة) ===== */
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);if(!p)return;
 const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&me.uid===p.uid;const isMyStorePost=myStore&&p.storeId===myStore.id;
@@ -1770,9 +1775,8 @@ let sellerTags="";
 if(p.storeId){sellerTags+=` <span class="storeBadge">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`;}
 else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
 if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
-const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openStore('${p.storeId}',false,'post')">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
+const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
 
-/* ===== ✅ أزرار تفاصيل الإعلان: واتساب أخضر + اتصال أحمر ===== */
 const cleanPPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn = (p.phone && !isSold)
   ? (isRestaurantPost
@@ -1826,8 +1830,10 @@ const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;b
 const discPct=getDiscountPercent(p);
 const priceHtml=discPct>0?`<div style="margin:6px 0"><span class="originalPrice" style="font-size:15px">${p.originalPrice} د.ل</span><span class="discountPrice" style="font-size:24px">${p.price} د.ل</span><span style="background:#e5484d;color:#fff;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;margin-right:8px">🔥 خصم ${discPct}%</span></div>`:`<div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>`;
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="closeOnImg" onclick="closeOverlay()">✕</button><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+/* ملاحظة: حذفنا زر closeOnImg من داخل الصورة — أصبح زر الرجوع في الـHeader */
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
+window.scrollTo(0,0);
 setTimeout(()=>{
   const carousel=document.querySelector("#postContent .carousel");
   if(carousel){
@@ -2300,7 +2306,6 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
-  /* ===== ✅ أزرار المتجر: واتساب أخضر + اتصال أحمر ===== */
   const cleanStorePhone = String(store.phone||'').replace(/[^0-9+]/g,'');
   const contactStoreBtn = store.phone
     ? (isRestaurant
@@ -2399,7 +2404,8 @@ window.saveStoreEdits=async()=>{
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
   finally{btn.disabled=false;btn.textContent="💾 حفظ التعديلات";}
 };
-  /* ===== Seller Profile ===== */
+
+/* ===== Seller Profile ===== */
 function startFollowingListener(user){
   stopFollowingListener();
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
@@ -2581,7 +2587,6 @@ function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null
 function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
 function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
 
-/* ===== Stores: Open + Submit + Admin Mod ===== */
 window.startOpenStore=async()=>{
   if(!auth.currentUser){authOverlay.classList.remove("hidden");return;}
   if(myStore){showToast("⚠️ لديك متجر بالفعل","warn");return;}
@@ -2827,7 +2832,6 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
-/* ===== closeOverlay يمسح _tempStoreData ===== */
 window.closeOverlay=()=>{
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
@@ -2844,6 +2848,7 @@ window.closeOverlay=()=>{
   _tempStoreData=null;
   updateSEOMeta(null);
   pendingAction=null;
+  document.body.style.overflow="";
 };
 
 function populateCitySelects(){
@@ -2980,7 +2985,6 @@ window.showFollowingPosts=()=>{
   updateCartUI();window.scrollTo(0,0);
 };
 
-/* ===== Auth State ===== */
 onAuthStateChanged(auth,user=>{
 if(user){
 isAdmin=user.email===ADMIN_EMAIL;
@@ -2998,25 +3002,14 @@ const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
-
-/* ✅ tryApplyPendingUpgrade ينتظر تحميل posts */
 if(isAdmin && pendingAutoUpgrade){
-  const checkUpgrade=()=>{
-    if(allPosts.length>0){tryApplyPendingUpgrade();}
-    else{setTimeout(checkUpgrade,500);}
-  };
+  const checkUpgrade=()=>{if(allPosts.length>0){tryApplyPendingUpgrade();}else{setTimeout(checkUpgrade,500);}};
   setTimeout(checkUpgrade,1500);
 }
-
-/* ✅ autoDeleteOldExpired ينتظر تحميل posts */
 if(isAdmin){
-  const checkAutoDelete=()=>{
-    if(allPosts.length>0){autoDeleteOldExpired();}
-    else{setTimeout(checkAutoDelete,1000);}
-  };
+  const checkAutoDelete=()=>{if(allPosts.length>0){autoDeleteOldExpired();}else{setTimeout(checkAutoDelete,1000);}};
   setTimeout(checkAutoDelete,3000);
 }
-
 if(pendingAction==="form"){pendingAction=null;showForm();}
 else if(pendingAction==="postType"){pendingAction=null;setTimeout(()=>startAddPost(),300);}
 else if(pendingAction==="mine"){pendingAction=null;showMyPosts();}
@@ -3039,11 +3032,7 @@ renderPosts();
 }
 });
 
-/* ✅ logout يمسح userLimitsCache */
-window.logout=()=>{
-  Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
-  signOut(auth);
-};
+window.logout=()=>{Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);signOut(auth);};
 
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
