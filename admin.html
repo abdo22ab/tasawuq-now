@@ -4,32 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>لوحة الأدمن — تسوق الآن</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="theme-color" content="#38bdf8" id="themeColorMeta">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--green:#16a34a;--wa:#25d366}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--green:#16a34a;--wa:#25d366;--call:#e5484d}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);padding-bottom:60px;line-height:1.7}
-.header{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:20px 16px;text-align:center;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);padding-bottom:40px;line-height:1.7;padding-top:env(safe-area-inset-top,0)}
+.header{background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:18px 16px calc(18px + env(safe-area-inset-top,0));text-align:center;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(2,132,199,.3)}
 .header h1{margin:0;font-size:20px;font-weight:800}
 .header p{margin:6px 0 0;font-size:12.5px;opacity:.9}
-.header .userLine{margin-top:8px;font-size:12px;background:rgba(255,255,255,.18);padding:5px 12px;border-radius:999px;display:inline-block}
+.header .userLine{margin-top:10px;font-size:12px;background:rgba(255,255,255,.2);padding:5px 14px;border-radius:999px;display:inline-block;font-weight:700}
+.header .headerActions{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.header .headerActions button{background:rgba(255,255,255,.18);color:#fff;border:none;padding:7px 14px;border-radius:999px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.header .headerActions button:active{transform:scale(.96)}
 .container{padding:14px 12px;max-width:700px;margin:0 auto}
 .statsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.statCard{background:#fff;border-radius:12px;padding:12px 6px;text-align:center;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.statCard .sIcon{font-size:22px;margin-bottom:2px}
-.statCard .sVal{font-size:20px;font-weight:800;color:var(--teal-dark);line-height:1.2}
+.statCard{background:linear-gradient(135deg,#e6f6fe,#f0f9ff);border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #bae6fd;position:relative}
+.statCard .sIcon{font-size:22px;margin-bottom:4px;display:inline-block;background:#fff;width:42px;height:42px;line-height:42px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.statCard .sVal{font-size:22px;font-weight:900;color:var(--teal-dark);line-height:1.2}
 .statCard .sLabel{font-size:11px;color:var(--muted);font-weight:700}
-.section{background:#fff;border-radius:14px;margin-bottom:12px;border:1px solid var(--border);overflow:hidden}
-.sectionHeader{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;transition:background .15s}
+.section{background:#fff;border-radius:16px;margin-bottom:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .2s}
+.section:active{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.sectionHeader{display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;transition:background .15s;gap:10px}
 .sectionHeader:active{background:#f9fafb}
-.sectionHeader .secIcon{font-size:20px;margin-left:8px}
-.sectionHeader .secTitle{flex:1;font-weight:800;font-size:15px;display:flex;align-items:center}
-.sectionHeader .badge{background:var(--danger);color:#fff;font-size:11px;font-weight:800;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 7px;margin-left:8px}
-.sectionHeader .arrow{color:var(--muted);font-size:14px;transition:transform .2s}
+.sectionHeader .secIconWrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.sectionHeader .secTitle{flex:1;font-weight:800;font-size:15px;line-height:1.4}
+.sectionHeader .secSub{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+.sectionHeader .badge{background:var(--danger);color:#fff;font-size:11px;font-weight:800;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 7px}
+.sectionHeader .arrow{color:var(--muted);font-size:14px;transition:transform .25s ease;font-weight:800}
 .section.open .sectionHeader .arrow{transform:rotate(180deg)}
-.sectionBody{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.sectionBody{display:none;padding:0 14px 16px;border-top:1px solid var(--border);animation:fadeIn .25s ease-out}
 .section.open .sectionBody{display:block}
-.btn{width:100%;padding:13px;border:none;border-radius:11px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;margin-top:8px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;margin-top:8px;transition:transform .12s}
+.btn:active{transform:scale(.97)}
 .btn-primary{background:var(--teal);color:#fff}
 .btn-success{background:var(--green);color:#fff}
 .btn-danger{background:#fdeceb;color:var(--danger)}
@@ -44,11 +54,12 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 .imgRow .info{flex:1;min-width:0}
 .imgRow .info input{font-size:13px;padding:8px 10px;width:100%}
 .imgRow .rm{width:34px;height:34px;border-radius:50%;background:#fdeceb;border:none;color:var(--danger);font-size:15px;cursor:pointer;flex:0 0 auto;font-family:inherit}
-.uploadArea{border:2px dashed var(--teal);border-radius:12px;padding:20px;text-align:center;color:var(--teal-dark);cursor:pointer;background:#f0f9ff;font-weight:700;font-size:14px}
+.uploadArea{border:2px dashed var(--teal);border-radius:12px;padding:20px;text-align:center;color:var(--teal-dark);cursor:pointer;background:#f0f9ff;font-weight:700;font-size:14px;transition:background .15s}
+.uploadArea:active{background:#e0f2fe}
 .uploadArea.disabled{opacity:.5;pointer-events:none}
 .uploadArea .sub{font-size:11.5px;font-weight:400;margin-top:6px;color:var(--muted)}
 .status{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:13.5px;display:none}
-.status.show{display:block}
+.status.show{display:block;animation:fadeIn .25s ease-out}
 .status.ok{background:#dcfce7;color:#166534}
 .status.err{background:#fdeceb;color:#b91c1c}
 .status.info{background:#e0f2fe;color:#0369a1}
@@ -78,6 +89,19 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 .adminRow .rm{width:34px;height:34px;border-radius:50%;background:#fdeceb;border:none;color:var(--danger);font-size:15px;cursor:pointer;flex:0 0 auto}
 .verifiedBadge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1877F2;color:#fff;font-size:10px;font-weight:900;margin-right:5px;vertical-align:middle;flex:0 0 auto;line-height:1;box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
 .verifiedBadge::before{content:"✓";font-weight:900;transform:translateY(-.5px);line-height:1}
+html.dark-mode{--bg:#0f1420;--card:#1a2233;--text:#e8edf5;--muted:#8b95a7;--border:#2a3446;--teal-light:#0c2942;--amber-light:#3a2f11}
+html.dark-mode body{background:var(--bg);color:var(--text)}
+html.dark-mode .header{background:linear-gradient(135deg,#0c2942,#1e4976)}
+html.dark-mode .statCard{background:linear-gradient(135deg,#0c2942,#131a28);border-color:#1c3a5c}
+html.dark-mode .statCard .sIcon{background:#1a2233}
+html.dark-mode .section{background:var(--card);border-color:var(--border)}
+html.dark-mode .sectionHeader:active{background:#232d42}
+html.dark-mode .item{background:#131a28;border-color:var(--border)}
+html.dark-mode .field input,html.dark-mode .field select{background:#131a28;border-color:var(--border);color:var(--text)}
+html.dark-mode .imgRow{background:#131a28}
+html.dark-mode .uploadArea{background:#0c2942;color:#7cc0f0}
+html.dark-mode .adminRow{background:#131a28}
+html.dark-mode .sIconWrap{}
 </style>
 </head>
 <body>
@@ -85,6 +109,10 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 <div class="header">
 <h1>🎛️ لوحة الأدمن</h1>
 <p>تسوق الآن — لوحة التحكم الكاملة</p>
+<div class="headerActions">
+<button onclick="toggleDark()" id="darkBtn">🌙 الوضع الليلي</button>
+<button onclick="window.open('https://tasawuqnow.com','_blank')">🌐 عرض الموقع</button>
+</div>
 <div class="userLine" id="userLine" style="display:none">👤 <span id="userEmail"></span></div>
 </div>
 
@@ -107,14 +135,15 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 <div id="mainScreen" class="container" style="display:none">
 
 <div class="statsGrid">
-<div class="statCard"><div class="sIcon">📋</div><div class="sVal" id="statPosts">—</div><div class="sLabel">إعلان</div></div>
-<div class="statCard"><div class="sIcon">🏪</div><div class="sVal" id="statStores">—</div><div class="sLabel">متجر</div></div>
-<div class="statCard"><div class="sIcon">🚩</div><div class="sVal" id="statReports">—</div><div class="sLabel">إبلاغ</div></div>
+<div class="statCard"><span class="sIcon">📋</span><div class="sVal" id="statPosts">—</div><div class="sLabel">إعلان</div></div>
+<div class="statCard"><span class="sIcon">🏪</span><div class="sVal" id="statStores">—</div><div class="sLabel">متجر</div></div>
+<div class="statCard"><span class="sIcon">🚩</span><div class="sVal" id="statReports">—</div><div class="sLabel">إبلاغ</div></div>
 </div>
 
 <div class="section" id="secBanner">
 <div class="sectionHeader" onclick="toggleSection('secBanner')">
-<div class="secTitle"><span class="secIcon">📢</span> البانر الإعلاني</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff">📢</div>
+<div><div class="secTitle">البانر الإعلاني</div><div class="secSub">صور تظهر في أعلى الموقع</div></div>
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody">
@@ -133,7 +162,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secReports">
 <div class="sectionHeader" onclick="toggleSection('secReports')">
-<div class="secTitle"><span class="secIcon">🚩</span> الإبلاغات</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#e5484d,#b91c1c);color:#fff">🚩</div>
+<div><div class="secTitle">الإبلاغات</div><div class="secSub">بلاغات من المستخدمين</div></div>
 <span class="badge" id="reportsBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
@@ -142,7 +172,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secModeration">
 <div class="sectionHeader" onclick="toggleSection('secModeration')">
-<div class="secTitle"><span class="secIcon">⏳</span> الإعلانات قيد المراجعة</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff">⏳</div>
+<div><div class="secTitle">الإعلانات قيد المراجعة</div><div class="secSub">تحتاج موافقة أو رفض</div></div>
 <span class="badge" id="moderationBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
@@ -151,7 +182,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secStores">
 <div class="sectionHeader" onclick="toggleSection('secStores')">
-<div class="secTitle"><span class="secIcon">🏪</span> إدارة المتاجر</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff">🏪</div>
+<div><div class="secTitle">إدارة المتاجر</div><div class="secSub">قبول، رفض، توثيق</div></div>
 <span class="badge" id="storesBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
@@ -160,7 +192,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secExpired">
 <div class="sectionHeader" onclick="toggleSection('secExpired')">
-<div class="secTitle"><span class="secIcon">⏰</span> الإعلانات المنتهية</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#6b7280,#4b5563);color:#fff">⏰</div>
+<div><div class="secTitle">الإعلانات المنتهية</div><div class="secSub">تنظيف الإعلانات القديمة</div></div>
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody"><div id="expiredList"><div class="listEmpty">اضغط لتحميل</div></div></div>
@@ -168,7 +201,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secLimits">
 <div class="sectionHeader" onclick="toggleSection('secLimits')">
-<div class="secTitle"><span class="secIcon">⚙️</span> حدود المستخدمين</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#fff">⚙️</div>
+<div><div class="secTitle">حدود المستخدمين</div><div class="secSub">تخصيص عدد الإعلانات</div></div>
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody">
@@ -193,7 +227,8 @@ body{margin:0;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--te
 
 <div class="section" id="secAdmins">
 <div class="sectionHeader" onclick="toggleSection('secAdmins')">
-<div class="secTitle"><span class="secIcon">👥</span> إدارة الأدمنز</div>
+<div class="secIconWrap" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff">👥</div>
+<div><div class="secTitle">إدارة الأدمنز</div><div class="secSub">إضافة أو حذف مشرفين</div></div>
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody">
@@ -232,6 +267,24 @@ let currentImages=[];
 let hasBannerChanges=false;
 let unsubPosts=null,unsubReports=null,unsubStores=null;
 let allPostsCache=[],allStoresCache=[],allReportsCache=[],limitsCache=[],adminsCache=[];
+
+(function initDark(){
+  try{
+    const saved=localStorage.getItem('admin_theme');
+    const prefersDark=window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches;
+    const useDark=saved==='dark' || (saved===null && prefersDark);
+    if(useDark)document.documentElement.classList.add('dark-mode');
+    setTimeout(()=>{const b=document.getElementById('darkBtn');if(b)b.textContent=useDark?'☀️ الوضع النهاري':'🌙 الوضع الليلي';},100);
+  }catch(e){}
+})();
+window.toggleDark=()=>{
+  const isDark=document.documentElement.classList.toggle('dark-mode');
+  try{localStorage.setItem('admin_theme',isDark?'dark':'light');}catch(e){}
+  const b=document.getElementById('darkBtn');
+  if(b)b.textContent=isDark?'☀️ الوضع النهاري':'🌙 الوضع الليلي';
+  const m=document.getElementById('themeColorMeta');
+  if(m)m.setAttribute('content',isDark?'#0c2942':'#38bdf8');
+};
 
 window.toggleSection=(id)=>{document.getElementById(id).classList.toggle("open");};
 window.loginWithGoogle=async()=>{
@@ -560,32 +613,20 @@ window.deleteOneStore=async(id)=>{
   }catch(e){alert("خطأ: "+e.message);}
 };
 
-/* ===== Verify Store (شارة موثوق) ===== */
 window.verifyStore=async(id)=>{
   const store=allStoresCache.find(s=>s.id===id);
   if(!store)return;
   if(!confirm(`🔵 منح شارة "موثوق" لـ:\n${store.name}؟`))return;
   try{
-    await updateDoc(doc(db,"stores",id),{
-      verified:true,
-      verifiedAt:Date.now(),
-      verifiedBy:currentUser.email
-    });
-    alert("✅ تم توثيق المتجر\n\nستظهر الشارة الزرقاء على الموقع.");
+    await updateDoc(doc(db,"stores",id),{verified:true,verifiedAt:Date.now(),verifiedBy:currentUser.email});
+    alert("✅ تم توثيق المتجر");
   }catch(e){alert("❌ خطأ: "+e.message);}
 };
-
 window.unverifyStore=async(id)=>{
   const store=allStoresCache.find(s=>s.id===id);
   if(!store)return;
   if(!confirm(`❌ إلغاء توثيق:\n${store.name}؟`))return;
-  try{
-    await updateDoc(doc(db,"stores",id),{
-      verified:false,
-      verifiedAt:null
-    });
-    alert("✅ تم إلغاء التوثيق");
-  }catch(e){alert("❌ خطأ: "+e.message);}
+  try{await updateDoc(doc(db,"stores",id),{verified:false,verifiedAt:null});alert("✅");}catch(e){alert("❌ خطأ: "+e.message);}
 };
 
 /* ===== Expired ===== */
