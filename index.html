@@ -403,7 +403,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes popIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
 @keyframes cardAppear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .overlay:not(.hidden){animation:fadeIn .2s ease-out}
 .overlay:not(.hidden):not(.fullscreen) .sheet{animation:slideUp .3s cubic-bezier(.22,1,.36,1)}
@@ -551,6 +550,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="topbarActions">
 <button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
 <button class="bellBtn" onclick="enableNotifications()">🔔</button>
+<button class="bellBtn" onclick="openFeedback()" title="اقتراح أو شكوى">💬</button>
 <button class="bellBtn" onclick="showFavorites()">❤️</button>
 <button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none">🛒<span class="cartBadge" id="cartHeaderCount" style="display:none">0</span></button>
 </div>
@@ -737,6 +737,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
 <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
 <button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع</button>
+<button class="btnGhost" onclick="openFeedback()">💬 اقتراح / شكوى</button>
 <button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
 <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
 <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
@@ -827,9 +828,36 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <option value="أخرى">أخرى</option>
 </select>
 <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.7">
-💡 <b>ملاحظة:</b> أنت مسؤول عن التوصيل. تقدر تتفق مع أي شركة توصيل أو توصّل بنفسك. "تسوق الآن" غير مسؤولة عن عملية التوصيل.
+💡 <b>ملاحظة:</b> أنت مسؤول عن التوصيل. تقدر تتفق مع أي شركة توصيل أو توصّل بنفسك.
 </div>
 </div>
+
+<!-- 💳 معلومات الدفع (جديد) -->
+<div class="field">
+<label>💳 معلومات الدفع (اختياري)</label>
+<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
+<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+💡 املأ ما يناسبك — يستخدمها الزبون للتحويل ثم يرسل لك إيصال التحويل على واتساب.
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div>
+<input id="storeBankOwner" maxlength="60" placeholder="الاسم الكامل">
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div>
+<input id="storeBankName" maxlength="50" placeholder="مصرف الجمهورية">
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div>
+<input id="storeBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace">
+</div>
+<div>
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div>
+<input id="storeBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace">
+</div>
+</div>
+</div>
+
 <div class="field"><label>شعار المتجر</label>
 <div id="storeLogoThumbs" class="imgThumbs"></div>
 <div id="storeLogoAddTile" class="imgAddTile" onclick="document.getElementById('storeLogoFile').click()">📷 إضافة شعار</div>
@@ -868,6 +896,33 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <input type="checkbox" id="editStoreAlwaysOpen"> 🕐 مفتوح 24 ساعة
 </label>
 </div>
+
+<!-- 💳 معلومات الدفع (تعديل) -->
+<div class="field">
+<label>💳 معلومات الدفع (اختياري)</label>
+<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
+<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+💡 املأ ما يناسبك — يستخدمها الزبون للتحويل.
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div>
+<input id="editStoreBankOwner" maxlength="60" placeholder="الاسم الكامل">
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div>
+<input id="editStoreBankName" maxlength="50" placeholder="مصرف الجمهورية">
+</div>
+<div style="margin-bottom:10px">
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div>
+<input id="editStoreBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace">
+</div>
+<div>
+<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div>
+<input id="editStoreBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace">
+</div>
+</div>
+</div>
+
 <div class="field"><label>🖼️ شعار جديد (اختياري)</label>
 <div id="editStoreLogoThumbs" class="imgThumbs"></div>
 <div id="editStoreLogoAddTile" class="imgAddTile" onclick="document.getElementById('editStoreLogoFile').click()">📷 تغيير الشعار</div>
@@ -911,7 +966,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="limitsList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<!-- ✅ صفحة تفاصيل الإعلان كصفحة كاملة -->
+<!-- 💳 صفحة تفاصيل الإعلان (صفحة كاملة) -->
 <div id="postOverlay" class="overlay fullscreen hidden">
 <div class="sheet">
 <div class="screenHeader" style="position:sticky;top:0;z-index:20">
@@ -950,6 +1005,34 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="sellerOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><div id="sellerContent"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+
+<!-- 💬 نموذج الاقتراحات والشكاوى (جديد) -->
+<div id="feedbackOverlay" class="overlay hidden">
+<div class="sheet">
+<h3 style="text-align:center">💬 اقتراح أو شكوى</h3>
+<p style="font-size:13px;color:var(--muted);margin:0 0 14px;text-align:center">ساعدنا نطوّر "تسوق الآن" — رأيك يهمنا 🙏</p>
+<div class="field">
+<label>نوع الرسالة</label>
+<select id="fbType">
+<option value="bug">🐛 مشكلة / عطل</option>
+<option value="suggestion">💡 اقتراح</option>
+<option value="complaint">⚠️ شكوى</option>
+<option value="other">📝 أخرى</option>
+</select>
+</div>
+<div class="field">
+<label>الرسالة</label>
+<textarea id="fbMessage" maxlength="1000" rows="5" placeholder="اكتب رسالتك بالتفصيل (10 أحرف على الأقل)..."></textarea>
+</div>
+<div class="field">
+<label>وسيلة التواصل (اختياري — للرد عليك)</label>
+<input id="fbContact" placeholder="إيميل أو واتساب" dir="ltr" style="text-align:left">
+<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتبها لو تبي نرد عليك — وإلا الرسالة تبقى مجهولة</div>
+</div>
+<button class="btnMain" id="fbSendBtn" onclick="submitFeedback()">📤 إرسال الرسالة</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
 
 <div id="warnOverlay" class="overlay hidden"><div class="sheet">
 <h3>⚠️ تنبيه قبل التواصل</h3>
@@ -1215,9 +1298,46 @@ const expiredOverlay=document.getElementById("expiredOverlay");
 const cartOverlay=document.getElementById("cartOverlay");
 const termsOverlay=document.getElementById("termsOverlay"),privacyOverlay=document.getElementById("privacyOverlay");
 const editStoreOverlay=document.getElementById("editStoreOverlay");
+const feedbackOverlay=document.getElementById("feedbackOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
+
+/* ===== 💬 Feedback (اقتراحات وشكاوى) ===== */
+window.openFeedback=()=>{
+  const t=document.getElementById("fbType");
+  const m=document.getElementById("fbMessage");
+  const c=document.getElementById("fbContact");
+  if(t)t.value="bug";
+  if(m)m.value="";
+  if(c)c.value="";
+  feedbackOverlay.classList.remove("hidden");
+};
+
+window.submitFeedback=async()=>{
+  const type=document.getElementById("fbType").value;
+  const message=(document.getElementById("fbMessage").value||"").trim();
+  const contact=(document.getElementById("fbContact").value||"").trim();
+  if(message.length<10){showToast("⚠️ اكتب رسالة (10 أحرف على الأقل)","warn");return;}
+  const btn=document.getElementById("fbSendBtn");
+  btn.disabled=true;btn.textContent="⏳ جاري الإرسال...";
+  try{
+    await addDoc(collection(db,"feedback"),{
+      type:type,
+      message:message.slice(0,1000),
+      contact:contact.slice(0,100),
+      userEmail:(auth.currentUser&&auth.currentUser.email)||"",
+      userUid:(auth.currentUser&&auth.currentUser.uid)||"",
+      pageUrl:window.location.href.slice(0,500),
+      userAgent:navigator.userAgent.slice(0,300),
+      createdAt:Date.now(),
+      status:"new"
+    });
+    showToast("✅ وصلتنا رسالتك، شكراً لك!","success",3000);
+    closeOverlay();
+  }catch(e){showToast("❌ خطأ: "+e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="📤 إرسال الرسالة";}
+};
 
 function catIconHtml(c){
   const color=c.color||"#38bdf8";
@@ -1552,6 +1672,29 @@ window.toggleStoreQR=()=>{
   } else { box.style.display="none"; }
 };
 
+/* ===== Copy to clipboard + Receipt (جديد) ===== */
+window.copyToClipboard=async(text,label)=>{
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast(`✅ تم نسخ ${label}`,"success",1500);
+  }catch(e){
+    const ta=document.createElement("textarea");
+    ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");showToast(`✅ تم نسخ ${label}`,"success",1500);}
+    catch(err){showToast("❌ فشل النسخ","error");}
+    document.body.removeChild(ta);
+  }
+};
+
+window.sendReceiptToSeller=(phone,storeName)=>{
+  const cleanPhone=String(phone||"").replace(/[^0-9]/g,"");
+  if(!cleanPhone){showToast("⚠️ رقم المتجر غير متوفر","warn");return;}
+  const msg=`السلام عليكم 👋\n\nحولت مبلغ لـ "${storeName}" على موقع تسوق الآن.\n\n📎 هذا إيصال التحويل 👇\n\n(أرفق صورة الإيصال هنا)`;
+  const url=`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+  window.open(url,"_blank");
+};
+
 window.openLightbox=(url)=>{
   if(!url)return;
   const lb=document.getElementById("lightbox");
@@ -1753,7 +1896,7 @@ const priceHTML=discPct>0?`<div class="price"><span class="originalPrice">${p.or
 return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
-
+  
 /* ===== Post Detail (صفحة كاملة) ===== */
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);if(!p)return;
@@ -1828,7 +1971,6 @@ const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;b
 const discPct=getDiscountPercent(p);
 const priceHtml=discPct>0?`<div style="margin:6px 0"><span class="originalPrice" style="font-size:15px">${p.originalPrice} د.ل</span><span class="discountPrice" style="font-size:24px">${p.price} د.ل</span><span style="background:#e5484d;color:#fff;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;margin-right:8px">🔥 خصم ${discPct}%</span></div>`:`<div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>`;
 updateSEOMeta(p);
-/* ملاحظة: حذفنا زر closeOnImg — أصبح زر الرجوع في الـ Header */
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 window.scrollTo(0,0);
@@ -2312,6 +2454,25 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
            <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
     : "";
 
+  /* ===== 💳 قسم معلومات الدفع (جديد — 4 حقول) ===== */
+  const bi = store.bankInfo || {};
+  const hasIban = bi.iban && bi.iban.trim();
+  const hasAccount = bi.accountNumber && bi.accountNumber.trim();
+  const hasBankInfo = hasIban || hasAccount;
+  let bankInfoHtml = "";
+  if(hasBankInfo){
+    const copyBtn = (val, label) => `<button onclick="copyToClipboard('${escapeHtml(val)}', '${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
+    bankInfoHtml = `<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
+      <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
+      <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
+      ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
+      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
+      ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
+      ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
+      ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.phone).replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
+    </div>`;
+  }
+
   const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
   const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
   const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:var(--card);color:var(--text)"><button class="filterBtn active" onclick="setStoreSort('newest')" id="ssortNewest" style="font-size:12px">🆕 الأحدث</button><button class="filterBtn" onclick="setStoreSort('cheapest')" id="ssortCheapest" style="font-size:12px">💰 الأرخص</button><button class="filterBtn" onclick="setStoreSort('expensive')" id="ssortExpensive" style="font-size:12px">💎 الأغلى</button><button class="filterBtn" onclick="setStoreSort('views')" id="ssortViews" style="font-size:12px">👁️ الأكثر مشاهدة</button></div>`;
@@ -2322,7 +2483,7 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const restaurantBadge=isRestaurant?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
   const storePostsCountAll=allPosts.filter(p=>p.storeId===storeId && getStatus(p)==="approved").length;
   const storeTierBadge=renderSellerTierBadge(store.ownerUid,storePostsCountAll);
-  box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${storeFilterBar}<div id="storeProductsBox"></div>`;
+  box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${storeFilterBar}<div id="storeProductsBox"></div>`;
   renderStoreProducts();
   updateCartUI();
   loadStoreRatings(storeId).then(()=>{
@@ -2364,7 +2525,13 @@ window.goAddStorePost=(storeId)=>{
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
 window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
-window.openEditStore=(storeId)=>{const me=auth.currentUser;if(!me){authOverlay.classList.remove("hidden");return;}const store=allStores.find(s=>s.id===storeId);if(!store){showToast("❌ المتجر غير موجود","error");return;}const isOwnerStore=me.uid===store.ownerUid;if(!isOwnerStore && !isAdmin){showToast("❌ هذا المتجر ليس لك","error");return;}editStoreCurrentId=storeId;editStoreLogoImage=null;document.getElementById("editStoreName").value=store.name||"";document.getElementById("editStoreCategory").value=store.category||"سيارات ومركبات";document.getElementById("editStoreCity").value=store.city||"";document.getElementById("editStoreDescription").value=store.description||"";const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";document.getElementById("editStoreCloseTime").value=wh.closeTime||"23:00";document.getElementById("editStoreAlwaysOpen").checked=!!wh.alwaysOpen;renderEditStoreLogo();closeOverlay();editStoreOverlay.classList.remove("hidden");};
+window.openEditStore=(storeId)=>{const me=auth.currentUser;if(!me){authOverlay.classList.remove("hidden");return;}const store=allStores.find(s=>s.id===storeId);if(!store){showToast("❌ المتجر غير موجود","error");return;}const isOwnerStore=me.uid===store.ownerUid;if(!isOwnerStore && !isAdmin){showToast("❌ هذا المتجر ليس لك","error");return;}editStoreCurrentId=storeId;editStoreLogoImage=null;document.getElementById("editStoreName").value=store.name||"";document.getElementById("editStoreCategory").value=store.category||"سيارات ومركبات";document.getElementById("editStoreCity").value=store.city||"";document.getElementById("editStoreDescription").value=store.description||"";const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";document.getElementById("editStoreCloseTime").value=wh.closeTime||"23:00";document.getElementById("editStoreAlwaysOpen").checked=!!wh.alwaysOpen;
+const bi=store.bankInfo||{};
+document.getElementById("editStoreBankOwner").value=bi.accountOwner||"";
+document.getElementById("editStoreBankName").value=bi.bankName||"";
+document.getElementById("editStoreBankIban").value=bi.iban||"";
+document.getElementById("editStoreBankAccount").value=bi.accountNumber||"";
+renderEditStoreLogo();closeOverlay();editStoreOverlay.classList.remove("hidden");};
 window.handleEditStoreLogo=()=>{const input=document.getElementById("editStoreLogoFile");const f=input.files[0];if(!f)return;editStoreLogoImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderEditStoreLogo();};
 function renderEditStoreLogo(){const box=document.getElementById("editStoreLogoThumbs");if(!box)return;box.innerHTML=editStoreLogoImage?`<div class="imgThumb"><img src="${editStoreLogoImage.previewUrl}"><button class="rm" onclick="editStoreLogoImage=null;renderEditStoreLogo()">×</button></div>`:"";const tile=document.getElementById("editStoreLogoAddTile");if(tile)tile.classList.toggle("hidden",!!editStoreLogoImage);}
 window.saveStoreEdits=async()=>{
@@ -2389,7 +2556,12 @@ window.saveStoreEdits=async()=>{
   const btn=document.getElementById("editStoreSubmitBtn");
   btn.disabled=true;btn.textContent="⏳ جاري الحفظ...";
   try{
-    const updates={name:newName,category:newCategory,city:newCity,description:newDescription,workingHours:{openTime,closeTime,alwaysOpen}};
+    const updates={name:newName,category:newCategory,city:newCity,description:newDescription,workingHours:{openTime,closeTime,alwaysOpen},bankInfo:{
+      accountOwner:(document.getElementById("editStoreBankOwner")?.value||"").trim().slice(0,60),
+      bankName:(document.getElementById("editStoreBankName")?.value||"").trim().slice(0,50),
+      iban:(document.getElementById("editStoreBankIban")?.value||"").trim().slice(0,34),
+      accountNumber:(document.getElementById("editStoreBankAccount")?.value||"").trim().slice(0,30)
+    }};
     if(editStoreLogoImage){btn.textContent="⏳ جاري رفع الشعار...";updates.logo=await uploadToImgBB(editStoreLogoImage.file);}
     btn.textContent="⏳ جاري الحفظ...";
     await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
@@ -2402,7 +2574,7 @@ window.saveStoreEdits=async()=>{
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
   finally{btn.disabled=false;btn.textContent="💾 حفظ التعديلات";}
 };
-
+  
 /* ===== Seller Profile ===== */
 function startFollowingListener(user){
   stopFollowingListener();
@@ -2608,6 +2780,10 @@ window.startOpenStore=async()=>{
   document.getElementById("storeOpenTime").value="09:00";
   document.getElementById("storeCloseTime").value="23:00";
   document.getElementById("storeAlwaysOpen").checked=false;
+  document.getElementById("storeBankOwner").value="";
+  document.getElementById("storeBankName").value="";
+  document.getElementById("storeBankIban").value="";
+  document.getElementById("storeBankAccount").value="";
   const delivEl=document.getElementById("storeDelivery");if(delivEl)delivEl.value="";
   renderStoreLogo();renderStoreCover();
 };
@@ -2640,7 +2816,13 @@ window.submitStore=async()=>{
     const logoUrl=await uploadToImgBB(storeLogoImage.file);
     let coverUrl="";
     if(storeCoverImage)coverUrl=await uploadToImgBB(storeCoverImage.file);
-    const storeData={ownerUid:auth.currentUser.uid,ownerUsername:(myProfile&&myProfile.username)||"",ownerMemberNo:(myProfile&&myProfile.memberNo)||null,name,category,city,phone,description,logo:logoUrl,cover:coverUrl,workingHours:{openTime,closeTime,alwaysOpen},deliveryCompany,status:"pending",rejectReason:"",createdAt:Date.now(),approvedAt:null};
+    const bankInfo={
+      accountOwner:(document.getElementById("storeBankOwner")?.value||"").trim().slice(0,60),
+      bankName:(document.getElementById("storeBankName")?.value||"").trim().slice(0,50),
+      iban:(document.getElementById("storeBankIban")?.value||"").trim().slice(0,34),
+      accountNumber:(document.getElementById("storeBankAccount")?.value||"").trim().slice(0,30)
+    };
+    const storeData={ownerUid:auth.currentUser.uid,ownerUsername:(myProfile&&myProfile.username)||"",ownerMemberNo:(myProfile&&myProfile.memberNo)||null,name,category,city,phone,description,logo:logoUrl,cover:coverUrl,workingHours:{openTime,closeTime,alwaysOpen},deliveryCompany,bankInfo,status:"pending",rejectReason:"",createdAt:Date.now(),approvedAt:null};
     const ref=await addDoc(collection(db,"stores"),storeData);
     try{await updateDoc(doc(db,"profiles",auth.currentUser.uid),{storeId:ref.id});}catch(e){}
     showToast("✅ تم إرسال طلب فتح المتجر — سيظهر بعد موافقة الإدارة","success");
@@ -2839,6 +3021,7 @@ window.closeOverlay=()=>{
   if(cartOverlay)cartOverlay.classList.add("hidden");
   if(termsOverlay)termsOverlay.classList.add("hidden");
   if(privacyOverlay)privacyOverlay.classList.add("hidden");
+  if(feedbackOverlay)feedbackOverlay.classList.add("hidden");
   const cmp=document.getElementById("compareOverlay");if(cmp)cmp.classList.add("hidden");
   const dsh=document.getElementById("dashboardOverlay");if(dsh)dsh.classList.add("hidden");
   const eso=document.getElementById("editStoreOverlay");
