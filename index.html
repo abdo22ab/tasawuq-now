@@ -39,7 +39,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <style>
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:16px;line-height:1.5;overflow-x:hidden}
 @supports(padding:max(0px)){body{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}}
-:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0));width:100%;max-width:100%;overflow-x:hidden}
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -96,7 +96,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .card .cardViews{font-size:11.5px;color:var(--teal-dark);font-weight:700;margin-top:2px}
 .card .actions{display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .waBtn{flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;background:var(--wa);color:#fff}
-.callBtn{flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;background:var(--restaurant);color:#fff}
+.callBtn{flex:1 1 auto;border:none;border-radius:9px;padding:7px 0;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;background:var(--call);color:#fff}
 .cartAddBtn{flex:1 1 auto;border:none;border-radius:9px;padding:8px 0;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;text-align:center;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;display:flex;align-items:center;justify-content:center;gap:5px}
 .cartAddBtn.added{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff}
 .iconBtn2{width:32px;height:32px;flex:0 0 auto;border:none;border-radius:9px;cursor:pointer;font-size:14.5px;display:flex;align-items:center;justify-content:center}
@@ -356,7 +356,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .cartStoreLine{background:#fff7e6;border:1px solid #f59e0b;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:800;color:#92400e;display:flex;align-items:center;gap:6px}
 .cartStoreLine.restaurant{background:#fdeceb;border-color:#e5484d;color:#b91c1c}
 .btnWhatsBig{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--wa);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
-.btnCallBig{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--restaurant);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.btnCallBig{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--call);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
 .btnClearCart{width:100%;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--danger);background:#fdeceb;cursor:pointer;font-family:inherit}
 .cartEmptyBox{text-align:center;padding:50px 20px;color:var(--muted)}
 .cartEmptyBox .icon{font-size:60px;margin-bottom:10px;opacity:.5}
@@ -1362,7 +1362,7 @@ function hasViewedOnDevice(id){try{const v=JSON.parse(localStorage.getItem('view
 function markViewedOnDevice(id){try{let v=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!v.includes(id)){v.push(id);if(v.length>300)v=v.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(v));}}catch(e){}}
 async function incrementViews(id){try{if(hasViewedOnDevice(id))return;markViewedOnDevice(id);await updateDoc(doc(db,"posts",id),{views:increment(1)});}catch(e){}}
 
-/* ===== ✅ إصلاح 1: incrementWhatsappClick يدعم المتاجر والإعلانات ===== */
+/* ===== ✅ إصلاح: incrementWhatsappClick يدعم المتاجر والإعلانات ===== */
 async function incrementWhatsappClick(id, type){
   if(!id)return;
   type = type || 'post';
@@ -1708,13 +1708,13 @@ const images=getImages(p);const dots=dotsHtml(images);
 const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
 const isRestaurantPost = postStore ? isRestaurantStore(postStore) : (p.category === RESTAURANT_CATEGORY);
 
-/* ===== ✅ إصلاح 2: أزرار الإعلان — واتساب + اتصال مباشر + stopPropagation + cleanPhone ===== */
+/* ===== ✅ أزرار الإعلان: واتساب أخضر + اتصال أحمر + <a href> ===== */
 const cleanPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn = (p.phone && !isSold)
   ? (isRestaurantPost
-      ? `<button class="callBtn" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post');window.location.href='tel:${escapeHtml(cleanPhone)}'">📞 اتصل</button>`
+      ? `<a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل</a>`
       : `<button class="waBtn" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">واتساب</button>
-         <button class="callBtn" style="background:#0284c7" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post');window.location.href='tel:${escapeHtml(cleanPhone)}'">اتصال</button>`)
+         <a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">اتصال</a>`)
   : "";
 
 const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id}')">✏️</button>`:"";
@@ -1772,13 +1772,13 @@ else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMe
 if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
 const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openStore('${p.storeId}',false,'post')">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
 
-/* ===== ✅ إصلاح: أزرار تفاصيل الإعلان — واتساب + اتصال مباشر ===== */
+/* ===== ✅ أزرار تفاصيل الإعلان: واتساب أخضر + اتصال أحمر ===== */
 const cleanPPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn = (p.phone && !isSold)
   ? (isRestaurantPost
-      ? `<button class="btnMain" style="background:var(--restaurant);margin-bottom:8px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post');window.location.href='tel:${escapeHtml(cleanPPhone)}'">📞 اتصل بالمطعم</button>`
+      ? `<a href="tel:${cleanPPhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل بالمطعم</a>`
       : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
-         <button class="btnMain" style="background:#0284c7;margin-bottom:8px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post');window.location.href='tel:${escapeHtml(cleanPPhone)}'">📞 اتصال هاتفي مباشر</button>`)
+         <a href="tel:${cleanPPhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي مباشر</a>`)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
@@ -2300,13 +2300,13 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
-  /* ===== ✅ إصلاح 3: أزرار الاتصال في المتجر — stopPropagation + cleanPhone + type='store' ===== */
+  /* ===== ✅ أزرار المتجر: واتساب أخضر + اتصال أحمر ===== */
   const cleanStorePhone = String(store.phone||'').replace(/[^0-9+]/g,'');
   const contactStoreBtn = store.phone
     ? (isRestaurant
-        ? `<button class="btnMain" style="background:var(--restaurant);margin-bottom:8px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store');window.location.href='tel:${escapeHtml(cleanStorePhone)}'">📞 اتصل بالمطعم</button>`
+        ? `<a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
         : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
-           <button class="btnMain" style="background:#0284c7;margin-bottom:8px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store');window.location.href='tel:${escapeHtml(cleanStorePhone)}'">📞 اتصال هاتفي بالمتجر</button>`)
+           <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
     : "";
 
   const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
@@ -2827,7 +2827,7 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
-/* ===== ✅ إصلاح 4: closeOverlay يمسح _tempStoreData ===== */
+/* ===== closeOverlay يمسح _tempStoreData ===== */
 window.closeOverlay=()=>{
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
@@ -2999,7 +2999,7 @@ if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 
-/* ===== ✅ إصلاح 5: tryApplyPendingUpgrade ينتظر تحميل posts ===== */
+/* ✅ tryApplyPendingUpgrade ينتظر تحميل posts */
 if(isAdmin && pendingAutoUpgrade){
   const checkUpgrade=()=>{
     if(allPosts.length>0){tryApplyPendingUpgrade();}
@@ -3008,7 +3008,7 @@ if(isAdmin && pendingAutoUpgrade){
   setTimeout(checkUpgrade,1500);
 }
 
-/* ===== ✅ إصلاح 6: autoDeleteOldExpired ينتظر تحميل posts ===== */
+/* ✅ autoDeleteOldExpired ينتظر تحميل posts */
 if(isAdmin){
   const checkAutoDelete=()=>{
     if(allPosts.length>0){autoDeleteOldExpired();}
@@ -3039,7 +3039,7 @@ renderPosts();
 }
 });
 
-/* ===== ✅ إصلاح 7: logout يمسح userLimitsCache ===== */
+/* ✅ logout يمسح userLimitsCache */
 window.logout=()=>{
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   signOut(auth);
