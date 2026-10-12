@@ -1712,7 +1712,6 @@ const wanted=isWanted(p);
 const images=getImages(p);const dots=dotsHtml(images);
 const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
 const isRestaurantPost = postStore ? isRestaurantStore(postStore) : (p.category === RESTAURANT_CATEGORY);
-
 const cleanPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn = (p.phone && !isSold)
   ? (isRestaurantPost
@@ -1720,7 +1719,6 @@ const contactBtn = (p.phone && !isSold)
       : `<button class="waBtn" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">واتساب</button>
          <a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">اتصال</a>`)
   : "";
-
 const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const renewBtn=canDelete && !isSold?`<button class="iconBtn2 renewBtn" onclick="renewPost('${p.id}',event)" title="تجديد 30 يوم">🔄</button>`:"";
@@ -1830,7 +1828,7 @@ const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;b
 const discPct=getDiscountPercent(p);
 const priceHtml=discPct>0?`<div style="margin:6px 0"><span class="originalPrice" style="font-size:15px">${p.originalPrice} د.ل</span><span class="discountPrice" style="font-size:24px">${p.price} د.ل</span><span style="background:#e5484d;color:#fff;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;margin-right:8px">🔥 خصم ${discPct}%</span></div>`:`<div class="price" style="font-size:20px">${p.price!=null?p.price+" د.ل":""}</div>`;
 updateSEOMeta(p);
-/* ملاحظة: حذفنا زر closeOnImg من داخل الصورة — أصبح زر الرجوع في الـHeader */
+/* ملاحظة: حذفنا زر closeOnImg — أصبح زر الرجوع في الـ Header */
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 window.scrollTo(0,0);
