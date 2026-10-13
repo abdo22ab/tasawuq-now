@@ -233,15 +233,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .adPopupInner{position:relative;max-width:92vw;max-height:85vh}
 .adPopupInner img{max-width:100%;max-height:85vh;border-radius:14px;display:block}
 .adClose{position:absolute;top:10px;left:10px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.95);color:#1f2937;border:none;font-size:16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;font-family:inherit;padding:0}
-#splashScreen{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#38bdf8,#0284c7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s,visibility .6s}
-#splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none}
-#splashScreen .splashLogo{width:120px;height:120px;border-radius:28px;background:#fff;padding:6px}
-#splashScreen .splashName{color:#fff;font-size:26px;font-weight:800}
-#splashScreen .splashLoader{display:flex;gap:8px;margin-top:14px}
-#splashScreen .splashLoader span{width:10px;height:10px;border-radius:50%;background:#fff;animation:bounce 1.2s infinite}
-#splashScreen .splashLoader span:nth-child(2){animation-delay:.15s}
-#splashScreen .splashLoader span:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
 .authOption{width:100%;padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px}
 .authOption .icon{font-size:20px}
 .authOption.disabled{opacity:.6;cursor:not-allowed;background:#f9fafb;position:relative}
@@ -539,13 +530,19 @@ html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 html.dark-mode .overlay.fullscreen{background:var(--bg)}
 html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-bottom-color:var(--border)}
 </style>
+</head>
 <body>
 
-<div id="splashScreen">
-<img src="icon-192.png" alt="تسوق الآن" class="splashLogo" onerror="this.style.display='none'">
-<div class="splashName">تسوق الآن</div>
-<div class="splashLoader"><span></span><span></span><span></span></div>
+<!-- 🎬 شاشة البداية بالفيديو -->
+<div id="videoSplash" style="position:fixed;inset:0;background:#0284c7;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s ease,visibility .6s ease;overflow:hidden;">
+<video id="splashVideo" autoplay muted playsinline loop poster="icon-512.png" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+<source src="1000068463.mp4" type="video/mp4">
+</video>
+<div style="position:relative;z-index:2;margin-top:auto;margin-bottom:60px;background:rgba(2,132,199,0.85);color:#fff;padding:12px 28px;border-radius:999px;font-size:18px;font-weight:800;border:1px solid rgba(255,255,255,0.4);font-family:'Cairo',sans-serif;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);">
+مرحباً بكم في تسوق الآن 🛍️
 </div>
+</div>
+
 <div class="topbar" id="mainTopbar">
 <div class="topbarActions">
 <button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
@@ -832,7 +829,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
-<!-- 💳 معلومات الدفع (جديد) -->
 <div class="field">
 <label>💳 معلومات الدفع (اختياري)</label>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
@@ -897,7 +893,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </label>
 </div>
 
-<!-- 💳 معلومات الدفع (تعديل) -->
 <div class="field">
 <label>💳 معلومات الدفع (اختياري)</label>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
@@ -966,7 +961,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="limitsList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<!-- 💳 صفحة تفاصيل الإعلان (صفحة كاملة) -->
 <div id="postOverlay" class="overlay fullscreen hidden">
 <div class="sheet">
 <div class="screenHeader" style="position:sticky;top:0;z-index:20">
@@ -1006,7 +1000,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 <div id="sellerOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><div id="sellerContent"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<!-- 💬 نموذج الاقتراحات والشكاوى (جديد) -->
 <div id="feedbackOverlay" class="overlay hidden">
 <div class="sheet">
 <h3 style="text-align:center">💬 اقتراح أو شكوى</h3>
@@ -1141,8 +1134,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-
-setTimeout(()=>{const s=document.getElementById('splashScreen');if(s){s.classList.add('hide');setTimeout(()=>s.remove(),700);}},1800);
 
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
@@ -1303,7 +1294,7 @@ const feedbackOverlay=document.getElementById("feedbackOverlay");
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
 
-/* ===== 💬 Feedback (اقتراحات وشكاوى) ===== */
+/* ===== Feedback ===== */
 window.openFeedback=()=>{
   const t=document.getElementById("fbType");
   const m=document.getElementById("fbMessage");
@@ -1672,7 +1663,6 @@ window.toggleStoreQR=()=>{
   } else { box.style.display="none"; }
 };
 
-/* ===== Copy to clipboard + Receipt (جديد) ===== */
 window.copyToClipboard=async(text,label)=>{
   try{
     await navigator.clipboard.writeText(text);
@@ -1897,7 +1887,7 @@ return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><
 }).join("");
 }
   
-/* ===== Post Detail (صفحة كاملة) ===== */
+/* ===== Post Detail ===== */
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);if(!p)return;
 const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&me.uid===p.uid;const isMyStorePost=myStore&&p.storeId===myStore.id;
@@ -2454,7 +2444,6 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
            <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
     : "";
 
-  /* ===== 💳 قسم معلومات الدفع (جديد — 4 حقول) ===== */
   const bi = store.bankInfo || {};
   const hasIban = bi.iban && bi.iban.trim();
   const hasAccount = bi.accountNumber && bi.accountNumber.trim();
@@ -3253,5 +3242,25 @@ window.addEventListener('load',()=>{
 });
 
 </script>
+
+<!-- 🎬 Script شاشة الفيديو -->
+<script>
+(function(){
+  function hideVideoSplash(){
+    const s=document.getElementById("videoSplash");
+    if(!s)return;
+    s.style.opacity="0";
+    s.style.visibility="hidden";
+    setTimeout(()=>{try{s.remove();}catch(e){}},700);
+  }
+  window.skipVideoSplash=hideVideoSplash;
+  window.addEventListener("DOMContentLoaded",()=>{
+    setTimeout(hideVideoSplash,3500);
+    const v=document.getElementById("splashVideo");
+    if(v){v.addEventListener("error",()=>setTimeout(hideVideoSplash,800));}
+  });
+})();
+</script>
+
 </body>
 </html>
