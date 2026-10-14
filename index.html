@@ -533,9 +533,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </head>
 <body>
 
-<!-- 🎬 شاشة البداية بالفيديو -->
+<!-- 🎬 شاشة البداية بالفيديو (بدون poster) -->
 <div id="videoSplash" style="position:fixed;inset:0;background:#0284c7;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s ease,visibility .6s ease;overflow:hidden;">
-<video id="splashVideo" autoplay muted playsinline loop poster="icon-512.png" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+<video id="splashVideo" autoplay muted playsinline loop style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
 <source src="1000068463.mp4" type="video/mp4">
 </video>
 <div style="position:relative;z-index:2;margin-top:auto;margin-bottom:60px;background:rgba(2,132,199,0.85);color:#fff;padding:12px 28px;border-radius:999px;font-size:18px;font-weight:800;border:1px solid rgba(255,255,255,0.4);font-family:'Cairo',sans-serif;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);">
@@ -1886,7 +1886,7 @@ const priceHTML=discPct>0?`<div class="price"><span class="originalPrice">${p.or
 return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
-  
+
 /* ===== Post Detail ===== */
 window.openPost=(id)=>{
 const p=allPosts.find(x=>x.id===id);if(!p)return;
@@ -2563,7 +2563,7 @@ window.saveStoreEdits=async()=>{
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
   finally{btn.disabled=false;btn.textContent="💾 حفظ التعديلات";}
 };
-  
+
 /* ===== Seller Profile ===== */
 function startFollowingListener(user){
   stopFollowingListener();
@@ -3263,4 +3263,4 @@ window.addEventListener('load',()=>{
 </script>
 
 </body>
-</html>
+</html> 
