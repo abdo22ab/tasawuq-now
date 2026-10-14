@@ -1310,52 +1310,48 @@ window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
 
 /* ===== Store Helpers ===== */
-window.loadStoreHelpers = (storeId) => {
-  const store = allStores.find(s => s.id === storeId);
-  if (!store) { currentStoreHelpers = []; renderStoreHelpersList(); return; }
-  currentStoreHelpers = Array.isArray(store.helpers) ? [...store.helpers] : [];
+window.loadStoreHelpers=(storeId)=>{
+  const store=allStores.find(s=>s.id===storeId);
+  if(!store){currentStoreHelpers=[];renderStoreHelpersList();return;}
+  currentStoreHelpers=Array.isArray(store.helpers)?[...store.helpers]:[];
   renderStoreHelpersList();
 };
-
-function renderStoreHelpersList() {
-  const box = document.getElementById("storeHelpersList");
-  if (!box) return;
-  if (currentStoreHelpers.length === 0) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">لا يوجد مساعدين بعد</div>';
+function renderStoreHelpersList(){
+  const box=document.getElementById("storeHelpersList");
+  if(!box)return;
+  if(currentStoreHelpers.length===0){
+    box.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">لا يوجد مساعدين بعد</div>';
     return;
   }
-  box.innerHTML = currentStoreHelpers.map((email, i) => `
+  box.innerHTML=currentStoreHelpers.map((email,i)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
       <span style="font-size:12.5px;direction:ltr;word-break:break-all;flex:1">${escapeHtml(email)}</span>
       <button onclick="removeStoreHelper(${i})" style="background:#fdeceb;color:#e5484d;border:none;padding:6px 10px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️</button>
     </div>
   `).join("");
 }
-
-window.addStoreHelper = () => {
-  const input = document.getElementById("newHelperEmail");
-  const email = (input.value || "").trim().toLowerCase();
-  if (!email) { showToast("⚠️ اكتب الإيميل", "warn"); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast("❌ إيميل غير صحيح", "error"); return; }
-  if (currentStoreHelpers.includes(email)) { showToast("⚠️ موجود مسبقاً", "warn"); return; }
-  if (currentStoreHelpers.length >= 10) { showToast("⚠️ الحد الأقصى 10 مساعدين", "warn"); return; }
+window.addStoreHelper=()=>{
+  const input=document.getElementById("newHelperEmail");
+  const email=(input.value||"").trim().toLowerCase();
+  if(!email){showToast("⚠️ اكتب الإيميل","warn");return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast("❌ إيميل غير صحيح","error");return;}
+  if(currentStoreHelpers.includes(email)){showToast("⚠️ موجود مسبقاً","warn");return;}
+  if(currentStoreHelpers.length>=10){showToast("⚠️ الحد الأقصى 10 مساعدين","warn");return;}
   currentStoreHelpers.push(email);
-  input.value = "";
+  input.value="";
   renderStoreHelpersList();
-  showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات", "success", 3000);
+  showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات","success",3000);
 };
-
-window.removeStoreHelper = (index) => {
-  if (!confirm("حذف هذا المساعد؟")) return;
-  currentStoreHelpers.splice(index, 1);
+window.removeStoreHelper=(index)=>{
+  if(!confirm("حذف هذا المساعد؟"))return;
+  currentStoreHelpers.splice(index,1);
   renderStoreHelpersList();
-  showToast("✅ تم الحذف — لا تنسى حفظ التعديلات", "success", 3000);
+  showToast("✅ تم الحذف — لا تنسى حفظ التعديلات","success",3000);
 };
-
-window.isStoreHelper = (storeId, userEmail) => {
-  if (!userEmail) return false;
-  const store = allStores.find(s => s.id === storeId);
-  if (!store || !Array.isArray(store.helpers)) return false;
+window.isStoreHelper=(storeId,userEmail)=>{
+  if(!userEmail)return false;
+  const store=allStores.find(s=>s.id===storeId);
+  if(!store||!Array.isArray(store.helpers))return false;
   return store.helpers.includes(userEmail.toLowerCase());
 };
 
@@ -1369,7 +1365,6 @@ window.openFeedback=()=>{
   if(c)c.value="";
   feedbackOverlay.classList.remove("hidden");
 };
-
 window.submitFeedback=async()=>{
   const type=document.getElementById("fbType").value;
   const message=(document.getElementById("fbMessage").value||"").trim();
@@ -1479,7 +1474,6 @@ function renderRecentlyViewed(){
 const searchInputEl=document.getElementById("searchInput");
 const clearSearchBtnEl=document.getElementById("clearSearchBtn");
 try{const saved=localStorage.getItem('lastSearch');if(saved && searchInputEl){searchInputEl.value=saved;if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';}}catch(e){}
-// ✅ debounce البحث
 let _searchDebounceTimer=null;
 if(searchInputEl){
   searchInputEl.addEventListener('input',function(){
@@ -1563,12 +1557,12 @@ function hasViewedOnDevice(id){try{const v=JSON.parse(localStorage.getItem('view
 function markViewedOnDevice(id){try{let v=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!v.includes(id)){v.push(id);if(v.length>300)v=v.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(v));}}catch(e){}}
 async function incrementViews(id){try{if(hasViewedOnDevice(id))return;markViewedOnDevice(id);await updateDoc(doc(db,"posts",id),{views:increment(1)});}catch(e){}}
 
-async function incrementWhatsappClick(id, type){
+async function incrementWhatsappClick(id,type){
   if(!id)return;
-  type = type || 'post';
+  type=type||'post';
   try{
-    const coll = (type === 'store') ? 'stores' : 'posts';
-    await updateDoc(doc(db, coll, id), {whatsappClicks: increment(1)});
+    const coll=(type==='store')?'stores':'posts';
+    await updateDoc(doc(db,coll,id),{whatsappClicks:increment(1)});
   }catch(e){}
 }
 async function incrementFavoritesCount(postId,delta){if(!postId)return;try{await updateDoc(doc(db,"posts",postId),{favoritesCount:increment(delta)});}catch(e){}}
@@ -1642,9 +1636,9 @@ window.openStoreRating=async(storeId)=>{
   const comment=prompt("💬 تعليق (اختياري):",mine?(mine.comment||""):"")||"";
   try{
     await setDoc(doc(db,"storeRatings",storeId+"_"+me.uid),{
-      storeId, raterUid:me.uid,
+      storeId,raterUid:me.uid,
       raterName:(myProfile&&myProfile.name)||me.displayName||"مستخدم",
-      stars:s, comment:comment.trim().slice(0,300), createdAt:Date.now()
+      stars:s,comment:comment.trim().slice(0,300),createdAt:Date.now()
     });
     delete allStoreRatings[storeId];
     await loadStoreRatings(storeId);
@@ -1670,7 +1664,7 @@ window.updateDiscountPreview=()=>{
     box.textContent=`🔥 خصم ${pct}% — سيظهر شارة على المنتج`;
   } else { box.textContent=""; }
 };
-window.setStoreSort=(sort)=>{
+ window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
     const el=document.getElementById(id);
@@ -1920,9 +1914,9 @@ const expired=isExpired(p);const days=daysLeft(p);const isSold=!!p.sold;
 const wanted=isWanted(p);
 const images=getImages(p);const dots=dotsHtml(images);
 const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
-const isRestaurantPost = postStore ? isRestaurantStore(postStore) : (p.category === RESTAURANT_CATEGORY);
-const cleanPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
-const contactBtn = (p.phone && !isSold)
+const isRestaurantPost=postStore?isRestaurantStore(postStore):(p.category===RESTAURANT_CATEGORY);
+const cleanPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
+const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
       ? `<a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل</a>`
       : `<button class="waBtn" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">واتساب</button>
@@ -1977,15 +1971,15 @@ const images=getImages(p);const dots=dotsHtml(images);
 const thumbsHtml=images.length>1?`<div class="thumbsRow" id="postThumbs">${images.map((u,i)=>`<div class="thumbItem${i===0?' active':''}" onclick="event.stopPropagation();scrollToPostImage('${p.id}',${i})"><img src="${escapeHtml(u)}" loading="lazy"></div>`).join("")}</div>`:"";
 const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف.</div>`;
 const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
-const isRestaurantPost = postStore ? isRestaurantStore(postStore) : (p.category === RESTAURANT_CATEGORY);
+const isRestaurantPost=postStore?isRestaurantStore(postStore):(p.category===RESTAURANT_CATEGORY);
 let sellerTags="";
 if(p.storeId){sellerTags+=` <span class="storeBadge">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`;}
 else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
 if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
 const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
 
-const cleanPPhone = String(p.phone||'').replace(/[^0-9+]/g,'');
-const contactBtn = (p.phone && !isSold)
+const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
+const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
       ? `<a href="tel:${cleanPPhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل بالمطعم</a>`
       : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
@@ -2051,6 +2045,9 @@ setTimeout(()=>{
 },50);
 };
 
+// ==========================================
+// ✅ savePost مع التعديلات (retrieve from sessionStorage)
+// ==========================================
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!window._isStorePost;
@@ -2064,8 +2061,8 @@ const saveBtn=document.getElementById("saveBtn");
 const wasEditing=!!editingPostId;
 const userPhone=(myProfile&&myProfile.phone)||"";
 const isStorePostFlag=!!window._isStorePost;
-const storeForPhone = isStorePostFlag && _tempStoreData ? _tempStoreData : myStore;
-const phone = (isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : userPhone;
+const storeForPhone=isStorePostFlag && _tempStoreData ? _tempStoreData : myStore;
+const phone=(isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : userPhone;
 const adType=document.querySelector('input[name="adType"]:checked')?.value||"offer";
 const originalPrice=parseFloat(document.getElementById("originalPrice")?.value)||0;
 if(!phone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
@@ -2077,7 +2074,16 @@ if(!city){showToast("الرجاء اختيار المدينة","warn");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){showToast("⚠️ يجب الموافقة على الشروط والتعهد القانوني قبل النشر","warn");return;}
 const bad=checkContent(title,description);
 if(bad){showToast(`❌ لا يمكن نشر الإعلان — يحتوي على كلمة ممنوعة (${bad.word})`,"error");return;}
-const storeToUse = isStore && _tempStoreData ? _tempStoreData : myStore;
+
+// 🆕 استرجع من sessionStorage لو _tempStoreData فاضي
+if(isStore && !_tempStoreData){
+  try{
+    const saved=sessionStorage.getItem('_tempStoreData');
+    if(saved) _tempStoreData=JSON.parse(saved);
+  }catch(e){}
+}
+
+const storeToUse=isStore && _tempStoreData ? _tempStoreData : myStore;
 if(!wasEditing){
   if(isStore){
     if(!storeToUse||storeToUse.status!=="approved"){showToast("❌ المتجر غير معتمد","error");return;}
@@ -2128,13 +2134,19 @@ else{
 }
 editingPostId=null;
 _tempStoreData=null;
+try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
 document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
 if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
 if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
 selectedImages=[];renderImagePicker();
 if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
 }catch(e){showToast("خطأ أثناء الحفظ: "+e.message,"error");}
-finally{saveBtn.disabled=false;saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";_tempStoreData=null;}
+finally{
+  saveBtn.disabled=false;
+  saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";
+  _tempStoreData=null;
+  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+}
 };
 
 window.onAdTypeChange=()=>{
@@ -2227,7 +2239,7 @@ window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length=
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+  window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){
   const list=document.getElementById("limitsList");if(!list)return;
   if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3 إعلانات فردية · 20 إعلان متجر</span></div>";return;}
@@ -2499,7 +2511,10 @@ function renderStoresList(){
     return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
   }).join("");
 }
+// ✅ إصلاح #7: refreshOpenStore لا يعمل أثناء الفورم مفتوح
 window.refreshOpenStore=async(storeId)=>{
+  const formScreen=document.getElementById("form");
+  if(formScreen && !formScreen.classList.contains("hidden")) return;
   const sc=document.getElementById("storeScreen");
   if(!sc || sc.classList.contains("hidden"))return;
   if(window._currentStoreId!==storeId)return;
@@ -2529,22 +2544,22 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
-  const cleanStorePhone = String(store.phone||'').replace(/[^0-9+]/g,'');
-  const contactStoreBtn = store.phone
+  const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
+  const contactStoreBtn=store.phone
     ? (isRestaurant
         ? `<a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
         : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
            <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
     : "";
 
-  const bi = store.bankInfo || {};
-  const hasIban = bi.iban && bi.iban.trim();
-  const hasAccount = bi.accountNumber && bi.accountNumber.trim();
-  const hasBankInfo = hasIban || hasAccount;
-  let bankInfoHtml = "";
+  const bi=store.bankInfo || {};
+  const hasIban=bi.iban && bi.iban.trim();
+  const hasAccount=bi.accountNumber && bi.accountNumber.trim();
+  const hasBankInfo=hasIban || hasAccount;
+  let bankInfoHtml="";
   if(hasBankInfo){
-    const copyBtn = (val, label) => `<button onclick="copyToClipboard('${escapeHtml(val)}', '${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
-    bankInfoHtml = `<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
+    const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
+    bankInfoHtml=`<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
       <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
       <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
       ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
@@ -2591,6 +2606,7 @@ window.backFromStore=()=>{
   else{showCategoriesScreen();}
 };
 window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(String(phone||'').replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
+// ✅ إصلاح #1: goAddStorePost يحفظ في sessionStorage
 window.goAddStorePost=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
@@ -2732,9 +2748,9 @@ window.saveMyPhone=async()=>{
     }
     return;
   }
-  let confirmMsg, updates;
+  let confirmMsg,updates;
   if(!oldPhone){confirmMsg=`هل تريد حفظ رقم الواتساب: ${v.value}؟\n\n⚠️ سيظهر في كل إعلاناتك.`;updates={phone:v.value};}
-  else{confirmMsg=`هل تريد تغيير رقم الواتساب من ${oldPhone} إلى ${v.value}؟\n\n⚠️ هذه فرصتك الوحيدة للتعديل!`;updates={phone:v.value, phoneEditsCount:1};}
+  else{confirmMsg=`هل تريد تغيير رقم الواتساب من ${oldPhone} إلى ${v.value}؟\n\n⚠️ هذه فرصتك الوحيدة للتعديل!`;updates={phone:v.value,phoneEditsCount:1};}
   if(!confirm(confirmMsg))return;
   try{
     await updateDoc(doc(db,"profiles",me.uid),updates);
@@ -3107,6 +3123,7 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
+// ✅ إصلاح #6: closeOverlay نظيف (بدون _tempStoreData=null)
 window.closeOverlay=()=>{
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
@@ -3155,14 +3172,14 @@ window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";
 function renderSubCats(){if(!subCatsRow)return;const subs=SUB_CATEGORIES[currentCategory];if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}subCatsRow.classList.remove("hidden");subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;}
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 
-// ✅ إصلاح: openFormScreen يحفظ _tempStoreData قبل closeOverlay
+// ✅ إصلاح #2 (مُعزّز): openFormScreen يحفظ _tempStoreData قبل closeOverlay
 function openFormScreen(){
-  const _preserved = _tempStoreData;
+  const _preserved=_tempStoreData;
   home.classList.add("hidden");
   form.classList.remove("hidden");
   categoriesScreen.classList.add("hidden");
   closeOverlay();
-  _tempStoreData = _preserved;
+  _tempStoreData=_preserved;
 }
 window.startAddPost=async()=>{
   if(!auth.currentUser){pendingAction="postType";authOverlay.classList.remove("hidden");return;}
@@ -3174,9 +3191,16 @@ window.startAddPost=async()=>{
   postTypeOverlay.classList.remove("hidden");
 };
 window.chooseOpenStoreFromPlus=()=>{closeOverlay();setTimeout(()=>startOpenStore(),300);};
-window.chooseIndividualPost=()=>{closeOverlay();_tempStoreData=null;showForm();};
-window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="approved"){_tempStoreData={id:myStore.id,name:myStore.name,category:myStore.category,city:myStore.city,phone:myStore.phone||"",status:myStore.status};}showForm(true);};
+// ✅ إصلاح #4: chooseIndividualPost يمسح من sessionStorage
+window.chooseIndividualPost=()=>{
+  closeOverlay();
+  _tempStoreData=null;
+  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  showForm();
+};
+window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="approved"){const data={id:myStore.id,name:myStore.name,category:myStore.category,city:myStore.city,phone:myStore.phone||"",status:myStore.status};_tempStoreData=data;try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}}showForm(true);};
 
+// ✅ إصلاح #3: showForm يسترجع من sessionStorage
 window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!isStorePost;
@@ -3189,7 +3213,7 @@ if(isStore && !_tempStoreData){
   }catch(e){}
 }
 
-const storeForPost = isStore && _tempStoreData ? _tempStoreData : myStore;
+const storeForPost=isStore && _tempStoreData ? _tempStoreData : myStore;
 if(isStore && (!storeForPost || storeForPost.status!=="approved")){showToast("⚠️ لا يمكنك النشر كمتجر — المتجر غير معتمد","warn");return;}
 if(!isStore && !isAdmin){
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
@@ -3202,7 +3226,7 @@ if(!isStore && !isAdmin){
 }
 editingPostId=null;
 window._isStorePost=isStore;
-const activeStore = isStore ? storeForPost : null;
+const activeStore=isStore ? storeForPost : null;
 document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+activeStore.name):"إضافة إعلان";
 document.getElementById("saveBtn").textContent="نشر الإعلان";
 document.getElementById("title").value="";document.getElementById("price").value="";
@@ -3229,7 +3253,7 @@ if(!auth.currentUser)return;
 const post=allPosts.find(p=>p.id===id);if(!post)return;
 editingPostId=id;
 window._isStorePost=!!post.storeId;
-if(post.storeId){_tempStoreData={id:post.storeId,name:post.storeName||"",category:post.storeCategory||post.category||"سيارات ومركبات",city:post.city||"",phone:post.storePhone||post.phone||"",status:"approved"};}
+if(post.storeId){const data={id:post.storeId,name:post.storeName||"",category:post.storeCategory||post.category||"سيارات ومركبات",city:post.city||"",phone:post.storePhone||post.phone||"",status:"approved"};_tempStoreData=data;try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}}
 document.getElementById("formHeaderTitle").textContent=post.storeId?"تعديل إعلان المتجر":"تعديل الإعلان";
 document.getElementById("saveBtn").textContent="حفظ التعديلات";
 document.getElementById("title").value=post.title||"";document.getElementById("price").value=post.price||"";
@@ -3324,7 +3348,7 @@ renderPosts();
 }
 });
 
-window.logout=()=>{Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);signOut(auth);};
+window.logout=()=>{Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);try{sessionStorage.removeItem('_tempStoreData');}catch(e){}signOut(auth);};
 
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
