@@ -2602,7 +2602,7 @@ window.goAddStorePost=(storeId)=>{
   if(!isOwner && !isAdminUser && !isHelper){showToast("❌ ليس لديك صلاحية لهذا المتجر","error");return;}
   if(store.status!=="approved"){showToast("❌ المتجر غير معتمد","error");return;}
   closeOverlay();
-  _tempStoreData={
+  const data={
     id:store.id,
     name:store.name||"",
     category:store.category||"سيارات ومركبات",
@@ -2612,6 +2612,8 @@ window.goAddStorePost=(storeId)=>{
     ownerUid:store.ownerUid,
     ownerEmail:store.ownerEmail||""
   };
+  _tempStoreData=data;
+  try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}
   setTimeout(()=>showForm(true),200);
 };
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
