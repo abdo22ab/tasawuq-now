@@ -3180,6 +3180,15 @@ window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="appro
 window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!isStorePost;
+
+// 🆕 استرجع من sessionStorage لو _tempStoreData فاضي
+if(isStore && !_tempStoreData){
+  try{
+    const saved=sessionStorage.getItem('_tempStoreData');
+    if(saved) _tempStoreData=JSON.parse(saved);
+  }catch(e){}
+}
+
 const storeForPost = isStore && _tempStoreData ? _tempStoreData : myStore;
 if(isStore && (!storeForPost || storeForPost.status!=="approved")){showToast("⚠️ لا يمكنك النشر كمتجر — المتجر غير معتمد","warn");return;}
 if(!isStore && !isAdmin){
