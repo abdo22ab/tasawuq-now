@@ -1912,8 +1912,12 @@ window.sendAIChat = async () => {
       setTimeout(()=>{ window._aiDraggingNow = false; }, 100);
     } else {
       window._aiDraggingNow = false;
+      // 🎯 ضغطة عادية → يفتح الشات
+      if(typeof window.toggleAIChat === 'function'){
+        window.toggleAIChat();
+      }
     }
-  });
+});
 
   btn.addEventListener('pointercancel', () => {
     isDragging = false;
