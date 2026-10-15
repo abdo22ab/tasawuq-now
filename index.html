@@ -39,7 +39,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <style>
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:16px;line-height:1.5;overflow-x:hidden}
 @supports(padding:max(0px)){body{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}}
-:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d;--purple:#8b5cf6;--pink:#ec4899}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0));width:100%;max-width:100%;overflow-x:hidden}
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -662,6 +662,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
 <option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
 <option>مطاعم وغداء</option><option>إلكترونيات</option>
+<option>الحيوانات والطيور</option><option>العطور</option>
 </select></div>
 <div class="field hidden" id="brandField"><label id="brandLabel">الماركة</label><select id="brand"></select></div>
 <div class="field"><label>المدينة</label><select id="city"></select>
@@ -799,6 +800,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
 <option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
 <option>مطاعم وغداء</option><option>إلكترونيات</option>
+<option>الحيوانات والطيور</option><option>العطور</option>
 </select></div>
 <div class="field"><label>المدينة</label><select id="storeCity"></select></div>
 <div class="field"><label>رقم الواتساب (من حسابك)</label><input id="storePhone" class="phoneInput" readonly placeholder="—"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يظهر تلقائيًا من حسابك</div></div>
@@ -879,6 +881,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
 <option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
 <option>مطاعم وغداء</option><option>إلكترونيات</option>
+<option>الحيوانات والطيور</option><option>العطور</option>
 </select></div>
 <div class="field"><label>📍 المدينة</label><select id="editStoreCity"></select></div>
 <div class="field"><label>📄 الوصف</label><textarea id="editStoreDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
@@ -1161,12 +1164,26 @@ const POST_DURATION_DAYS=30;
 const POST_DURATION_MS=POST_DURATION_DAYS*24*60*60*1000;
 const EXPIRED_GRACE_DAYS=7;
 const RESTAURANT_CATEGORY="مطاعم وغداء";
-const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","مطاعم وغداء","إلكترونيات"];
+const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
 const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاوازاكي","BMW","دوكاتي","KTM","هارلي ديفيدسون","تريومف","أبريليا","بياجيو","فيسبا","بولاريس","رويال إنفيلد","بينيللي","هوسكفارنا","CF Moto","بينجو","هوجان","دايون","أخرى"];
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
-const SUB_CATEGORIES={"سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},"دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},"موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},"لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS}};
+
+// 🆕 فئات الحيوانات
+const ANIMAL_TYPES=["كلاب","قطط","طيور","أغنام ومواشي","أرانب وقوارض","أسماك وزينة","خيول ودواب","زواحف","أخرى"];
+
+// 🆕 فئات العطور
+const PERFUME_TYPES=["عطور رجالية","عطور نسائية","عطور عربية","بخور وعود","مسك","ماركات عالمية","معطرات جسم","أخرى"];
+
+const SUB_CATEGORIES={
+  "سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
+  "دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},
+  "موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},
+  "لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS},
+  "الحيوانات والطيور":{title:"🐾 اختر النوع:",items:ANIMAL_TYPES},
+  "العطور":{title:"🌸 اختر النوع:",items:PERFUME_TYPES}
+};
 
 const CATEGORIES=[
 {name:"الكل",icon:"✨",iconName:"layout-grid",color:"#38bdf8"},
@@ -1187,7 +1204,9 @@ const CATEGORIES=[
 {name:"جمال وصحة",icon:"💆",iconName:"sparkles",color:"#ec4899"},
 {name:"مكياج",icon:"💄",iconName:"palette",color:"#e11d48"},
 {name:"مطاعم وغداء",icon:"🍽️",iconName:"utensils-crossed",color:"#dc2626"},
-{name:"إلكترونيات",icon:"🔌",iconName:"plug",color:"#0ea5e9"}
+{name:"إلكترونيات",icon:"🔌",iconName:"plug",color:"#0ea5e9"},
+{name:"الحيوانات والطيور",icon:"🐾",iconName:"paw-print",color:"#8b5cf6"},
+{name:"العطور",icon:"🌸",iconName:"spray-can",color:"#ec4899"}
 ];
 
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
@@ -1492,7 +1511,7 @@ function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHi
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
 function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
-function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
+function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
 
 window.showSearchDropdown=function(){
   const box=document.getElementById("searchDropdown"),input=document.getElementById("searchInput");
@@ -1664,7 +1683,7 @@ window.updateDiscountPreview=()=>{
     box.textContent=`🔥 خصم ${pct}% — سيظهر شارة على المنتج`;
   } else { box.textContent=""; }
 };
- window.setStoreSort=(sort)=>{
+  window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
     const el=document.getElementById(id);
@@ -2046,7 +2065,7 @@ setTimeout(()=>{
 };
 
 // ==========================================
-// ✅ savePost مع التعديلات (retrieve from sessionStorage)
+// ✅ savePost مع التعديلات
 // ==========================================
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
@@ -2511,7 +2530,6 @@ function renderStoresList(){
     return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
   }).join("");
 }
-// ✅ إصلاح #7: refreshOpenStore لا يعمل أثناء الفورم مفتوح
 window.refreshOpenStore=async(storeId)=>{
   const formScreen=document.getElementById("form");
   if(formScreen && !formScreen.classList.contains("hidden")) return;
@@ -2606,7 +2624,6 @@ window.backFromStore=()=>{
   else{showCategoriesScreen();}
 };
 window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(String(phone||'').replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
-// ✅ إصلاح #1: goAddStorePost يحفظ في sessionStorage
 window.goAddStorePost=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
@@ -3123,7 +3140,6 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
-// ✅ إصلاح #6: closeOverlay نظيف (بدون _tempStoreData=null)
 window.closeOverlay=()=>{
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
@@ -3152,9 +3168,40 @@ function populateCitySelects(){
   const esc=document.getElementById("editStoreCity");if(esc)esc.innerHTML=`<option value="">اختر المدينة</option>${g}`;
 }
 populateCitySelects();
-function populateBrandSelect(cat){const sel=document.getElementById("brand");if(!sel)return;let brands=[];if(cat==="سيارات ومركبات")brands=CAR_BRANDS;else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;sel.innerHTML=`<option value="">اختر الماركة (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");}
+function populateBrandSelect(cat){
+  const sel=document.getElementById("brand");if(!sel)return;
+  let brands=[];
+  if(cat==="سيارات ومركبات")brands=CAR_BRANDS;
+  else if(cat==="دراجات نارية")brands=MOTORCYCLE_BRANDS;
+  else if(cat==="موبايل وتابلت")brands=PHONE_BRANDS;
+  else if(cat==="لابتوب وكمبيوتر")brands=COMPUTER_BRANDS;
+  else if(cat==="الحيوانات والطيور")brands=ANIMAL_TYPES;
+  else if(cat==="العطور")brands=PERFUME_TYPES;
+  if(brands.length===0){sel.innerHTML='<option value="">اختر (اختياري)</option>';return;}
+  sel.innerHTML=`<option value="">اختر (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");
+}
 populateBrandSelect("سيارات ومركبات");
-window.onCategoryChange=()=>{const cat=document.getElementById("category").value;const bf=document.getElementById("brandField");const bl=document.getElementById("brandLabel");if(cat==="سيارات ومركبات"||cat==="دراجات نارية"||cat==="موبايل وتابلت"||cat==="لابتوب وكمبيوتر"){bf.classList.remove("hidden");bl.textContent="الماركة";populateBrandSelect(cat);}else{bf.classList.add("hidden");document.getElementById("brand").value="";}};
+window.onCategoryChange=()=>{
+  const cat=document.getElementById("category").value;
+  const bf=document.getElementById("brandField");
+  const bl=document.getElementById("brandLabel");
+  if(cat==="سيارات ومركبات"||cat==="دراجات نارية"||cat==="موبايل وتابلت"||cat==="لابتوب وكمبيوتر"){
+    bf.classList.remove("hidden");
+    bl.textContent="الماركة";
+    populateBrandSelect(cat);
+  }else if(cat==="الحيوانات والطيور"){
+    bf.classList.remove("hidden");
+    bl.textContent="النوع";
+    populateBrandSelect(cat);
+  }else if(cat==="العطور"){
+    bf.classList.remove("hidden");
+    bl.textContent="النوع";
+    populateBrandSelect(cat);
+  }else{
+    bf.classList.add("hidden");
+    document.getElementById("brand").value="";
+  }
+};
 
 (function(){
   const cr=document.getElementById("catsRow");
@@ -3169,10 +3216,15 @@ setTimeout(updateClearBtn,500);
 setTimeout(updateCompareUI,300);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
 window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")));renderSubCats();renderPosts();};
-function renderSubCats(){if(!subCatsRow)return;const subs=SUB_CATEGORIES[currentCategory];if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}subCatsRow.classList.remove("hidden");subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;}
+function renderSubCats(){
+  if(!subCatsRow)return;
+  const subs=SUB_CATEGORIES[currentCategory];
+  if(!subs){subCatsRow.classList.add("hidden");subCatsRow.innerHTML="";return;}
+  subCatsRow.classList.remove("hidden");
+  subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;
+}
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 
-// ✅ إصلاح #2 (مُعزّز): openFormScreen يحفظ _tempStoreData قبل closeOverlay
 function openFormScreen(){
   const _preserved=_tempStoreData;
   home.classList.add("hidden");
@@ -3191,7 +3243,6 @@ window.startAddPost=async()=>{
   postTypeOverlay.classList.remove("hidden");
 };
 window.chooseOpenStoreFromPlus=()=>{closeOverlay();setTimeout(()=>startOpenStore(),300);};
-// ✅ إصلاح #4: chooseIndividualPost يمسح من sessionStorage
 window.chooseIndividualPost=()=>{
   closeOverlay();
   _tempStoreData=null;
@@ -3200,19 +3251,15 @@ window.chooseIndividualPost=()=>{
 };
 window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="approved"){const data={id:myStore.id,name:myStore.name,category:myStore.category,city:myStore.city,phone:myStore.phone||"",status:myStore.status};_tempStoreData=data;try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}}showForm(true);};
 
-// ✅ إصلاح #3: showForm يسترجع من sessionStorage
 window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!isStorePost;
-
-// 🆕 استرجع من sessionStorage لو _tempStoreData فاضي
 if(isStore && !_tempStoreData){
   try{
     const saved=sessionStorage.getItem('_tempStoreData');
     if(saved) _tempStoreData=JSON.parse(saved);
   }catch(e){}
 }
-
 const storeForPost=isStore && _tempStoreData ? _tempStoreData : myStore;
 if(isStore && (!storeForPost || storeForPost.status!=="approved")){showToast("⚠️ لا يمكنك النشر كمتجر — المتجر غير معتمد","warn");return;}
 if(!isStore && !isAdmin){
