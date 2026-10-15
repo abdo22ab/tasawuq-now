@@ -465,6 +465,9 @@ html.dark-mode .sellerTier.bronze{background:#3a2f11;color:#f0d28a}
 html.dark-mode .sellerTier.silver{background:#232d42;color:#cbd5e1}
 html.dark-mode .sellerTier.gold{background:#3a2f11;color:#fde047}
 html.dark-mode .sellerTier.diamond{background:#1e1b4b;color:#a5b4fc}
+/* ===== AI Chat Button ===== */
+#aiChatBtn{touch-action:none;user-select:none;}
+#aiChatBtn:active{transform:scale(.92);}
 html.dark-mode{--bg:#0f1420;--card:#1a2233;--text:#e8edf5;--muted:#8b95a7;--border:#2a3446;--teal-light:#0c2942;--amber-light:#3a2f11}
 html.dark-mode body{background:var(--bg);color:var(--text)}
 html.dark-mode .topbar{background:#0c2942}
@@ -529,6 +532,8 @@ html.dark-mode .bannerEmpty{background:linear-gradient(135deg,#0c2942,#131a28);c
 html.dark-mode .bannerCarousel{background:#0c2942;border-color:#1c3a5c}
 html.dark-mode .overlay.fullscreen{background:var(--bg)}
 html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-bottom-color:var(--border)}
+html.dark-mode #aiChatWindow{background:#1a2233;border-color:#2a3446}
+html.dark-mode #aiChatMessages{background:#0f1420}
 </style>
 </head>
 <body>
@@ -1136,6 +1141,57 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
   <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
 </div>
 
+<!-- ===== 🤖 المساعد الذكي ===== -->
+<button id="aiChatBtn" style="position:fixed;bottom:90px;right:20px;z-index:1000;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;font-size:26px;cursor:grab;box-shadow:0 8px 24px rgba(139,92,246,.55);display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;transition:transform .15s;">
+💬
+</button>
+
+<div id="aiChatWindow" style="display:none;position:fixed;bottom:160px;right:20px;width:min(370px,calc(100vw - 40px));height:520px;max-height:calc(100vh - 200px);background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.28);z-index:1001;flex-direction:column;overflow:hidden;border:1px solid var(--border);">
+
+  <!-- رأس النافذة -->
+  <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:14px 16px;font-weight:800;display:flex;justify-content:space-between;align-items:center;flex:0 0 auto;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:22px;">🤖</span>
+      <div>
+        <div style="font-size:14.5px;">مساعد تسوق الآن</div>
+        <div style="font-size:11px;font-weight:600;opacity:.85;">🟢 متصل - يرد فوراً</div>
+      </div>
+    </div>
+    <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">×</button>
+  </div>
+
+  <!-- الرسائل -->
+  <div id="aiChatMessages" style="flex:1;overflow-y:auto;padding:14px;background:#f5f6f8;display:flex;flex-direction:column;gap:10px;">
+
+    <!-- رسالة الترحيب -->
+    <div style="text-align:right;">
+      <span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">
+        السلام عليكم 👋<br>
+        أنا مساعد <b>تسوق الآن</b>.<br>
+        كيف أقدر أساعدك اليوم؟
+      </span>
+    </div>
+
+    <!-- الخيارات السريعة -->
+    <div id="aiQuickOptions" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;margin-top:4px;">
+      <button onclick="aiQuickAsk('كيف أسجل حساب جديد؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📝 كيف أسجل؟</button>
+      <button onclick="aiQuickAsk('كيف أنشر إعلان؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📢 كيف أنشر إعلان؟</button>
+      <button onclick="aiQuickAsk('كيف أفتح متجر؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">🏪 كيف أفتح متجر؟</button>
+      <button onclick="aiQuickAsk('كيف أعدل رقم واتساب؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📱 تعديل رقمي</button>
+      <button onclick="aiQuickAsk('ليش إعلاني مرفوض؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">❌ إعلان مرفوض</button>
+      <button onclick="aiQuickAsk('كيف أتواصل مع الإدارة؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📞 تواصل مع الإدارة</button>
+    </div>
+
+  </div>
+
+  <!-- حقل الإدخال -->
+  <div style="display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid var(--border);flex:0 0 auto;">
+    <input id="aiChatInput" type="text" placeholder="اكتب سؤالك..." maxlength="300" style="flex:1;border:1px solid var(--border);border-radius:12px;padding:11px;font-family:inherit;font-size:14px;outline:none;" onkeypress="if(event.key==='Enter')sendAIChat()">
+    <button onclick="sendAIChat()" id="aiChatSendBtn" style="background:#8b5cf6;color:#fff;border:none;border-radius:12px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit;font-size:14px;">إرسال</button>
+  </div>
+
+</div>
+
 <div class="siteFooter">
 <div class="fBrand">🛒 تسوق الآن</div>
 <div class="fDisclaimer">
@@ -1151,6 +1207,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
@@ -1169,11 +1226,7 @@ const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هون�
 const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاوازاكي","BMW","دوكاتي","KTM","هارلي ديفيدسون","تريومف","أبريليا","بياجيو","فيسبا","بولاريس","رويال إنفيلد","بينيللي","هوسكفارنا","CF Moto","بينجو","هوجان","دايون","أخرى"];
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
-
-// 🆕 فئات الحيوانات
 const ANIMAL_TYPES=["كلاب","قطط","طيور","أغنام ومواشي","أرانب وقوارض","أسماك وزينة","خيول ودواب","زواحف","أخرى"];
-
-// 🆕 فئات العطور
 const PERFUME_TYPES=["عطور رجالية","عطور نسائية","عطور عربية","بخور وعود","مسك","ماركات عالمية","معطرات جسم","أخرى"];
 
 const SUB_CATEGORIES={
@@ -1683,6 +1736,192 @@ window.updateDiscountPreview=()=>{
     box.textContent=`🔥 خصم ${pct}% — سيظهر شارة على المنتج`;
   } else { box.textContent=""; }
 };
+
+/* ===== 🤖 المساعد الذكي — التهيئة ===== */
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+const aiModel = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+
+const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الليبي 🇱🇾 (منصة إعلانات مجانية).
+
+🎯 مهمتك:
+مساعد المستخدمين في استخدام الموقع فقط.
+
+📚 المعلومات المتاحة لك عن الموقع:
+- التسجيل: يدخل بحساب Google من زر "حسابي" في الأسفل
+- النشر: يضغط زر ➕ الأصفر في الأسفل، يختار إعلان فردي أو متجر
+- الإعلان الفردي: 5 صور، حد 3 إعلانات، مدة 30 يوم
+- المتجر: مجاني، يحتاج موافقة الأدمن، حد 20 منتج، يمكن إضافة مساعدين
+- تعديل الرقم: في "حسابي" → تعديل رقم الواتساب (فرصة واحدة فقط)
+- الرفض: إذا الإعلان مرفوض، المستخدم يقدر يعدله ويعيد الإرسال
+- التواصل: واتساب الإدارة 218928476784
+- الترقية: إعلان مميز بـ 5 دينار (7 أيام)، 10 دينار (15 يوم)، 18 دينار (30 يوم)
+- التقييم: كل مستخدم يقدر يقيّم البائع والمتجر
+- المفضلة: بحفظ الإعلانات في ❤️
+- المقارنة: يقدر يقارن 3 إعلانات
+
+⚠️ قواعد صارمة جداً:
+1. أجب بالعربية الليبية البسيطة
+2. الرد بحد أقصى 4 أسطر
+3. لا تخرج عن موضوع الموقع أبداً
+4. ارفض بلطف: السياسة، الدين، الجنس، العنف، الهاكينغ
+5. لا تطلب: أرقام هواتف، إيميلات، كلمات سر
+6. لا تعطي معلومات شخصية عن أي مستخدم
+7. لو ما تعرف: "تواصل مع الإدارة على واتساب 218928476784"
+8. استخدم إيموجي بسيط للتوضيح
+
+سؤال المستخدم: `;
+
+const AI_BLOCKED = ['سياسة','سياسي','رئيس','حكومة','انتخابات','حرب','دين','ديني','إسلام','مسيحي','يهودي','صلاة','جنس','جنسي','سكس','عاري','عنف','قتل','سلاح','بندقية','هاك','اختراق','فيروس','هاكر','كلمة سر','باسورد','مخدر','حشيش','كحول','احتيال','نصب عليك','سرقة بيانات'];
+const AI_DAILY_LIMIT = 30;
+
+function getAICount(){
+  try{ return parseInt(localStorage.getItem('aiCount_'+new Date().toDateString())||'0'); }catch(e){ return 0; }
+}
+function incAICount(){
+  try{ localStorage.setItem('aiCount_'+new Date().toDateString(), String(getAICount()+1)); }catch(e){}
+}
+
+window.toggleAIChat = () => {
+  const win = document.getElementById('aiChatWindow');
+  const isOpen = win.style.display === 'flex';
+  win.style.display = isOpen ? 'none' : 'flex';
+  if(!isOpen) setTimeout(()=>document.getElementById('aiChatInput').focus(),100);
+};
+
+window.aiQuickAsk = (question) => {
+  document.getElementById('aiChatInput').value = question;
+  window.sendAIChat();
+};
+
+window.sendAIChat = async () => {
+  const input = document.getElementById('aiChatInput');
+  const box = document.getElementById('aiChatMessages');
+  const btn = document.getElementById('aiChatSendBtn');
+  const quickOpts = document.getElementById('aiQuickOptions');
+  const msg = input.value.trim();
+
+  if(!msg) return;
+  if(quickOpts) quickOpts.style.display = 'none';
+
+  if(getAICount() >= AI_DAILY_LIMIT){
+    box.innerHTML += `<div style="text-align:right;"><span style="background:#fdeceb;color:#b91c1c;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.7;">🚫 وصلت للحد اليومي (${AI_DAILY_LIMIT} رسالة).<br>جرب غداً 🙏<br><br>للاستفسار:<br>واتساب <b>218928476784</b></span></div>`;
+    box.scrollTop = box.scrollHeight;
+    input.value='';
+    return;
+  }
+
+  const lower = msg.toLowerCase();
+  const foundBlocked = AI_BLOCKED.find(w => lower.includes(w));
+  if(foundBlocked){
+    box.innerHTML += `<div style="text-align:left;"><span style="background:#8b5cf6;color:#fff;padding:10px 14px;border-radius:14px 14px 14px 0;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.7;">${escapeHtml(msg)}</span></div>`;
+    box.innerHTML += `<div style="text-align:right;"><span style="background:#fef3c7;color:#92400e;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.7;">🌸 آسف، أنا مساعد التسوق فقط.<br><br>اسألني عن:<br>• كيف أنشر إعلان<br>• كيف أفتح متجر<br>• كيف أعدل رقمي<br>• معلومات عن الموقع</span></div>`;
+    box.scrollTop = box.scrollHeight;
+    input.value='';
+    return;
+  }
+
+  box.innerHTML += `<div style="text-align:left;"><span style="background:#8b5cf6;color:#fff;padding:10px 14px;border-radius:14px 14px 14px 0;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.7;">${escapeHtml(msg)}</span></div>`;
+  input.value='';
+  box.scrollTop = box.scrollHeight;
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  btn.style.opacity = '0.6';
+
+  const loadingId = 'aiLoading_'+Date.now();
+  box.innerHTML += `<div id="${loadingId}" style="text-align:right;"><span style="background:#e6f6fe;color:#0284c7;padding:10px 14px;border-radius:14px 14px 0 14px;display:inline-block;font-size:13.5px;">✍️ يكتب...</span></div>`;
+  box.scrollTop = box.scrollHeight;
+
+  try{
+    const result = await aiModel.generateContent(AI_SYSTEM_PROMPT + msg);
+    const response = result.response.text();
+
+    document.getElementById(loadingId)?.remove();
+    box.innerHTML += `<div style="text-align:right;"><span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">${escapeHtml(response).replace(/\n/g,'<br>')}</span></div>`;
+    incAICount();
+  }catch(e){
+    document.getElementById(loadingId)?.remove();
+    box.innerHTML += `<div style="text-align:right;"><span style="background:#fdeceb;color:#b91c1c;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.7;">❌ صار خطأ، جرب مرة ثانية.<br><br>للاستفسار:<br>واتساب <b>218928476784</b></span></div>`;
+    console.error('AI Error:', e);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'إرسال';
+    btn.style.opacity = '1';
+    box.scrollTop = box.scrollHeight;
+  }
+};
+
+/* ===== 🎯 زر عائم متحرك (Draggable) ===== */
+(function(){
+  const btn = document.getElementById('aiChatBtn');
+  if(!btn) return;
+
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
+  let offsetX = 0, offsetY = 0;
+
+  function initializePosition(){
+    const rect = btn.getBoundingClientRect();
+    btn.style.right = 'auto';
+    btn.style.bottom = 'auto';
+    btn.style.left = rect.left + 'px';
+    btn.style.top = rect.top + 'px';
+    btn.style.transform = 'translate(0,0)';
+  }
+
+  btn.addEventListener('pointerdown', (e) => {
+    initializePosition();
+    const rect = btn.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    isDragging = true;
+    btn.style.cursor = 'grabbing';
+    btn.style.transition = 'none';
+    try{ btn.setPointerCapture(e.pointerId); }catch(err){}
+  });
+
+  btn.addEventListener('pointermove', (e) => {
+    if(!isDragging) return;
+    offsetX = startLeft + (e.clientX - startX);
+    offsetY = startTop + (e.clientY - startY);
+
+    const maxX = window.innerWidth - btn.offsetWidth - 5;
+    const maxY = window.innerHeight - btn.offsetHeight - 5;
+    offsetX = Math.max(5, Math.min(maxX, offsetX));
+    offsetY = Math.max(5, Math.min(maxY, offsetY));
+
+    btn.style.left = offsetX + 'px';
+    btn.style.top = offsetY + 'px';
+  });
+
+  btn.addEventListener('pointerup', (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    btn.style.cursor = 'grab';
+    btn.style.transition = 'transform .15s';
+
+    try{
+      localStorage.setItem('aiBtnPos', JSON.stringify({ x: offsetX, y: offsetY }));
+    }catch(err){}
+  });
+
+  btn.addEventListener('pointercancel', () => {
+    isDragging = false;
+    btn.style.cursor = 'grab';
+  });
+
+  try{
+    const saved = JSON.parse(localStorage.getItem('aiBtnPos') || 'null');
+    if(saved && typeof saved.x === 'number' && typeof saved.y === 'number'){
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      btn.style.left = saved.x + 'px';
+      btn.style.top = saved.y + 'px';
+    }
+  }catch(err){}
+})();
   window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
@@ -2064,9 +2303,6 @@ setTimeout(()=>{
 },50);
 };
 
-// ==========================================
-// ✅ savePost مع التعديلات
-// ==========================================
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!window._isStorePost;
@@ -2094,7 +2330,6 @@ if(!wasEditing && !document.getElementById("termsCheck").checked){showToast("⚠
 const bad=checkContent(title,description);
 if(bad){showToast(`❌ لا يمكن نشر الإعلان — يحتوي على كلمة ممنوعة (${bad.word})`,"error");return;}
 
-// 🆕 استرجع من sessionStorage لو _tempStoreData فاضي
 if(isStore && !_tempStoreData){
   try{
     const saved=sessionStorage.getItem('_tempStoreData');
