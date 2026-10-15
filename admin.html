@@ -224,6 +224,26 @@ html.dark-mode .adminRow{background:#131a28}
 </div>
 </div>
 
+<!-- ===== 🆕 قسم تعديل رقم واتساب ===== -->
+<div class="section" id="secPhoneEdit">
+<div class="sectionHeader" onclick="toggleSection('secPhoneEdit')">
+<div class="secIconWrap" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">📱</div>
+<div><div class="secTitle">تعديل رقم واتساب</div><div class="secSub">لتعديل الرقم في الحساب + الإعلانات + المتجر</div></div>
+<div class="arrow">▼</div>
+</div>
+<div class="sectionBody">
+<div style="background:#e0f2fe;border:1px solid #38bdf8;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#0369a1;margin-bottom:12px;line-height:1.8">
+💡 <b>ملاحظة:</b> اكتب اسم المستخدم (@username) أو رقم العضوية (#1001) — التعديل يشمل: الحساب + كل الإعلانات + المتجر.
+</div>
+<div class="field">
+<label>🔍 بحث عن المستخدم</label>
+<input id="phoneEditSearch" placeholder="مثال: abd أو 1001" dir="ltr" style="text-align:left">
+</div>
+<button class="btn btn-primary" onclick="searchForPhoneEdit()">🔍 بحث عن المستخدم</button>
+<div id="phoneEditResult"></div>
+</div>
+</div>
+
 <div class="section" id="secFeedback">
 <div class="sectionHeader" onclick="toggleSection('secFeedback')">
 <div class="secIconWrap" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff">💬</div>
@@ -368,6 +388,106 @@ function updateStats(){
 
 function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
+
+/* ===== 🆕 Phone Edit ===== */
+async function findUserByAny(search){
+  const s=String(search||"").trim();
+  if(!s)return null;
+  const clean=s.replace(/^@/,"").toLowerCase();
+  try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}
+  const num=parseInt(s,10);
+  if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}
+  return null;
+}
+
+window.searchForPhoneEdit = async () => {
+  const search = document.getElementById("phoneEditSearch").value.trim();
+  if (!search) { alert("اكتب اسم المستخدم أو رقم العضوية"); return; }
+  
+  const resultBox = document.getElementById("phoneEditResult");
+  resultBox.innerHTML = '<div class="listEmpty">⏳ جاري البحث...</div>';
+  
+  const found = await findUserByAny(search);
+  if (!found) {
+    resultBox.innerHTML = '<div class="listEmpty" style="color:var(--danger)">❌ لم يُعثر على المستخدم<br><span style="font-size:12px">جرب @username أو #1001</span></div>';
+    return;
+  }
+  
+  const profSnap = await getDoc(doc(db, "profiles", found.uid));
+  if (!profSnap.exists()) {
+    resultBox.innerHTML = '<div class="listEmpty" style="color:var(--danger)">❌ لا يوجد ملف شخصي للمستخدم</div>';
+    return;
+  }
+  const prof = profSnap.data();
+  
+  const postsCount = allPostsCache.filter(p => p.uid === found.uid).length;
+  const storesCount = allStoresCache.filter(s => s.ownerUid === found.uid).length;
+  
+  resultBox.innerHTML = `
+    <div class="item" style="margin-top:12px;border-color:#0ea5e9;background:#f0f9ff">
+      <div class="itTitle">👤 ${esc(prof.name || 'بدون اسم')}</div>
+      <div class="itMeta">
+        🔢 رقم العضوية: <b>#${prof.memberNo || '—'}</b><br>
+        🏷️ اسم المستخدم: <b style="direction:ltr;display:inline-block">@${esc(prof.username || '—')}</b><br>
+        📱 الرقم الحالي: <b style="direction:ltr;display:inline-block">${esc(prof.phone || '—')}</b><br>
+        📋 الإعلانات: <b>${postsCount}</b> · 🏪 المتاجر: <b>${storesCount}</b>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>📱 الرقم الجديد (بصيغة دولية)</label>
+        <input id="newPhoneValue" placeholder="218928476784" dir="ltr" style="direction:ltr;text-align:left;font-family:monospace">
+      </div>
+      <button class="btn btn-success" onclick="applyPhoneChange('${found.uid}')">✅ تطبيق التعديل على كل شي</button>
+    </div>
+  `;
+};
+
+window.applyPhoneChange = async (uid) => {
+  const input = document.getElementById("newPhoneValue");
+  const newPhone = (input.value || "").trim().replace(/[^0-9]/g, "");
+  
+  if (newPhone.length < 9) {
+    alert("❌ رقم غير صحيح — يجب أن يكون 9 أرقام على الأقل");
+    return;
+  }
+  
+  if (!confirm(`⚠️ تأكيد التعديل:\n\n📱 الرقم الجديد: ${newPhone}\n\nسيتم تعديله في:\n- 👤 الحساب\n- 📋 كل الإعلانات\n- 🏪 المتجر (إن وجد)`)) return;
+  
+  try {
+    // 1. تعديل في profile
+    await updateDoc(doc(db, "profiles", uid), {
+      phone: newPhone,
+      phoneEditsCount: 0
+    });
+    
+    // 2. تعديل في كل الإعلانات
+    const postsSnap = await getDocs(query(collection(db, "posts"), where("uid", "==", uid)));
+    let postCount = 0;
+    for (const p of postsSnap.docs) {
+      try {
+        await updateDoc(doc(db, "posts", p.id), { phone: newPhone });
+        postCount++;
+      } catch(e) {}
+    }
+    
+    // 3. تعديل في المتجر
+    const storeSnap = await getDocs(query(collection(db, "stores"), where("ownerUid", "==", uid)));
+    let storeCount = 0;
+    for (const s of storeSnap.docs) {
+      try {
+        await updateDoc(doc(db, "stores", s.id), { phone: newPhone });
+        storeCount++;
+      } catch(e) {}
+    }
+    
+    alert(`✅ تم التعديل بنجاح!\n\n📱 الرقم الجديد: ${newPhone}\n👤 الحساب: 1\n📋 الإعلانات: ${postCount}\n🏪 المتاجر: ${storeCount}`);
+    
+    document.getElementById("phoneEditResult").innerHTML = "";
+    document.getElementById("phoneEditSearch").value = "";
+    
+  } catch (e) {
+    alert("❌ خطأ: " + e.message);
+  }
+};
 
 /* ===== Banner ===== */
 async function loadBanner(){
@@ -749,15 +869,6 @@ window.editLimitRow=(uid)=>{
   window.scrollTo({top:document.getElementById("secLimits").offsetTop-80,behavior:"smooth"});
 };
 window.removeLimitRow=async(uid)=>{if(!confirm("إلغاء الحد؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));await loadLimits();alert("✅");}catch(e){alert("خطأ: "+e.message);}};
-async function findUserByAny(search){
-  const s=String(search||"").trim();
-  if(!s)return null;
-  const clean=s.replace(/^@/,"").toLowerCase();
-  try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}
-  const num=parseInt(s,10);
-  if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}
-  return null;
-}
 window.applyUserLimit=async()=>{
   const search=document.getElementById("limitSearch").value.trim();
   const limitNum=parseInt(document.getElementById("limitNumber").value,10);
@@ -779,7 +890,7 @@ window.applyUserLimit=async()=>{
   }catch(e){alert("خطأ: "+e.message);}
 };
 
-/* ===== Feedback (جديد) ===== */
+/* ===== Feedback ===== */
 function renderFeedbackList(){
   const box=document.getElementById("feedbackList");
   if(!box)return;
