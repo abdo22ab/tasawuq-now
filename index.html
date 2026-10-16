@@ -1201,17 +1201,19 @@ import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup }
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
-// ✅ التعديل 1: استيراد App Check
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app-check.js";
-
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
 
-// ✅ التعديل 2: تهيئة App Check
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider('6LdxXPEtAAAAAKAoOQOo6sCykdjjKlfmnNaYVc0c2'),
-  isTokenAutoRefreshEnabled: true
-});
+/* 🛡️ App Check داخل try/catch عشان ما يمنع الطلبات */
+try{
+  const appCheckMod = await import("https://www.gstatic.com/firebasejs/12.8.0/firebase-app-check.js");
+  appCheckMod.initializeAppCheck(app, {
+    provider: new appCheckMod.ReCaptchaEnterpriseProvider('6LdxXPEtAAAAAKAoOQOo6sCykdjjKlfmnNaYVc0c2'),
+    isTokenAutoRefreshEnabled: true
+  });
+}catch(e){
+  console.warn('⚠️ App Check ما اشتغل (تجاهلناه):', e.message);
+}
 
 const auth=getAuth();
 const db=getFirestore();
@@ -1739,64 +1741,65 @@ window.updateDiscountPreview=()=>{
   } else { box.textContent=""; }
 };
 
-/* ===== 🤖 المساعد الذكي — التهيئة ===== */
+/* ===== 🤖 المساعد الذكي — نظام الموديلات المتعددة ===== */
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
-/* ===== 🤖 نظام الموديلات المتعددة ===== */
 const AI_MODELS_LIST = [
   "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
   "gemini-3.0-flash",
+  "gemini-3.1-flash-lite",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-pro"
+  "gemini-1.5-flash"
 ];
 
 let _workingModel = null;
 try{ _workingModel = localStorage.getItem('aiWorkingModel') || null; }catch(e){}
 
 let aiModel = null;
-
 function createAIModel(modelName){
   return getGenerativeModel(ai, { model: modelName });
 }
 
 if(_workingModel){
-  try{ aiModel = createAIModel(_workingModel); }catch(e){ aiModel = null; }
+  try{
+    aiModel = createAIModel(_workingModel);
+    console.log('✅ موديل محفوظ:', _workingModel);
+  }catch(e){ aiModel = null; }
 }
 
 async function generateAIContent(prompt){
+  // 1) نجرب الموديل المحفوظ أولاً
   if(aiModel){
     try{
       const result = await aiModel.generateContent(prompt);
       console.log('✅ الموديل المحفوظ شغال:', _workingModel);
       return result.response.text();
     }catch(e){
-      console.warn('⚠️ الموديل المحفوظ فشل، نجرب الباقي:', e.message);
+      console.warn('⚠️ الموديل المحفوظ فشل:', e.message);
       aiModel = null;
       try{ localStorage.removeItem('aiWorkingModel'); }catch(err){}
     }
   }
-
+  // 2) نجرب كل الموديلات
   let lastError = null;
   for(const modelName of AI_MODELS_LIST){
     try{
-      console.log('🔄 نجرب الموديل:', modelName);
+      console.log('🔄 نجرب:', modelName);
       const testModel = createAIModel(modelName);
       const result = await testModel.generateContent(prompt);
       const text = result.response.text();
-      
       aiModel = testModel;
       _workingModel = modelName;
       try{ localStorage.setItem('aiWorkingModel', modelName); }catch(err){}
       console.log('🎉 نجح الموديل:', modelName);
       return text;
     }catch(e){
-      console.warn('❌ فشل الموديل:', modelName, '—', e.message);
+      console.warn('❌ فشل:', modelName, '—', e.message);
       lastError = e;
       continue;
     }
   }
-
   throw lastError || new Error('كل الموديلات فشلت');
 }
 
@@ -1893,7 +1896,6 @@ window.sendAIChat = async () => {
 
   try{
     const response = await generateAIContent(AI_SYSTEM_PROMPT + msg);
-
     document.getElementById(loadingId)?.remove();
     box.innerHTML += `<div style="text-align:right;"><span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">${escapeHtml(response).replace(/\n/g,'<br>')}</span></div>`;
     incAICount();
@@ -2575,7 +2577,7 @@ window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length=
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-   window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+    window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){
   const list=document.getElementById("limitsList");if(!list)return;
   if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3 إعلانات فردية · 20 إعلان متجر</span></div>";return;}
@@ -2646,6 +2648,7 @@ window.openDashboard=async()=>{
     const totalStores=allStores.length;
     const approvedStores=allStores.filter(s=>s.status==="approved").length;
     const pendingStores=allStores.filter(s=>s.status==="pending").length;
+    const verifiedStores=allStores.filter(s=>s.verified).length;
     const totalReports=allReports.length;
     const cityCount={};
     allPosts.filter(p=>getStatus(p)==="approved").forEach(p=>{if(p.city)cityCount[p.city]=(cityCount[p.city]||0)+1;});
@@ -2665,6 +2668,7 @@ window.openDashboard=async()=>{
         <div class="dashboardCard"><div class="dVal">${totalStores}</div><div class="dLbl">🏪 المتاجر</div></div>
         <div class="dashboardCard"><div class="dVal">${approvedStores}</div><div class="dLbl">✅ متاجر معتمدة</div></div>
         <div class="dashboardCard"><div class="dVal">${pendingStores}</div><div class="dLbl">⏳ متاجر معلقة</div></div>
+        <div class="dashboardCard"><div class="dVal">${verifiedStores}</div><div class="dLbl">✓ متاجر موثقة</div></div>
         <div class="dashboardCard"><div class="dVal">${totalReports}</div><div class="dLbl">🚩 الإبلاغات</div></div>
         <div class="dashboardCard"><div class="dVal">${totalViews.toLocaleString()}</div><div class="dLbl">👁️ إجمالي المشاهدات</div></div>
         <div class="dashboardCard"><div class="dVal">${totalWa.toLocaleString()}</div><div class="dLbl">📱 ضغطات واتساب</div></div>
@@ -3267,7 +3271,7 @@ window.submitStore=async()=>{
       iban:(document.getElementById("storeBankIban")?.value||"").trim().slice(0,34),
       accountNumber:(document.getElementById("storeBankAccount")?.value||"").trim().slice(0,30)
     };
-    const storeData={ownerUid:auth.currentUser.uid,ownerUsername:(myProfile&&myProfile.username)||"",ownerMemberNo:(myProfile&&myProfile.memberNo)||null,name,category,city,phone,description,logo:logoUrl,cover:coverUrl,workingHours:{openTime,closeTime,alwaysOpen},deliveryCompany,bankInfo,helpers:[],status:"pending",rejectReason:"",createdAt:Date.now(),approvedAt:null};
+    const storeData={ownerUid:auth.currentUser.uid,ownerUsername:(myProfile&&myProfile.username)||"",ownerMemberNo:(myProfile&&myProfile.memberNo)||null,name,category,city,phone,description,logo:logoUrl,cover:coverUrl,workingHours:{openTime,closeTime,alwaysOpen},deliveryCompany,bankInfo,helpers:[],status:"pending",rejectReason:"",createdAt:Date.now(),approvedAt:null,verified:false};
     const ref=await addDoc(collection(db,"stores"),storeData);
     try{await updateDoc(doc(db,"profiles",auth.currentUser.uid),{storeId:ref.id});}catch(e){}
     showToast("✅ تم إرسال طلب فتح المتجر — سيظهر بعد موافقة الإدارة","success");
@@ -3277,6 +3281,28 @@ window.submitStore=async()=>{
 };
 
 window.switchStoresTab=(tab)=>{storesModTab=tab;renderStoresModeration();};
+
+/* ✨ دالة التوثيق الجديدة */
+window.toggleStoreVerify=async(id)=>{
+  if(!isAdmin)return;
+  const store=allStores.find(s=>s.id===id);
+  if(!store){showToast("❌ المتجر غير موجود","error");return;}
+  const isVerified=!!store.verified;
+  const msg=isVerified
+    ? `إلغاء توثيق المتجر: ${store.name}؟`
+    : `توثيق المتجر: ${store.name}؟\n\nراح تظهر العلامة الزرقاء ✓ على المتجر.`;
+  if(!confirm(msg))return;
+  try{
+    await updateDoc(doc(db,"stores",id),{
+      verified:!isVerified,
+      verifiedAt:!isVerified?Date.now():null,
+      verifiedBy:!isVerified?(auth.currentUser&&auth.currentUser.email)||"admin":null
+    });
+    showToast(isVerified?"✅ تم إلغاء التوثيق":"✅ تم توثيق المتجر بنجاح","success");
+    renderStoresModeration();
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
 function renderStoresModeration(){
   const list=document.getElementById("storesModerationList");if(!list)return;
   const tabs={all:"smTabAll",pending:"smTabPending",approved:"smTabApproved",rejected:"smTabRejected"};
@@ -3296,7 +3322,7 @@ function renderStoresModeration(){
     const verifiedBadge=s.verified?`<span class="verifiedBadge" title="موثق"></span>`:"";
     const isRest=isRestaurantStore(s);
     const badgeHTML=isRest?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
-    return `<div style="border:${border};border-radius:14px;padding:12px;margin-bottom:14px;background:${bg}"><div style="font-size:12px;font-weight:800;margin-bottom:8px">${label} · 📦 ${count} منتج · ${badgeHTML}</div><div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)} ${verifiedBadge}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div><div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div><div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · ☎️ ${escapeHtml(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}${s.deliveryCompany?"<br>🛵 التوصيل: "+escapeHtml(s.deliveryCompany):""}${s.rejectReason?"<br>📝 <b>سبب الرفض:</b> "+escapeHtml(s.rejectReason):""}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">${s.status!=="approved"?`<button onclick="approveStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة</button>`:""}${s.status!=="rejected"?`<button onclick="rejectStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#f59e0b;color:#3a2500;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🚫 رفض</button>`:""}<button onclick="openStore('${s.id}',false,'categories')" style="padding:12px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">👁️ عرض</button><button onclick="deleteStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🗑️ حذف</button></div></div>`;
+    return `<div style="border:${border};border-radius:14px;padding:12px;margin-bottom:14px;background:${bg}"><div style="font-size:12px;font-weight:800;margin-bottom:8px">${label} · 📦 ${count} منتج · ${badgeHTML} ${s.verified?'· <span style="color:#1877F2">✓ موثق</span>':''}</div><div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)} ${verifiedBadge}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div><div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div><div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · ☎️ ${escapeHtml(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}${s.deliveryCompany?"<br>🛵 التوصيل: "+escapeHtml(s.deliveryCompany):""}${s.rejectReason?"<br>📝 <b>سبب الرفض:</b> "+escapeHtml(s.rejectReason):""}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">${s.status!=="approved"?`<button onclick="approveStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة</button>`:""}${s.status!=="rejected"?`<button onclick="rejectStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#f59e0b;color:#3a2500;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🚫 رفض</button>`:""}<button onclick="openStore('${s.id}',false,'categories')" style="padding:12px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">👁️ عرض</button><button onclick="toggleStoreVerify('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:${s.verified?'#8a93a3':'#1877F2'};color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">${s.verified?'✕ إلغاء':'✓ توثيق'}</button><button onclick="deleteStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🗑️ حذف</button></div></div>`;
   }).join("");
 }
 window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});showToast("✅ تم قبول المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
@@ -3450,12 +3476,20 @@ window.openAccount=()=>{
     const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
     const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
     const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
+    const vsb=document.getElementById("verifiedStoresBtn");if(vsb)vsb.classList.toggle("hidden",!isAdmin);
     accountOverlay.classList.remove("hidden");
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
 };
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openVerifiedStores=()=>{
+  if(!isAdmin)return;
+  storesModTab="approved";
+  renderStoresModeration();
+  storesModerationOverlay.classList.remove("hidden");
+  accountOverlay.classList.add("hidden");
+};
 
 window.closeOverlay=()=>{
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
@@ -3671,6 +3705,8 @@ const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
+const vsb=document.getElementById("verifiedStoresBtn");
+if(vsb)vsb.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){
@@ -3767,4 +3803,4 @@ window.addEventListener('load',()=>{
 </script>
 
 </body>
-</html> 
+</html>
