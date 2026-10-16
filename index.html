@@ -2448,6 +2448,9 @@ window.submitFeedback=async()=>{
 
 function catIconHtml(c){
   const color=c.color||"#38bdf8";
+  if(c.image){
+    return `<div class="catIconWrap catIconImg"><img src="${c.image}" alt="${c.name}" loading="lazy"></div>`;
+  }
   return `<div class="catIconWrap" style="background:${color}"><i data-lucide="${c.iconName||'circle'}"></i></div>`;
 }
 function buildCategoriesGrid(){
