@@ -1434,15 +1434,8 @@ import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.co
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
 
-try{
-  const appCheckMod = await import("https://www.gstatic.com/firebasejs/12.8.0/firebase-app-check.js");
-  appCheckMod.initializeAppCheck(app, {
-    provider: new appCheckMod.ReCaptchaEnterpriseProvider('6LdxXPEtAAAAAKAoOQOo6sCykdjjKlfmnNaYVc0c2'),
-    isTokenAutoRefreshEnabled: true
-  });
-}catch(e){
-  console.warn('⚠️ App Check ما اشتغل:', e.message);
-}
+/* ⚠️ App Check معطّل مؤقتاً */
+console.log('ℹ️ App Check متوقف — البوت يشتغل بدون حماية إضافية');
 
 const auth=getAuth();
 const db=getFirestore();
