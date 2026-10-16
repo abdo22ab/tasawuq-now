@@ -1201,8 +1201,18 @@ import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup }
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
+// ✅ التعديل 1: استيراد App Check
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app-check.js";
+
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
+
+// ✅ التعديل 2: تهيئة App Check
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider('6LdxXPEtAAAAAKAoOQOo6sCykdjjKlfmnNaYVc0c2'),
+  isTokenAutoRefreshEnabled: true
+});
+
 const auth=getAuth();
 const db=getFirestore();
 
@@ -1731,7 +1741,9 @@ window.updateDiscountPreview=()=>{
 
 /* ===== 🤖 المساعد الذكي — التهيئة ===== */
 const ai = getAI(app, { backend: new GoogleAIBackend() });
-const aiModel = getGenerativeModel(ai, { model: "gemini-1.5-flash" });
+
+// ✅ التعديل 3: الموديل الصحيح المدعوم
+const aiModel = getGenerativeModel(ai, { model: "gemini-2.0-flash" });
 
 const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الليبي 🇱🇾 (منصة إعلانات مجانية).
 
@@ -1912,12 +1924,11 @@ window.sendAIChat = async () => {
       setTimeout(()=>{ window._aiDraggingNow = false; }, 100);
     } else {
       window._aiDraggingNow = false;
-      // 🎯 ضغطة عادية → يفتح الشات
       if(typeof window.toggleAIChat === 'function'){
         window.toggleAIChat();
       }
     }
-});
+  });
 
   btn.addEventListener('pointercancel', () => {
     isDragging = false;
@@ -1939,7 +1950,7 @@ window.sendAIChat = async () => {
     }
   }catch(err){}
 })();
-  window.setStoreSort=(sort)=>{
+    window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
     const el=document.getElementById(id);
@@ -2510,7 +2521,7 @@ window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length=
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-  window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+   window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){
   const list=document.getElementById("limitsList");if(!list)return;
   if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3 إعلانات فردية · 20 إعلان متجر</span></div>";return;}
@@ -3702,4 +3713,4 @@ window.addEventListener('load',()=>{
 </script>
 
 </body>
-</html>
+</html> 
