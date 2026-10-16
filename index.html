@@ -2070,9 +2070,16 @@ async function giveWheelReward(uid, reward){
 
 function updateWheelBadge(){
   const badge = document.getElementById('luckyWheelBadge');
-  if(!badge) return;
+  const btn = document.getElementById('luckyWheelBtn');
+  if(!badge || !btn) return;
   const status = getWheelStatus();
-  badge.style.display = status.canSpin ? 'flex' : 'none';
+  if(status.canSpin){
+    btn.style.display = 'flex';
+    badge.style.display = 'flex';
+  } else {
+    btn.style.display = 'none';
+    badge.style.display = 'none';
+  }
 }
 setInterval(updateWheelBadge, 60000);
 setTimeout(updateWheelBadge, 2000);
