@@ -1892,8 +1892,7 @@ window.sendAIChat = async () => {
   box.scrollTop = box.scrollHeight;
 
   try{
-    const result = await aiModel.generateContent(AI_SYSTEM_PROMPT + msg);
-    const response = result.response.text();
+    const response = await generateAIContent(AI_SYSTEM_PROMPT + msg);
 
     document.getElementById(loadingId)?.remove();
     box.innerHTML += `<div style="text-align:right;"><span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">${escapeHtml(response).replace(/\n/g,'<br>')}</span></div>`;
