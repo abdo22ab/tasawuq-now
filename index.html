@@ -155,13 +155,129 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .reviewBox .rbBtns button{padding:10px 4px;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .reviewBox .rbBtns .approve{background:#16a34a;color:#fff}
 .reviewBox .rbBtns .reject{background:#e5484d;color:#fff}
-.bottomNav{position:fixed;bottom:0;right:0;left:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0))}
-.navItem{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;flex:1;padding:2px 0;min-width:0}
-.navItem .navIcon{font-size:18px;line-height:1}
-.navItem>span:not(.navIcon){display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;padding:0 2px}
-.navItem.active{color:var(--teal)}
+
+/* ============================================
+   🔷 الشريط السفلي — مُعدّل بأيقونات Lucide + Glass
+   ============================================ */
+.bottomNav{
+  position:fixed;
+  bottom:10px;
+  right:12px;
+  left:12px;
+  z-index:30;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.4);
+  border-radius:22px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
+  display:flex;
+  justify-content:space-around;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom,0));
+}
+html.dark-mode .bottomNav{
+  background:rgba(19,26,40,.92);
+  border-color:rgba(42,52,70,.6);
+  box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
+.navItem{
+  background:none;
+  border:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  color:var(--muted);
+  font-family:inherit;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+  flex:1;
+  padding:4px 0;
+  min-width:0;
+  position:relative;
+  transition:color .2s ease;
+}
+.navItem .navIcon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:24px;
+  height:24px;
+  position:relative;
+  transition:transform .18s ease;
+}
+.navItem .navIcon svg,
+.navItem [data-lucide],
+.navItem svg[data-lucide]{
+  width:22px!important;
+  height:22px!important;
+  stroke-width:2.2;
+  transition:transform .18s ease, stroke-width .18s ease;
+}
+.navItem.active{
+  color:var(--teal);
+}
+.navItem.active .navIcon svg,
+.navItem.active [data-lucide]{
+  stroke-width:2.8;
+  transform:translateY(-1px);
+}
+.navItem.active::before{
+  content:"";
+  position:absolute;
+  top:-8px;
+  left:50%;
+  transform:translateX(-50%);
+  width:28px;
+  height:3px;
+  border-radius:0 0 6px 6px;
+  background:var(--teal);
+  animation:navDotIn .25s ease-out;
+}
+@keyframes navDotIn{
+  from{width:0;opacity:0}
+  to{width:28px;opacity:1}
+}
+.navItem:active .navIcon svg,
+.navItem:active [data-lucide]{
+  transform:scale(.85);
+}
+.navItem>span:not(.navIcon){
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:100%;
+  padding:0 2px;
+}
+html.dark-mode .navItem.active{color:var(--teal)}
 .fabWrap{flex:1;display:flex;justify-content:center;margin-top:-26px}
-.fab{width:52px;height:52px;border-radius:50%;background:var(--amber);color:#3a2500;border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit}
+.fab{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  color:#3a2500;
+  border:5px solid var(--bg);
+  font-size:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  font-family:inherit;
+  box-shadow:0 6px 20px rgba(245,158,11,.45);
+  transition:transform .15s ease;
+}
+.fab:active{transform:scale(.9)}
+.fab svg{
+  width:26px!important;
+  height:26px!important;
+  stroke-width:2.5;
+}
+html.dark-mode .fab{border-color:var(--bg)}
+
+/* ===== باقي الأنماط ===== */
 .screen{background:var(--bg);min-height:100%}
 .screenHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15}
 .screenHeader .back{background:none;border:none;font-size:20px;cursor:pointer}
@@ -552,6 +668,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 @keyframes wheelPopIn{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.3) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
 </style>
 </head>
+</head>
 <body>
 
 <!-- 🎬 شاشة البداية بالفيديو -->
@@ -564,6 +681,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 Topbar العلوي -->
+<!-- ============================================ -->
 <div class="topbar" id="mainTopbar">
 <div class="topbarActions">
 <button class="bellBtn" id="pointsBtn" onclick="openPoints()" title="نقاطي" style="position:relative">🏆<span id="pointsBadge" style="position:absolute;bottom:-4px;right:-4px;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;border:1.5px solid var(--teal);display:none">0</span></button>
@@ -576,6 +696,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 شاشة الأقسام (الرئيسية) -->
+<!-- ============================================ -->
 <div id="categoriesScreen">
 <div class="searchWrap">
 <div class="searchBox">
@@ -585,8 +708,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
 </div>
 
+<!-- 🕘 تم التعديل هنا -->
 <div class="recentSection" id="recentSection">
-<div class="recentTitle">👁️ شفتها مؤخراً</div>
+<div class="recentTitle">🕘 تصفحتها حديثاً</div>
 <div class="recentScroll" id="recentScroll"></div>
 </div>
 
@@ -604,11 +728,15 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="categoriesGrid" id="categoriesGrid"></div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 شاشة عرض الإعلانات (بعد اختيار قسم) -->
+<!-- ============================================ -->
 <div id="home" class="hidden">
 <div class="categoryHeader" id="categoryHeader">
 <button class="backBtn" onclick="showCategoriesScreen()">→</button>
 <h3 id="categoryTitle">الإعلانات</h3>
 </div>
+
 <div class="searchWrap">
 <div class="searchBox">
 <span class="ic">🔎</span>
@@ -648,6 +776,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="grid" id="posts"></div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 نموذج إضافة/تعديل إعلان -->
+<!-- ============================================ -->
 <div id="form" class="screen hidden">
 <div class="screenHeader">
 <button class="back" onclick="backFromForm()">→</button>
@@ -712,15 +843,43 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
 </div>
 </div>
-
+<!-- ============================================ -->
+<!-- 🔷 الشريط السفلي — مُعدّل بأيقونات Lucide -->
+<!-- ============================================ -->
 <div class="bottomNav">
-<button class="navItem active" id="navHome" onclick="showCategoriesScreen()"><span class="navIcon">🏠</span>الرئيسية</button>
-<button class="navItem" id="navMine" onclick="showMyPosts()"><span class="navIcon">📋</span>إعلاناتي</button>
-<div class="fabWrap"><button class="fab" onclick="startAddPost()">+</button></div>
-<button class="navItem" id="navFav" onclick="showFavorites()"><span class="navIcon">❤️</span>المفضلة</button>
-<button class="navItem" id="navAccount" onclick="openAccount()"><span class="navIcon" style="position:relative">👤<span id="adminChip" class="adminChip hidden">A</span></span><span id="navAccountLabel">حسابي</span></button>
+  <button class="navItem active" id="navHome" onclick="showCategoriesScreen()">
+    <span class="navIcon"><i data-lucide="house"></i></span>
+    <span>الرئيسية</span>
+  </button>
+  
+  <button class="navItem" id="navMine" onclick="showMyPosts()">
+    <span class="navIcon"><i data-lucide="shopping-bag"></i></span>
+    <span>إعلاناتي</span>
+  </button>
+  
+  <div class="fabWrap">
+    <button class="fab" onclick="startAddPost()">
+      <i data-lucide="plus" style="width:26px;height:26px;stroke-width:2.5"></i>
+    </button>
+  </div>
+  
+  <button class="navItem" id="navFav" onclick="showFavorites()">
+    <span class="navIcon"><i data-lucide="heart"></i></span>
+    <span>المفضلة</span>
+  </button>
+  
+  <button class="navItem" id="navAccount" onclick="openAccount()">
+    <span class="navIcon" style="position:relative">
+      <i data-lucide="circle-user-round"></i>
+      <span id="adminChip" class="adminChip hidden">A</span>
+    </span>
+    <span id="navAccountLabel">حسابي</span>
+  </button>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 أزرار عائمة (سلة + مقارنة) -->
+<!-- ============================================ -->
 <button class="cartFAB hidden" id="cartFAB" onclick="openCart()">
 🛒 اعرض السلة
 <span class="cartFABcount" id="cartFABcount">0</span>
@@ -728,6 +887,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 <button class="compareFAB hidden" id="compareFAB" onclick="openCompare()">⚖️ قارن (0)</button>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlay تسجيل الدخول -->
+<!-- ============================================ -->
 <div id="authOverlay" class="overlay hidden">
 <div class="sheet">
 <div id="authOptions">
@@ -740,6 +902,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlay حسابي -->
+<!-- ============================================ -->
 <div id="accountOverlay" class="overlay hidden">
 <div class="sheet">
 <h3>حسابي</h3>
@@ -770,6 +935,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlay نوع الإعلان -->
+<!-- ============================================ -->
 <div id="postTypeOverlay" class="overlay hidden">
 <div class="sheet">
 <h3 style="text-align:center">ماذا تريد أن تنشر؟</h3>
@@ -790,6 +958,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 شاشة المتاجر -->
+<!-- ============================================ -->
 <div id="storesScreen" class="screen hidden">
 <div class="screenHeader">
 <button class="back" onclick="showCategoriesScreen()">→</button>
@@ -808,7 +979,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 <div style="padding:16px"><div id="storeContent"></div></div>
 </div>
-
+<!-- ============================================ -->
+<!-- 🔷 Overlay فتح متجر -->
+<!-- ============================================ -->
 <div id="openStoreOverlay" class="overlay hidden">
 <div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">🏪 فتح متجر جديد</h3>
@@ -891,6 +1064,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlay تعديل متجر -->
+<!-- ============================================ -->
 <div id="editStoreOverlay" class="overlay hidden">
 <div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">⚙️ تعديل بيانات المتجر</h3>
@@ -966,6 +1142,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlays الأدمن -->
+<!-- ============================================ -->
 <div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3>🏪 إدارة المتاجر</h3>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
@@ -986,7 +1165,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+
 <div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+
 <div id="limitsOverlay" class="overlay hidden"><div class="sheet" style="max-height:85vh"><h3>⚙️ إدارة حدود المستخدمين</h3>
 <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
 <div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد</div>
@@ -1000,6 +1181,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="limitsList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
+<!-- ============================================ -->
+<!-- 🔷 Overlays تفاصيل الإعلان + السلة + الترقية -->
+<!-- ============================================ -->
 <div id="postOverlay" class="overlay fullscreen hidden">
 <div class="sheet">
 <div class="screenHeader" style="position:sticky;top:0;z-index:20">
@@ -1072,6 +1256,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <a id="warnGo" class="btnMain" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" onclick="closeOverlay()">متابعة إلى واتساب</a>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
+<!-- ============================================ -->
+<!-- 🔷 الشروط + الخصوصية -->
+<!-- ============================================ -->
 <div id="termsOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">📄 الشروط والأحكام</h3>
 <div class="legalBody">
@@ -1139,6 +1326,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div></div>
 
+<!-- ============================================ -->
+<!-- 🔷 Compare + Dashboard + Ad + Lightbox -->
+<!-- ============================================ -->
 <div id="compareOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">⚖️ مقارنة الإعلانات</h3>
 <div id="compareContent"></div>
@@ -1158,7 +1348,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
   <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
 </div>
 
-<!-- ===== 🤖 المساعد الذكي ===== -->
+<!-- ============================================ -->
+<!-- 🔷 المساعد الذكي -->
+<!-- ============================================ -->
 <button id="aiChatBtn" title="المساعد الذكي" style="position:fixed;bottom:95px;right:20px;z-index:1000;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(139,92,246,.55),rgba(124,58,237,.55));color:#fff;border:none;font-size:18px;cursor:grab;box-shadow:0 4px 12px rgba(139,92,246,.25);display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;transition:transform .15s,opacity .3s;opacity:.7;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
 💬
 </button>
@@ -1204,13 +1396,17 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 </div>
 
-<!-- 🎡 زر عجلة الحظ (شفاف وصغير) -->
+<!-- ============================================ -->
+<!-- 🔷 زر عجلة الحظ العائم -->
+<!-- ============================================ -->
 <button id="luckyWheelBtn" onclick="openLuckyWheel()" title="عجلة الحظ" style="position:fixed;bottom:145px;right:20px;z-index:1000;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(245,158,11,.55),rgba(251,191,36,.55));color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,.25);display:flex;align-items:center;justify-content:center;opacity:.7;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .15s,opacity .3s;">
 🎡
 <span id="luckyWheelBadge" style="position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;">!</span>
 </button>
 
-<!-- 🎡 نافذة عجلة الحظ -->
+<!-- ============================================ -->
+<!-- 🔷 نافذة عجلة الحظ -->
+<!-- ============================================ -->
 <div id="luckyWheelOverlay" class="overlay hidden">
   <div class="sheet" style="max-width:420px;padding:20px;text-align:center">
     <button onclick="closeLuckyWheel()" style="position:absolute;top:14px;left:14px;background:rgba(0,0,0,.08);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:10;">×</button>
@@ -1265,7 +1461,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
   </div>
 </div>
 
-<!-- 🏆 صفحة نقاطي -->
+<!-- ============================================ -->
+<!-- 🔷 صفحة نقاطي -->
+<!-- ============================================ -->
 <div id="pointsOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:92vh;padding:0">
     <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:20px;text-align:center;position:relative">
@@ -1317,6 +1515,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
   </div>
 </div>
 
+<!-- ============================================ -->
+<!-- 🔷 الفوتر -->
+<!-- ============================================ -->
 <div class="siteFooter">
 <div class="fBrand">🛒 تسوق الآن</div>
 <div class="fDisclaimer">
@@ -1328,7 +1529,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 <div class="fCopy">© 2026 تسوق الآن — جميع الحقوق محفوظة</div>
 </div>
-<script type="module">
+  <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -1474,6 +1675,19 @@ window.showFloatingButtons = showFloatingButtons;
 window.hideFloatingButtons = hideFloatingButtons;
 
 /* ============================================
+   🎨 تفعيل أيقونات Lucide للشريط السفلي ✏️
+   ============================================ */
+function refreshNavIcons(){
+  if(window.lucide && typeof lucide.createIcons === 'function'){
+    try{ lucide.createIcons(); }catch(e){ console.warn('Lucide error:', e); }
+  }
+}
+window.refreshNavIcons = refreshNavIcons;
+refreshNavIcons();
+setTimeout(refreshNavIcons, 300);
+setTimeout(refreshNavIcons, 1500);
+
+/* ============================================
    🏆 نظام النقاط الكامل
    ============================================ */
 const POINTS_TIERS = [
@@ -1484,15 +1698,12 @@ const POINTS_TIERS = [
 ];
 
 const POINTS_REWARDS = [
-  // ⭐ التمييز
   { id: 'featured_1',  icon: '⭐', category: 'featured', title: 'إعلان مميز — يوم واحد',  cost: 250,   desc: 'إعلانك في الأعلى لمدة 24 ساعة' },
   { id: 'featured_3',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 3 أيام',    cost: 400,   desc: 'إعلانك في الأعلى 3 أيام كاملة' },
   { id: 'featured_7',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 7 أيام',    cost: 500,   desc: 'إعلانك في الأعلى أسبوع كامل 🔥' },
   { id: 'featured_30', icon: '⭐', category: 'featured', title: 'إعلان مميز — 30 يوم',    cost: 1500,  desc: 'إعلانك في الأعلى شهر كامل — أفضل قيمة!' },
-  // 🎁 إضافية
   { id: 'discount_50', icon: '🎟️', category: 'extra', title: 'خصم 50% على أي ترقية',     cost: 300,   desc: 'كود خصم لاستخدامه عند الترقية' },
   { id: 'extra_post',  icon: '💎', category: 'extra', title: 'إعلان إضافي (تجاوز الحد)',  cost: 250,   desc: 'انشر إعلان فوق الحد المسموح' },
-  // 🏆 VIP
   { id: 'custom_logo',   icon: '🎨', category: 'vip', title: 'شعار مخصص للمتجر',       cost: 3000,  desc: 'يصمم لك الأدمن شعار خاص لمتجرك' },
   { id: 'pin_post',      icon: '📌', category: 'vip', title: 'تثبيت إعلان أعلى قسم',    cost: 2000,  desc: 'إعلانك أول في القسم 3 أيام' },
   { id: 'home_banner',   icon: '🌟', category: 'vip', title: 'شريط إعلان في الرئيسية',  cost: 10000, desc: 'إعلانك في بانر الرئيسية أسبوع' },
@@ -1750,6 +1961,42 @@ async function giveWelcomePoints(uid){
 }
 
 /* ============================================
+   🔄 مزامنة النقاط المعلقة ✏️ جديدة
+   ============================================ */
+async function syncPendingPoints(){
+  if(!auth.currentUser) return;
+  try{
+    const pending = JSON.parse(localStorage.getItem('pendingPoints') || '[]');
+    if(pending.length === 0) return;
+    const myPending = pending.filter(p => p.uid === auth.currentUser.uid);
+    if(myPending.length === 0) return;
+    const userRef = doc(db, 'userPoints', auth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const currentData = snap.exists() ? snap.data() : { points: 0, history: [] };
+    let newPoints = currentData.points || 0;
+    const history = Array.isArray(currentData.history) ? currentData.history : [];
+    for(const p of myPending){
+      newPoints += p.value;
+      history.unshift({
+        value: p.value,
+        title: p.title,
+        activity: 'lucky_wheel_synced',
+        timestamp: p.timestamp
+      });
+    }
+    if(history.length > 100) history.splice(100);
+    await setDoc(userRef, { points: newPoints, history, updatedAt: Date.now() }, { merge: true });
+    const remaining = pending.filter(p => p.uid !== auth.currentUser.uid);
+    localStorage.setItem('pendingPoints', JSON.stringify(remaining));
+    console.log('✅ تمت مزامنة', myPending.length, 'عملية معلقة');
+    showToast(`✅ تم استرجاع ${myPending.length} مكافأة معلقة`, 'success', 3000);
+  }catch(e){
+    console.warn('فشلت مزامنة النقاط المعلقة:', e);
+  }
+}
+window.syncPendingPoints = syncPendingPoints;
+
+/* ============================================
    🎡 نظام عجلة الحظ
    ============================================ */
 const WHEEL_REWARDS = [
@@ -1883,15 +2130,17 @@ window.spinLuckyWheel = async function(){
   updateWheelBadge();
 };
 
+/* ✏️ giveWheelReward محسّنة — تحديث فوري + رسائل خطأ واضحة */
 async function giveWheelReward(uid, reward){
+  const pointsToAdd = reward.type === 'points' ? reward.value : 0;
   try{
     const userRef = doc(db, 'userPoints', uid);
     const snap = await getDoc(userRef);
     const currentData = snap.exists() ? snap.data() : { points: 0, history: [] };
-    const newPoints = (currentData.points || 0) + (reward.type === 'points' ? reward.value : 0);
+    const newPoints = (currentData.points || 0) + pointsToAdd;
     const history = Array.isArray(currentData.history) ? currentData.history : [];
     history.unshift({
-      value: reward.type === 'points' ? reward.value : 0,
+      value: pointsToAdd,
       title: `🎡 عجلة الحظ: ${reward.title}`,
       activity: 'lucky_wheel',
       timestamp: Date.now()
@@ -1902,13 +2151,29 @@ async function giveWheelReward(uid, reward){
       updates.freeFeaturedTokens = (currentData.freeFeaturedTokens || 0) + 1;
     }
     await setDoc(userRef, updates, { merge: true });
+
+    // ✅ تحديث فوري للواجهة
+    myPoints = newPoints;
+    myHistory = history;
+    const balEl = document.getElementById('pointsBalance');
+    if(balEl) balEl.textContent = newPoints.toLocaleString();
+    updatePointsBadge();
+    updateTier();
+    renderPoints();
+
+    console.log('✅ تم إضافة', pointsToAdd, 'نقطة | الرصيد الجديد:', newPoints);
   }catch(e){
+    console.error('❌ فشل حفظ النقاط في Firestore:', e);
+    showToast('⚠️ تم الفوز لكن تعذر حفظ النقاط — تحقق من اتصالك', 'warn', 4000);
     try{
-      const local = JSON.parse(localStorage.getItem('myPoints') || '{"points":0,"history":[]}');
-      if(reward.type === 'points') local.points = (local.points || 0) + reward.value;
-      local.history = local.history || [];
-      local.history.unshift({ value: reward.value, title: `🎡 عجلة الحظ: ${reward.title}`, timestamp: Date.now() });
-      localStorage.setItem('myPoints', JSON.stringify(local));
+      const pending = JSON.parse(localStorage.getItem('pendingPoints') || '[]');
+      pending.push({
+        value: pointsToAdd,
+        title: `🎡 عجلة الحظ: ${reward.title}`,
+        uid: uid,
+        timestamp: Date.now()
+      });
+      localStorage.setItem('pendingPoints', JSON.stringify(pending));
     }catch(err){}
   }
 }
@@ -1922,7 +2187,9 @@ function updateWheelBadge(){
 setInterval(updateWheelBadge, 60000);
 setTimeout(updateWheelBadge, 2000);
 
-/* ===== 🤖 المساعد الذكي — نظام الموديلات المتعددة ===== */
+/* ============================================
+   🤖 المساعد الذكي — نظام الموديلات المتعددة
+   ============================================ */
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
 const AI_MODELS_LIST = [
@@ -2212,7 +2479,7 @@ const feedbackOverlay=document.getElementById("feedbackOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
-
+</script>
 /* ===== Store Helpers ===== */
 window.loadStoreHelpers=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
@@ -2570,7 +2837,8 @@ window.updateDiscountPreview=()=>{
     box.textContent=`🔥 خصم ${pct}% — سيظهر شارة على المنتج`;
   } else { box.textContent=""; }
 };
-  /* ===== Store Products ===== */
+
+/* ===== Store Products ===== */
 window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
@@ -3153,7 +3421,8 @@ window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length=
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-  /* ===== Admin: Limits ===== */
+
+/* ===== Admin: Limits ===== */
 window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 function renderLimits(){
   const list=document.getElementById("limitsList");if(!list)return;
@@ -3492,6 +3761,59 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
 
   const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
   const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
+  const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150
+                                                                            window.openStore=async(storeId,keepScroll,backTo)=>{
+  if(!keepScroll){window._currentStoreId=storeId;}
+  window._storeBackTo=backTo||"categories";
+  closeOverlay();
+  const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
+  categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
+  const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
+  const box=document.getElementById("storeContent");
+  if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
+  let store=allStores.find(s=>s.id===storeId);
+  if(!store){try{const snap=await getDoc(doc(db,"stores",storeId));if(snap.exists())store={id:snap.id,...snap.data()};}catch(e){}}
+  if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
+  window._currentStoreId=storeId;
+  const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
+  const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
+  const isStoreHelperNow=auth.currentUser && isStoreHelper(storeId,auth.currentUser.email);
+  if(store.status!=="approved" && !isOwnerStore && !isAdminUser){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
+  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser||isStoreHelperNow))) && (!isExpired(p) || isOwnerStore || isAdminUser || isStoreHelperNow));
+  currentStoreItems=items.slice();
+  window._canManageStoreItems=isAdminUser||isOwnerStore||isStoreHelperNow;
+  const isRestaurant=isRestaurantStore(store);
+  const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
+  const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
+
+  const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
+  const contactStoreBtn=store.phone
+    ? (isRestaurant
+        ? `<a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
+        : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
+           <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
+    : "";
+
+  const bi=store.bankInfo || {};
+  const hasIban=bi.iban && bi.iban.trim();
+  const hasAccount=bi.accountNumber && bi.accountNumber.trim();
+  const hasBankInfo=hasIban || hasAccount;
+  let bankInfoHtml="";
+  if(hasBankInfo){
+    const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
+    bankInfoHtml=`<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
+      <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
+      <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
+      ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
+      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
+      ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
+      ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
+      ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.phone).replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
+    </div>`;
+  }
+
+  const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
+  const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
   const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:var(--card);color:var(--text)"><button class="filterBtn active" onclick="setStoreSort('newest')" id="ssortNewest" style="font-size:12px">🆕 الأحدث</button><button class="filterBtn" onclick="setStoreSort('cheapest')" id="ssortCheapest" style="font-size:12px">💰 الأرخص</button><button class="filterBtn" onclick="setStoreSort('expensive')" id="ssortExpensive" style="font-size:12px">💎 الأغلى</button><button class="filterBtn" onclick="setStoreSort('views')" id="ssortViews" style="font-size:12px">👁️ الأكثر مشاهدة</button></div>`;
   const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة</div>`:"";
   const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
@@ -3735,7 +4057,6 @@ window.submitRating=async()=>{
   const raterName=(myProfile&&myProfile.name)||defaultName(me);
   try{
     await setDoc(doc(db,"ratings",uid+"_"+me.uid),{sellerUid:uid,raterUid:me.uid,raterName,stars:selectedStars,comment,createdAt:Date.now()});
-    // 🏆 منح نقاط للمقيّم
     addPoints(me.uid, 3, '⭐ قيّمت بائعاً', 'rating');
     await openSeller(uid);
   }catch(e){showToast("تعذر إرسال التقييم: "+e.message,"error");}
@@ -3869,7 +4190,6 @@ window.submitStore=async()=>{
 
 window.switchStoresTab=(tab)=>{storesModTab=tab;renderStoresModeration();};
 
-/* ✨ دالة التوثيق */
 window.toggleStoreVerify=async(id)=>{
   if(!isAdmin)return;
   const store=allStores.find(s=>s.id===id);
@@ -3930,7 +4250,8 @@ window.deleteStore=async(id)=>{
     renderStoresModeration();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
-  /* ===== Banner ===== */
+
+/* ===== Banner ===== */
 let bannerImages=[];
 let bannerCurrentIndex=0;
 let bannerTimer=null;
@@ -4280,10 +4601,10 @@ adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
 startFollowingListener(user);
-// 🏆 منح نقاط الترحيب
 giveWelcomePoints(user.uid);
-// 🏆 الاستماع للنقاط
 startPointsListener(user.uid);
+// ✏️ مزامنة النقاط المعلقة
+setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
 const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
@@ -4335,7 +4656,6 @@ startPostsListener();
 startStoresListener();
 loadBanner();
 
-// ✅ عرض الأزرار العائمة في الصفحة الرئيسية عند البدء
 setTimeout(()=>{
   if(!categoriesScreen.classList.contains('hidden')){
     showFloatingButtons();
@@ -4373,6 +4693,10 @@ window.addEventListener('load',()=>{
   }
 });
 
+// ✏️ تفعيل الأيقونات بعد التحميل
+setTimeout(refreshNavIcons, 500);
+setTimeout(refreshNavIcons, 1500);
+setTimeout(refreshNavIcons, 3000);
 </script>
 
 <!-- 🎬 Script شاشة الفيديو -->
