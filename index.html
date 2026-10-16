@@ -1742,8 +1742,63 @@ window.updateDiscountPreview=()=>{
 /* ===== 🤖 المساعد الذكي — التهيئة ===== */
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
-// ✅ التعديل 3: الموديل الصحيح المدعوم
-const aiModel = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+/* ===== 🤖 نظام الموديلات المتعددة ===== */
+const AI_MODELS_LIST = [
+  "gemini-2.5-flash",
+  "gemini-3.0-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-pro"
+];
+
+let _workingModel = null;
+try{ _workingModel = localStorage.getItem('aiWorkingModel') || null; }catch(e){}
+
+let aiModel = null;
+
+function createAIModel(modelName){
+  return getGenerativeModel(ai, { model: modelName });
+}
+
+if(_workingModel){
+  try{ aiModel = createAIModel(_workingModel); }catch(e){ aiModel = null; }
+}
+
+async function generateAIContent(prompt){
+  if(aiModel){
+    try{
+      const result = await aiModel.generateContent(prompt);
+      console.log('✅ الموديل المحفوظ شغال:', _workingModel);
+      return result.response.text();
+    }catch(e){
+      console.warn('⚠️ الموديل المحفوظ فشل، نجرب الباقي:', e.message);
+      aiModel = null;
+      try{ localStorage.removeItem('aiWorkingModel'); }catch(err){}
+    }
+  }
+
+  let lastError = null;
+  for(const modelName of AI_MODELS_LIST){
+    try{
+      console.log('🔄 نجرب الموديل:', modelName);
+      const testModel = createAIModel(modelName);
+      const result = await testModel.generateContent(prompt);
+      const text = result.response.text();
+      
+      aiModel = testModel;
+      _workingModel = modelName;
+      try{ localStorage.setItem('aiWorkingModel', modelName); }catch(err){}
+      console.log('🎉 نجح الموديل:', modelName);
+      return text;
+    }catch(e){
+      console.warn('❌ فشل الموديل:', modelName, '—', e.message);
+      lastError = e;
+      continue;
+    }
+  }
+
+  throw lastError || new Error('كل الموديلات فشلت');
+}
 
 const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الليبي 🇱🇾 (منصة إعلانات مجانية).
 
