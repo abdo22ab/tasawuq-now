@@ -156,128 +156,33 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .reviewBox .rbBtns .approve{background:#16a34a;color:#fff}
 .reviewBox .rbBtns .reject{background:#e5484d;color:#fff}
 
-/* ============================================
-   🔷 الشريط السفلي — مُعدّل بأيقونات Lucide + Glass
-   ============================================ */
+/* ✅ الشريط السفلي المُعدَّل (أيقونات Lucide + Glassmorphism) */
 .bottomNav{
-  position:fixed;
-  bottom:10px;
-  right:12px;
-  left:12px;
-  z-index:30;
+  position:fixed;bottom:10px;right:12px;left:12px;z-index:30;
   background:rgba(255,255,255,.92);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.4);
-  border-radius:22px;
-  box-shadow:0 8px 30px rgba(0,0,0,.12);
-  display:flex;
-  justify-content:space-around;
+  border-radius:22px;box-shadow:0 8px 30px rgba(0,0,0,.12);
+  display:flex;justify-content:space-around;
   padding:8px 6px calc(8px + env(safe-area-inset-bottom,0));
 }
-html.dark-mode .bottomNav{
-  background:rgba(19,26,40,.92);
-  border-color:rgba(42,52,70,.6);
-  box-shadow:0 8px 30px rgba(0,0,0,.4);
-}
-.navItem{
-  background:none;
-  border:none;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:3px;
-  color:var(--muted);
-  font-family:inherit;
-  font-size:10px;
-  font-weight:700;
-  cursor:pointer;
-  flex:1;
-  padding:4px 0;
-  min-width:0;
-  position:relative;
-  transition:color .2s ease;
-}
-.navItem .navIcon{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:24px;
-  height:24px;
-  position:relative;
-  transition:transform .18s ease;
-}
-.navItem .navIcon svg,
-.navItem [data-lucide],
-.navItem svg[data-lucide]{
-  width:22px!important;
-  height:22px!important;
-  stroke-width:2.2;
-  transition:transform .18s ease, stroke-width .18s ease;
-}
-.navItem.active{
-  color:var(--teal);
-}
-.navItem.active .navIcon svg,
-.navItem.active [data-lucide]{
-  stroke-width:2.8;
-  transform:translateY(-1px);
-}
-.navItem.active::before{
-  content:"";
-  position:absolute;
-  top:-8px;
-  left:50%;
-  transform:translateX(-50%);
-  width:28px;
-  height:3px;
-  border-radius:0 0 6px 6px;
-  background:var(--teal);
-  animation:navDotIn .25s ease-out;
-}
-@keyframes navDotIn{
-  from{width:0;opacity:0}
-  to{width:28px;opacity:1}
-}
-.navItem:active .navIcon svg,
-.navItem:active [data-lucide]{
-  transform:scale(.85);
-}
-.navItem>span:not(.navIcon){
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  max-width:100%;
-  padding:0 2px;
-}
+html.dark-mode .bottomNav{background:rgba(19,26,40,.92);border-color:rgba(42,52,70,.6);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.navItem{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;flex:1;padding:4px 0;min-width:0;position:relative;transition:color .2s ease}
+.navItem .navIcon{display:flex;align-items:center;justify-content:center;width:24px;height:24px;position:relative;transition:transform .18s ease}
+.navItem .navIcon svg,.navItem [data-lucide],.navItem svg[data-lucide]{width:22px!important;height:22px!important;stroke-width:2.2;transition:transform .18s ease, stroke-width .18s ease}
+.navItem.active{color:var(--teal)}
+.navItem.active .navIcon svg,.navItem.active [data-lucide]{stroke-width:2.8;transform:translateY(-1px)}
+.navItem.active::before{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:28px;height:3px;border-radius:0 0 6px 6px;background:var(--teal);animation:navDotIn .25s ease-out}
+@keyframes navDotIn{from{width:0;opacity:0}to{width:28px;opacity:1}}
+.navItem:active .navIcon svg,.navItem:active [data-lucide]{transform:scale(.85)}
+.navItem>span:not(.navIcon){display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;padding:0 2px}
 html.dark-mode .navItem.active{color:var(--teal)}
 .fabWrap{flex:1;display:flex;justify-content:center;margin-top:-26px}
-.fab{
-  width:52px;
-  height:52px;
-  border-radius:50%;
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  color:#3a2500;
-  border:5px solid var(--bg);
-  font-size:24px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  font-family:inherit;
-  box-shadow:0 6px 20px rgba(245,158,11,.45);
-  transition:transform .15s ease;
-}
+.fab{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:5px solid var(--bg);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(245,158,11,.45);transition:transform .15s ease}
 .fab:active{transform:scale(.9)}
-.fab svg{
-  width:26px!important;
-  height:26px!important;
-  stroke-width:2.5;
-}
+.fab svg{width:26px!important;height:26px!important;stroke-width:2.5}
 html.dark-mode .fab{border-color:var(--bg)}
 
-/* ===== باقي الأنماط ===== */
 .screen{background:var(--bg);min-height:100%}
 .screenHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15}
 .screenHeader .back{background:none;border:none;font-size:20px;cursor:pointer}
@@ -597,10 +502,8 @@ html.dark-mode .catBox .catName{color:var(--text)}
 html.dark-mode .catBox:active{background:#232d42}
 html.dark-mode .card{background:var(--card);border-color:var(--border)}
 html.dark-mode .card .catTag{background:#232d42;color:var(--muted)}
-html.dark-mode .bottomNav{background:#131a28;border-top-color:var(--border)}
 html.dark-mode .navItem{color:var(--muted)}
 html.dark-mode .navItem.active{color:var(--teal)}
-html.dark-mode .fab{border-color:var(--bg)}
 html.dark-mode .screenHeader{background:var(--card);border-bottom-color:var(--border)}
 html.dark-mode .categoryHeader{background:var(--card);border-bottom-color:var(--border)}
 html.dark-mode .filterBtn{background:var(--card);border-color:var(--border);color:var(--text)}
@@ -647,8 +550,6 @@ html.dark-mode .overlay.fullscreen{background:var(--bg)}
 html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-bottom-color:var(--border)}
 #aiChatBtn{touch-action:none;user-select:none;}
 #aiChatBtn:active{transform:scale(.92);}
-
-/* ===== 🎡 عجلة الحظ ===== */
 .wheel-wrap{position:relative;width:280px;height:280px;margin:0 auto;display:flex;align-items:center;justify-content:center}
 .wheel-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:36px;color:#ef4444;z-index:5;text-shadow:0 2px 4px rgba(0,0,0,.3);filter:drop-shadow(0 2px 2px rgba(0,0,0,.2))}
 .wheel-disc{width:280px;height:280px;border-radius:50%;position:relative;transition:transform 4s cubic-bezier(.17,.67,.2,1);box-shadow:0 0 0 6px #fff, 0 0 0 10px #f59e0b, 0 8px 30px rgba(0,0,0,.25);overflow:hidden}
@@ -668,7 +569,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 @keyframes wheelPopIn{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.3) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
 </style>
 </head>
-</head>
 <body>
 
 <!-- 🎬 شاشة البداية بالفيديو -->
@@ -682,7 +582,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 Topbar العلوي -->
+<!-- Topbar العلوي -->
 <!-- ============================================ -->
 <div class="topbar" id="mainTopbar">
 <div class="topbarActions">
@@ -697,7 +597,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 شاشة الأقسام (الرئيسية) -->
+<!-- شاشة الأقسام (الرئيسية) -->
 <!-- ============================================ -->
 <div id="categoriesScreen">
 <div class="searchWrap">
@@ -708,7 +608,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
 </div>
 
-<!-- 🕘 تم التعديل هنا -->
+<!-- ✅ مُعدّل: "تصفحتها حديثاً" -->
 <div class="recentSection" id="recentSection">
 <div class="recentTitle">🕘 تصفحتها حديثاً</div>
 <div class="recentScroll" id="recentScroll"></div>
@@ -729,7 +629,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 شاشة عرض الإعلانات (بعد اختيار قسم) -->
+<!-- شاشة عرض الإعلانات -->
 <!-- ============================================ -->
 <div id="home" class="hidden">
 <div class="categoryHeader" id="categoryHeader">
@@ -777,7 +677,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 نموذج إضافة/تعديل إعلان -->
+<!-- نموذج إضافة/تعديل إعلان -->
 <!-- ============================================ -->
 <div id="form" class="screen hidden">
 <div class="screenHeader">
@@ -843,8 +743,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnMain" id="saveBtn" onclick="savePost()">نشر الإعلان</button>
 </div>
 </div>
+
 <!-- ============================================ -->
-<!-- 🔷 الشريط السفلي — مُعدّل بأيقونات Lucide -->
+<!-- الشريط السفلي — مُعدَّل بأيقونات Lucide -->
 <!-- ============================================ -->
 <div class="bottomNav">
   <button class="navItem active" id="navHome" onclick="showCategoriesScreen()">
@@ -878,7 +779,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 أزرار عائمة (سلة + مقارنة) -->
+<!-- أزرار عائمة -->
 <!-- ============================================ -->
 <button class="cartFAB hidden" id="cartFAB" onclick="openCart()">
 🛒 اعرض السلة
@@ -888,7 +789,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="compareFAB hidden" id="compareFAB" onclick="openCompare()">⚖️ قارن (0)</button>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlay تسجيل الدخول -->
+<!-- Overlay تسجيل الدخول -->
 <!-- ============================================ -->
 <div id="authOverlay" class="overlay hidden">
 <div class="sheet">
@@ -903,7 +804,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlay حسابي -->
+<!-- Overlay حسابي -->
 <!-- ============================================ -->
 <div id="accountOverlay" class="overlay hidden">
 <div class="sheet">
@@ -936,7 +837,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlay نوع الإعلان -->
+<!-- Overlay نوع الإعلان -->
 <!-- ============================================ -->
 <div id="postTypeOverlay" class="overlay hidden">
 <div class="sheet">
@@ -959,7 +860,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 شاشة المتاجر -->
+<!-- شاشة المتاجر -->
 <!-- ============================================ -->
 <div id="storesScreen" class="screen hidden">
 <div class="screenHeader">
@@ -979,8 +880,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 <div style="padding:16px"><div id="storeContent"></div></div>
 </div>
+
 <!-- ============================================ -->
-<!-- 🔷 Overlay فتح متجر -->
+<!-- Overlay فتح متجر -->
 <!-- ============================================ -->
 <div id="openStoreOverlay" class="overlay hidden">
 <div class="sheet" style="max-height:92vh">
@@ -1065,7 +967,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlay تعديل متجر -->
+<!-- Overlay تعديل متجر -->
 <!-- ============================================ -->
 <div id="editStoreOverlay" class="overlay hidden">
 <div class="sheet" style="max-height:92vh">
@@ -1143,7 +1045,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlays الأدمن -->
+<!-- Overlays الأدمن -->
 <!-- ============================================ -->
 <div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3>🏪 إدارة المتاجر</h3>
@@ -1182,7 +1084,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <!-- ============================================ -->
-<!-- 🔷 Overlays تفاصيل الإعلان + السلة + الترقية -->
+<!-- تفاصيل الإعلان + السلة + الترقية -->
 <!-- ============================================ -->
 <div id="postOverlay" class="overlay fullscreen hidden">
 <div class="sheet">
@@ -1256,9 +1158,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <a id="warnGo" class="btnMain" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" onclick="closeOverlay()">متابعة إلى واتساب</a>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button></div></div>
 
-<!-- ============================================ -->
-<!-- 🔷 الشروط + الخصوصية -->
-<!-- ============================================ -->
 <div id="termsOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">📄 الشروط والأحكام</h3>
 <div class="legalBody">
@@ -1326,9 +1225,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div></div>
 
-<!-- ============================================ -->
-<!-- 🔷 Compare + Dashboard + Ad + Lightbox -->
-<!-- ============================================ -->
 <div id="compareOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">⚖️ مقارنة الإعلانات</h3>
 <div id="compareContent"></div>
@@ -1349,7 +1245,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 المساعد الذكي -->
+<!-- المساعد الذكي -->
 <!-- ============================================ -->
 <button id="aiChatBtn" title="المساعد الذكي" style="position:fixed;bottom:95px;right:20px;z-index:1000;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(139,92,246,.55),rgba(124,58,237,.55));color:#fff;border:none;font-size:18px;cursor:grab;box-shadow:0 4px 12px rgba(139,92,246,.25);display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;transition:transform .15s,opacity .3s;opacity:.7;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
 💬
@@ -1397,7 +1293,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 زر عجلة الحظ العائم -->
+<!-- زر عجلة الحظ العائم -->
 <!-- ============================================ -->
 <button id="luckyWheelBtn" onclick="openLuckyWheel()" title="عجلة الحظ" style="position:fixed;bottom:145px;right:20px;z-index:1000;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(245,158,11,.55),rgba(251,191,36,.55));color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,.25);display:flex;align-items:center;justify-content:center;opacity:.7;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .15s,opacity .3s;">
 🎡
@@ -1405,7 +1301,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </button>
 
 <!-- ============================================ -->
-<!-- 🔷 نافذة عجلة الحظ -->
+<!-- نافذة عجلة الحظ -->
 <!-- ============================================ -->
 <div id="luckyWheelOverlay" class="overlay hidden">
   <div class="sheet" style="max-width:420px;padding:20px;text-align:center">
@@ -1462,7 +1358,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 صفحة نقاطي -->
+<!-- صفحة نقاطي -->
 <!-- ============================================ -->
 <div id="pointsOverlay" class="overlay hidden">
   <div class="sheet" style="max-height:92vh;padding:0">
@@ -1516,7 +1412,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- 🔷 الفوتر -->
+<!-- الفوتر -->
 <!-- ============================================ -->
 <div class="siteFooter">
 <div class="fBrand">🛒 تسوق الآن</div>
@@ -1529,7 +1425,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 <div class="fCopy">© 2026 تسوق الآن — جميع الحقوق محفوظة</div>
 </div>
-  <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -1538,7 +1434,6 @@ import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.co
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
 
-/* 🛡️ App Check داخل try/catch */
 try{
   const appCheckMod = await import("https://www.gstatic.com/firebasejs/12.8.0/firebase-app-check.js");
   appCheckMod.initializeAppCheck(app, {
@@ -1656,7 +1551,6 @@ function showToast(text,type="info",duration=2200){
 }
 window.showToast=showToast;
 
-/* ===== التحكم بالأزرار العائمة ===== */
 function showFloatingButtons(){
   const btn1 = document.getElementById('luckyWheelBtn');
   const btn2 = document.getElementById('aiChatBtn');
@@ -1674,9 +1568,7 @@ function hideFloatingButtons(){
 window.showFloatingButtons = showFloatingButtons;
 window.hideFloatingButtons = hideFloatingButtons;
 
-/* ============================================
-   🎨 تفعيل أيقونات Lucide للشريط السفلي ✏️
-   ============================================ */
+/* 🎨 تفعيل أيقونات Lucide للشريط السفلي */
 function refreshNavIcons(){
   if(window.lucide && typeof lucide.createIcons === 'function'){
     try{ lucide.createIcons(); }catch(e){ console.warn('Lucide error:', e); }
@@ -1960,9 +1852,7 @@ async function giveWelcomePoints(uid){
   }catch(e){}
 }
 
-/* ============================================
-   🔄 مزامنة النقاط المعلقة ✏️ جديدة
-   ============================================ */
+/* 🔄 مزامنة النقاط المعلقة */
 async function syncPendingPoints(){
   if(!auth.currentUser) return;
   try{
@@ -2130,7 +2020,7 @@ window.spinLuckyWheel = async function(){
   updateWheelBadge();
 };
 
-/* ✏️ giveWheelReward محسّنة — تحديث فوري + رسائل خطأ واضحة */
+/* ✅ giveWheelReward محسّنة — تحديث فوري + رسائل خطأ واضحة */
 async function giveWheelReward(uid, reward){
   const pointsToAdd = reward.type === 'points' ? reward.value : 0;
   try{
@@ -2152,7 +2042,7 @@ async function giveWheelReward(uid, reward){
     }
     await setDoc(userRef, updates, { merge: true });
 
-    // ✅ تحديث فوري للواجهة
+    /* ✅ تحديث فوري للواجهة */
     myPoints = newPoints;
     myHistory = history;
     const balEl = document.getElementById('pointsBalance');
@@ -2188,7 +2078,7 @@ setInterval(updateWheelBadge, 60000);
 setTimeout(updateWheelBadge, 2000);
 
 /* ============================================
-   🤖 المساعد الذكي — نظام الموديلات المتعددة
+   🤖 المساعد الذكي
    ============================================ */
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
@@ -2339,7 +2229,7 @@ window.sendAIChat = async () => {
   }
 };
 
-/* ===== 🎯 زر عائم متحرك (Draggable) ===== */
+/* 🎯 زر عائم متحرك (Draggable) */
 (function(){
   const btn = document.getElementById('aiChatBtn');
   if(!btn) return;
@@ -2417,7 +2307,7 @@ window.sendAIChat = async () => {
   }catch(err){}
 })();
 
-/* ===== أساسيات أخرى ===== */
+/* أساسيات أخرى */
 (function initDarkMode(){
   try{
     const saved=localStorage.getItem('theme');
@@ -2479,8 +2369,7 @@ const feedbackOverlay=document.getElementById("feedbackOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
-</script>
-/* ===== Store Helpers ===== */
+  /* ===== Store Helpers ===== */
 window.loadStoreHelpers=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){currentStoreHelpers=[];renderStoreHelpersList();return;}
@@ -3302,7 +3191,6 @@ else{
   }
   await addDoc(collection(db,"posts"),base);
   showToast(isStore?"✅ تم إرسال إعلان المتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
-  // 🏆 منح نقاط للنشر
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
 }
 editingPostId=null;
@@ -3752,60 +3640,8 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
       <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
       <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
       ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
-      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
-      ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
-      ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
-      ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.phone).replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
-    </div>`;
-  }
-
-  const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
-  const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
-  const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150
-                                                                            window.openStore=async(storeId,keepScroll,backTo)=>{
-  if(!keepScroll){window._currentStoreId=storeId;}
-  window._storeBackTo=backTo||"categories";
-  closeOverlay();
-  const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
-  categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
-  const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
-  const box=document.getElementById("storeContent");
-  if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
-  let store=allStores.find(s=>s.id===storeId);
-  if(!store){try{const snap=await getDoc(doc(db,"stores",storeId));if(snap.exists())store={id:snap.id,...snap.data()};}catch(e){}}
-  if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
-  window._currentStoreId=storeId;
-  const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
-  const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
-  const isStoreHelperNow=auth.currentUser && isStoreHelper(storeId,auth.currentUser.email);
-  if(store.status!=="approved" && !isOwnerStore && !isAdminUser){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
-  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser||isStoreHelperNow))) && (!isExpired(p) || isOwnerStore || isAdminUser || isStoreHelperNow));
-  currentStoreItems=items.slice();
-  window._canManageStoreItems=isAdminUser||isOwnerStore||isStoreHelperNow;
-  const isRestaurant=isRestaurantStore(store);
-  const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
-  const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
-
-  const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
-  const contactStoreBtn=store.phone
-    ? (isRestaurant
-        ? `<a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
-        : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
-           <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
-    : "";
-
-  const bi=store.bankInfo || {};
-  const hasIban=bi.iban && bi.iban.trim();
-  const hasAccount=bi.accountNumber && bi.accountNumber.trim();
-  const hasBankInfo=hasIban || hasAccount;
-  let bankInfoHtml="";
-  if(hasBankInfo){
-    const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
-    bankInfoHtml=`<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
-      <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
-      <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
-      ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
-      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
+      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="
+      font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
       ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
       ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
       ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.phone).replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
@@ -4250,8 +4086,7 @@ window.deleteStore=async(id)=>{
     renderStoresModeration();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
-
-/* ===== Banner ===== */
+  /* ===== Banner ===== */
 let bannerImages=[];
 let bannerCurrentIndex=0;
 let bannerTimer=null;
@@ -4603,7 +4438,6 @@ startProfileListener(user);
 startFollowingListener(user);
 giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
-// ✏️ مزامنة النقاط المعلقة
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
@@ -4693,7 +4527,6 @@ window.addEventListener('load',()=>{
   }
 });
 
-// ✏️ تفعيل الأيقونات بعد التحميل
 setTimeout(refreshNavIcons, 500);
 setTimeout(refreshNavIcons, 1500);
 setTimeout(refreshNavIcons, 3000);
