@@ -603,12 +603,21 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <!-- ============================================ -->
 <div class="topbar" id="mainTopbar">
 <div class="topbarActions">
-<button class="bellBtn" id="pointsBtn" onclick="openPoints()" title="نقاطي" style="position:relative">🏆<span id="pointsBadge" style="position:absolute;bottom:-4px;right:-4px;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;border:1.5px solid var(--teal);display:none">0</span></button>
-<button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
-<button class="bellBtn" onclick="enableNotifications()">🔔</button>
-<button class="bellBtn" onclick="openFeedback()" title="اقتراح أو شكوى">💬</button>
-<button class="bellBtn" onclick="showFavorites()">❤️</button>
-<button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none">🛒<span class="cartBadge" id="cartHeaderCount" style="display:none">0</span></button>
+<button class="bellBtn" id="pointsBtn" onclick="openPoints()" title="نقاطي">
+  <i data-lucide="trophy"></i>
+  <span id="pointsBadge" class="pointsBadge">0</span>
+</button>
+<button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">
+  <i data-lucide="moon" id="darkModeIcon"></i>
+</button>
+<button class="bellBtn" onclick="enableNotifications()" title="الإشعارات">
+  <i data-lucide="bell"></i>
+</button>
+<button class="bellBtn bellBtnSmall" onclick="openFeedback()" title="اقتراح أو شكوى">💬</button>
+<button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none" title="السلة">
+  <i data-lucide="shopping-bag"></i>
+  <span class="cartBadge" id="cartHeaderCount" style="display:none">0</span>
+</button>
 </div>
 <div class="brand"><span class="dot"></span>تسوق الآن</div>
 </div>
