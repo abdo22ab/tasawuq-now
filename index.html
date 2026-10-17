@@ -2342,7 +2342,7 @@ window.sendAIChat = async () => {
     const prefersDark=window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches;
     const useDark=saved==='dark' || (saved===null && prefersDark);
     if(useDark)document.documentElement.classList.add('dark-mode');
-    setTimeout(()=>{const btn=document.getElementById('darkModeBtn');if(btn)btn.textContent=useDark?'☀️':'🌙';},200);
+    setTimeout(()=>{const icon=document.getElementById('darkModeIcon');if(icon){icon.setAttribute('data-lucide',useDark?'sun':'moon');if(window.lucide)lucide.createIcons();}},200);
   }catch(e){}
 })();
 window.toggleDarkMode=function(){
