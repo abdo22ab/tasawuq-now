@@ -45,8 +45,13 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar.scrollAway{position:relative}
 .topbarActions{display:flex;align-items:center;gap:6px}
-.bellBtn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative}
-.cartBadge{position:absolute;top:-5px;left:-5px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--teal);z-index:2}
+.bellBtn{width:34px;height:34px;border-radius:12px;border:none;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative;transition:all .2s ease;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:16px}
+.bellBtn:hover{background:rgba(255,255,255,.25);transform:translateY(-1px)}
+.bellBtn:active{transform:scale(.92)}
+.bellBtn i,.bellBtn svg{width:18px !important;height:18px !important;stroke-width:2.2}
+.bellBtnSmall{font-size:15px;background:rgba(255,255,255,.1)}
+.bellBtnSmall:hover{background:rgba(255,255,255,.2)}
+.bellBtn .pointsBadge{position:absolute;bottom:-4px;right:-4px;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:2px 5px;border-radius:6px;border:1.5px solid var(--teal);display:none;min-width:16px;text-align:center;line-height:1}.cartBadge{position:absolute;top:-5px;left:-5px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--teal);z-index:2}
 .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;flex:1;justify-content:flex-end}
 .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
 .iconBtn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
