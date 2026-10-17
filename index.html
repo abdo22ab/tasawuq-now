@@ -2349,8 +2349,8 @@ window.toggleDarkMode=function(){
   const html=document.documentElement;
   const isDark=html.classList.toggle('dark-mode');
   try{localStorage.setItem('theme',isDark?'dark':'light');}catch(e){}
-  const btn=document.getElementById('darkModeBtn');
-  if(btn)btn.textContent=isDark?'☀️':'🌙';
+  const icon=document.getElementById('darkModeIcon');
+if(icon){icon.setAttribute('data-lucide',isDark?'sun':'moon');if(window.lucide)lucide.createIcons();}
   const metaTheme=document.getElementById('themeColorMeta');
   if(metaTheme)metaTheme.setAttribute('content',isDark?'#0c2942':'#38bdf8');
 };
