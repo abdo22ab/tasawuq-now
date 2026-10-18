@@ -120,17 +120,6 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .dots .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
 .dots .dot.active{width:8px;height:8px;background:#fff}
 .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 20px;font-size:14px}
-  .emptyState{grid-column:1/-1;text-align:center;padding:50px 20px;animation:fadeIn .35s ease-out}
-.emptyState .esIcon{font-size:72px;margin-bottom:18px;opacity:.7;line-height:1;display:block;animation:esBounce 2s ease-in-out infinite}
-@keyframes esBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.emptyState .esTitle{font-size:18px;font-weight:800;color:var(--text);margin-bottom:10px}
-.emptyState .esDesc{font-size:13.5px;color:var(--muted);margin-bottom:22px;line-height:1.8;max-width:340px;margin-left:auto;margin-right:auto}
-.emptyState .esBtn{max-width:300px;margin:0 auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 26px;border:none;border-radius:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,#0284c7,#38bdf8);cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(2,132,199,.35);transition:transform .15s ease,box-shadow .2s}
-.emptyState .esBtn:hover{box-shadow:0 8px 26px rgba(2,132,199,.5)}
-.emptyState .esBtn:active{transform:scale(.95)}
-.emptyState .esBtn.esBtnSecondary{background:transparent;color:var(--teal-dark);box-shadow:none;border:2px solid var(--teal);font-size:14px;padding:11px 22px}
-html.dark-mode .emptyState .esTitle{color:var(--text)}
-html.dark-mode .emptyState .esBtn{box-shadow:0 6px 20px rgba(2,132,199,.25)}
 .card.featured{border:2px solid #f59e0b}
 .card.featured::before{content:"⭐ مميز";position:absolute;top:0;right:0;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-size:11px;font-weight:800;padding:4px 10px;border-radius:0 14px 0 12px;z-index:5}
 .card.pending{border:2px dashed #f59e0b;opacity:.9}
@@ -2890,14 +2879,14 @@ function renderSkeletons(){
   `).join("");
 }
 
-let _postsLoadedOnce=false;
-function startPostsListener(){onSnapshot(collection(db,"posts"),snap=>{allPosts=snap.docs.map(d=>({id:d.id,...d.data()}));allPosts=sortPosts(allPosts);_postsLoadedOnce=true;renderPosts();function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
+function startPostsListener(){onSnapshot(collection(db,"posts"),snap=>{allPosts=snap.docs.map(d=>({id:d.id,...d.data()}));allPosts=sortPosts(allPosts);renderPosts();updateModBadge();renderRecentlyViewed();updateCartUI();updateCompareUI();},err=>{postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";});}
+function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
 
 /* ============================================
    عرض الإعلانات (renderPosts)
    ============================================ */
 function renderPosts(){
-if(allPosts.length===0 && !showOnlyFavorites && !_postsLoadedOnce){renderSkeletons();}
+if(allPosts.length===0 && !showOnlyFavorites){renderSkeletons();}
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
 const me=auth.currentUser;
@@ -2923,17 +2912,8 @@ let list=allPosts.filter(p=>{
 });
 list=sortPosts(list);
 if(list.length===0){
-  if(showOnlyFavorites){
-    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">❤️</div><div class="esTitle">المفضلة فاضية</div><div class="esDesc">اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا للرجوع له بسهولة</div><button class="esBtn" onclick="showCategoriesScreen()">🏠 تصفح الإعلانات</button></div>`;
-  }else if(showOnlyMine){
-    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📝</div><div class="esTitle">لسه ما نشرت إعلانات</div><div class="esDesc">ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة واحدة</div><button class="esBtn" onclick="startAddPost()">➕ أنشر إعلانك الأول</button></div>`;
-  }else if(term){
-    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">🔍</div><div class="esTitle">لا توجد نتائج</div><div class="esDesc">لم نجد إعلانات تطابق "${escapeHtml(term)}"<br>جرّب كلمة بحث أخرى</div><button class="esBtn esBtnSecondary" onclick="clearSearch()">🔄 مسح البحث</button></div>`;
-  }else if(currentCity!=="الكل"){
-    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📍</div><div class="esTitle">لا توجد إعلانات في ${escapeHtml(currentCity)}</div><div class="esDesc">كن أول من ينشر إعلاناً في هذه المدينة<br>أو جرّب مدينة أخرى</div><button class="esBtn" onclick="startAddPost()">➕ أنشر إعلان هنا</button></div>`;
-  }else{
-    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📭</div><div class="esTitle">لا توجد إعلانات هنا حالياً</div><div class="esDesc">كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!</div><button class="esBtn" onclick="startAddPost()">➕ كن أول من ينشر إعلاناً</button></div>`;
-  }
+  if(allPosts.length===0){return;}
+  postsBox.innerHTML=showOnlyFavorites?"<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.</div>":"<div class='empty'>لا توجد إعلانات هنا حالياً</div>";
   return;
 }
 postsBox.innerHTML=list.map(p=>{
