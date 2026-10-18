@@ -88,6 +88,8 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:8px 16px 20px}
 @media (min-width:700px){.grid{grid-template-columns:repeat(3,1fr);gap:16px;padding:8px 24px 24px}}
 @media (min-width:1000px){.grid{grid-template-columns:repeat(4,1fr);max-width:1200px;margin:0 auto;padding:8px 40px 24px}}
+
+/* ✅ تعديل عرض الصور كاملة */
 .card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);display:flex;flex-direction:column;position:relative}
 .card .imgWrap{position:relative;width:100%;aspect-ratio:1/1;background:#f5f6f8;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .card .imgWrap img{width:100%;height:100%;object-fit:contain}
@@ -168,6 +170,7 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .reviewBox .rbBtns .approve{background:#16a34a;color:#fff}
 .reviewBox .rbBtns .reject{background:#e5484d;color:#fff}
 
+/* ✅ الشريط السفلي */
 .bottomNav{position:fixed;bottom:10px;right:12px;left:12px;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.4);border-radius:22px;box-shadow:0 8px 30px rgba(0,0,0,.12);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0));}
 html.dark-mode .bottomNav{background:rgba(19,26,40,.92);border-color:rgba(42,52,70,.6);box-shadow:0 8px 30px rgba(0,0,0,.4)}
 .navItem{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;flex:1;padding:4px 0;min-width:0;position:relative;transition:color .2s ease}
@@ -204,9 +207,11 @@ html.dark-mode .fab{border-color:var(--bg)}
 .imgAddTile.hidden{display:none}
 .btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;font-family:inherit}
 .btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px;font-family:inherit}
+/* ✅ كلاس جديد لأزرار حسابي */
 .btnGhost.accountBtn{background:#0284c7;color:#fff}
 .btnGhost.accountBtn:hover{background:#0369a1}
 
+/* ✅ إخفاء أزرار السلة والمقارنة وحركات الظهور */
 .cartFAB{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);opacity:0;visibility:hidden;transition:all .3s ease;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:none;padding:14px 28px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.5);z-index:45;display:flex;align-items:center;gap:8px;white-space:nowrap}
 .cartFAB.visible{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible;}
 .cartFAB .cartFABcount{background:#3a2500;color:#fbbf24;font-size:12px;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 6px;font-weight:800}
@@ -217,6 +222,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 .cartSheetBody{padding:0}
 .cartItemRow{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);align-items:center}
 .cartItemRow:last-child{border-bottom:none}
+/* ✅ تعديل عرض صورة السلة كاملة */
 .cartItemRow .cImg{width:70px;height:70px;border-radius:10px;object-fit:contain;background:#f5f6f8;flex:0 0 auto}
 .cartItemRow .cInfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .cartItemRow .cTitle{font-size:13.5px;font-weight:700;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -236,10 +242,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 .btnClearCart{width:100%;padding:12px;border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--danger);background:#fdeceb;cursor:pointer;font-family:inherit}
 .cartEmptyBox{text-align:center;padding:50px 20px;color:var(--muted)}
 .cartEmptyBox .icon{font-size:60px;margin-bottom:10px;opacity:.5}
-</style>
-</head>
 <body>
-  <body>
 
 <!-- 🎬 شاشة البداية بالفيديو -->
 <div id="videoSplash" style="position:fixed;inset:0;background:#0284c7;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s ease,visibility .6s ease;overflow:hidden;">
@@ -286,6 +289,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 <select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
 </div>
 
+<!-- ✅ مُعدّل: "تصفحتها حديثاً" -->
 <div class="recentSection" id="recentSection">
 <div class="recentTitle">🕘 تصفحتها حديثاً</div>
 <div class="recentScroll" id="recentScroll"></div>
@@ -314,15 +318,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 <h3 id="categoryTitle">الإعلانات</h3>
 </div>
 
-<div class="searchWrap">
-<div class="searchBox">
-<span class="ic">🔎</span>
-<input id="searchInput" placeholder="ابحث..." onfocus="showSearchDropdown()">
-<button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" style="display:none">✕</button>
-<div id="searchDropdown" class="searchDropdown hidden"></div>
-</div>
-<select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
-</div>
+<!-- ✅ تم إزالة شريط البحث المكرر من هنا للاكتفاء بالشريط العلوي -->
 
 <div class="filterBar">
 <button class="filterBtn active" id="sortNewest" onclick="setSort('newest')">🆕 الأحدث</button>
@@ -377,6 +373,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 
 <div class="field"><label>عنوان الإعلان</label><input id="title" placeholder="مثال: تويوتا كورولا 2018"></div>
 
+<!-- ✅ تعديل السعر وخيارات التواصل -->
 <div class="field" style="margin-bottom:8px">
 <label>السعر (د.ل)</label>
 <input id="price" type="number" placeholder="0" oninput="updateDiscountPreview()">
@@ -459,7 +456,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 </div>
 
 <!-- ============================================ -->
-<!-- أزرار عائمة -->
+<!-- أزرار عائمة (مخفية افتراضياً وتظهر بالأنيميشن) -->
 <!-- ============================================ -->
 <button class="cartFAB" id="cartFAB" onclick="openCart()">
 🛒 اعرض السلة
@@ -496,6 +493,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
 
+<!-- ✅ تم تعديل الأزرار للون الأزرق الموحد (accountBtn) -->
 <button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
 
 <div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
@@ -519,7 +517,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div>
 </div>
-<!-- ============================================ -->
+  <!-- ============================================ -->
 <!-- Overlay نوع الإعلان -->
 <!-- ============================================ -->
 <div id="postTypeOverlay" class="overlay hidden">
@@ -689,7 +687,7 @@ html.dark-mode .fab{border-color:var(--bg)}
 </div>
 
 <!-- ============================================ -->
-<!-- Overlays الأدمن -->
+<!-- Overlays الأدمن (مختصرة لتوفير المساحة) -->
 <!-- ============================================ -->
 <div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3>🏪 إدارة المتاجر</h3>
@@ -1021,8 +1019,6 @@ function checkContent(t,d){const a=detectForbidden(t);if(a)return{word:a,field:"
 const RESERVED_USERNAMES=["admin","administrator","root","support","help","tasawuq","tasawuqnow","owner","moderator","mod","official","system","api","www","mail","email"];
 function validateUsername(u){if(!u)return{ok:false,msg:"اكتب اسم المستخدم"};const s=String(u).trim().toLowerCase();if(s.length<3)return{ok:false,msg:"الاسم قصير جدًا (3 أحرف على الأقل)"};if(s.length>20)return{ok:false,msg:"الاسم طويل جدًا (20 حرف كحد أقصى)"};if(!/^[a-z][a-z0-9_]*$/.test(s))return{ok:false,msg:"لازم يبدأ بحرف إنجليزي، ويحتوي فقط a-z / 0-9 / _"};if(RESERVED_USERNAMES.includes(s))return{ok:false,msg:"هذا الاسم محجوز للنظام"};return{ok:true,value:s};}
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
-
-/* ✅ تحديث دالة التحقق من الهاتف (تضيف 218 تلقائياً) */
 function validatePhone(p){if(!p)return{ok:false,msg:"اكتب رقم الواتساب"};let s=String(p).replace(/[^0-9]/g,"");if(s.startsWith("0")){s="218"+s.slice(1);}if(s.length<9)return{ok:false,msg:"الرقم قصير جدًا"};if(s.length>15)return{ok:false,msg:"الرقم طويل جدًا"};if(!s.startsWith("218")&&s.length<10)return{ok:false,msg:"اكتب الرقم بصيغة دولية (مثال: 218912345678)"};return{ok:true,value:s};}
 window.normalizePhoneInput=()=>{const i=document.getElementById("myPhone");if(!i)return;i.value=i.value.replace(/[^0-9]/g,"").slice(0,15);};
 
@@ -1036,8 +1032,7 @@ async function setUserLimit(uid,limit,extra={}){try{const data={limit:Number(lim
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 let currentSort="newest",currentPriceMin=null,currentPriceMax=null,currentAdTypeFilter="all";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
-
-  let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
+                    let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
 let cart={storeId:null,storeName:"",storePhone:"",items:[]};
 let myFollowing=[];
 let unsubFollowing=null;
@@ -1731,6 +1726,7 @@ function cartTotalCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
 function cartTotalPrice(){return cart.items.reduce((s,i)=>s+((i.price||0)*(i.qty||1)),0);}
 function cartTotalItemsCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
 
+/* ✅ تحديث السلة مع الأنيميشن */
 function updateCartUI(){
   const cnt=cartTotalCount();
   const hc=document.getElementById("cartHeaderCount");
@@ -1768,7 +1764,7 @@ const feedbackOverlay=document.getElementById("feedbackOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
-    /* ===== Store Helpers ===== */
+                          /* ===== Store Helpers ===== */
 window.loadStoreHelpers=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){currentStoreHelpers=[];renderStoreHelpersList();return;}
@@ -1890,9 +1886,7 @@ window.backFromForm=()=>{
   else{showCategoriesScreen();}
 };
 window.focusSearchInHome=()=>{openCategory("الكل");setTimeout(()=>{const i=document.getElementById("searchInput");if(i)i.focus();},200);};
-
-/* ✅ دالة filterCityCat المحمية من الكراش */
-window.filterCityCat=()=>{const v=document.getElementById("cityFilterCat").value;const cf=document.getElementById("cityFilter");if(cf)cf.value=v;currentCity=v;openCategory("الكل");setTimeout(()=>{const cf2=document.getElementById("cityFilter");if(cf2)cf2.value=v;currentCity=v;renderPosts();},100);};
+window.filterCityCat=()=>{const v=document.getElementById("cityFilterCat").value;document.getElementById("cityFilter").value=v;currentCity=v;openCategory("الكل");setTimeout(()=>{document.getElementById("cityFilter").value=v;currentCity=v;renderPosts();},100);};
 
 window.setSort=(type)=>{
   currentSort=type;
@@ -1925,7 +1919,7 @@ function renderRecentlyViewed(){
   section.classList.add("hasItems");
   box.innerHTML=items.map(p=>{
     const imgs=getImages(p);const th=imgs[0]||"";
-    return `<div class="recentItem" onclick="openPost('${p.id}')"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th?`<img src="${escapeHtml(th)}" class="recentThumb">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="recentInfo"><div class="recentName">${escapeHtml(p.title||"بدون عنوان")}</div><div class="recentPrice">${p.contactPrice?"📞 تواصل":(p.price!=null?formatPrice(p.price)+" د.ل":"")}</div></div></div>`;
+    return `<div class="recentItem" onclick="openPost('${p.id}')"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th?`<img src="${escapeHtml(th)}" class="recentThumb">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div class="recentInfo"><div class="recentName">${escapeHtml(p.title||"بدون عنوان")}</div><div class="recentPrice">${p.price!=null?formatPrice(p.price)+" د.ل":""}</div></div></div>`;
   }).join("");
 }
 
@@ -2382,6 +2376,7 @@ if(!isSold && (isOwner||isAdmin||isMyStorePost)&&days!=null){
 const discPct=getDiscountPercent(p);
 const discBadge=discPct>0?`<span class="discountBadge">🔥 ${discPct}%</span>`:"";
 
+// ✅ عرض السعر أو "تواصل لمعرفة السعر"
 let priceHTML = "";
 if(p.contactPrice){
   priceHTML = `<div class="price-contact">📞 تواصل لمعرفة السعر</div>`;
@@ -2459,6 +2454,7 @@ const similar=allPosts.filter(x=>x.id!==p.id && x.category===p.category && getSt
 const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const imgs=getImages(s);const th=imgs[0]||"";return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th?`<img src="${escapeHtml(th)}" style="width:100%;height:100%;object-fit:contain">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${s.contactPrice?"📞 تواصل لمعرفة السعر":(s.price!=null?formatPrice(s.price)+" د.ل":"")}</div></div></div>`;}).join("")}</div></div>`:"";
 const discPct=getDiscountPercent(p);
 
+// ✅ تفاصيل السعر
 let priceHtml = "";
 if(p.contactPrice){
   priceHtml = `<div class="price-contact" style="font-size:20px;margin:6px 0">📞 تواصل لمعرفة السعر</div>`;
@@ -3003,8 +2999,8 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
   const box=document.getElementById("storeContent");
-  if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>جاري التحميل..
-      let store=allStores.find(s=>s.id===storeId);
+  if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
+  let store=allStores.find(s=>s.id===storeId);
   if(!store){try{const snap=await getDoc(doc(db,"stores",storeId));if(snap.exists())store={id:snap.id,...snap.data()};}catch(e){}}
   if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
   window._currentStoreId=storeId;
@@ -3020,8 +3016,9 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
   const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
-  const cleanStoreWhatsapp=String(store.whatsappPhone||store.phone||'').replace(/[^0-9+]/g,'');
   
+  // ✅ زر واتساب المتجر
+  const cleanStoreWhatsapp=String(store.whatsappPhone||store.phone||'').replace(/[^0-9+]/g,'');
   const contactStoreBtn=store.phone
     ? (isRestaurant
         ? `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStoreWhatsapp)}')">💬 تواصل عبر واتساب</button>
@@ -3036,6 +3033,7 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const hasBankInfo=hasIban || hasAccount;
   let bankInfoHtml="";
   if(hasBankInfo){
+    // ✅ تحديد رقم استلام الإيصال (للمطاعم: رقم الواتساب، لغير المطاعم: رقم الاتصال)
     const receiptPhone = isRestaurant ? (store.receiptWhatsapp || store.phone) : store.phone;
     const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
     
@@ -3105,6 +3103,7 @@ window.goAddStorePost=(storeId)=>{
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
 window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
+/* ✅ دالة إظهار وإخفاء حقل الإيصال للمطاعم */
 window.toggleStoreReceiptField = (catSelectId, fieldId) => {
   const cat = document.getElementById(catSelectId)?.value;
   const field = document.getElementById(fieldId);
@@ -3217,6 +3216,7 @@ window.saveMyUsername=async()=>{
   else{showToast("❌ "+res.msg,"error");}
 };
 
+/* ✅ تحديث دالة حفظ الهاتف مع المعالجة التلقائية */
 window.saveMyPhone=async()=>{
   const me=auth.currentUser; if(!me){authOverlay.classList.remove("hidden");return;}
   const input=document.getElementById("myPhone");
@@ -3247,6 +3247,7 @@ window.saveMyPhone=async()=>{
 
 window.contactSeller=(id)=>{
   const p=allPosts.find(x=>x.id===id); if(!p)return;
+  // ✅ تحديد الرقم: للمطاعم نستخدم whatsappPhone أو الرقم العادي
   const wpNum=(p.whatsappPhone||p.phone||"").replace(/[^0-9]/g,"");
   if(!wpNum)return;
   incrementWhatsappClick(id,'post');
@@ -3372,6 +3373,7 @@ window.startOpenStore=async()=>{
   const userPhone=(myProfile&&myProfile.phone)||"";
   if(!userPhone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
   
+  // ✅ فتح المتجر بضغطة واحدة وحذف الإعلانات الفردية
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
   if(myCount>0){
     if(!confirm(`⚠️ لديك ${myCount} إعلان فردي.\n\nيجب حذفها كلها قبل فتح المتجر.\n\nهل تريد حذفها الآن والمتابعة؟`))return;
