@@ -2491,6 +2491,8 @@ setTimeout(showAdIfDue,2600);
 
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 window.escapeHtml=escapeHtml;
+function formatPrice(n){if(n==null||n===""||isNaN(n))return"";return Number(n).toLocaleString('en-US');}
+window.formatPrice=formatPrice;
 
 function isStoreOpen(store){
   if(!store || !store.workingHours) return null;
