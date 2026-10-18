@@ -2923,8 +2923,17 @@ let list=allPosts.filter(p=>{
 });
 list=sortPosts(list);
 if(list.length===0){
-  if(allPosts.length===0){return;}
-  postsBox.innerHTML=showOnlyFavorites?"<div class='empty'>❤️ لا توجد إعلانات في المفضلة بعد.</div>":"<div class='empty'>لا توجد إعلانات هنا حالياً</div>";
+  if(showOnlyFavorites){
+    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">❤️</div><div class="esTitle">المفضلة فاضية</div><div class="esDesc">اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا للرجوع له بسهولة</div><button class="esBtn" onclick="showCategoriesScreen()">🏠 تصفح الإعلانات</button></div>`;
+  }else if(showOnlyMine){
+    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📝</div><div class="esTitle">لسه ما نشرت إعلانات</div><div class="esDesc">ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة واحدة</div><button class="esBtn" onclick="startAddPost()">➕ أنشر إعلانك الأول</button></div>`;
+  }else if(term){
+    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">🔍</div><div class="esTitle">لا توجد نتائج</div><div class="esDesc">لم نجد إعلانات تطابق "${escapeHtml(term)}"<br>جرّب كلمة بحث أخرى</div><button class="esBtn esBtnSecondary" onclick="clearSearch()">🔄 مسح البحث</button></div>`;
+  }else if(currentCity!=="الكل"){
+    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📍</div><div class="esTitle">لا توجد إعلانات في ${escapeHtml(currentCity)}</div><div class="esDesc">كن أول من ينشر إعلاناً في هذه المدينة<br>أو جرّب مدينة أخرى</div><button class="esBtn" onclick="startAddPost()">➕ أنشر إعلان هنا</button></div>`;
+  }else{
+    postsBox.innerHTML=`<div class="emptyState"><div class="esIcon">📭</div><div class="esTitle">لا توجد إعلانات هنا حالياً</div><div class="esDesc">كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!</div><button class="esBtn" onclick="startAddPost()">➕ كن أول من ينشر إعلاناً</button></div>`;
+  }
   return;
 }
 postsBox.innerHTML=list.map(p=>{
