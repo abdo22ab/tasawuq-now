@@ -318,8 +318,15 @@ html.dark-mode .fab{border-color:var(--bg)}
 <h3 id="categoryTitle">الإعلانات</h3>
 </div>
 
-<!-- ✅ تم إزالة شريط البحث المكرر من هنا للاكتفاء بالشريط العلوي -->
-
+<div class="searchWrap">
+<div class="searchBox">
+<span class="ic">🔎</span>
+<input id="searchInput" placeholder="ابحث..." onfocus="showSearchDropdown()">
+<button id="clearSearchBtn" class="clearSearchBtn" onclick="clearSearch()" style="display:none">✕</button>
+<div id="searchDropdown" class="searchDropdown hidden"></div>
+</div>
+<select id="cityFilter" class="cityFilter" onchange="filterCity()"></select>
+</div>
 <div class="filterBar">
 <button class="filterBtn active" id="sortNewest" onclick="setSort('newest')">🆕 الأحدث</button>
 <button class="filterBtn" id="sortCheapest" onclick="setSort('cheapest')">💰 الأرخص</button>
