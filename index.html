@@ -2897,7 +2897,7 @@ function startPostsListener(){onSnapshot(collection(db,"posts"),snap=>{allPosts=
    عرض الإعلانات (renderPosts)
    ============================================ */
 function renderPosts(){
-if(allPosts.length===0 && !showOnlyFavorites){renderSkeletons();}
+if(allPosts.length===0 && !showOnlyFavorites && !_postsLoadedOnce){renderSkeletons();}
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
 const me=auth.currentUser;
