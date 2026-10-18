@@ -3863,8 +3863,8 @@ window.startOpenStore=async()=>{
   if(!userPhone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
   if(myCount>0){
-    showToast(`ℹ️ عندك ${myCount} إعلان فردي — هيتنقلوا تلقائياً لمتجرك لما تحب`,"info",4000);
-  }
+    showToast(`ℹ️ عندك ${myCount} إعلان فردي — تقدر تنقلهم لمتجرك بضغطة زر من صفحة المتجر بعد الموافقة`,"info",5000);
+}
   accountOverlay.classList.add("hidden");
   openStoreOverlay.classList.remove("hidden");
   storeLogoImage=null;storeCoverImage=null;
