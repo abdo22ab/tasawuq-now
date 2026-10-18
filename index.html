@@ -1893,8 +1893,7 @@ window.backFromForm=()=>{
   else{showCategoriesScreen();}
 };
 window.focusSearchInHome=()=>{openCategory("الكل");setTimeout(()=>{const i=document.getElementById("searchInput");if(i)i.focus();},200);};
-window.filterCityCat=()=>{const v=document.getElementById("cityFilterCat").value;document.getElementById("cityFilter").value=v;currentCity=v;openCategory("الكل");setTimeout(()=>{document.getElementById("cityFilter").value=v;currentCity=v;renderPosts();},100);};
-
+window.filterCityCat=()=>{const v=document.getElementById("cityFilterCat").value;const cf=document.getElementById("cityFilter");if(cf)cf.value=v;currentCity=v;openCategory("الكل");setTimeout(()=>{const cf2=document.getElementById("cityFilter");if(cf2)cf2.value=v;currentCity=v;renderPosts();},100);};
 window.setSort=(type)=>{
   currentSort=type;
   document.querySelectorAll(".filterBar .filterBtn").forEach(b=>{if(b.id && b.id.startsWith("sort"))b.classList.remove("active");});
