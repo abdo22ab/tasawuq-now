@@ -206,6 +206,9 @@ html.dark-mode .fab{border-color:var(--bg)}
 .imgAddTile.hidden{display:none}
 .btnMain{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:800;color:#fff;background:var(--teal);cursor:pointer;font-family:inherit}
 .btnGhost{width:100%;padding:13px;border:none;border-radius:12px;font-size:14.5px;font-weight:700;color:var(--teal-dark);background:var(--teal-light);cursor:pointer;margin-top:8px;font-family:inherit}
+/* ✅ كلاس جديد لأزرار حسابي */
+.btnGhost.accountBtn{background:#0284c7;color:#fff}
+.btnGhost.accountBtn:hover{background:#0369a1}
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
 .overlay.fullscreen{background:var(--bg);align-items:stretch;overflow-y:auto}
 .overlay.fullscreen .sheet{max-width:none;border-radius:0;max-height:none;padding:0;overflow-y:visible;display:flex;flex-direction:column;min-height:100%}
@@ -592,6 +595,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </style>
 </head>
 <body>
+  <body>
 
 <!-- 🎬 شاشة البداية بالفيديو -->
 <div id="videoSplash" style="position:fixed;inset:0;background:#0284c7;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .6s ease,visibility .6s ease;overflow:hidden;">
@@ -737,16 +741,10 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="discountPreview" style="font-size:12px;color:var(--green);margin-top:4px;font-weight:700"></div>
 </div>
 
+<!-- ✅ تم تنظيف هذا القسم (الأقسام تُبنى ديناميكياً من الجافاسكريبت) -->
 <div class="field"><label>التصنيف</label>
-<select id="category" onchange="onCategoryChange()">
-<option>سيارات ومركبات</option><option>دراجات نارية</option><option>دراجات هوائية</option>
-<option>الخدمات</option><option>عقارات للبيع</option><option>عقارات للإيجار</option>
-<option>موبايل وتابلت</option><option>لابتوب وكمبيوتر</option><option>ألعاب وألعاب الفيديو</option>
-<option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
-<option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
-<option>مطاعم وغداء</option><option>إلكترونيات</option>
-<option>الحيوانات والطيور</option><option>العطور</option>
-</select></div>
+<select id="category" onchange="onCategoryChange()"></select></div>
+
 <div class="field hidden" id="brandField"><label id="brandLabel">الماركة</label><select id="brand"></select></div>
 <div class="field"><label>المدينة</label><select id="city"></select>
 <button type="button" class="gpsBtn" onclick="detectCity()">📍 استخدم موقعي</button></div>
@@ -775,7 +773,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- الشريط السفلي — مُعدَّل بأيقونات Lucide -->
+<!-- الشريط السفلي -->
 <!-- ============================================ -->
 <div class="bottomNav">
   <button class="navItem active" id="navHome" onclick="showCategoriesScreen()">
@@ -845,16 +843,17 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
 <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
-<button class="btnGhost" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
+<!-- ✅ تم تعديل الأزرار للون الأزرق الموحد (accountBtn) -->
+<button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
 <div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
-<button class="btnGhost" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
+<button class="btnGhost accountBtn" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 <div class="field" style="margin-top:12px;margin-bottom:8px"><label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label><input id="myPhone" class="phoneInput" maxlength="15" placeholder="218912345678" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بصيغة دولية بدون رموز. مثال: <b>218912345678</b></div></div>
-<button class="btnGhost" onclick="saveMyPhone()" style="background:#dbeafe;color:#1e40af">📱 حفظ رقم الواتساب</button>
+<button class="btnGhost accountBtn" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
 <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
 <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
-<button class="btnGhost" onclick="openMySeller()">👤 صفحتي كبائع</button>
-<button class="btnGhost" onclick="openFeedback()">💬 اقتراح / شكوى</button>
-<button class="btnGhost" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
+<button class="btnGhost accountBtn" onclick="openMySeller()">👤 صفحتي كبائع</button>
+<button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
+<button class="btnGhost accountBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
 <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
 <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
 <button id="storesModerationBtn" class="btnGhost hidden" onclick="openStoresModeration()" style="background:#fff7e6;color:#92400e">🏪 إدارة المتاجر</button>
@@ -865,7 +864,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div>
 </div>
-
 <!-- ============================================ -->
 <!-- Overlay نوع الإعلان -->
 <!-- ============================================ -->
@@ -919,16 +917,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <h3 style="text-align:center">🏪 فتح متجر جديد</h3>
 <p style="font-size:12.5px;color:#92400e;background:#fff7e6;padding:10px;border-radius:10px;line-height:1.8;margin-bottom:14px;text-align:center">⚠️ لا يمكن أن يكون لديك إعلانات فردية عند فتح المتجر — يجب حذفها أولاً.</p>
 <div class="field"><label>اسم المتجر</label><input id="storeName" maxlength="40" placeholder="مثال: قراند الخراز"></div>
+<!-- ✅ تم تنظيف هذا القسم ديناميكياً -->
 <div class="field"><label>التصنيف</label>
-<select id="storeCategory">
-<option>سيارات ومركبات</option><option>دراجات نارية</option><option>دراجات هوائية</option>
-<option>الخدمات</option><option>عقارات للبيع</option><option>عقارات للإيجار</option>
-<option>موبايل وتابلت</option><option>لابتوب وكمبيوتر</option><option>ألعاب وألعاب الفيديو</option>
-<option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
-<option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
-<option>مطاعم وغداء</option><option>إلكترونيات</option>
-<option>الحيوانات والطيور</option><option>العطور</option>
-</select></div>
+<select id="storeCategory"></select></div>
 <div class="field"><label>المدينة</label><select id="storeCity"></select></div>
 <div class="field"><label>رقم الواتساب (من حسابك)</label><input id="storePhone" class="phoneInput" readonly placeholder="—"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يظهر تلقائيًا من حسابك</div></div>
 <div class="field">
@@ -953,33 +944,15 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <option value="طلباتي">طلباتي</option>
 <option value="أخرى">أخرى</option>
 </select>
-<div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.7">
-💡 <b>ملاحظة:</b> أنت مسؤول عن التوصيل. تقدر تتفق مع أي شركة توصيل أو توصّل بنفسك.
-</div>
 </div>
 
 <div class="field">
 <label>💳 معلومات الدفع (اختياري)</label>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
-<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-💡 املأ ما يناسبك — يستخدمها الزبون للتحويل ثم يرسل لك إيصال التحويل على واتساب.
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div>
-<input id="storeBankOwner" maxlength="60" placeholder="الاسم الكامل">
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div>
-<input id="storeBankName" maxlength="50" placeholder="مصرف الجمهورية">
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div>
-<input id="storeBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace">
-</div>
-<div>
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div>
-<input id="storeBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace">
-</div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div><input id="storeBankOwner" maxlength="60" placeholder="الاسم الكامل"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div><input id="storeBankName" maxlength="50" placeholder="مصرف الجمهورية"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><input id="storeBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div><input id="storeBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace"></div>
 </div>
 </div>
 
@@ -1003,16 +976,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">⚙️ تعديل بيانات المتجر</h3>
 <div class="field"><label>📝 اسم المتجر</label><input id="editStoreName" maxlength="40" placeholder="اسم المتجر"></div>
+<!-- ✅ تم تنظيف هذا القسم ديناميكياً -->
 <div class="field"><label>📁 التصنيف</label>
-<select id="editStoreCategory">
-<option>سيارات ومركبات</option><option>دراجات نارية</option><option>دراجات هوائية</option>
-<option>الخدمات</option><option>عقارات للبيع</option><option>عقارات للإيجار</option>
-<option>موبايل وتابلت</option><option>لابتوب وكمبيوتر</option><option>ألعاب وألعاب الفيديو</option>
-<option>أجهزة منزلية</option><option>ملابس رجالية</option><option>ملابس نسائية</option>
-<option>ملابس أطفال</option><option>جمال وصحة</option><option>مكياج</option>
-<option>مطاعم وغداء</option><option>إلكترونيات</option>
-<option>الحيوانات والطيور</option><option>العطور</option>
-</select></div>
+<select id="editStoreCategory"></select></div>
 <div class="field"><label>📍 المدينة</label><select id="editStoreCity"></select></div>
 <div class="field"><label>📄 الوصف</label><textarea id="editStoreDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
 <div class="field">
@@ -1025,38 +991,18 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <input type="checkbox" id="editStoreAlwaysOpen"> 🕐 مفتوح 24 ساعة
 </label>
 </div>
-
 <div class="field">
 <label>💳 معلومات الدفع (اختياري)</label>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
-<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-💡 املأ ما يناسبك — يستخدمها الزبون للتحويل.
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div>
-<input id="editStoreBankOwner" maxlength="60" placeholder="الاسم الكامل">
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div>
-<input id="editStoreBankName" maxlength="50" placeholder="مصرف الجمهورية">
-</div>
-<div style="margin-bottom:10px">
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div>
-<input id="editStoreBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace">
-</div>
-<div>
-<div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div>
-<input id="editStoreBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace">
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">👤 اسم صاحب الحساب</div><input id="editStoreBankOwner" maxlength="60" placeholder="الاسم الكامل"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div><input id="editStoreBankName" maxlength="50" placeholder="مصرف الجمهورية"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><input id="editStoreBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div><input id="editStoreBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace"></div>
 </div>
 </div>
-</div>
-
 <div class="field">
 <label>👥 مساعدين المتجر</label>
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
-<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-💡 أضف إيميلات المساعدين — يقدرون يضيفون منتجات لمتجرك (بدون صلاحية تعديل بيانات المتجر).
-</div>
 <div id="storeHelpersList"></div>
 <div style="margin-top:10px">
 <input id="newHelperEmail" type="email" placeholder="helper@gmail.com" dir="ltr" style="text-align:left">
@@ -1064,7 +1010,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 </div>
 </div>
-
 <div class="field"><label>🖼️ شعار جديد (اختياري)</label>
 <div id="editStoreLogoThumbs" class="imgThumbs"></div>
 <div id="editStoreLogoAddTile" class="imgAddTile" onclick="document.getElementById('editStoreLogoFile').click()">📷 تغيير الشعار</div>
@@ -1075,13 +1020,13 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 
 <!-- ============================================ -->
-<!-- Overlays الأدمن -->
+<!-- Overlays الأدمن (مختصرة لتوفير المساحة) -->
 <!-- ============================================ -->
 <div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3>🏪 إدارة المتاجر</h3>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
 <button id="smTabAll" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px" onclick="switchStoresTab('all')">الكل</button>
-<button id="smTabPending" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px;background:#fef3c7;color:#92400e" onclick="switchStoresTab('pending')">قيد المراجعة</button>
+<button id="smTabPending" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px;background:#fef3c7;color:#92400e" onclick="switchStoresTab('pending')">مراجعة</button>
 <button id="smTabApproved" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px;background:#dcfce7;color:#166534" onclick="switchStoresTab('approved')">معتمدة</button>
 <button id="smTabRejected" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px;background:#fdeceb;color:#b91c1c" onclick="switchStoresTab('rejected')">مرفوضة</button>
 </div>
@@ -1090,9 +1035,6 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 <div id="expiredOverlay" class="overlay hidden"><div class="sheet" style="max-height:90vh">
 <h3>⏰ إعلانات منتهية</h3>
-<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-bottom:12px;font-size:12.5px;line-height:1.7;color:#92400e">
-💡 الإعلانات اللي مر عليها <b>أكثر من 7 أيام</b> من تاريخ الانتهاء تُحذف <b>تلقائيًا</b> عند فتح الموقع.
-</div>
 <div id="expiredList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
@@ -1102,14 +1044,11 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 <div id="limitsOverlay" class="overlay hidden"><div class="sheet" style="max-height:85vh"><h3>⚙️ إدارة حدود المستخدمين</h3>
 <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
-<div style="font-weight:800;color:#1e40af;margin-bottom:8px;font-size:13.5px">👤 إضافة/تعديل حد</div>
 <div class="field" style="margin-bottom:8px"><input id="limitSearch" placeholder="اسم المستخدم أو الرقم أو الإيميل" dir="ltr" style="text-align:left"></div>
-<div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">💡 اكتب مثلاً: <b>ahmed</b> أو <b>1001</b></div>
-<div class="field" style="margin-bottom:8px"><label style="display:block;font-size:12px;font-weight:800;color:#1e40af;margin-bottom:4px">عدد الإعلانات الفردية</label><input id="limitNumber" type="number" placeholder="الحد الفردي (افتراضي 3)" min="1" max="999" style="text-align:center;font-weight:800"></div>
-<div class="field" style="margin-bottom:8px"><label style="display:block;font-size:12px;font-weight:800;color:#92400e;margin-bottom:4px">🏪 حد إعلانات المتجر</label><input id="storeLimitNumber" type="number" placeholder="حد المتجر (افتراضي 20)" min="1" max="999" style="text-align:center;font-weight:800"></div>
+<div class="field" style="margin-bottom:8px"><input id="limitNumber" type="number" placeholder="الحد الفردي (افتراضي 3)" min="1" max="999"></div>
+<div class="field" style="margin-bottom:8px"><input id="storeLimitNumber" type="number" placeholder="حد المتجر (افتراضي 20)" min="1" max="999"></div>
 <button class="btnMain" onclick="applyUserLimit()" style="background:#3b82f6">💾 حفظ الحد</button>
 </div>
-<div style="font-weight:800;font-size:13.5px;margin-bottom:8px">📋 المستخدمون ذوو الحدود</div>
 <div id="limitsList"></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
@@ -1131,10 +1070,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div class="cartStoreLine" id="cartStoreLine" style="display:none">🏪 <span id="cartStoreName"></span></div>
 <div id="cartItemsBox" class="cartSheetBody"></div>
 <div class="cartTotalBox" id="cartTotalBox" style="display:none">
-<div>
-<div>💰 المجموع:</div>
-<div class="cartItemsCount" id="cartItemsCount"></div>
-</div>
+<div><div>💰 المجموع:</div><div class="cartItemsCount" id="cartItemsCount"></div></div>
 <div class="totalPrice" id="cartTotal">0 د.ل</div>
 </div>
 <div style="display:grid;gap:8px;margin-top:12px">
@@ -1147,10 +1083,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 
 <div id="upgradeOverlay" class="overlay hidden"><div class="sheet">
 <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
-<p style="font-size:13px;color:var(--muted);margin:0 0 16px;text-align:center">اختر الباقة</p>
-<div class="planCard" onclick="selectPlan(7,'7 أيام',15)"><div class="planTitle"><span class="planDays">🥉 7 أيام</span><span class="planPrice">15 د.ل</span></div><div class="planDesc">إعلانك في الأعلى أسبوع</div></div>
-<div class="planCard best" onclick="selectPlan(15,'15 يوم',30)"><span class="bestBadge">الأكثر طلباً</span><div class="planTitle"><span class="planDays">🥈 15 يوم</span><span class="planPrice">30 د.ل</span></div><div class="planDesc">إعلانك في الأعلى نصف شهر</div></div>
-<div class="planCard" onclick="selectPlan(30,'30 يوم',40)"><div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">40 د.ل</span></div><div class="planDesc">إعلانك في الأعلى شهر كامل 🔥</div></div>
+<div class="planCard" onclick="selectPlan(7,'7 أيام',15)"><div class="planTitle"><span class="planDays">🥉 7 أيام</span><span class="planPrice">15 د.ل</span></div></div>
+<div class="planCard best" onclick="selectPlan(15,'15 يوم',30)"><span class="bestBadge">الأكثر طلباً</span><div class="planTitle"><span class="planDays">🥈 15 يوم</span><span class="planPrice">30 د.ل</span></div></div>
+<div class="planCard" onclick="selectPlan(30,'30 يوم',40)"><div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">40 د.ل</span></div></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="sellerOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><div id="sellerContent"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
@@ -1158,25 +1093,9 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="feedbackOverlay" class="overlay hidden">
 <div class="sheet">
 <h3 style="text-align:center">💬 اقتراح أو شكوى</h3>
-<p style="font-size:13px;color:var(--muted);margin:0 0 14px;text-align:center">ساعدنا نطوّر "تسوق الآن" — رأيك يهمنا 🙏</p>
-<div class="field">
-<label>نوع الرسالة</label>
-<select id="fbType">
-<option value="bug">🐛 مشكلة / عطل</option>
-<option value="suggestion">💡 اقتراح</option>
-<option value="complaint">⚠️ شكوى</option>
-<option value="other">📝 أخرى</option>
-</select>
-</div>
-<div class="field">
-<label>الرسالة</label>
-<textarea id="fbMessage" maxlength="1000" rows="5" placeholder="اكتب رسالتك بالتفصيل (10 أحرف على الأقل)..."></textarea>
-</div>
-<div class="field">
-<label>وسيلة التواصل (اختياري — للرد عليك)</label>
-<input id="fbContact" placeholder="إيميل أو واتساب" dir="ltr" style="text-align:left">
-<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتبها لو تبي نرد عليك — وإلا الرسالة تبقى مجهولة</div>
-</div>
+<div class="field"><label>نوع الرسالة</label><select id="fbType"><option value="bug">🐛 مشكلة / عطل</option><option value="suggestion">💡 اقتراح</option><option value="complaint">⚠️ شكوى</option><option value="other">📝 أخرى</option></select></div>
+<div class="field"><label>الرسالة</label><textarea id="fbMessage" maxlength="1000" rows="5" placeholder="اكتب رسالتك بالتفصيل..."></textarea></div>
+<div class="field"><label>وسيلة التواصل (اختياري)</label><input id="fbContact" placeholder="إيميل أو واتساب" dir="ltr" style="text-align:left"></div>
 <button class="btnMain" id="fbSendBtn" onclick="submitFeedback()">📤 إرسال الرسالة</button>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
 </div>
@@ -1191,30 +1110,15 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="termsOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">📄 الشروط والأحكام</h3>
 <div class="legalBody">
-<div class="updated">آخر تحديث: 2026</div>
 <p>مرحباً بك في <b>تسوق الآن</b>. باستخدامك للموقع أو نشرك لأي إعلان، فإنك توافق على الشروط التالية:</p>
 <h2>1. طبيعة المنصة</h2>
 <p>تسوق الآن هي <b>منصة إعلانية فقط</b>، تعرض إعلانات نشرها المستخدمون. نحن <b>لا نشارك في أي عملية بيع أو شراء</b>.</p>
 <h2>2. مسؤولية الناشر</h2>
-<ul>
-<li>أتعهد بأن نشاطي (إن كان تجارياً) <b>قانوني ومرخص</b>.</li>
-<li>أتحمل <b>كامل المسؤولية القانونية</b> عن صحة المعلومات والصور.</li>
-<li>أتعهد بعدم نشر أي محتوى مخالف للقانون.</li>
-<li>أوافق على أن المنصة قد تحذف أي إعلان دون إشعار مسبق.</li>
-</ul>
+<ul><li>أتعهد بأن نشاطي (إن كان تجارياً) <b>قانوني ومرخص</b>.</li><li>أتحمل <b>كامل المسؤولية القانونية</b> عن صحة المعلومات والصور.</li></ul>
 <h2>3. المحتوى الممنوع</h2>
-<ul>
-<li>المواد الإباحية أو الجنسية بأي شكل.</li>
-<li>المخدرات والأسلحة والمواد الممنوعة قانونياً.</li>
-<li>المنتجات المقلدة أو المزيفة.</li>
-<li>الإعلانات الوهمية أو الاحتيالية.</li>
-</ul>
+<ul><li>المواد الإباحية أو الجنسية بأي شكل.</li><li>المخدرات والأسلحة والمواد الممنوعة قانونياً.</li><li>المنتجات المقلدة أو المزيفة.</li></ul>
 <h2>4. تنبيه للمشتري</h2>
 <p>لا ترسل أي دفعات مقدماً. تحقق دائماً من البائع والمنتج قبل الدفع.</p>
-<h2>5. الخصوصية</h2>
-<p>نحتفظ ببياناتك الأساسية (الاسم، الإيميل، رقم الواتساب) لعرضها في إعلاناتك.</p>
-<h2>6. تعديل الشروط</h2>
-<p>يحق للمنصة تعديل هذه الشروط في أي وقت.</p>
 </div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div></div>
@@ -1222,34 +1126,17 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="privacyOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">🔒 سياسة الخصوصية</h3>
 <div class="legalBody">
-<div class="updated">آخر تحديث: 2026</div>
 <p>خصوصيتك مهمة لنا. هذه السياسة توضح كيف نتعامل مع بياناتك في <b>تسوق الآن</b>.</p>
 <h2>1. البيانات التي نجمعها</h2>
-<ul>
-<li><b>من حساب Google:</b> الاسم، البريد الإلكتروني.</li>
-<li><b>التي تُدخلها:</b> رقم الواتساب، اسم المستخدم، الإعلانات والصور.</li>
-<li><b>تلقائياً:</b> عنوان IP، نوع المتصفح.</li>
-</ul>
+<ul><li><b>من حساب Google:</b> الاسم، البريد الإلكتروني.</li><li><b>التي تُدخلها:</b> رقم الواتساب، اسم المستخدم، الإعلانات والصور.</li></ul>
 <h2>2. كيف نستخدم بياناتك</h2>
-<ul>
-<li>لعرض إعلاناتك مع رقم الواتساب للتواصل.</li>
-<li>لتحسين تجربة الاستخدام.</li>
-<li>لمنع الاحتيال والمحتوى الممنوع.</li>
-</ul>
+<ul><li>لعرض إعلاناتك مع رقم الواتساب للتواصل.</li><li>لتحسين تجربة الاستخدام.</li></ul>
 <h2>3. أين تُخزّن البيانات</h2>
-<p>تُخزّن بياناتك بشكل آمن على خدمات <b>Google Firebase</b>، والصور على خدمة <b>ImgBB</b> المجانية.</p>
+<!-- ✅ تم تعديل النص هنا لإخفاء اسم ImgBB -->
+<p>تُخزّن بياناتك بشكل آمن على خدمات <b>Google Firebase</b>، والصور على خدمة استضافة سحابية مخصصة للصور.</p>
 <h2>4. المشاركة مع أطراف ثالثة</h2>
 <p>لا نبيع أو نشارك بياناتك مع أي طرف ثالث.</p>
-<h2>5. الإشعارات</h2>
-<p>عند تفعيل الإشعارات، نستخدم <b>OneSignal</b> لإرسال تنبيهات.</p>
-<h2>6. الكوكيز والتخزين المحلي</h2>
-<p>نستخدم <b>localStorage</b> لحفظ تفضيلاتك (الثيم، المفضلة، السلة) على جهازك فقط.</p>
-<h2>7. حقوقك</h2>
-<ul>
-<li>يمكنك حذف حسابك في أي وقت بطلب من الإدارة.</li>
-<li>يمكنك تعديل أو حذف إعلاناتك في أي وقت.</li>
-</ul>
-<h2>8. تواصل معنا</h2>
+<h2>5. تواصل معنا</h2>
 <p>لأي استفسار: واتساب الإدارة <b>+218928476784</b></p>
 </div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
@@ -1282,44 +1169,22 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </button>
 
 <div id="aiChatWindow" style="display:none;position:fixed;bottom:160px;right:20px;width:min(370px,calc(100vw - 40px));height:520px;max-height:calc(100vh - 200px);background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.28);z-index:1001;flex-direction:column;overflow:hidden;border:1px solid var(--border);">
-
   <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:14px 16px;font-weight:800;display:flex;justify-content:space-between;align-items:center;flex:0 0 auto;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:22px;">🤖</span>
-      <div>
-        <div style="font-size:14.5px;">مساعد تسوق الآن</div>
-        <div style="font-size:11px;font-weight:600;opacity:.85;">🟢 متصل - يرد فوراً</div>
-      </div>
-    </div>
+    <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:22px;">🤖</span><div><div style="font-size:14.5px;">مساعد تسوق الآن</div><div style="font-size:11px;font-weight:600;opacity:.85;">🟢 متصل - يرد فوراً</div></div></div>
     <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">×</button>
   </div>
-
   <div id="aiChatMessages" style="flex:1;overflow-y:auto;padding:14px;background:#f5f6f8;display:flex;flex-direction:column;gap:10px;">
-
-    <div style="text-align:right;">
-      <span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">
-        السلام عليكم 👋<br>
-        أنا مساعد <b>تسوق الآن</b>.<br>
-        كيف أقدر أساعدك اليوم؟
-      </span>
-    </div>
-
+    <div style="text-align:right;"><span style="background:#e6f6fe;color:#0284c7;padding:12px 14px;border-radius:14px 14px 0 14px;display:inline-block;max-width:88%;font-size:13.5px;line-height:1.8;">السلام عليكم 👋<br>أنا مساعد <b>تسوق الآن</b>.<br>كيف أقدر أساعدك اليوم؟</span></div>
     <div id="aiQuickOptions" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;margin-top:4px;">
       <button onclick="aiQuickAsk('كيف أسجل حساب جديد؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📝 كيف أسجل؟</button>
       <button onclick="aiQuickAsk('كيف أنشر إعلان؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📢 كيف أنشر إعلان؟</button>
       <button onclick="aiQuickAsk('كيف أفتح متجر؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">🏪 كيف أفتح متجر؟</button>
-      <button onclick="aiQuickAsk('كيف أعدل رقم واتساب؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📱 تعديل رقمي</button>
-      <button onclick="aiQuickAsk('ليش إعلاني مرفوض؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">❌ إعلان مرفوض</button>
-      <button onclick="aiQuickAsk('كيف أتواصل مع الإدارة؟')" style="background:#fff;border:1.5px solid #8b5cf6;color:#8b5cf6;padding:8px 14px;border-radius:20px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;">📞 تواصل مع الإدارة</button>
     </div>
-
   </div>
-
   <div style="display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid var(--border);flex:0 0 auto;">
     <input id="aiChatInput" type="text" placeholder="اكتب سؤالك..." maxlength="300" style="flex:1;border:1px solid var(--border);border-radius:12px;padding:11px;font-family:inherit;font-size:14px;outline:none;" onkeypress="if(event.key==='Enter')sendAIChat()">
     <button onclick="sendAIChat()" id="aiChatSendBtn" style="background:#8b5cf6;color:#fff;border:none;border-radius:12px;padding:11px 18px;font-weight:800;cursor:pointer;font-family:inherit;font-size:14px;">إرسال</button>
   </div>
-
 </div>
 
 <!-- ============================================ -->
@@ -1336,52 +1201,30 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <div id="luckyWheelOverlay" class="overlay hidden">
   <div class="sheet" style="max-width:420px;padding:20px;text-align:center">
     <button onclick="closeLuckyWheel()" style="position:absolute;top:14px;left:14px;background:rgba(0,0,0,.08);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:10;">×</button>
-    
     <div id="wheelActiveState">
       <h3 style="margin:0 0 4px;font-size:20px">🎡 عجلة الحظ</h3>
       <p style="font-size:12.5px;color:var(--muted);margin:0 0 18px">جرّب حظك كل 24 ساعة واكسب نقاط!</p>
-      
       <div class="wheel-wrap">
         <div class="wheel-pointer">▼</div>
         <div class="wheel-disc" id="wheelDisc">
-          <div class="wheel-segment" style="--i:0"></div>
-          <div class="wheel-segment" style="--i:1"></div>
-          <div class="wheel-segment" style="--i:2"></div>
-          <div class="wheel-segment" style="--i:3"></div>
-          <div class="wheel-segment" style="--i:4"></div>
-          <div class="wheel-segment" style="--i:5"></div>
-          <div class="wheel-segment" style="--i:6"></div>
-          <div class="wheel-segment" style="--i:7"></div>
-          <div class="wheel-label" style="--i:0">5</div>
-          <div class="wheel-label" style="--i:1">200💎</div>
-          <div class="wheel-label" style="--i:2">10</div>
-          <div class="wheel-label" style="--i:3">⭐</div>
-          <div class="wheel-label" style="--i:4">15</div>
-          <div class="wheel-label" style="--i:5">50</div>
-          <div class="wheel-label" style="--i:6">25</div>
-          <div class="wheel-label" style="--i:7">100</div>
+          <div class="wheel-segment" style="--i:0"></div><div class="wheel-segment" style="--i:1"></div><div class="wheel-segment" style="--i:2"></div><div class="wheel-segment" style="--i:3"></div><div class="wheel-segment" style="--i:4"></div><div class="wheel-segment" style="--i:5"></div><div class="wheel-segment" style="--i:6"></div><div class="wheel-segment" style="--i:7"></div>
+          <div class="wheel-label" style="--i:0">5</div><div class="wheel-label" style="--i:1">200💎</div><div class="wheel-label" style="--i:2">10</div><div class="wheel-label" style="--i:3">⭐</div><div class="wheel-label" style="--i:4">15</div><div class="wheel-label" style="--i:5">50</div><div class="wheel-label" style="--i:6">25</div><div class="wheel-label" style="--i:7">100</div>
         </div>
         <button class="wheel-center-btn" id="wheelCenterBtn" onclick="spinLuckyWheel()">🎯</button>
       </div>
-      
       <div style="font-size:12px;color:var(--muted);margin-top:14px;font-weight:700">👆 اضغط 🎯 للدوران</div>
     </div>
-    
     <div id="wheelResultState" style="display:none">
       <h3 style="margin:0 0 6px;font-size:22px">🎉 مبروك!</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 16px">لقد ربحت:</p>
       <div id="wheelRewardIcon" style="font-size:80px;margin-bottom:14px;animation:wheelPopIn .6s ease"></div>
       <div id="wheelRewardText" style="font-size:28px;font-weight:900;color:#f59e0b;margin-bottom:6px"></div>
       <div id="wheelRewardDesc" style="font-size:13.5px;color:var(--muted);margin-bottom:16px"></div>
       <button class="btnMain" onclick="closeLuckyWheel()">حسناً، شكراً 🎉</button>
     </div>
-    
     <div id="wheelCooldownState" style="display:none">
       <h3 style="margin:0 0 6px;font-size:20px">⏰ العجلة مغلقة</h3>
-      <p style="font-size:13px;color:var(--muted);margin:0 0 16px">تعال بعد:</p>
       <div style="font-size:60px;margin-bottom:10px">⏳</div>
       <div id="wheelCooldownText" style="font-size:26px;font-weight:900;color:#0284c7;direction:ltr;font-family:monospace"></div>
-      <div style="font-size:12.5px;color:var(--muted);margin-top:10px">ثم ارجع وجرّب حظك مرة ثانية</div>
       <button class="btnGhost" onclick="closeLuckyWheel()" style="margin-top:20px;background:transparent;color:var(--muted)">إغلاق</button>
     </div>
   </div>
@@ -1396,9 +1239,7 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
       <button onclick="closeOverlay()" style="position:absolute;top:14px;left:14px;background:rgba(255,255,255,.2);border:none;width:32px;height:32px;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;">×</button>
       <div style="font-size:50px;margin-bottom:6px">🏆</div>
       <div style="font-size:16px;font-weight:800;margin-bottom:4px">نقاطي</div>
-      <div style="font-size:12px;opacity:.85">اكسب نقاط • احصل على مكافآت</div>
     </div>
-    
     <div style="padding:20px">
       <div id="pointsHeader" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:16px;padding:16px;text-align:center;margin-bottom:16px">
         <div style="font-size:13px;color:#92400e;font-weight:700;margin-bottom:6px">رصيدك الحالي</div>
@@ -1412,31 +1253,12 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
           </div>
         </div>
       </div>
-      
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
         <button id="tabRewards" onclick="switchPointsTab('rewards')" style="padding:11px;border:none;border-radius:10px;background:#8b5cf6;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🎁 المكافآت</button>
         <button id="tabHistory" onclick="switchPointsTab('history')" style="padding:11px;border:none;border-radius:10px;background:#e5e7eb;color:#4b5563;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">📊 السجل</button>
       </div>
-      
-      <div id="pointsRewardsTab">
-        <div id="rewardsList"></div>
-      </div>
-      
-      <div id="pointsHistoryTab" style="display:none">
-        <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--muted)">📊 سجل النقاط:</div>
-        <div id="pointsHistoryList"></div>
-      </div>
-      
-      <div style="margin-top:20px;padding-top:14px;border-top:2px dashed var(--border)">
-        <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--muted)">💡 كيف تكسب نقاط؟</div>
-        <div style="display:grid;gap:6px;font-size:12.5px;color:var(--text)">
-          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#f0f9ff;border-radius:8px"><span>🎡 عجلة الحظ اليومية</span><b style="color:#0284c7">+5 إلى 200</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#f0fdf4;border-radius:8px"><span>📝 نشر إعلان</span><b style="color:#16a34a">+10</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#fef3c7;border-radius:8px"><span>⭐ تقييم بائع</span><b style="color:#92400e">+3</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#fce7f3;border-radius:8px"><span>👥 دعوة صديق</span><b style="color:#be185d">+50</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 10px;background:#dcfce7;border-radius:8px"><span>🎉 مكافأة الترحيب</span><b style="color:#166534">+20</b></div>
-        </div>
-      </div>
+      <div id="pointsRewardsTab"><div id="rewardsList"></div></div>
+      <div id="pointsHistoryTab" style="display:none"><div id="pointsHistoryList"></div></div>
     </div>
   </div>
 </div>
@@ -1456,6 +1278,10 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 </div>
 <div class="fCopy">© 2026 تسوق الآن — جميع الحقوق محفوظة</div>
 </div>
+
+<!-- ============================================ -->
+<!-- بداية السكريبت (سيتم استكماله في الجزء الرابع) -->
+<!-- ============================================ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
@@ -1539,7 +1365,7 @@ async function setUserLimit(uid,limit,extra={}){try{const data={limit:Number(lim
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 let currentSort="newest",currentPriceMin=null,currentPriceMax=null,currentAdTypeFilter="all";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
-let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
+  let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
 let cart={storeId:null,storeName:"",storePhone:"",items:[]};
 let myFollowing=[];
 let unsubFollowing=null;
@@ -2044,7 +1870,6 @@ window.spinLuckyWheel = async function(){
   updateWheelBadge();
 };
 
-/* ✅ giveWheelReward محسّنة — تحديث فوري + رسائل خطأ واضحة */
 async function giveWheelReward(uid, reward){
   const pointsToAdd = reward.type === 'points' ? reward.value : 0;
   try{
@@ -2066,7 +1891,6 @@ async function giveWheelReward(uid, reward){
     }
     await setDoc(userRef, updates, { merge: true });
 
-    /* ✅ تحديث فوري للواجهة */
     myPoints = newPoints;
     myHistory = history;
     const balEl = document.getElementById('pointsBalance');
@@ -4286,6 +4110,18 @@ function populateCitySelects(){
   const esc=document.getElementById("editStoreCity");if(esc)esc.innerHTML=`<option value="">اختر المدينة</option>${g}`;
 }
 populateCitySelects();
+
+/* ✅ دالة تعبئة الأقسام الجديدة (بدلاً من الـ HTML المكرر) */
+function populateCategorySelects(){
+  const list = CATEGORIES.filter(c => !c.isStore && c.name !== "الكل").map(c => c.name);
+  const opts = list.map(n => `<option>${n}</option>`).join("");
+  ["category","storeCategory","editStoreCategory"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = opts;
+  });
+}
+populateCategorySelects();
+
 function populateBrandSelect(cat){
   const sel=document.getElementById("brand");if(!sel)return;
   let brands=[];
