@@ -326,8 +326,14 @@ html.dark-mode .fab{border-color:var(--bg)}
   mix-blend-mode:multiply;
 }
 html.dark-mode .catBox .catIconWrap.catIconImg{
-  background:transparent;
+  background:#f5f6f8;
   border:none;
+  padding:6px;
+  box-sizing:border-box;
+  border-radius:14px;
+}
+html.dark-mode .catBox .catIconWrap.catIconImg img{
+  mix-blend-mode:normal;
 }.catBox:active .catIconWrap{transform:scale(.88)}
 .catBox .catIconWrap svg{width:30px;height:30px;stroke-width:2.2;color:#fff}
 .catBox.storeBox .catIconWrap,.catBox.allBox .catIconWrap{box-shadow:0 2px 8px rgba(0,0,0,.25)}
