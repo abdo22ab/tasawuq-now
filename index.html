@@ -3428,7 +3428,41 @@ window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add(
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();showToast("✅ بعد الدفع، اضغط الرابط","info");},400);};
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){showToast("⚠️ الإعلان غير موجود","warn");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
 
+window.openSendNotification=()=>{
+  if(!isAdmin)return;
+  document.getElementById("notifTitle").value="";
+  document.getElementById("notifMessage").value="";
+  document.getElementById("notifLink").value="";
+  document.getElementById("sendNotifOverlay").classList.remove("hidden");
+  accountOverlay.classList.add("hidden");
+};
+
+window.submitNotification=async()=>{
+  if(!isAdmin)return;
+  const title=document.getElementById("notifTitle").value.trim();
+  const message=document.getElementById("notifMessage").value.trim();
+  const link=document.getElementById("notifLink").value.trim();
+  if(!title||!message){showToast("⚠️ اكتب العنوان والرسالة","warn");return;}
+  const btn=document.getElementById("notifSendBtn");
+  btn.disabled=true;btn.textContent="⏳ جاري الإرسال...";
+  try{
+    await addDoc(collection(db,"app_notifications"),{
+      title:title,
+      message:message,
+      link:link,
+      createdAt:Date.now(),
+      createdBy:auth.currentUser.email
+    });
+    showToast("✅ تم إرسال الإشعار للمستخدمين بنجاح","success");
+    closeOverlay();
+  }catch(e){showToast("❌ خطأ: "+e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="📤 إرسال الإشعار الآن";}
+};
+
+/* ↓↓↓ الكود الأصلي بتاعك - سايبه زي ما هو ↓↓↓ */
 window.openDashboard=async()=>{
+
+  window.openDashboard=async()=>{
   if(!isAdmin)return;
   const box=document.getElementById("dashboardContent");
   box.innerHTML='<div class="reportsEmpty">جاري التحميل...</div>';
