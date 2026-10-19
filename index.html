@@ -4773,8 +4773,61 @@ googleProvider.setCustomParameters({prompt:'select_account'});
 window.loginWithGoogle=async()=>{try{await signInWithPopup(auth,googleProvider);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")showToast("الرجاء السماح بالنوافذ المنبثقة","warn");else if(e.code==="auth/unauthorized-domain")showToast("هذا النطاق غير مصرح به","error");else showToast("تعذر تسجيل الدخول: "+e.code,"error");}};
 
 /* ============================================
-   Start Listeners
+   📢 إشعارات داخل التطبيق (In-App)
    ============================================ */
+function listenToAppNotifications(){
+  onSnapshot(collection(db,"app_notifications"), snap => {
+    if(snap.empty) return;
+    const notifs = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>b.createdAt-a.createdAt);
+    const latest = notifs[0];
+    const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
+    if(seen.includes(latest.id)) return;
+    showInAppBanner(latest);
+  });
+}
+
+function showInAppBanner(notif){
+  const oldBanner = document.getElementById("inAppNotifBanner");
+  if(oldBanner) oldBanner.remove();
+
+  const banner = document.createElement("div");
+  banner.id = "inAppNotifBanner";
+  banner.style.cssText = "position:fixed;top:70px;right:12px;left:12px;z-index:99998;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:14px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:flex-start;animation:slideDown .3s ease-out;max-width:480px;margin:0 auto;font-family:'Cairo',sans-serif;";
+  
+  const linkHtml = notif.link ? '<a href="'+escapeHtml(notif.link)+'" target="_blank" style="display:inline-block;margin-top:8px;background:rgba(255,255,255,.25);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none">👉 اضغط هنا</a>' : "";
+
+  banner.innerHTML = 
+    '<div style="font-size:24px;flex:0 0 auto;line-height:1">🔔</div>' +
+    '<div style="flex:1;min-width:0">' +
+      '<div style="font-weight:800;font-size:14.5px;margin-bottom:3px;line-height:1.4">'+escapeHtml(notif.title)+'</div>' +
+      '<div style="font-size:12.5px;line-height:1.6;opacity:.95">'+escapeHtml(notif.message)+'</div>' +
+      linkHtml +
+    '</div>' +
+    '<button onclick="dismissInAppBanner(\''+notif.id+'\')" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;font-weight:800;cursor:pointer;flex:0 0 auto;display:flex;align-items:center;justify-content:center;line-height:1;padding:0">×</button>';
+  
+  document.body.appendChild(banner);
+  
+  setTimeout(() => {
+    if(document.getElementById("inAppNotifBanner")) dismissInAppBanner(notif.id);
+  }, 15000);
+}
+
+window.dismissInAppBanner = (id) => {
+  const banner = document.getElementById("inAppNotifBanner");
+  if(banner) banner.remove();
+  try{
+    const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
+    if(!seen.includes(id)){
+      seen.push(id);
+      if(seen.length > 20) seen.shift();
+      localStorage.setItem("seenAppNotifs", JSON.stringify(seen));
+    }
+  }catch(e){}
+};
+
+/* ============================================
+   Start Listeners
+   ============================================ */  
 startPostsListener();
 startStoresListener();
 loadBanner();
