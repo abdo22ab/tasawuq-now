@@ -3775,22 +3775,105 @@ window.transferMyPostsToStore=async(storeId)=>{
   if(!isOwner && !isAdmin){showToast("❌ ليس لديك صلاحية","error");return;}
   const myPosts=allPosts.filter(p=>p.uid===store.ownerUid && !p.storeId);
   if(myPosts.length===0){showToast("ℹ️ مفيش إعلانات فردية للنقل","info");return;}
-  if(!confirm(`📥 نقل ${myPosts.length} إعلان فردي لمتجر "${store.name}"؟\n\nسيتم ربطهم بالمتجر ونقلهم لصفحته.`))return;
-  let ok=0,fail=0;
+
+  const overlay=document.createElement('div');
+  overlay.id='transferPostsOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease-out;overflow-y:auto';
+
+  let listHtml='';
   for(const p of myPosts){
-    try{
-      await updateDoc(doc(db,"posts",p.id),{
-        storeId:store.id,
-        storeName:store.name,
-        storeCategory:store.category,
-        storePhone:store.phone||"",
-        phone:store.phone||p.phone||""
-      });
-      ok++;
-    }catch(e){fail++;}
+    const imgArr=getImages(p);
+    const thumb=imgArr[0]||'';
+    const priceTxt=p.priceType==='contact'?'📞 تواصل':(p.price!=null?formatPrice(p.price)+' د.ل':'');
+    const safeTitle=escapeHtml(p.title||'بدون عنوان');
+    const thumbHtml=thumb
+      ?'<img src="'+escapeHtml(thumb)+'" style="width:100%;height:100%;object-fit:cover">'
+      :'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:20px;opacity:.5">🖼️</div>';
+    listHtml+=
+      '<label style="display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff;margin-bottom:8px;cursor:pointer">'+
+        '<input type="checkbox" class="transferChk" data-post-id="'+p.id+'" checked style="width:20px;height:20px;flex:0 0 auto;accent-color:#0284c7">'+
+        '<div style="width:50px;height:50px;border-radius:8px;overflow:hidden;background:var(--teal-light);flex:0 0 auto">'+thumbHtml+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:700;font-size:13px;line-height:1.4;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+safeTitle+'</div>'+
+          '<div style="font-size:12px;color:var(--teal-dark);font-weight:800">'+priceTxt+'</div>'+
+        '</div>'+
+      '</label>';
   }
-  showToast(`✅ تم نقل ${ok} إعلان للمتجر${fail>0?` (فشل ${fail})`:''}`,"success",3500);
-  if(window._currentStoreId===storeId){setTimeout(()=>openStore(storeId,true),500);}
+
+  overlay.innerHTML=
+    '<div style="background:#fff;border-radius:20px;padding:22px 18px;max-width:480px;width:100%;max-height:90vh;display:flex;flex-direction:column">'+
+      '<div style="text-align:center;margin-bottom:14px">'+
+        '<div style="font-size:44px;margin-bottom:6px">📥</div>'+
+        '<div style="font-size:17px;font-weight:800;color:#1f2937;margin-bottom:4px">اختر الإعلانات لنقلها</div>'+
+        '<div style="font-size:12.5px;color:#6b7280">اختر الإعلانات اللي تحب تنقلها لمتجر "<b>'+escapeHtml(store.name)+'</b>"</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:12px">'+
+        '<button id="transferSelectAll" style="flex:1;padding:9px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ تحديد الكل</button>'+
+        '<button id="transferSelectNone" style="flex:1;padding:9px;border:none;border-radius:9px;background:#f3f4f6;color:#4b5563;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✕ إلغاء الكل</button>'+
+      '</div>'+
+      '<div id="transferPostsList" style="flex:1;overflow-y:auto;max-height:45vh;margin-bottom:14px">'+listHtml+'</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button id="transferConfirmBtn" style="flex:1;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer">📥 نقل المحدد</button>'+
+        '<button id="transferCancelBtn" style="padding:13px 20px;border:none;border-radius:12px;background:#f3f4f6;color:#4b5563;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">إلغاء</button>'+
+      '</div>'+
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  const updateBtn=function(){
+    const checked=overlay.querySelectorAll('.transferChk:checked').length;
+    const btn=overlay.querySelector('#transferConfirmBtn');
+    if(!btn)return;
+    if(checked===0){
+      btn.disabled=true;
+      btn.style.opacity='0.5';
+      btn.textContent='📥 اختر إعلانات';
+    }else{
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.textContent='📥 نقل المحدد ('+checked+')';
+    }
+  };
+
+  overlay.querySelector('#transferCancelBtn').onclick=()=>overlay.remove();
+  overlay.querySelector('#transferSelectAll').onclick=()=>{
+    overlay.querySelectorAll('.transferChk').forEach(c=>c.checked=true);
+    updateBtn();
+  };
+  overlay.querySelector('#transferSelectNone').onclick=()=>{
+    overlay.querySelectorAll('.transferChk').forEach(c=>c.checked=false);
+    updateBtn();
+  };
+  overlay.querySelectorAll('.transferChk').forEach(c=>{c.onchange=updateBtn;});
+  overlay.addEventListener('click',(e)=>{if(e.target===overlay)overlay.remove();});
+
+  overlay.querySelector('#transferConfirmBtn').onclick=async()=>{
+    const checked=overlay.querySelectorAll('.transferChk:checked');
+    if(checked.length===0){showToast('⚠️ اختر إعلان واحد على الأقل','warn');return;}
+    const ids=Array.from(checked).map(c=>c.getAttribute('data-post-id'));
+    const btn=overlay.querySelector('#transferConfirmBtn');
+    btn.disabled=true;
+    btn.textContent='⏳ جاري النقل...';
+    let ok=0,fail=0;
+    for(const pid of ids){
+      try{
+        const p=myPosts.find(x=>x.id===pid);
+        await updateDoc(doc(db,'posts',pid),{
+          storeId:store.id,
+          storeName:store.name,
+          storeCategory:store.category,
+          storePhone:store.phone||'',
+          phone:store.phone||(p&&p.phone)||''
+        });
+        ok++;
+      }catch(e){fail++;}
+    }
+    overlay.remove();
+    showToast('✅ تم نقل '+ok+' إعلان للمتجر'+(fail>0?' (فشل '+fail+')':''),'success',3500);
+    if(window._currentStoreId===store.id){setTimeout(()=>openStore(store.id,true),500);}
+  };
+
+  updateBtn();
 };
 
 /* ============================================
