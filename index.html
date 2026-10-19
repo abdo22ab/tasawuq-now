@@ -1141,6 +1141,17 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div></div>
 
+<div id="sendNotifOverlay" class="overlay hidden">
+<div class="sheet" style="max-height:92vh">
+<h3 style="text-align:center">📢 إرسال إشعار للمستخدمين</h3>
+<p style="font-size:12.5px;color:#92400e;background:#fef3c7;padding:10px;border-radius:10px;margin-bottom:14px;text-align:center;line-height:1.7">⚠️ الإشعار هيظهر لكل المستخدمين كبانر أعلى الصفحة.</p>
+<div class="field"><label>عنوان الإشعار</label><input id="notifTitle" maxlength="60" placeholder="مثال: خصم 50% على الترقية!"></div>
+<div class="field"><label>الرسالة</label><textarea id="notifMessage" maxlength="200" rows="3" placeholder="اكتب تفاصيل الإشعار هنا..."></textarea></div>
+<div class="field"><label>الرابط (اختياري)</label><input id="notifLink" placeholder="https://tasawuqnow.com" dir="ltr" style="text-align:left"></div>
+<button class="btnMain" id="notifSendBtn" onclick="submitNotification()" style="background:#0284c7">📤 إرسال الإشعار الآن</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+</div>
+</div>
 <div id="dashboardOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3 style="text-align:center">📈 لوحة الإحصائيات</h3>
 <div id="dashboardContent"></div>
