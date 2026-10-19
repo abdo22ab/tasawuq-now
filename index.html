@@ -4828,6 +4828,7 @@ window.dismissInAppBanner = (id) => {
 startPostsListener();
 startStoresListener();
 loadBanner();
+listenToAppNotifications();
 
 setTimeout(()=>{
   if(!categoriesScreen.classList.contains('hidden')){
