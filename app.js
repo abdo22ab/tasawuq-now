@@ -27,11 +27,6 @@ console.log('ℹ️ App Check متوقف — البوت يشتغل بدون حم
 window.app = app;
 window.auth = auth;
 window.db = db;
-window.firebaseFns = {
-  collection, addDoc, setDoc, getDoc, getDocs, query, where,
-  updateDoc, onSnapshot, deleteDoc, doc, increment, runTransaction,
-  onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup
-};
 
 /* ============================================================
    Constants
@@ -1116,7 +1111,30 @@ window.sendAIChat = async function(){
   }catch(err){}
 })();
 
+/* ============================================================
+   ✅ Firebase Globals (مهمة جداً لـ parts 2 & 3)
+   ============================================================ */
+window.collection = collection;
+window.doc = doc;
+window.addDoc = addDoc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
+window.getDocs = getDocs;
+window.query = query;
+window.where = where;
+window.updateDoc = updateDoc;
+window.onSnapshot = onSnapshot;
+window.deleteDoc = deleteDoc;
+window.increment = increment;
+window.runTransaction = runTransaction;
+window.onAuthStateChanged = onAuthStateChanged;
+window.signOut = signOut;
+window.GoogleAuthProvider = GoogleAuthProvider;
+window.signInWithPopup = signInWithPopup;
+
+/* ✅ التأكد من التحميل */
 console.log('✅ js-part-1 loaded successfully');
+console.log('✅ Firebase globals exported to window');
 /* ============================================================
    تسوق الآن — الجزء الثاني: Posts + Cart + Search + Filters + Admin
    ============================================================ */
@@ -3212,7 +3230,7 @@ window.updateCartUI();
 window.addEventListener('load',()=>{setTimeout(window.updateCartUI,500);});
 
 console.log('✅ js-part-2 loaded successfully');
-/* ============================================================
+   /* ============================================================
    تسوق الآن — الجزء الثالث: Stores + Account + Auth + Seller + Init
    ============================================================ */
 
