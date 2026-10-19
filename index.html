@@ -4364,6 +4364,7 @@ window.openAccount=()=>{
     const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
     const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
     const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
+    const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
     const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
     accountOverlay.classList.remove("hidden");
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
