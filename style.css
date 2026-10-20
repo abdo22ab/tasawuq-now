@@ -545,3 +545,67 @@ html.dark-mode .overlay.fullscreen .screenHeader{background:var(--card);border-b
 .wheel-center-btn:active{transform:translate(-50%,-50%) scale(.9)}
 .wheel-center-btn:disabled{opacity:.6;cursor:not-allowed}
 @keyframes wheelPopIn{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.3) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+
+/* ============================================
+   نافذة توليد صورة الستوري (Story Card Maker)
+   ============================================ */
+#storyModalOverlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99999;
+  display: flex; align-items: center; justify-content: center; padding: 14px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+#storyModalOverlay.hidden { display: none !important; }
+.storyModalBox {
+  background: #111827; color: #fff; width: 100%; max-width: 420px;
+  max-height: 94vh; border-radius: 20px; padding: 18px;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
+  overflow-y: auto;
+}
+.storyModalHeader {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.storyModalHeader h3 { margin: 0; font-size: 17px; font-weight: 800; color: #38bdf8; }
+.storyModalClose {
+  background: rgba(255,255,255,0.1); border: none; color: #fff;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px;
+}
+.storyPreviewImg {
+  width: 100%; max-height: 55vh; object-fit: contain; border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6); margin-bottom: 14px; background: #0b1120;
+}
+.storyActions {
+  width: 100%; display: flex; gap: 8px; flex-direction: column;
+}
+.btnStoryDownload {
+  background: linear-gradient(135deg, #38bdf8, #0284c7); color: #fff;
+  border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 15px;
+  cursor: pointer; font-family: 'Cairo', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btnStoryShare {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff;
+  border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 15px;
+  cursor: pointer; font-family: 'Cairo', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* ============================================
+   بطاقة برنامج الإحالة والمكافآت (Referral Program)
+   ============================================ */
+.referralCardBox {
+  background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff;
+  padding: 16px; border-radius: 16px; margin: 14px 0; text-align: center;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.25);
+}
+.referralCardBox h4 { margin: 0 0 6px; font-size: 17px; font-weight: 800; }
+.referralCardBox p { margin: 0 0 10px; font-size: 12.5px; opacity: 0.95; line-height: 1.5; }
+.referralLinkDisplay {
+  background: rgba(255,255,255,0.22); padding: 8px 12px; border-radius: 10px;
+  font-size: 12px; font-weight: 700; word-break: break-all; margin-bottom: 10px;
+  direction: ltr; border: 1px dashed rgba(255,255,255,0.4);
+}
+.referralBtnsRow { display: flex; gap: 8px; justify-content: center; }
+.referralBtnsRow button {
+  flex: 1; border: none; padding: 9px 12px; border-radius: 10px;
+  font-weight: 800; font-size: 13px; cursor: pointer; font-family: 'Cairo', sans-serif;
+}
