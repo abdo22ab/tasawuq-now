@@ -451,7 +451,7 @@ window.redeemReward = async function(rewardId){
   }
 };
 
-async async function rewardReferrer(refCode, newUid) {
+async function rewardReferrer(refCode, newUid) {
   try {
     const found = await findUserByAny(refCode);
     if (found && found.uid && found.uid !== newUid) {
