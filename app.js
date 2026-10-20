@@ -1,3 +1,11 @@
+// التقاط رابط الإحالة من الرابط عند الدخول
+try {
+  const prms = new URLSearchParams(window.location.search);
+  const refCode = prms.get('ref');
+  if (refCode) {
+    sessionStorage.setItem('tasawuq_pending_ref', refCode);
+  }
+} catch(e){}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
@@ -196,6 +204,10 @@ const POINTS_REWARDS = [
   { id: 'featured_3',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 3 أيام',    cost: 400,   desc: 'إعلانك في الأعلى 3 أيام كاملة' },
   { id: 'featured_7',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 7 أيام',    cost: 500,   desc: 'إعلانك في الأعلى أسبوع كامل 🔥' },
   { id: 'featured_30', icon: '⭐', category: 'featured', title: 'إعلان مميز — 30 يوم',    cost: 1500,  desc: 'إعلانك في الأعلى شهر كامل — أفضل قيمة!' },
+  { id: 'card_libyana_5', icon: '📱', category: 'cards', title: 'كرت شحن ليبيانا 5 د.ل', cost: 450, desc: 'كرت تعبئة رصيد ليبيانا 5 دينار فوري' },
+  { id: 'card_madar_5',   icon: '📱', category: 'cards', title: 'كرت شحن المدار 5 د.ل',   cost: 450, desc: 'كرت تعبئة رصيد المدار 5 دينار فوري' },
+  { id: 'card_libyana_10',icon: '🎁', category: 'cards', title: 'كرت شحن ليبيانا 10 د.ل',cost: 850, desc: 'كرت تعبئة رصيد ليبيانا 10 دينار' },
+  { id: 'card_madar_10',  icon: '🎁', category: 'cards', title: 'كرت شحن المدار 10 د.ل',  cost: 850, desc: 'كرت تعبئة رصيد المدار 10 دينار' },
   { id: 'discount_50', icon: '🎟️', category: 'extra', title: 'خصم 50% على أي ترقية',     cost: 300,   desc: 'كود خصم لاستخدامه عند الترقية' },
   { id: 'extra_post',  icon: '💎', category: 'extra', title: 'إعلان إضافي (تجاوز الحد)',  cost: 250,   desc: 'انشر إعلان فوق الحد المسموح' },
   { id: 'custom_logo',   icon: '🎨', category: 'vip', title: 'شعار مخصص للمتجر',       cost: 3000,  desc: 'يصمم لك الأدمن شعار خاص لمتجرك' },
@@ -439,14 +451,36 @@ window.redeemReward = async function(rewardId){
   }
 };
 
+async async function rewardReferrer(refCode, newUid) {
+  try {
+    const found = await findUserByAny(refCode);
+    if (found && found.uid && found.uid !== newUid) {
+      await addPoints(found.uid, 50, '🎁 هدية دعوة صديق جديد للموقع', 'referral_bonus');
+    }
+  } catch(e) {
+    console.warn('Reward referrer error:', e);
+  }
+}
+
 async function giveWelcomePoints(uid){
   try{
     const userRef = doc(db, 'userPoints', uid);
     const snap = await getDoc(userRef);
     if(!snap.exists()){
+      let welcomePts = 20;
+      let history = [{ value: 20, title: '🎉 مكافأة الترحيب', activity: 'welcome', timestamp: Date.now() }];
+      
+      const refCode = sessionStorage.getItem('tasawuq_pending_ref');
+      if (refCode) {
+        welcomePts += 20;
+        history.push({ value: 20, title: '🎁 مكافأة التسجيل عبر رابط دعوة', activity: 'referral_bonus', timestamp: Date.now() });
+        rewardReferrer(refCode, uid);
+        sessionStorage.removeItem('tasawuq_pending_ref');
+      }
+
       await setDoc(userRef, {
-        points: 20,
-        history: [{ value: 20, title: '🎉 مكافأة الترحيب', activity: 'welcome', timestamp: Date.now() }],
+        points: welcomePts,
+        history: history,
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
@@ -1812,7 +1846,7 @@ const contactBtn=(p.phone && !isSold)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
-const shareBtn=(status==="approved" && !expired)?`<button class="btnMain" style="background:var(--teal-dark);margin-bottom:8px" onclick="sharePost('${p.id}')">📤 مشاركة الإعلان</button>`:"";
+const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('')">📸 صورة للستوري</button></div>`:"";
 const viewsBadge=(isOwner||isAdmin||isMyStorePost)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
 let statusBadge="";
 if(isOwner||isAdmin||isMyStorePost){if(status==="pending")statusBadge=`<span class="statusBadge pending">⏳ قيد المراجعة</span>`;else if(status==="rejected")statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
@@ -2024,6 +2058,7 @@ window.approvePost=async(id)=>{
     const post=allPosts.find(p=>p.id===id);
     await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
     if(post && post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
+    if(post) sendPostToTelegram(post);
     showToast("✅ تم قبول الإعلان","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -3077,6 +3112,9 @@ window.openAccount=()=>{
     const mnEl=document.getElementById("accountMemberNo");
     if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}
     const unEl=document.getElementById("accountUsername");
+    const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+    const refDisplay = document.getElementById("myRefLinkDisplay");
+    if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
     if(unEl){if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}}
     const stEl=document.getElementById("accountStore");
     if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
@@ -3601,6 +3639,313 @@ setTimeout(refreshNavIcons, 3000);
 
 // ============================================
 // ربط كافة دوال ووظائف التطبيق بـ window لضمان عمل كافة أحداث الـ HTML (onclick, oninput, onchange)
+
+// ============================================
+// نشر الإعلان تلقائياً في قناة التليجرام @tasawuqnow
+// ============================================
+async function sendPostToTelegram(post){
+  if(!post) return;
+  const token = "8476996485:AAH_06mzTH3V8f-0e-GXEVC2a46hSlz3Yl4";
+  const chatId = "@tasawuqnow";
+  
+  const priceText = post.priceType === "contact" 
+    ? "📞 عند الاتصال" 
+    : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
+  
+  const cityText = post.city ? "\n📍 المدينة: " + post.city : "";
+  const catText = post.category ? "\n🏷️ التصنيف: " + post.category : "";
+  const brandText = post.brand ? " (" + post.brand + ")" : "";
+  const postUrl = "https://tasawuqnow.com/#post-" + post.id;
+  
+  const caption = "🔥 إعلان جديد على تسوق الآن!\n\n📌 " + (post.title || "إعلان") + "\n💰 السعر: " + priceText + cityText + catText + brandText + "\n\n🔗 شاهد باقي الصور وتواصل مع البائع:\n" + postUrl + "\n\n📢 تابعنا لأحدث العروض: @tasawuqnow";
+
+  const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
+
+  try {
+    if (images.length > 0) {
+      await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, photo: images[0], caption: caption })
+      });
+    } else {
+      await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: caption })
+      });
+    }
+  } catch (err) {
+    console.warn("Telegram broadcast error:", err);
+  }
+}
+window.sendPostToTelegram = sendPostToTelegram;
+
+// ============================================
+// أداة توليد صورة الستوري (Story Card Generator)
+// ============================================
+let currentStoryDataUrl = null;
+let currentStoryPost = null;
+
+async function generateStoryImage(post) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+
+  // خلفية تدرج لوني فخم
+  const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+  grad.addColorStop(0, "#0b1329");
+  grad.addColorStop(0.5, "#111827");
+  grad.addColorStop(1, "#0f172a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1080, 1920);
+
+  // دوائر زخرفية
+  ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
+  ctx.beginPath();
+  ctx.arc(100, 200, 320, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(236, 72, 153, 0.07)";
+  ctx.beginPath();
+  ctx.arc(980, 1680, 420, 0, Math.PI * 2);
+  ctx.fill();
+
+  // رأس البطاقة - اسم الموقع
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 46px 'Cairo', sans-serif";
+  ctx.fillText("🛒 تـسـوق الآن | TasawuqNow.com", 540, 140);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.font = "26px 'Cairo', sans-serif";
+  ctx.fillText("منصة الإعلانات المبوبة في ليبيا", 540, 195);
+
+  // خط فاصل
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(140, 240);
+  ctx.lineTo(940, 240);
+  ctx.stroke();
+
+  // صورة السلعة الرئيسية
+  const imgX = 100, imgY = 280, imgW = 880, imgH = 880, radius = 36;
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
+  else ctx.rect(imgX, imgY, imgW, imgH);
+  ctx.clip();
+
+  const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
+  let imageLoaded = false;
+
+  if (images.length > 0) {
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((resolve) => {
+        img.onload = () => { imageLoaded = true; resolve(); };
+        img.onerror = () => { resolve(); };
+        setTimeout(resolve, 3500);
+        img.src = images[0];
+      });
+      if (imageLoaded) {
+        const hRatio = imgW / img.width;
+        const vRatio = imgH / img.height;
+        const ratio = Math.max(hRatio, vRatio);
+        const shiftX = (imgW - img.width * ratio) / 2;
+        const shiftY = (imgH - img.height * ratio) / 2;
+        ctx.drawImage(img, 0, 0, img.width, img.height, imgX + shiftX, imgY + shiftY, img.width * ratio, img.height * ratio);
+      }
+    } catch(e) {}
+  }
+
+  if (!imageLoaded) {
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(imgX, imgY, imgW, imgH);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 80px 'Cairo', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("📸 تسوق الآن", imgX + imgW / 2, imgY + imgH / 2);
+  }
+  ctx.restore();
+
+  // إطار الصورة
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
+  else ctx.rect(imgX, imgY, imgW, imgH);
+  ctx.stroke();
+
+  // وسم التصنيف فوق الصورة
+  if (post.category) {
+    ctx.fillStyle = "rgba(2, 132, 199, 0.92)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(140, 320, 240, 60, 16);
+    else ctx.fillRect(140, 320, 240, 60);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 26px 'Cairo', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(post.category, 260, 360);
+  }
+
+  // عنوان الإعلان
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 50px 'Cairo', sans-serif";
+  const title = post.title || "إعلان مميز";
+  if (title.length > 32) {
+    ctx.fillText(title.slice(0, 32), 980, 1240);
+    ctx.fillText(title.slice(32, 64) + "...", 980, 1300);
+  } else {
+    ctx.fillText(title, 980, 1260);
+  }
+
+  // شريط السعر والمدينة
+  const priceY = 1360;
+  ctx.fillStyle = "#f59e0b";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(100, priceY, 460, 110, 24);
+  else ctx.fillRect(100, priceY, 460, 110);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.font = "bold 44px 'Cairo', sans-serif";
+  const priceStr = post.priceType === "contact" ? "📞 عند الاتصال" : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
+  ctx.fillText(priceStr, 330, priceY + 70);
+
+  // شارة المدينة
+  if (post.city) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(590, priceY, 390, 110, 24);
+    else ctx.fillRect(590, priceY, 390, 110);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = "bold 36px 'Cairo', sans-serif";
+    ctx.fillText("📍 " + post.city, 785, priceY + 70);
+  }
+
+  // بطاقة أسفل الإعلان (دعوة للتواصل)
+  const ctaY = 1520;
+  ctx.fillStyle = "rgba(2, 132, 199, 0.2)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(100, ctaY, 880, 260, 28);
+  else ctx.fillRect(100, ctaY, 880, 260);
+  ctx.fill();
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 38px 'Cairo', sans-serif";
+  ctx.fillText("💬 تواصل مباشرة مع المعلن عبر واتساب", 540, ctaY + 75);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 34px 'Cairo', sans-serif";
+  ctx.fillText("ابحث عن الإعلان في موقعنا الآن:", 540, ctaY + 140);
+
+  ctx.fillStyle = "#fde047";
+  ctx.font = "bold 42px 'Cairo', sans-serif";
+  ctx.fillText("tasawuqnow.com", 540, ctaY + 215);
+
+  return canvas.toDataURL("image/png");
+}
+
+window.openStoryModal = async function(id) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+  currentStoryPost = p;
+  const overlay = document.getElementById("storyModalOverlay");
+  const loader = document.getElementById("storyLoading");
+  const img = document.getElementById("storyPreviewImg");
+  const actions = document.getElementById("storyActionsBox");
+  if (!overlay) return;
+
+  overlay.classList.remove("hidden");
+  loader.style.display = "block";
+  img.style.display = "none";
+  actions.style.display = "none";
+
+  try {
+    currentStoryDataUrl = await generateStoryImage(p);
+    img.src = currentStoryDataUrl;
+    loader.style.display = "none";
+    img.style.display = "block";
+    actions.style.display = "flex";
+  } catch (err) {
+    loader.textContent = "تعذر توليد الصورة: " + err.message;
+  }
+};
+
+window.closeStoryModal = function() {
+  const overlay = document.getElementById("storyModalOverlay");
+  if (overlay) overlay.classList.add("hidden");
+};
+
+window.downloadStoryImage = function() {
+  if (!currentStoryDataUrl) return;
+  const a = document.createElement("a");
+  a.href = currentStoryDataUrl;
+  const title = (currentStoryPost && currentStoryPost.title) ? currentStoryPost.title.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_').slice(0, 20) : "story";
+  a.download = "tasawuq-" + title + ".png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast("📥 تم حفظ صورة الستوري بجهازك!", "success");
+};
+
+window.shareStoryDirectly = async function() {
+  if (!currentStoryDataUrl) return;
+  try {
+    const res = await fetch(currentStoryDataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], "tasawuq-story.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: currentStoryPost ? currentStoryPost.title : "إعلان على تسوق الآن",
+        text: "شاهد هذا الإعلان على تسوق الآن: https://tasawuqnow.com/#post-" + (currentStoryPost ? currentStoryPost.id : "")
+      });
+      return;
+    }
+  } catch(e) {}
+  downloadStoryImage();
+  setTimeout(() => {
+    showToast("تم تنزيل الصورة، يمكنك نشرها الآن في ستوري واتساب أو فيسبوك!", "info", 4000);
+  }, 1000);
+};
+
+// ============================================
+// دوال برنامج الإحالة والمكافآت (Referrals)
+// ============================================
+window.copyRefLink = function() {
+  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+  const link = window.location.origin + window.location.pathname + "?ref=" + refCode;
+  navigator.clipboard.writeText(link).then(() => {
+    showToast("📋 تم نسخ رابط الدعوة بنجاح!", "success");
+  }).catch(() => {
+    prompt("انسخ رابط الدعوة الخاص بك:", link);
+  });
+};
+
+window.shareRefOnWhatsapp = function() {
+  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+  const link = window.location.origin + window.location.pathname + "?ref=" + refCode;
+  const msg = "🔥 تطبيق وموقع تسوق الآن في ليبيا — لبيع وشراء السيارات، العقارات، والأجهزة مجاناً!\n\nسجّل بحساب Google من هذا الرابط واكسب نقاط ترحيبية فورية:\n" + link;
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+};
+
+
 // ============================================
 if (typeof addPoints === 'function' && typeof window.addPoints === 'undefined') window.addPoints = addPoints;
 if (typeof addRecentView === 'function' && typeof window.addRecentView === 'undefined') window.addRecentView = addRecentView;
