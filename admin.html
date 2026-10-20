@@ -629,7 +629,46 @@ function renderModerationList(){
   }).join("");
   box.innerHTML=toolbar+items;
 }
-window.approveOnePost=async(id)=>{try{await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});alert("✅");}catch(e){alert("خطأ: "+e.message);}};
+// ============================================
+// نشر الإعلان تلقائياً في قناة التليجرام @tasawuqnow
+// ============================================
+async function sendPostToTelegram(post){
+  if(!post) return;
+  const token = "8476996485:AAH_06mzTH3V8f-0e-GXEVC2a46hSlz3Yl4";
+  const chatId = "@tasawuqnow";
+  
+  const priceText = post.priceType === "contact" 
+    ? "📞 عند الاتصال" 
+    : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
+  
+  const cityText = post.city ? "\n📍 المدينة: " + post.city : "";
+  const catText = post.category ? "\n🏷️ التصنيف: " + post.category : "";
+  const brandText = post.brand ? " (" + post.brand + ")" : "";
+  const postUrl = "https://tasawuqnow.com/#post-" + post.id;
+  
+  const caption = "🔥 إعلان جديد على تسوق الآن!\n\n📌 " + (post.title || "إعلان") + "\n💰 السعر: " + priceText + cityText + catText + brandText + "\n\n🔗 شاهد باقي الصور وتواصل مع البائع:\n" + postUrl + "\n\n📢 تابعنا لأحدث العروض: @tasawuqnow";
+
+  const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
+
+  try {
+    if (images.length > 0) {
+      await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, photo: images[0], caption: caption })
+      });
+    } else {
+      await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: caption })
+      });
+    }
+  } catch (err) {
+    console.warn("Telegram broadcast error:", err);
+  }
+}
+window.approveOnePost=async(id)=>{try{const p=allPostsCache.find(x=>x.id===id);await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});if(p)sendPostToTelegram(p);alert("✅ تمت الموافقة ونشر الإعلان في التليجرام!");}catch(e){alert("خطأ: "+e.message);}};
 window.rejectOnePost=async(id)=>{
   const reason=prompt("سبب الرفض:","محتوى غير مناسب");
   if(reason===null)return;
