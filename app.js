@@ -71,6 +71,17 @@ const RESERVED_USERNAMES=["admin","administrator","root","support","help","tasaw
 function validateUsername(u){if(!u)return{ok:false,msg:"اكتب اسم المستخدم"};const s=String(u).trim().toLowerCase();if(s.length<3)return{ok:false,msg:"الاسم قصير جدًا (3 أحرف على الأقل)"};if(s.length>20)return{ok:false,msg:"الاسم طويل جدًا (20 حرف كحد أقصى)"};if(!/^[a-z][a-z0-9_]*$/.test(s))return{ok:false,msg:"لازم يبدأ بحرف إنجليزي، ويحتوي فقط a-z / 0-9 / _"};if(RESERVED_USERNAMES.includes(s))return{ok:false,msg:"هذا الاسم محجوز للنظام"};return{ok:true,value:s};}
 
 /* ✅ التعديل الخامس: normalizePhone + validatePhone جديد */
+function formatCallPhone(p){
+  let s = String(p || "").replace(/[^0-9+]/g, "");
+  if (!s) return "";
+  if (s.startsWith("+218")) s = s.slice(4);
+  else if (s.startsWith("+")) return s;
+  else if (s.startsWith("00218")) s = s.slice(5);
+  else if (s.startsWith("218")) s = s.slice(3);
+  if (s.startsWith("0")) s = s.slice(1);
+  return "0" + s;
+}
+window.formatCallPhone = formatCallPhone;
 function normalizePhone(p){
   let s = String(p||"").replace(/[^0-9]/g,"");
   if(!s) return "";
@@ -1721,9 +1732,9 @@ const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCatego
 const cleanPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
-      ? `<a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل</a>`
+      ? `<a href="tel:${formatCallPhone(p.phone)}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل</a>`
       : `<button class="waBtn" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">واتساب</button>
-         <a href="tel:${cleanPhone}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">اتصال</a>`)
+         <a href="tel:${formatCallPhone(p.phone)}" class="callBtn" style="background:var(--call);text-decoration:none;display:inline-flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">اتصال</a>`)
   : "";
 const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id}')">✏️</button>`:"";
 const del=canDelete?`<button class="iconBtn2 delBtn" onclick="deletePost('${p.id}')">🗑️</button>`:"";
@@ -1795,9 +1806,9 @@ const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
-      ? `<a href="tel:${cleanPPhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل بالمطعم</a>`
+      ? `<a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل بالمطعم</a>`
       : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
-         <a href="tel:${cleanPPhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي مباشر</a>`)
+         <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي مباشر</a>`)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
@@ -2305,7 +2316,7 @@ window.sendCartToWhats=()=>{
   if(isRestaurant){
     let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title} × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n");
     alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
-    window.location.href=`tel:${phone}`;
+    window.location.href=`tel:${formatCallPhone(phone)}`;
     return;
   }
   let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title}\n   💰 ${formatPrice(item.price)} د.ل × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n\n");
@@ -2321,7 +2332,7 @@ window.sendCartToCall=()=>{
   const cnt=cartTotalItemsCount();
   let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title} × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n");
   alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
-  window.location.href=`tel:${phone}`;
+  window.location.href=`tel:${formatCallPhone(phone)}`;
 };
 
 window.toggleSold=async(id,event)=>{
@@ -2441,9 +2452,9 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
   const contactStoreBtn=store.phone
     ? (isRestaurant
-        ? `<a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
+        ? `<a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
         : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
-           <a href="tel:${cleanStorePhone}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
+           <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
     : "";
 
   const bi=store.bankInfo || {};
