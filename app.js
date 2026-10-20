@@ -8,7 +8,7 @@ try {
 } catch(e){}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction,orderBy,limit,startAfter } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
@@ -165,7 +165,8 @@ window.showToast=showToast;
 function showFloatingButtons(){
   const btn1 = document.getElementById('luckyWheelBtn');
   const btn2 = document.getElementById('aiChatBtn');
-  if(btn1) btn1.style.display = 'flex';
+  const status = typeof getWheelStatus === 'function' ? getWheelStatus() : { canSpin: true };
+  if(btn1) btn1.style.display = status.canSpin ? 'flex' : 'none';
   if(btn2) btn2.style.display = 'flex';
 }
 function hideFloatingButtons(){
@@ -204,10 +205,10 @@ const POINTS_REWARDS = [
   { id: 'featured_3',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 3 أيام',    cost: 400,   desc: 'إعلانك في الأعلى 3 أيام كاملة' },
   { id: 'featured_7',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 7 أيام',    cost: 500,   desc: 'إعلانك في الأعلى أسبوع كامل 🔥' },
   { id: 'featured_30', icon: '⭐', category: 'featured', title: 'إعلان مميز — 30 يوم',    cost: 1500,  desc: 'إعلانك في الأعلى شهر كامل — أفضل قيمة!' },
-  { id: 'card_libyana_5', icon: '📱', category: 'cards', title: 'كرت شحن ليبيانا 5 د.ل', cost: 450, desc: 'كرت تعبئة رصيد ليبيانا 5 دينار فوري' },
-  { id: 'card_madar_5',   icon: '📱', category: 'cards', title: 'كرت شحن المدار 5 د.ل',   cost: 450, desc: 'كرت تعبئة رصيد المدار 5 دينار فوري' },
-  { id: 'card_libyana_10',icon: '🎁', category: 'cards', title: 'كرت شحن ليبيانا 10 د.ل',cost: 850, desc: 'كرت تعبئة رصيد ليبيانا 10 دينار' },
-  { id: 'card_madar_10',  icon: '🎁', category: 'cards', title: 'كرت شحن المدار 10 د.ل',  cost: 850, desc: 'كرت تعبئة رصيد المدار 10 دينار' },
+  { id: 'card_libyana_5', icon: '📱', category: 'cards', title: 'كرت شحن ليبيانا 5 د.ل', cost: 600, desc: 'كرت تعبئة رصيد ليبيانا 5 دينار فوري' },
+  { id: 'card_madar_5',   icon: '📱', category: 'cards', title: 'كرت شحن المدار 5 د.ل',   cost: 600, desc: 'كرت تعبئة رصيد المدار 5 دينار فوري' },
+  { id: 'card_libyana_10',icon: '🎁', category: 'cards', title: 'كرت شحن ليبيانا 10 د.ل',cost: 1000, desc: 'كرت تعبئة رصيد ليبيانا 10 دينار' },
+  { id: 'card_madar_10',  icon: '🎁', category: 'cards', title: 'كرت شحن المدار 10 د.ل',  cost: 1000, desc: 'كرت تعبئة رصيد المدار 10 دينار' },
   { id: 'discount_50', icon: '🎟️', category: 'extra', title: 'خصم 50% على أي ترقية',     cost: 300,   desc: 'كود خصم لاستخدامه عند الترقية' },
   { id: 'extra_post',  icon: '💎', category: 'extra', title: 'إعلان إضافي (تجاوز الحد)',  cost: 250,   desc: 'انشر إعلان فوق الحد المسموح' },
   { id: 'custom_logo',   icon: '🎨', category: 'vip', title: 'شعار مخصص للمتجر',       cost: 3000,  desc: 'يصمم لك الأدمن شعار خاص لمتجرك' },
@@ -304,6 +305,7 @@ function renderRewards(){
   const list = document.getElementById('rewardsList');
   if(!list) return;
   const categories = {
+    cards: { title: '📱 كروت الشحن (ليبيانا والمدار)', desc: 'استبدل نقاطك برصيد تعبئة فوري' },
     featured: { title: '⭐ التمييز', desc: 'خلّي إعلانك في الأعلى' },
     extra: { title: '🎁 مكافآت إضافية', desc: 'خصومات وعروض' },
     vip: { title: '🏆 مكافآت VIP', desc: 'ميزات خاصة للمميزين' }
@@ -392,6 +394,11 @@ window.switchPointsTab = function(tab){
 
 async function addPoints(uid, amount, title, activity){
   if(!uid || !amount) return;
+  // حماية ضد التلاعب: أقصى إضافة مسموحة في العملية الواحدة 100 نقطة
+  if(amount > 100) {
+    console.warn("محاولة غير مصرح بها لإضافة نقاط.");
+    return;
+  }
   try{
     const userRef = doc(db, 'userPoints', uid);
     const snap = await getDoc(userRef);
@@ -455,7 +462,7 @@ async function rewardReferrer(refCode, newUid) {
   try {
     const found = await findUserByAny(refCode);
     if (found && found.uid && found.uid !== newUid) {
-      await addPoints(found.uid, 50, '🎁 هدية دعوة صديق جديد للموقع', 'referral_bonus');
+      await addPoints(found.uid, 40, '🎁 هدية دعوة صديق جديد للموقع', 'referral_bonus');
     }
   } catch(e) {
     console.warn('Reward referrer error:', e);
@@ -525,14 +532,14 @@ window.syncPendingPoints = syncPendingPoints;
    🎡 نظام عجلة الحظ
    ============================================ */
 const WHEEL_REWARDS = [
-  { type: 'points', value: 5,     icon: '💎', title: '5 نقاط',       desc: 'أضفنا 5 نقاط لرصيدك',      weight: 25 },
-  { type: 'points', value: 200,   icon: '💎', title: '200 نقطة',     desc: 'جاكبوت! ربحت 200 نقطة!',    weight: 2 },
-  { type: 'points', value: 10,    icon: '💰', title: '10 نقاط',      desc: 'أضفنا 10 نقاط لرصيدك',      weight: 20 },
-  { type: 'featured', value: 1,   icon: '⭐', title: 'إعلان مميز',   desc: 'إعلان مميز لمدة يوم مجاناً!',  weight: 3 },
-  { type: 'points', value: 15,    icon: '💰', title: '15 نقطة',      desc: 'أضفنا 15 نقطة لرصيدك',      weight: 15 },
-  { type: 'points', value: 50,    icon: '🥈', title: '50 نقطة',      desc: 'مكافأة نادرة! 50 نقطة',      weight: 12 },
-  { type: 'points', value: 25,    icon: '🥉', title: '25 نقطة',      desc: 'أضفنا 25 نقطة لرصيدك',      weight: 15 },
-  { type: 'points', value: 100,   icon: '🥇', title: '100 نقطة',     desc: 'مكافأة أسطورية! 100 نقطة',  weight: 8 }
+  { type: 'points', value: 5,     icon: '💎', title: '5 نقاط',       desc: 'أضفنا 5 نقاط لرصيدك',      weight: 30 },
+  { type: 'points', value: 20,    icon: '💎', title: '20 نقطة',      desc: 'أضفنا 20 نقطة لرصيدك',     weight: 15 },
+  { type: 'points', value: 10,    icon: '💰', title: '10 نقاط',      desc: 'أضفنا 10 نقاط لرصيدك',      weight: 25 },
+  { type: 'featured', value: 1,   icon: '⭐', title: 'إعلان مميز',   desc: 'إعلان مميز لمدة يوم مجاناً!',  weight: 2 },
+  { type: 'points', value: 15,    icon: '💰', title: '15 نقطة',      desc: 'أضفنا 15 نقطة لرصيدك',      weight: 20 },
+  { type: 'points', value: 50,    icon: '🥈', title: '50 نقطة',      desc: 'مكافأة نادرة! 50 نقطة',      weight: 2 },
+  { type: 'points', value: 25,    icon: '🥉', title: '25 نقطة',      desc: 'أضفنا 25 نقطة لرصيدك',      weight: 10 },
+  { type: 'points', value: 100,   icon: '🥇', title: '100 نقطة',     desc: 'مكافأة أسطورية! 100 نقطة',  weight: 1 }
 ];
 
 const WHEEL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -1698,13 +1705,115 @@ function renderSkeletons(){
 }
 
 let _postsLoadedOnce=false;
+let lastVisiblePostDoc = null;
+let hasMorePosts = true;
+let isLoadingPostsBatch = false;
+const POSTS_BATCH_SIZE = 24;
+
+async function loadPostsBatch(isInitial = false) {
+  if (isLoadingPostsBatch) return;
+  if (!isInitial && !hasMorePosts) return;
+
+  isLoadingPostsBatch = true;
+  const btn = document.getElementById("loadMorePostsBtn");
+  if (btn) {
+    btn.textContent = "⏳ جاري تحميل الإعلانات...";
+    btn.disabled = true;
+  }
+
+  try {
+    let q;
+    if (isInitial || !lastVisiblePostDoc) {
+      q = query(
+        collection(db, "posts"),
+        orderBy("createdAt", "desc"),
+        limit(POSTS_BATCH_SIZE)
+      );
+    } else {
+      q = query(
+        collection(db, "posts"),
+        orderBy("createdAt", "desc"),
+        startAfter(lastVisiblePostDoc),
+        limit(POSTS_BATCH_SIZE)
+      );
+    }
+
+    const snap = await getDocs(q);
+    const newDocs = snap.docs;
+
+    if (newDocs.length < POSTS_BATCH_SIZE) {
+      hasMorePosts = false;
+    } else {
+      hasMorePosts = true;
+    }
+
+    if (newDocs.length > 0) {
+      lastVisiblePostDoc = newDocs[newDocs.length - 1];
+    }
+
+    const fetchedPosts = newDocs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (isInitial) {
+      allPosts = fetchedPosts;
+    } else {
+      const existingIds = new Set(allPosts.map(p => p.id));
+      fetchedPosts.forEach(p => {
+        if (!existingIds.has(p.id)) {
+          allPosts.push(p);
+        }
+      });
+    }
+
+    allPosts = sortPosts(allPosts);
+    _postsLoadedOnce = true;
+    renderPosts();
+    updateLoadMoreButton();
+    updateModBadge();
+    renderRecentlyViewed();
+    updateCartUI();
+    updateCompareUI();
+  } catch (err) {
+    console.warn("Error loading posts batch:", err);
+    if (isInitial && allPosts.length === 0) {
+      postsBox.innerHTML = "<div class='empty'>تعذر تحميل الإعلانات. يرجى إعادة المحاولة.</div>";
+    }
+  } finally {
+    isLoadingPostsBatch = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function updateLoadMoreButton() {
+  let btn = document.getElementById("loadMorePostsBtn");
+  if (!btn && postsBox) {
+    btn = document.createElement("button");
+    btn.id = "loadMorePostsBtn";
+    btn.className = "btnMain";
+    btn.style.cssText = "display:block;width:calc(100% - 24px);margin:20px auto;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;font-weight:800;font-size:15px;padding:12px;border-radius:12px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;";
+    btn.onclick = () => loadPostsBatch(false);
+    postsBox.parentNode.insertBefore(btn, postsBox.nextSibling);
+  }
+
+  if (btn) {
+    if (hasMorePosts && allPosts.length >= POSTS_BATCH_SIZE) {
+      btn.style.display = "block";
+      btn.textContent = "📥 عرض المزيد من الإعلانات";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+}
+
+// التحميل التلقائي عند التمرير لأسفل الصفحة (Infinite Scroll)
+window.addEventListener("scroll", () => {
+  if (!hasMorePosts || isLoadingPostsBatch) return;
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
+    loadPostsBatch(false);
+  }
+}, { passive: true });
+
 function startPostsListener(){
-  onSnapshot(collection(db,"posts"),snap=>{
-    allPosts=snap.docs.map(d=>({id:d.id,...d.data()}));
-    allPosts=sortPosts(allPosts);
-    _postsLoadedOnce=true;
-    renderPosts();updateModBadge();renderRecentlyViewed();updateCartUI();updateCompareUI();
-  },err=>{postsBox.innerHTML="<div class='empty'>تعذر تحميل الإعلانات.</div>";});
+  loadPostsBatch(true);
 }
 function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
 
