@@ -295,6 +295,15 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
 <div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
+<div class="referralCardBox" id="accountRefCard">
+  <h4>🎁 شارك واربح كروت شحن!</h4>
+  <p>ادعُ أصحابك للتسجيل بجوجل واكسب 50 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
+  <div class="referralLinkDisplay" id="myRefLinkDisplay">https://tasawuqnow.com/?ref=...</div>
+  <div class="referralBtnsRow">
+    <button type="button" style="background:#fff;color:#0284c7" onclick="copyRefLink()">📋 نسخ الرابط</button>
+    <button type="button" style="background:#25d366;color:#fff" onclick="shareRefOnWhatsapp()">💬 واتساب</button>
+  </div>
+</div>
 <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
 <button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
@@ -741,6 +750,21 @@ OneSignalDeferred.push(async function(OneSignal){
 <button onclick="openFeedback()">💬 اقتراح / شكوى</button>
 </div>
 <div class="fCopy">© 2026 تسوق الآن — جميع الحقوق محفوظة</div>
+</div>
+<!-- نافذة صورة الستوري (Story Card Maker) -->
+<div id="storyModalOverlay" class="hidden" onclick="if(event.target===this)closeStoryModal()">
+  <div class="storyModalBox">
+    <div class="storyModalHeader">
+      <h3>📸 صورة ستوري الإعلان</h3>
+      <button class="storyModalClose" onclick="closeStoryModal()">✕</button>
+    </div>
+    <div id="storyLoading" style="padding:40px;text-align:center;color:#38bdf8;font-weight:700">⏳ جاري تصميم صورة الستوري...</div>
+    <img id="storyPreviewImg" class="storyPreviewImg" style="display:none" alt="Story Preview">
+    <div class="storyActions" id="storyActionsBox" style="display:none">
+      <button class="btnStoryDownload" onclick="downloadStoryImage()">📥 حفظ الصورة في الهاتف</button>
+      <button class="btnStoryShare" onclick="shareStoryDirectly()">📲 مشاركة في الستوري مباشرة</button>
+    </div>
+  </div>
 </div>
 <script type="module" src="app.js"></script>
 
