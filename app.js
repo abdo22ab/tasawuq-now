@@ -3321,96 +3321,91 @@ window.saveMyPhone=async()=>{
    التواصل + المشاركة
    ============================================ */
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
-window.sharePost = function(id) {
+window.sharePost = async function(id) {
   const p = allPosts.find(x => x.id === id);
   if (!p) return;
   
   const url = window.location.origin + window.location.pathname + '#post-' + id;
-  const price = p.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (p.price + " د.ل");
-  const text = `🛒 ${p.title || 'إعلان'}\n💰 السعر: ${price}\n\nشاهده على تسوق الآن:`;
-  
-  let shareMenu = document.getElementById('customShareMenu');
-  if (shareMenu) shareMenu.remove();
-
-  const encText = encodeURIComponent(text);
-  const encUrl = encodeURIComponent(url);
-  const fullText = encodeURIComponent(text + '\n' + url);
-  
-  shareMenu = document.createElement('div');
-  shareMenu.id = 'customShareMenu';
-  shareMenu.className = 'overlay';
-  shareMenu.style.zIndex = '99999';
-  
-  shareMenu.innerHTML = `
-    <div class="sheet" style="text-align:center; padding-bottom: 30px;">
-      <h3 style="margin-bottom: 20px;">مشاركة الإعلان عبر</h3>
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-        
-        <a href="https://wa.me/?text=${fullText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">💬</div>
-          <span style="font-size:12px; font-weight:700;">واتساب</span>
-        </a>
-        
-        <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:#1877F2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px; font-family:sans-serif;">f</div>
-          <span style="font-size:12px; font-weight:700;">فيسبوك</span>
-        </a>
-        
-        <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:#0088cc; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">✈️</div>
-          <span style="font-size:12px; font-weight:700;">تليجرام</span>
-        </a>
-
-        <a href="https://twitter.com/intent/tweet?text=${encText}&url=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">𝕏</div>
-          <span style="font-size:12px; font-weight:700;">X (تويتر)</span>
-        </a>
-
-        <div onclick="copyShareLink('${fullText}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📋</div>
-          <span style="font-size:12px; font-weight:700;">نسخ (انستجرام/تيك توك)</span>
-        </div>
-
-        <div onclick="nativeShare('${encText}', '${encUrl}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
-          <div style="width:55px; height:55px; border-radius:15px; background:#8b5cf6; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📱</div>
-          <span style="font-size:12px; font-weight:700;">المزيد...</span>
-        </div>
-      </div>
-      <button class="btnGhost" onclick="closeShareMenu()">إلغاء</button>
-    </div>
-  `;
-  
-  document.body.appendChild(shareMenu);
-};
-
-window.copyShareLink = function(encFullText) {
-  const textToCopy = decodeURIComponent(encFullText);
-  navigator.clipboard.writeText(textToCopy).then(() => {
-    showToast('✅ تم نسخ الرابط! افتح انستجرام أو تيك توك والصقه', 'success', 4000);
-    closeShareMenu();
-  }).catch(() => {
-    showToast('❌ فشل النسخ، يرجى المحاولة يدوياً', 'error');
-  });
-};
-
-window.nativeShare = async function(encText, encUrl) {
-  const text = decodeURIComponent(encText);
-  const url = decodeURIComponent(encUrl);
+  const text = `شوف هذا الإعلان على تسوق الآن:\n${p.title}\nالسعر: ${p.priceType === 'contact' ? 'تواصل لمعرفة السعر' : (p.price + ' د.ل')}\n\nالرابط: ${url}`;
   
   if (navigator.share) {
     try {
-      await navigator.share({ title: 'تسوق الآن', text: text, url: url });
-      closeShareMenu();
-    } catch (err) { console.log('Native share cancelled'); }
+      await navigator.share({
+        title: p.title || 'تسوق الآن',
+        text: text,
+        url: url
+      });
+    } catch (err) {
+      console.log('فشل المشاركة:', err);
+    }
   } else {
-    copyShareLink(encText + '%0A' + encUrl);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 };
 
-window.closeShareMenu = function() {
-  const menu = document.getElementById('customShareMenu');
-  if (menu) menu.remove();
-};/* ============================================
+window.generateStoryImage = async function(id) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+
+  showToast('⏳ جاري تجهيز صورة الستوري...', 'info', 2000);
+
+  const storyDiv = document.createElement('div');
+  storyDiv.style.cssText = 'width: 1080px; height: 1920px; position: absolute; top: -9999px; left: -9999px; background: #fff; padding: 60px 40px; box-sizing: border-box; font-family: "Cairo", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; direction: rtl;';
+  
+  const imgUrl = p.images && p.images[0] ? p.images[0] : 'icon-192.png';
+  
+  storyDiv.innerHTML = `
+    <div style="text-align: center; width: 100%;">
+      <h1 style="color: #0284c7; font-size: 60px; margin: 0 0 20px;">🛒 تسوق الآن</h1>
+    </div>
+    <div style="width: 100%; background: #f5f6f8; border-radius: 30px; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid #edeff2;">
+      <img src="${imgUrl}" crossorigin="anonymous" style="max-width: 100%; max-height: 700px; object-fit: contain; border-radius: 20px;">
+    </div>
+    <div style="text-align: center; width: 100%;">
+      <h2 style="font-size: 50px; color: #1f2937; margin: 0 0 20px; line-height: 1.4;">${p.title}</h2>
+      <div style="font-size: 65px; font-weight: 800; color: ${p.priceType === 'contact' ? '#f59e0b' : '#16a34a'}; margin-bottom: 30px;">
+        ${p.priceType === 'contact' ? '📞 تواصل لمعرفة السعر' : p.price + ' د.ل'}
+      </div>
+      <div style="font-size: 40px; color: #6b7280; background: #e6f6fe; padding: 15px 30px; border-radius: 20px; display: inline-block;">
+        📍 ${p.city || 'ليبيا'}
+      </div>
+    </div>
+    <div style="text-align: center; width: 100%; border-top: 2px dashed #edeff2; padding-top: 30px;">
+      <div style="font-size: 35px; color: #0284c7; font-weight: 800; margin-bottom: 10px;">تصفح المزيد على:</div>
+      <div style="font-size: 45px; color: #1f2937; font-weight: 800; font-family: monospace;">tasawuqnow.com</div>
+    </div>
+  `;
+  
+  document.body.appendChild(storyDiv);
+
+  try {
+    const canvas = await html2canvas(storyDiv, { useCORS: true, scale: 1 });
+    document.body.removeChild(storyDiv);
+
+    canvas.toBlob(async function(blob) {
+      const file = new File([blob], 'tasawuq_story.png', { type: 'image/png' });
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'مشاركة الستوري', text: 'شوف الإعلان ده في تسوق الآن!' });
+        } catch (e) { console.log('المستخدم ألغى المشاركة'); }
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tasawuq_story.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ تم تحميل الصورة بنجاح', 'success');
+      }
+    }, 'image/png');
+  } catch (err) {
+    console.error('خطأ في إنشاء الصورة:', err);
+    if(document.body.contains(storyDiv)) document.body.removeChild(storyDiv);
+    showToast('❌ حدث خطأ أثناء إنشاء الصورة', 'error');
+  }
+};
+/* ============================================
    المتابعة + التقييم
    ============================================ */
 function startFollowingListener(user){
