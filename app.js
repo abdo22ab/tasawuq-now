@@ -1,3 +1,8 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction,orderBy,limit,startAfter } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
+
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
   const prms = new URLSearchParams(window.location.search);
@@ -6,10 +11,6 @@ try {
     sessionStorage.setItem('tasawuq_pending_ref', refCode);
   }
 } catch(e){}
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction,orderBy,limit,startAfter } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
 const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const app=initializeApp(firebaseConfig);
@@ -1488,7 +1489,12 @@ const STORE_CATEGORY_PRESETS = {
     { name: 'حلويات وكريب', icon: '🍰', keywords: ['حلو', 'حلويات', 'كريب', 'وافل', 'بان كيك', 'ايسكريم', 'كعك'] }
   ],
   general: [
-    { name: 'هواتف نقالة', icon: '📱', keywords: ['هاتف', 'تلفون', 'ايفون', 'iphone', 'سامسونج', 'samsung', 'شاومي', 'xiaomi', 'جوال', 'نقال', 'موبايل', 'نوكيا'] },
+    { name: 'Apple / آيفون', icon: '🍏', keywords: ['ايفون', 'آيفون', 'iphone', 'apple', 'ابل'] },
+    { name: 'Samsung / سامسونج', icon: '📱', keywords: ['سامسونج', 'samsung', 'جالكسي', 'galaxy'] },
+    { name: 'Xiaomi / شاومي', icon: '📱', keywords: ['شاومي', 'xiaomi', 'ريدمي', 'redmi', 'بوكو', 'poco'] },
+    { name: 'Huawei / هواوي', icon: '📱', keywords: ['هواوي', 'huawei'] },
+    { name: 'Honor / هونر', icon: '📱', keywords: ['هونر', 'honor'] },
+    { name: 'هواتف نقالة', icon: '📱', keywords: ['هاتف', 'تلفون', 'موبايل', 'نقال', 'جوال', 'نوكيا', 'انفينكس', 'تكنو'] },
     { name: 'كفر', icon: '🛡️', keywords: ['كفر', 'جراب', 'كفرات', 'case', 'cover', 'غطاء', 'حماية ظهر'] },
     { name: 'شواحن', icon: '🔌', keywords: ['شاحن', 'شواحن', 'شاحنة', 'راس', 'رأس', 'charger', 'adapter', 'محول'] },
     { name: 'كابل شحن', icon: '⚡', keywords: ['كابل', 'سلك', 'وصلة', 'كيبل', 'cable', 'type-c', 'lightning', 'شحن سريع', 'مايكرو'] },
@@ -2165,7 +2171,7 @@ const contactBtn=(p.phone && !isSold)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
-const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('')">📸 صورة للستوري</button></div>`:"";
+const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`:"";
 const viewsBadge=(isOwner||isAdmin||isMyStorePost)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
 let statusBadge="";
 if(isOwner||isAdmin||isMyStorePost){if(status==="pending")statusBadge=`<span class="statusBadge pending">⏳ قيد المراجعة</span>`;else if(status==="rejected")statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
@@ -3251,7 +3257,7 @@ if(subCatField && subCatInput){
     const isRest=isRestaurantCategory(post.storeCategory||post.category);
     const tagList=isRest
       ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
-      : ['هواتف نقالة', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'سبيكر و ميكروفون', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة وكاميرا', 'فلاش', 'ايباد'];
+      : ['Apple / آيفون', 'Samsung / سامسونج', 'Xiaomi / شاومي', 'Huawei / هواوي', 'Honor / هونر', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة'];
     if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
       <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
     `).join('');
@@ -3314,7 +3320,7 @@ if(subCatField && subCatInput){
     const isRest=isRestaurantStore(activeStore);
     const tagList=isRest
       ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
-      : ['هواتف نقالة', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'سبيكر و ميكروفون', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة وكاميرا', 'فلاش', 'ايباد'];
+      : ['Apple / آيفون', 'Samsung / سامسونج', 'Xiaomi / شاومي', 'Huawei / هواوي', 'Honor / هونر', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة'];
     if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
       <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
     `).join('');
@@ -4225,7 +4231,44 @@ async function generateStoryImage(post) {
   ctx.font = "bold 42px 'Cairo', sans-serif";
   ctx.fillText("tasawuqnow.com", 540, ctaY + 215);
 
-  return canvas.toDataURL("image/png");
+  try {
+    return canvas.toDataURL("image/jpeg", 0.92);
+  } catch(err) {
+    console.warn("Story canvas export fallback:", err);
+    const cleanCanvas = document.createElement("canvas");
+    cleanCanvas.width = 1080;
+    cleanCanvas.height = 1920;
+    const cctx = cleanCanvas.getContext("2d");
+    const g = cctx.createLinearGradient(0, 0, 0, 1920);
+    g.addColorStop(0, "#0b1329");
+    g.addColorStop(0.5, "#111827");
+    g.addColorStop(1, "#0f172a");
+    cctx.fillStyle = g;
+    cctx.fillRect(0, 0, 1080, 1920);
+    cctx.textAlign = "center";
+    cctx.fillStyle = "#38bdf8";
+    cctx.font = "bold 52px 'Cairo', sans-serif";
+    cctx.fillText("🛒 تـسـوق الآن | TasawuqNow.com", 540, 200);
+    cctx.fillStyle = "#ffffff";
+    cctx.font = "bold 54px 'Cairo', sans-serif";
+    cctx.fillText(post.title || "إعلان مميز", 540, 680);
+    cctx.fillStyle = "#f59e0b";
+    cctx.font = "bold 64px 'Cairo', sans-serif";
+    const pText = post.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (post.price != null ? post.price + " د.ل" : "");
+    cctx.fillText(pText, 540, 820);
+    if(post.city){
+      cctx.fillStyle = "#94a3b8";
+      cctx.font = "bold 44px 'Cairo', sans-serif";
+      cctx.fillText("📍 " + post.city, 540, 940);
+    }
+    cctx.fillStyle = "#38bdf8";
+    cctx.font = "bold 44px 'Cairo', sans-serif";
+    cctx.fillText("شاهد الإعلان وتواصل مع البائع:", 540, 1500);
+    cctx.fillStyle = "#fde047";
+    cctx.font = "bold 52px 'Cairo', sans-serif";
+    cctx.fillText("tasawuqnow.com", 540, 1600);
+    return cleanCanvas.toDataURL("image/jpeg", 0.9);
+  }
 }
 
 window.openStoryModal = async function(id) {
