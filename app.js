@@ -2740,15 +2740,21 @@ window.handleFilesSelected=()=>{const input=document.getElementById("imageFile")
 /* ============================================
    المتاجر — القائمة + الصفحة
    ============================================ */
+let storesLoadedInitially = false;
 function startStoresListener(){
   if(unsubStores)return;
   unsubStores=onSnapshot(collection(db,"stores"),snap=>{
+    storesLoadedInitially=true;
     allStores=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderStoresList();
     if(storesModerationOverlay && !storesModerationOverlay.classList.contains("hidden"))renderStoresModeration();
     const sc=document.getElementById("storeScreen");
     if(sc && !sc.classList.contains("hidden")){const openStoreId=window._currentStoreId;if(openStoreId)setTimeout(()=>refreshOpenStore(openStoreId),300);}
-  },err=>{});
+  },err=>{
+    console.error("Stores listener failed:", err);
+    storesLoadedInitially=true;
+    renderStoresList();
+  });
 }
 window.openStores=()=>{
   document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
@@ -2756,6 +2762,7 @@ window.openStores=()=>{
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
   const ss=document.getElementById("storesScreen");
   if(ss)ss.classList.remove("hidden");
+  if(!unsubStores) startStoresListener();
   renderStoresList();
   window.scrollTo(0,0);
   hideFloatingButtons();
@@ -2764,7 +2771,14 @@ function renderStoresList(){
   const list=document.getElementById("storesList");if(!list)return;
   const term=(document.getElementById("storeSearch")?.value||"").trim().toLowerCase();
   const approved=allStores.filter(s=>s.status==="approved").filter(s=>!term || (s.name||"").toLowerCase().includes(term) || (s.category||"").toLowerCase().includes(term) || (s.city||"").toLowerCase().includes(term));
-  if(approved.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد متاجر معتمدة بعد</div>";return;}
+  if(approved.length===0){
+    if(!storesLoadedInitially && allStores.length===0){
+      list.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل المتاجر...</div>";
+      return;
+    }
+    list.innerHTML="<div class='reportsEmpty'>لا توجد متاجر معتمدة بعد</div>";
+    return;
+  }
   list.innerHTML=approved.map(s=>{
     const logo=s.logo?`<img src="${escapeHtml(s.logo)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
     const count=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved" && !isExpired(p) && !p.sold).length;
@@ -2774,7 +2788,7 @@ function renderStoresList(){
     const isRest=isRestaurantStore(s);
     const badgeHTML=isRest?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
     const storePostsCount=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved").length;
-    const storeTier=renderSellerTierBadge(s.ownerUid,storePostsCount);
+    const storeTier=typeof renderSellerTierBadge === 'function' ? renderSellerTierBadge(s.ownerUid,storePostsCount) : "";
     return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
   }).join("");
 }
@@ -2787,95 +2801,128 @@ window.refreshOpenStore=async(storeId)=>{
   await openStore(storeId,true);
 };
 window.openStore=async(storeId,keepScroll,backTo)=>{
-  if(!keepScroll){window._currentStoreId=storeId;}
-  window._storeBackTo=backTo||"categories";
-  closeOverlay();
-  const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
-  categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
-  const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
-  const box=document.getElementById("storeContent");
-  if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
-  let store=allStores.find(s=>s.id===storeId);
-  if(!store){try{const snap=await getDoc(doc(db,"stores",storeId));if(snap.exists())store={id:snap.id,...snap.data()};}catch(e){}}
-  if(!store){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود</div>";return;}
-  window._currentStoreId=storeId;
-  const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
-  const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
-  const isStoreHelperNow=auth.currentUser && isStoreHelper(storeId,auth.currentUser.email);
-  if(store.status!=="approved" && !isOwnerStore && !isAdminUser){box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح</div>";return;}
-  const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser||isStoreHelperNow))) && (!isExpired(p) || isOwnerStore || isAdminUser || isStoreHelperNow));
-  currentStoreItems=items.slice();
-  window._canManageStoreItems=isAdminUser||isOwnerStore||isStoreHelperNow;
-  const isRestaurant=isRestaurantStore(store);
-  const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
-  const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
-
-  const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
-  const contactStoreBtn=store.phone
-    ? (isRestaurant
-        ? `<a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
-        : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
-           <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
-    : "";
-
-  const bi=store.bankInfo || {};
-  const hasIban=bi.iban && bi.iban.trim();
-  const hasAccount=bi.accountNumber && bi.accountNumber.trim();
-  const hasBankInfo=hasIban || hasAccount;
-  let bankInfoHtml="";
-  if(hasBankInfo){
-    const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
-    bankInfoHtml=`<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
-      <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
-      <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
-      ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
-      ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
-      ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
-      ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
-      ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.receiptPhone||store.phone||'').replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
-    </div>`;
-  }
-
-  /* ✅ زر نقل الإعلانات الفردية */
-  const myIndividualCount=(auth.currentUser && (isOwnerStore||isAdminUser)) ? allPosts.filter(p=>p.uid===store.ownerUid && !p.storeId).length : 0;
-  const transferBtn=myIndividualCount>0?`<button class="storeQRBtn" onclick="transferMyPostsToStore('${store.id}')" style="background:#0284c7;color:#fff">📥 نقل إعلاناتي (${myIndividualCount})</button>`:"";
-
-  const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
-  const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
-  const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:var(--card);color:var(--text)"><button class="filterBtn active" onclick="setStoreSort('newest')" id="ssortNewest" style="font-size:12px">🆕 الأحدث</button><button class="filterBtn" onclick="setStoreSort('cheapest')" id="ssortCheapest" style="font-size:12px">💰 الأرخص</button><button class="filterBtn" onclick="setStoreSort('expensive')" id="ssortExpensive" style="font-size:12px">💎 الأغلى</button><button class="filterBtn" onclick="setStoreSort('views')" id="ssortViews" style="font-size:12px">👁️ الأكثر مشاهدة</button></div>`;
-  const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة</div>`:"";
-  const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
-  const verifiedBadgeLg=store.verified?`<span class="verifiedBadge verifiedBadgeLg" title="متجر موثق"></span>`:"";
-  const deliveryBadge=store.deliveryCompany?`<span style="font-size:12px;color:#166534;padding:3px 9px;background:#f0fdf4;border-radius:7px;font-weight:700;border:1px solid #bbf7d0">🛵 التوصيل: ${escapeHtml(store.deliveryCompany)}</span>`:"";
-  const restaurantBadge=isRestaurant?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
-  currentStoreSubCategory = "all";
-  currentStoreSearch = "";
-  const availableSubCategories = [];
-  items.forEach(p => {
-    const cat = getProductSubCategory(p, isRestaurant);
-    if(cat && !availableSubCategories.includes(cat)) availableSubCategories.push(cat);
-  });
-  const prestoCategoriesHtml = isRestaurant 
-    ? (renderRestaurantPopular(items) + renderRestaurantTabs(items, availableSubCategories))
-    : renderStoreCategoryTiles(items, availableSubCategories);
-
-  box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
-  renderStoreProducts();
-  updateCartUI();
-  loadStoreRatings(storeId).then(()=>{
-    const sec=document.getElementById("storeRatingSection");
-    const inline=document.getElementById("storeRatingInline");
-    const ratings=allStoreRatings[storeId]||[];
-    if(inline && ratings.length>0){
-      const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
-      inline.innerHTML=`<span class="storeRatingBadge">⭐ ${avg.toFixed(1)} (${ratings.length})</span>`;
+  try{
+    if(!keepScroll){window._currentStoreId=storeId;}
+    window._storeBackTo=backTo||"categories";
+    closeOverlay();
+    const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
+    categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
+    const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
+    const box=document.getElementById("storeContent");
+    if(!box)return;
+    if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>⏳ جاري التحميل...</div>";
+    
+    let store=allStores.find(s=>s.id===storeId);
+    if(!store){
+      try{
+        const snap=await Promise.race([
+          getDoc(doc(db,"stores",storeId)),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error("مهلة التحميل انتهت")),8000))
+        ]);
+        if(snap && snap.exists()) store={id:snap.id,...snap.data()};
+      }catch(e){
+        console.warn("Could not fetch store doc:",e);
+      }
     }
-    if(!sec) return;
-    if(ratings.length===0){ sec.innerHTML='<h4>⭐ التقييمات</h4><div style="color:var(--muted);font-size:13px">لا توجد تقييمات بعد</div>'; return; }
-    const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
-    sec.innerHTML=`<h4>⭐ التقييمات (${ratings.length}) — متوسط ${avg.toFixed(1)}/5</h4>`+ratings.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${escapeHtml(r.raterName||"مستخدم")}</b><span style="color:#f5a623">${"★".repeat(r.stars||0)}${"☆".repeat(5-(r.stars||0))}</span></div>${r.comment?`<div style="font-size:13px;margin-top:4px">${escapeHtml(r.comment)}</div>`:""}</div>`).join("");
-  });
-  hideFloatingButtons();
+    if(!store){
+      box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود أو تم حذفه<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
+      return;
+    }
+    window._currentStoreId=storeId;
+    const titleEl=document.getElementById("storeScreenTitle");
+    if(titleEl)titleEl.textContent=store.name||"🏪 المتجر";
+
+    const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
+    const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
+    const isStoreHelperNow=auth.currentUser && isStoreHelper(storeId,auth.currentUser.email);
+    if(store.status!=="approved" && !isOwnerStore && !isAdminUser){
+      box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح حالياً<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
+      return;
+    }
+    const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser||isStoreHelperNow))) && (!isExpired(p) || isOwnerStore || isAdminUser || isStoreHelperNow));
+    currentStoreItems=items.slice();
+    window._canManageStoreItems=isAdminUser||isOwnerStore||isStoreHelperNow;
+    const isRestaurant=isRestaurantStore(store);
+    const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
+    const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
+
+    const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
+    const contactStoreBtn=store.phone
+      ? (isRestaurant
+          ? `<a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
+          : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
+             <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
+      : "";
+
+    const bi=store.bankInfo || {};
+    const hasIban=bi.iban && bi.iban.trim();
+    const hasAccount=bi.accountNumber && bi.accountNumber.trim();
+    const hasBankInfo=hasIban || hasAccount;
+    let bankInfoHtml="";
+    if(hasBankInfo){
+      const copyBtn=(val,label)=>`<button onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
+      bankInfoHtml=`<div style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
+        <div style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع</div>
+        <div style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
+        ${bi.accountOwner?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
+        ${bi.bankName?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
+        ${hasIban?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
+        ${hasAccount?`<div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
+        ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.receiptPhone||store.phone||'').replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
+      </div>`;
+    }
+
+    /* ✅ زر نقل الإعلانات الفردية */
+    const myIndividualCount=(auth.currentUser && (isOwnerStore||isAdminUser)) ? allPosts.filter(p=>p.uid===store.ownerUid && !p.storeId).length : 0;
+    const transferBtn=myIndividualCount>0?`<button class="storeQRBtn" onclick="transferMyPostsToStore('${store.id}')" style="background:#0284c7;color:#fff">📥 نقل إعلاناتي (${myIndividualCount})</button>`:"";
+
+    const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
+    const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
+    const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:var(--card);color:var(--text)"><button class="filterBtn active" onclick="setStoreSort('newest')" id="ssortNewest" style="font-size:12px">🆕 الأحدث</button><button class="filterBtn" onclick="setStoreSort('cheapest')" id="ssortCheapest" style="font-size:12px">💰 الأرخص</button><button class="filterBtn" onclick="setStoreSort('expensive')" id="ssortExpensive" style="font-size:12px">💎 الأغلى</button><button class="filterBtn" onclick="setStoreSort('views')" id="ssortViews" style="font-size:12px">👁️ الأكثر مشاهدة</button></div>`;
+    const statusNote=store.status==="pending"?`<div style="background:#fef3c7;color:#92400e;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">⏳ متجرك قيد المراجعة</div>`:"";
+    const statusNote2=store.status==="rejected"?`<div style="background:#fdeceb;color:#b91c1c;padding:8px;border-radius:10px;text-align:center;font-weight:800;margin-bottom:10px">❌ متجرك مرفوض${store.rejectReason?" — "+escapeHtml(store.rejectReason):""}</div>`:"";
+    const verifiedBadgeLg=store.verified?`<span class="verifiedBadge verifiedBadgeLg" title="متجر موثق"></span>`:"";
+    const deliveryBadge=store.deliveryCompany?`<span style="font-size:12px;color:#166534;padding:3px 9px;background:#f0fdf4;border-radius:7px;font-weight:700;border:1px solid #bbf7d0">🛵 التوصيل: ${escapeHtml(store.deliveryCompany)}</span>`:"";
+    const restaurantBadge=isRestaurant?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
+
+    const storePostsCount=allPosts.filter(p=>p.storeId===store.id && getStatus(p)==="approved").length;
+    const storeTierBadge=typeof renderSellerTierBadge === 'function' ? renderSellerTierBadge(store.ownerUid, storePostsCount) : "";
+
+    currentStoreSubCategory = "all";
+    currentStoreSearch = "";
+    const availableSubCategories = [];
+    items.forEach(p => {
+      const cat = getProductSubCategory(p, isRestaurant);
+      if(cat && !availableSubCategories.includes(cat)) availableSubCategories.push(cat);
+    });
+    const prestoCategoriesHtml = isRestaurant 
+      ? (renderRestaurantPopular(items) + renderRestaurantTabs(items, availableSubCategories))
+      : renderStoreCategoryTiles(items, availableSubCategories);
+
+    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
+    renderStoreProducts();
+    updateCartUI();
+    loadStoreRatings(storeId).then(()=>{
+      const sec=document.getElementById("storeRatingSection");
+      const inline=document.getElementById("storeRatingInline");
+      const ratings=allStoreRatings[storeId]||[];
+      if(inline && ratings.length>0){
+        const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
+        inline.innerHTML=`<span class="storeRatingBadge">⭐ ${avg.toFixed(1)} (${ratings.length})</span>`;
+      }
+      if(!sec) return;
+      if(ratings.length===0){ sec.innerHTML='<h4>⭐ التقييمات</h4><div style="color:var(--muted);font-size:13px">لا توجد تقييمات بعد</div>'; return; }
+      const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
+      sec.innerHTML=`<h4>⭐ التقييمات (${ratings.length}) — متوسط ${avg.toFixed(1)}/5</h4>`+ratings.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${escapeHtml(r.raterName||"مستخدم")}</b><span style="color:#f5a623">${"★".repeat(r.stars||0)}${"☆".repeat(5-(r.stars||0))}</span></div>${r.comment?`<div style="font-size:13px;margin-top:4px">${escapeHtml(r.comment)}</div>`:""}</div>`).join("");
+    }).catch(e=>console.warn("Ratings error:",e));
+    hideFloatingButtons();
+  }catch(err){
+    console.error("Critical error in openStore:",err);
+    const box=document.getElementById("storeContent");
+    if(box){
+      box.innerHTML=`<div class='reportsEmpty'>❌ حدث خطأ غير متوقع أثناء عرض المتجر<br><small style="color:var(--muted);font-size:12px;display:block;margin-top:6px">${escapeHtml(err.message||String(err))}</small><br><button class="btnMain" style="max-width:200px;margin:auto" onclick="openStores()">العودة لدليل المتاجر</button></div>`;
+    }
+  }
 };
 window.backFromStore=()=>{
   const sc=document.getElementById("storeScreen");
