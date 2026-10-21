@@ -3321,9 +3321,96 @@ window.saveMyPhone=async()=>{
    التواصل + المشاركة
    ============================================ */
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
-window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.priceType==="contact"?'📞 تواصل لمعرفة السعر':(p.price!=null?formatPrice(p.price)+' د.ل':'');const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
+window.sharePost = function(id) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+  
+  const url = window.location.origin + window.location.pathname + '#post-' + id;
+  const price = p.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (p.price + " د.ل");
+  const text = `🛒 ${p.title || 'إعلان'}\n💰 السعر: ${price}\n\nشاهده على تسوق الآن:`;
+  
+  let shareMenu = document.getElementById('customShareMenu');
+  if (shareMenu) shareMenu.remove();
 
-/* ============================================
+  const encText = encodeURIComponent(text);
+  const encUrl = encodeURIComponent(url);
+  const fullText = encodeURIComponent(text + '\n' + url);
+  
+  shareMenu = document.createElement('div');
+  shareMenu.id = 'customShareMenu';
+  shareMenu.className = 'overlay';
+  shareMenu.style.zIndex = '99999';
+  
+  shareMenu.innerHTML = `
+    <div class="sheet" style="text-align:center; padding-bottom: 30px;">
+      <h3 style="margin-bottom: 20px;">مشاركة الإعلان عبر</h3>
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+        
+        <a href="https://wa.me/?text=${fullText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">💬</div>
+          <span style="font-size:12px; font-weight:700;">واتساب</span>
+        </a>
+        
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:#1877F2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px; font-family:sans-serif;">f</div>
+          <span style="font-size:12px; font-weight:700;">فيسبوك</span>
+        </a>
+        
+        <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:#0088cc; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">✈️</div>
+          <span style="font-size:12px; font-weight:700;">تليجرام</span>
+        </a>
+
+        <a href="https://twitter.com/intent/tweet?text=${encText}&url=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">𝕏</div>
+          <span style="font-size:12px; font-weight:700;">X (تويتر)</span>
+        </a>
+
+        <div onclick="copyShareLink('${fullText}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📋</div>
+          <span style="font-size:12px; font-weight:700;">نسخ (انستجرام/تيك توك)</span>
+        </div>
+
+        <div onclick="nativeShare('${encText}', '${encUrl}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
+          <div style="width:55px; height:55px; border-radius:15px; background:#8b5cf6; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📱</div>
+          <span style="font-size:12px; font-weight:700;">المزيد...</span>
+        </div>
+      </div>
+      <button class="btnGhost" onclick="closeShareMenu()">إلغاء</button>
+    </div>
+  `;
+  
+  document.body.appendChild(shareMenu);
+};
+
+window.copyShareLink = function(encFullText) {
+  const textToCopy = decodeURIComponent(encFullText);
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    showToast('✅ تم نسخ الرابط! افتح انستجرام أو تيك توك والصقه', 'success', 4000);
+    closeShareMenu();
+  }).catch(() => {
+    showToast('❌ فشل النسخ، يرجى المحاولة يدوياً', 'error');
+  });
+};
+
+window.nativeShare = async function(encText, encUrl) {
+  const text = decodeURIComponent(encText);
+  const url = decodeURIComponent(encUrl);
+  
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'تسوق الآن', text: text, url: url });
+      closeShareMenu();
+    } catch (err) { console.log('Native share cancelled'); }
+  } else {
+    copyShareLink(encText + '%0A' + encUrl);
+  }
+};
+
+window.closeShareMenu = function() {
+  const menu = document.getElementById('customShareMenu');
+  if (menu) menu.remove();
+};/* ============================================
    المتابعة + التقييم
    ============================================ */
 function startFollowingListener(user){
