@@ -605,6 +605,7 @@ window.closeLuckyWheel = function(){
     clearInterval(window._wheelCooldownInterval);
     window._wheelCooldownInterval = null;
   }
+  updateWheelBadge();
 };
 
 function startWheelCooldown(){
@@ -721,8 +722,10 @@ function updateWheelBadge(){
     badge.style.display = 'none';
   }
 }
-setInterval(updateWheelBadge, 60000);
+updateWheelBadge();
+setTimeout(updateWheelBadge, 500);
 setTimeout(updateWheelBadge, 2000);
+setInterval(updateWheelBadge, 30000);
 
 /* ============================================
    🤖 المساعد الذكي
@@ -1469,18 +1472,178 @@ window.setStoreSort=(sort)=>{
   if(active) active.classList.add("active");
   renderStoreProducts();
 };
+/* ============================================
+   🍔 بريستو - محرك تصنيفات المتاجر وقوائم المطاعم (Presto Engine)
+   ============================================ */
+let currentStoreSubCategory = "all";
+
+const STORE_CATEGORY_PRESETS = {
+  restaurant: [
+    { name: 'برجر', icon: '🍔', keywords: ['برجر', 'burger'] },
+    { name: 'ساندوتشات مشاوي', icon: '🥪', keywords: ['ساندوتش', 'سندوتش', 'مشاوي', 'شاورما', 'دجاج', 'لحم', 'بانيني', 'فخد', 'شيز'] },
+    { name: 'وجبات سريعة', icon: '🍗', keywords: ['وجبة', 'وجبات', 'كومبو', 'بوكس', 'كرسبي', 'بروستد', 'زنجر', 'ستربس'] },
+    { name: 'بيتزا', icon: '🍕', keywords: ['بيتزا', 'pizza'] },
+    { name: 'مقبلات ساخنة', icon: '🍟', keywords: ['مقبلات', 'بطاطا', 'اصابع', 'حلقات', 'شيبس', 'صلصة', 'صوص', 'تومية'] },
+    { name: 'مشروبات', icon: '🥤', keywords: ['مشروب', 'عصير', 'غازي', 'بيبسي', 'كولا', 'ماء', 'مياه', 'موهيتو', 'قهوة', 'شاي'] },
+    { name: 'حلويات وكريب', icon: '🍰', keywords: ['حلو', 'حلويات', 'كريب', 'وافل', 'بان كيك', 'ايسكريم', 'كعك'] }
+  ],
+  general: [
+    { name: 'هواتف نقالة', icon: '📱', keywords: ['هاتف', 'تلفون', 'ايفون', 'iphone', 'سامسونج', 'samsung', 'شاومي', 'xiaomi', 'جوال', 'نقال', 'موبايل', 'نوكيا'] },
+    { name: 'كفر', icon: '🛡️', keywords: ['كفر', 'جراب', 'كفرات', 'case', 'cover', 'غطاء', 'حماية ظهر'] },
+    { name: 'شواحن', icon: '🔌', keywords: ['شاحن', 'شواحن', 'شاحنة', 'راس', 'رأس', 'charger', 'adapter', 'محول'] },
+    { name: 'كابل شحن', icon: '⚡', keywords: ['كابل', 'سلك', 'وصلة', 'كيبل', 'cable', 'type-c', 'lightning', 'شحن سريع', 'مايكرو'] },
+    { name: 'سماعات', icon: '🎧', keywords: ['سماعة', 'سماعات', 'ايربودز', 'airpod', 'earphone', 'headphone', 'بودز', 'بلوتوث'] },
+    { name: 'سبيكر و ميكروفون', icon: '🔊', keywords: ['سبيكر', 'مكبر', 'مايك', 'ميكروفون', 'speaker', 'mic', 'صوتيات'] },
+    { name: 'حاملة هاتف', icon: '🤳', keywords: ['حامل', 'حاملة', 'ستاند', 'stand', 'holder', 'مسكة', 'قاعدة'] },
+    { name: 'ساعات ذكية', icon: '⌚', keywords: ['ساعة', 'ساعات', 'سمارت', 'watch', 'smartwatch', 'باند', 'اسوارة'] },
+    { name: 'باور بانك', icon: '🔋', keywords: ['باور', 'بنك', 'بطارية', 'خازن', 'powerbank', 'شاحن متنقل'] },
+    { name: 'حماية شاشة وكاميرا', icon: '🛡️', keywords: ['حماية', 'شاشة', 'لاصقة', 'زجاج', 'اسكرين', 'screen', 'كاميرا', 'نانو'] },
+    { name: 'كابل اوكس', icon: '🎵', keywords: ['اوكس', 'aux'] },
+    { name: 'فلاش', icon: '💾', keywords: ['فلاش', 'ذاكرة', 'ميموري', 'flash', 'usb', 'sd', 'فلاشة'] },
+    { name: 'ايباد', icon: '📲', keywords: ['ايباد', 'ipad', 'تابلت', 'لوحي', 'tablet'] },
+    { name: 'اكسسوارات الهاتف', icon: '✨', keywords: ['اكسسوار', 'إكسسوارات', 'ميدالية', 'ملحقات', 'منوعات'] }
+  ]
+};
+
+function getProductSubCategory(p, isRestaurant){
+  if(p && p.subCategory && p.subCategory.trim()) return p.subCategory.trim();
+  const presets = isRestaurant ? STORE_CATEGORY_PRESETS.restaurant : STORE_CATEGORY_PRESETS.general;
+  const text = `${p.title || ''} ${p.description || ''} ${p.brand || ''}`.toLowerCase();
+  for(const preset of presets){
+    for(const kw of preset.keywords){
+      if(text.includes(kw.toLowerCase())){
+        return preset.name;
+      }
+    }
+  }
+  return isRestaurant ? 'وجبات أخرى' : 'أصناف متنوعة';
+}
+
+function getCategoryIcon(catName, isRestaurant){
+  const presets = isRestaurant ? STORE_CATEGORY_PRESETS.restaurant : STORE_CATEGORY_PRESETS.general;
+  const found = presets.find(p => p.name === catName);
+  return found ? found.icon : '📦';
+}
+
+window.setStoreSubCategory = function(catName){
+  currentStoreSubCategory = catName;
+  document.querySelectorAll('.restaurantTabItem').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-cat') === catName);
+  });
+  document.querySelectorAll('.storeCatTile').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-cat') === catName);
+  });
+  document.querySelectorAll('.storeCatName').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-cat') === catName);
+  });
+  renderStoreProducts();
+};
+
+function renderRestaurantPopular(items){
+  if(!items || items.length < 2) return '';
+  const popular = items.slice(0, 6);
+  return `
+    <div class="popularSection">
+      <div class="popularTitle">الأكثر طلباً 🔥</div>
+      <div class="popularScroll">
+        ${popular.map(p => {
+          const imgs = getImages(p); const th = imgs[0] || '';
+          const isSold = !!p.sold;
+          const canCart = !isSold && canHaveCart(p);
+          const inCart = cart.items.some(i => i.postId === p.id);
+          const cartBtn = canCart ? `<button class="foodAddBtn${inCart ? ' inCart' : ''}" title="${inCart ? 'في السلة' : 'أضف للسلة'}" onclick="event.stopPropagation();addToCart('${p.id}',event)">${inCart ? '✓' : '+'}</button>` : '';
+          return `
+            <div class="popularCard" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
+              <div class="popularImgWrap">
+                ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : `<div class="foodImgPlaceholder">🍔</div>`}
+                ${cartBtn}
+              </div>
+              <div class="popularName">${escapeHtml(p.title||'بدون عنوان')}</div>
+              <div class="popularPrice">${p.price != null ? formatPrice(p.price) + ' د.ل' : '📞 للتواصل'}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderRestaurantTabs(items, categories){
+  if(!categories || categories.length === 0) return '';
+  return `
+    <div class="restaurantTabsBar">
+      <button class="restaurantTabItem ${currentStoreSubCategory === 'all' ? 'active' : ''}" data-cat="all" onclick="setStoreSubCategory('all')">الكل</button>
+      ${categories.map(cat => `
+        <button class="restaurantTabItem ${currentStoreSubCategory === cat ? 'active' : ''}" data-cat="${escapeHtml(cat)}" onclick="setStoreSubCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderStoreCategoryTiles(items, categories){
+  if(!categories || categories.length === 0) return '';
+  return `
+    <div class="storeSectionTitle">تصفح حسب الفئة</div>
+    <div class="storeCatGrid">
+      ${categories.map(cat => {
+        const icon = getCategoryIcon(cat, false);
+        const isActive = currentStoreSubCategory === cat;
+        return `
+          <div class="storeCatTileWrap" onclick="setStoreSubCategory('${isActive ? 'all' : escapeHtml(cat)}')">
+            <div class="storeCatTile ${isActive ? 'active' : ''}" data-cat="${escapeHtml(cat)}">${icon}</div>
+            <div class="storeCatName ${isActive ? 'active' : ''}" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderPrestoFoodItemHtml(p, canManage){
+  const imgs = getImages(p); const th = imgs[0] || '';
+  const isSold = !!p.sold;
+  const canCart = !isSold && canHaveCart(p);
+  const inCart = cart.items.some(i => i.postId === p.id);
+  const cartBtn = canCart ? `<button class="foodAddBtn${inCart ? ' inCart' : ''}" title="${inCart ? 'في السلة' : 'أضف للسلة'}" onclick="event.stopPropagation();addToCart('${p.id}',event)">${inCart ? '✓' : '+'}</button>` : '';
+  const actionsHtml = canManage ? `<div style="display:flex;gap:6px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="padding:4px 8px;border:none;border-radius:6px;background:#eef2ff;color:#0284c7;font-size:11px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="padding:4px 8px;border:none;border-radius:6px;background:#fdeceb;color:#e5484d;font-size:11px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>` : '';
+  const priceText = p.priceType === "contact" ? "📞 تواصل" : (p.price != null ? formatPrice(p.price) + " د.ل" : "—");
+
+  return `
+    <div class="prestoFoodItem" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
+      <div class="foodInfo">
+        <div class="foodTitle">${escapeHtml(p.title || 'بدون عنوان')}</div>
+        ${p.description ? `<div class="foodDesc">${escapeHtml(p.description)}</div>` : ''}
+        <div class="foodPrice">${priceText}</div>
+        ${actionsHtml}
+      </div>
+      <div class="foodImgWrap">
+        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : `<div class="foodImgPlaceholder">🍔</div>`}
+        ${cartBtn}
+      </div>
+    </div>
+  `;
+}
+
 window.applyStoreProductFilter=()=>{
   const input=document.getElementById("storeProductSearch");
   currentStoreSearch=(input?.value||"").toLowerCase();
   renderStoreProducts();
 };
+
 function renderStoreProducts(){
   const box=document.getElementById("storeProductsBox");
   if(!box) return;
-  let items=currentStoreItems.slice();
+  const store = allStores.find(s => s.id === window._currentStoreId);
+  const isRestaurant = isRestaurantStore(store);
+
+  let items = currentStoreItems.slice();
   if(currentStoreSearch){
-    items=items.filter(p=>(p.title||"").toLowerCase().includes(currentStoreSearch));
+    items = items.filter(p => (p.title||"").toLowerCase().includes(currentStoreSearch));
   }
+  if(currentStoreSubCategory && currentStoreSubCategory !== "all"){
+    items = items.filter(p => getProductSubCategory(p, isRestaurant) === currentStoreSubCategory);
+  }
+
   items.sort((a,b)=>{
     switch(currentStoreSort){
       case "cheapest":return (Number(a.price)||0)-(Number(b.price)||0);
@@ -1489,12 +1652,13 @@ function renderStoreProducts(){
       default:return (b.createdAt||0)-(a.createdAt||0);
     }
   });
+
   if(items.length===0){
-    const isSearch=currentStoreSearch.length>0;
+    const isFiltered = currentStoreSearch.length > 0 || currentStoreSubCategory !== "all";
     const canManage=window._canManageStoreItems;
     const storeId=window._currentStoreId||"";
-    if(isSearch){
-      box.innerHTML=buildEmptyState('📦','لا توجد منتجات مطابقة','جرّب كلمة بحث أخرى', '🔄 مسح البحث', 'applyStoreProductFilterClear()', true);
+    if(isFiltered){
+      box.innerHTML=buildEmptyState('📦','لا توجد منتجات مطابقة','جرّب فئة أخرى أو امسح البحث', '🔄 عرض كل المنتجات', 'setStoreSubCategory("all");applyStoreProductFilterClear();', true);
     } else if(canManage){
       box.innerHTML=buildEmptyState('📦','لا توجد منتجات بعد','أضف أول منتج لمتجرك الآن','➕ أضف منتج جديد',"goAddStorePost('"+storeId+"')");
     } else {
@@ -1503,7 +1667,52 @@ function renderStoreProducts(){
     return;
   }
   const canManage=window._canManageStoreItems;
-  box.innerHTML=`<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
+
+  let filterBanner = '';
+  if(currentStoreSubCategory !== 'all'){
+    filterBanner = `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#fff7ed;border:1px solid #fdba74;padding:8px 14px;border-radius:12px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;color:#c2410c">
+          الفئة: <b>${escapeHtml(currentStoreSubCategory)}</b> (${items.length})
+        </div>
+        <button onclick="setStoreSubCategory('all')" style="border:none;background:none;color:#ea580c;font-weight:800;cursor:pointer;font-size:12.5px">
+          عرض الكل ✖️
+        </button>
+      </div>
+    `;
+  }
+
+  // إذا كان مطعماً: عرض بنمط بريستو
+  if(isRestaurant){
+    if(currentStoreSubCategory === 'all' && !currentStoreSearch){
+      const groups = {};
+      items.forEach(p => {
+        const cat = getProductSubCategory(p, true);
+        if(!groups[cat]) groups[cat] = [];
+        groups[cat].push(p);
+      });
+
+      let html = filterBanner;
+      Object.keys(groups).forEach(catName => {
+        const groupItems = groups[catName];
+        html += `<div class="foodSectionTitle">${escapeHtml(catName)}</div>`;
+        html += `<div class="foodSectionList">`;
+        html += groupItems.map(p => renderPrestoFoodItemHtml(p, canManage)).join('');
+        html += `</div>`;
+      });
+      box.innerHTML = html;
+    } else {
+      let html = filterBanner;
+      html += `<div class="foodSectionList">`;
+      html += items.map(p => renderPrestoFoodItemHtml(p, canManage)).join('');
+      html += `</div>`;
+      box.innerHTML = html;
+    }
+    return;
+  }
+
+  // إذا كان متجراً عاماً أو إلكترونيات: عرض شبكة الكروت
+  box.innerHTML=filterBanner + `<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
     const imgs=getImages(p);const th=imgs[0]||"";
     const expired=isExpired(p);const isSold=!!p.sold;
     const canCart=!isSold && canHaveCart(p);
@@ -1527,6 +1736,7 @@ function renderStoreProducts(){
     return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
   }).join("")}</div>`;
 }
+
 window.applyStoreProductFilterClear=()=>{
   const input=document.getElementById("storeProductSearch");
   if(input)input.value="";
@@ -2078,17 +2288,18 @@ try{
 const images=[];
 for(const item of selectedImages){if(item.type==="existing")images.push(item.url);else{saveBtn.textContent="جاري رفع الصور...";images.push(await uploadToImgBB(item.file));}}
 const finalOriginalPrice=(priceType==="fixed" && originalPrice>Number(price))?originalPrice:0;
+const subCategory=(document.getElementById("storeSubCategory")?.value||"").trim();
 if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
 const newExpires=Date.now()+POST_DURATION_MS;
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
 if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
 await updateDoc(doc(db,"posts",editingPostId),upd);
 }
 else{
   const now=Date.now();
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
   if(isStore){
     base.storeId=storeToUse.id;
     base.storeName=storeToUse.name;
@@ -2631,9 +2842,18 @@ window.openStore=async(storeId,keepScroll,backTo)=>{
   const verifiedBadgeLg=store.verified?`<span class="verifiedBadge verifiedBadgeLg" title="متجر موثق"></span>`:"";
   const deliveryBadge=store.deliveryCompany?`<span style="font-size:12px;color:#166534;padding:3px 9px;background:#f0fdf4;border-radius:7px;font-weight:700;border:1px solid #bbf7d0">🛵 التوصيل: ${escapeHtml(store.deliveryCompany)}</span>`:"";
   const restaurantBadge=isRestaurant?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
-  const storePostsCountAll=allPosts.filter(p=>p.storeId===storeId && getStatus(p)==="approved").length;
-  const storeTierBadge=renderSellerTierBadge(store.ownerUid,storePostsCountAll);
-  box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${storeFilterBar}<div id="storeProductsBox"></div>`;
+  currentStoreSubCategory = "all";
+  currentStoreSearch = "";
+  const availableSubCategories = [];
+  items.forEach(p => {
+    const cat = getProductSubCategory(p, isRestaurant);
+    if(cat && !availableSubCategories.includes(cat)) availableSubCategories.push(cat);
+  });
+  const prestoCategoriesHtml = isRestaurant 
+    ? (renderRestaurantPopular(items) + renderRestaurantTabs(items, availableSubCategories))
+    : renderStoreCategoryTiles(items, availableSubCategories);
+
+  box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
   renderStoreProducts();
   updateCartUI();
   loadStoreRatings(storeId).then(()=>{
@@ -3021,6 +3241,25 @@ const radio=document.querySelector(`input[name="adType"][value="${adTypeVal}"]`)
 if(radio)radio.checked=true;
 onAdTypeChange();
 onCategoryChange();if(post.brand)document.getElementById("brand").value=post.brand;
+const subCatField=document.getElementById("storeSubCategoryField");
+const subCatInput=document.getElementById("storeSubCategory");
+const subCatTags=document.getElementById("storeSubCategoryTags");
+if(subCatField && subCatInput){
+  if(post.storeId){
+    subCatField.classList.remove("hidden");
+    subCatInput.value=post.subCategory||"";
+    const isRest=isRestaurantCategory(post.storeCategory||post.category);
+    const tagList=isRest
+      ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
+      : ['هواتف نقالة', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'سبيكر و ميكروفون', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة وكاميرا', 'فلاش', 'ايباد'];
+    if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
+      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
+    `).join('');
+  } else {
+    subCatField.classList.add("hidden");
+    subCatInput.value="";
+  }
+}
 const existing=(post.images&&post.images.length)?post.images:(post.imageUrl?[post.imageUrl]:[]);
 selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();onPriceTypeChange();openFormScreen();
@@ -3065,6 +3304,25 @@ document.getElementById("phone").setAttribute("readonly","readonly");
 document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
 document.getElementById("category").value=(isStore?activeStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
+const subCatField=document.getElementById("storeSubCategoryField");
+const subCatInput=document.getElementById("storeSubCategory");
+const subCatTags=document.getElementById("storeSubCategoryTags");
+if(subCatField && subCatInput){
+  if(isStore && activeStore){
+    subCatField.classList.remove("hidden");
+    subCatInput.value="";
+    const isRest=isRestaurantStore(activeStore);
+    const tagList=isRest
+      ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
+      : ['هواتف نقالة', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'سبيكر و ميكروفون', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة وكاميرا', 'فلاش', 'ايباد'];
+    if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
+      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
+    `).join('');
+  } else {
+    subCatField.classList.add("hidden");
+    subCatInput.value="";
+  }
+}
 updateDescCount();document.getElementById("termsCheck").checked=false;
 document.getElementById("termsBox").classList.remove("hidden");
 const offerRadio=document.querySelector('input[name="adType"][value="offer"]');
@@ -3321,90 +3579,8 @@ window.saveMyPhone=async()=>{
    التواصل + المشاركة
    ============================================ */
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
-window.sharePost = async function(id) {
-  const p = allPosts.find(x => x.id === id);
-  if (!p) return;
-  
-  const url = window.location.origin + window.location.pathname + '#post-' + id;
-  const text = `شوف هذا الإعلان على تسوق الآن:\n${p.title}\nالسعر: ${p.priceType === 'contact' ? 'تواصل لمعرفة السعر' : (p.price + ' د.ل')}\n\nالرابط: ${url}`;
-  
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: p.title || 'تسوق الآن',
-        text: text,
-        url: url
-      });
-    } catch (err) {
-      console.log('فشل المشاركة:', err);
-    }
-  } else {
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  }
-};
+window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.priceType==="contact"?'📞 تواصل لمعرفة السعر':(p.price!=null?formatPrice(p.price)+' د.ل':'');const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
 
-window.generateStoryImage = async function(id) {
-  const p = allPosts.find(x => x.id === id);
-  if (!p) return;
-
-  showToast('⏳ جاري تجهيز صورة الستوري...', 'info', 2000);
-
-  const storyDiv = document.createElement('div');
-  storyDiv.style.cssText = 'width: 1080px; height: 1920px; position: absolute; top: -9999px; left: -9999px; background: #fff; padding: 60px 40px; box-sizing: border-box; font-family: "Cairo", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; direction: rtl;';
-  
-  const imgUrl = p.images && p.images[0] ? p.images[0] : 'icon-192.png';
-  
-  storyDiv.innerHTML = `
-    <div style="text-align: center; width: 100%;">
-      <h1 style="color: #0284c7; font-size: 60px; margin: 0 0 20px;">🛒 تسوق الآن</h1>
-    </div>
-    <div style="width: 100%; background: #f5f6f8; border-radius: 30px; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid #edeff2;">
-      <img src="${imgUrl}" crossorigin="anonymous" style="max-width: 100%; max-height: 700px; object-fit: contain; border-radius: 20px;">
-    </div>
-    <div style="text-align: center; width: 100%;">
-      <h2 style="font-size: 50px; color: #1f2937; margin: 0 0 20px; line-height: 1.4;">${p.title}</h2>
-      <div style="font-size: 65px; font-weight: 800; color: ${p.priceType === 'contact' ? '#f59e0b' : '#16a34a'}; margin-bottom: 30px;">
-        ${p.priceType === 'contact' ? '📞 تواصل لمعرفة السعر' : p.price + ' د.ل'}
-      </div>
-      <div style="font-size: 40px; color: #6b7280; background: #e6f6fe; padding: 15px 30px; border-radius: 20px; display: inline-block;">
-        📍 ${p.city || 'ليبيا'}
-      </div>
-    </div>
-    <div style="text-align: center; width: 100%; border-top: 2px dashed #edeff2; padding-top: 30px;">
-      <div style="font-size: 35px; color: #0284c7; font-weight: 800; margin-bottom: 10px;">تصفح المزيد على:</div>
-      <div style="font-size: 45px; color: #1f2937; font-weight: 800; font-family: monospace;">tasawuqnow.com</div>
-    </div>
-  `;
-  
-  document.body.appendChild(storyDiv);
-
-  try {
-    const canvas = await html2canvas(storyDiv, { useCORS: true, scale: 1 });
-    document.body.removeChild(storyDiv);
-
-    canvas.toBlob(async function(blob) {
-      const file = new File([blob], 'tasawuq_story.png', { type: 'image/png' });
-      
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'مشاركة الستوري', text: 'شوف الإعلان ده في تسوق الآن!' });
-        } catch (e) { console.log('المستخدم ألغى المشاركة'); }
-      } else {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'tasawuq_story.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('✅ تم تحميل الصورة بنجاح', 'success');
-      }
-    }, 'image/png');
-  } catch (err) {
-    console.error('خطأ في إنشاء الصورة:', err);
-    if(document.body.contains(storyDiv)) document.body.removeChild(storyDiv);
-    showToast('❌ حدث خطأ أثناء إنشاء الصورة', 'error');
-  }
-};
 /* ============================================
    المتابعة + التقييم
    ============================================ */
