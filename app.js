@@ -3320,7 +3320,6 @@ window.saveMyPhone=async()=>{
 /* ============================================
    التواصل + المشاركة
    ============================================ */
-window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
 window.sharePost = async function(id) {
   const p = allPosts.find(x => x.id === id);
   if (!p) return;
@@ -3337,13 +3336,24 @@ window.sharePost = async function(id) {
       });
     } catch (err) {
       console.log('فشل المشاركة:', err);
+      // الحل: لو المتصفح رفض المشاركة، بنفتح الواتساب تلقائي
+      if (err.name !== 'AbortError') {
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      }
     }
   } else {
+    // لو المتصفح مش بيدعم المشاركة (زي الكمبيوتر)
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 };
 
 window.generateStoryImage = async function(id) {
+  // لو مكتبة التصوير مش موجودة، هنطلع رسالة تنبيه
+  if (typeof html2canvas === 'undefined') {
+    alert('مكتبة تصوير الستوري لم يتم تحميلها. تأكد من إضافة السطر في index.html');
+    return;
+  }
+  
   const p = allPosts.find(x => x.id === id);
   if (!p) return;
 
