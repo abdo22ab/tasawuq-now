@@ -3321,8 +3321,90 @@ window.saveMyPhone=async()=>{
    التواصل + المشاركة
    ============================================ */
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
-window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.priceType==="contact"?'📞 تواصل لمعرفة السعر':(p.price!=null?formatPrice(p.price)+' د.ل':'');const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
+window.sharePost = async function(id) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+  
+  const url = window.location.origin + window.location.pathname + '#post-' + id;
+  const text = `شوف هذا الإعلان على تسوق الآن:\n${p.title}\nالسعر: ${p.priceType === 'contact' ? 'تواصل لمعرفة السعر' : (p.price + ' د.ل')}\n\nالرابط: ${url}`;
+  
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: p.title || 'تسوق الآن',
+        text: text,
+        url: url
+      });
+    } catch (err) {
+      console.log('فشل المشاركة:', err);
+    }
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  }
+};
 
+window.generateStoryImage = async function(id) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+
+  showToast('⏳ جاري تجهيز صورة الستوري...', 'info', 2000);
+
+  const storyDiv = document.createElement('div');
+  storyDiv.style.cssText = 'width: 1080px; height: 1920px; position: absolute; top: -9999px; left: -9999px; background: #fff; padding: 60px 40px; box-sizing: border-box; font-family: "Cairo", sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: space-between; direction: rtl;';
+  
+  const imgUrl = p.images && p.images[0] ? p.images[0] : 'icon-192.png';
+  
+  storyDiv.innerHTML = `
+    <div style="text-align: center; width: 100%;">
+      <h1 style="color: #0284c7; font-size: 60px; margin: 0 0 20px;">🛒 تسوق الآن</h1>
+    </div>
+    <div style="width: 100%; background: #f5f6f8; border-radius: 30px; padding: 20px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid #edeff2;">
+      <img src="${imgUrl}" crossorigin="anonymous" style="max-width: 100%; max-height: 700px; object-fit: contain; border-radius: 20px;">
+    </div>
+    <div style="text-align: center; width: 100%;">
+      <h2 style="font-size: 50px; color: #1f2937; margin: 0 0 20px; line-height: 1.4;">${p.title}</h2>
+      <div style="font-size: 65px; font-weight: 800; color: ${p.priceType === 'contact' ? '#f59e0b' : '#16a34a'}; margin-bottom: 30px;">
+        ${p.priceType === 'contact' ? '📞 تواصل لمعرفة السعر' : p.price + ' د.ل'}
+      </div>
+      <div style="font-size: 40px; color: #6b7280; background: #e6f6fe; padding: 15px 30px; border-radius: 20px; display: inline-block;">
+        📍 ${p.city || 'ليبيا'}
+      </div>
+    </div>
+    <div style="text-align: center; width: 100%; border-top: 2px dashed #edeff2; padding-top: 30px;">
+      <div style="font-size: 35px; color: #0284c7; font-weight: 800; margin-bottom: 10px;">تصفح المزيد على:</div>
+      <div style="font-size: 45px; color: #1f2937; font-weight: 800; font-family: monospace;">tasawuqnow.com</div>
+    </div>
+  `;
+  
+  document.body.appendChild(storyDiv);
+
+  try {
+    const canvas = await html2canvas(storyDiv, { useCORS: true, scale: 1 });
+    document.body.removeChild(storyDiv);
+
+    canvas.toBlob(async function(blob) {
+      const file = new File([blob], 'tasawuq_story.png', { type: 'image/png' });
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'مشاركة الستوري', text: 'شوف الإعلان ده في تسوق الآن!' });
+        } catch (e) { console.log('المستخدم ألغى المشاركة'); }
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tasawuq_story.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ تم تحميل الصورة بنجاح', 'success');
+      }
+    }, 'image/png');
+  } catch (err) {
+    console.error('خطأ في إنشاء الصورة:', err);
+    if(document.body.contains(storyDiv)) document.body.removeChild(storyDiv);
+    showToast('❌ حدث خطأ أثناء إنشاء الصورة', 'error');
+  }
+};
 /* ============================================
    المتابعة + التقييم
    ============================================ */
