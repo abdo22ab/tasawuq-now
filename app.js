@@ -3338,54 +3338,45 @@ window.sharePost = function(id) {
   
   shareMenu = document.createElement('div');
   shareMenu.id = 'customShareMenu';
-  
-  // استايل مدمج (Inline) لضمان الظهور فوق أي عنصر في الموقع
-  shareMenu.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:999999;display:flex;align-items:flex-end;justify-content:center;';
+  shareMenu.className = 'overlay';
+  shareMenu.style.zIndex = '99999';
   
   shareMenu.innerHTML = `
-    <div style="text-align:center; padding: 20px 20px 30px; background:#fff; width:100%; max-width:480px; border-radius:20px 20px 0 0; direction:rtl; font-family:'Cairo',sans-serif; box-sizing:border-box;">
-      <h3 style="margin:0 0 20px; font-size:17px; font-weight:800; color:#1f2937;">مشاركة الإعلان عبر</h3>
-      
+    <div class="sheet" style="text-align:center; padding-bottom: 30px;">
+      <h3 style="margin-bottom: 20px;">مشاركة الإعلان عبر</h3>
       <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
         
-        <!-- واتساب -->
-        <a href="https://wa.me/?text=${fullText}" target="_blank" style="text-decoration:none; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <a href="https://wa.me/?text=${fullText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:#25d366; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">💬</div>
           <span style="font-size:12px; font-weight:700;">واتساب</span>
         </a>
         
-        <!-- فيسبوك -->
-        <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" style="text-decoration:none; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:#1877F2; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px; font-family:sans-serif;">f</div>
           <span style="font-size:12px; font-weight:700;">فيسبوك</span>
         </a>
         
-        <!-- تليجرام -->
-        <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" style="text-decoration:none; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <a href="https://t.me/share/url?url=${encUrl}&text=${encText}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:#0088cc; color:#fff; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">✈️</div>
           <span style="font-size:12px; font-weight:700;">تليجرام</span>
         </a>
 
-        <!-- X (تويتر) -->
-        <a href="https://twitter.com/intent/tweet?text=${encText}&url=${encUrl}" target="_blank" style="text-decoration:none; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <a href="https://twitter.com/intent/tweet?text=${encText}&url=${encUrl}" target="_blank" style="text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:#000; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">𝕏</div>
           <span style="font-size:12px; font-weight:700;">X (تويتر)</span>
         </a>
 
-        <!-- نسخ (انستجرام / تيك توك) -->
-        <div onclick="copyShareLink('${fullText}')" style="cursor:pointer; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <div onclick="copyShareLink('${fullText}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📋</div>
-          <span style="font-size:12px; font-weight:700;">نسخ (انستجرام)</span>
+          <span style="font-size:12px; font-weight:700;">نسخ (انستجرام/تيك توك)</span>
         </div>
 
-        <!-- المزيد (قائمة الموبايل) -->
-        <div onclick="nativeShare('${encText}', '${encUrl}')" style="cursor:pointer; color:#1f2937; display:flex; flex-direction:column; align-items:center;">
+        <div onclick="nativeShare('${encText}', '${encUrl}')" style="cursor:pointer; color:var(--text); display:flex; flex-direction:column; align-items:center;">
           <div style="width:55px; height:55px; border-radius:15px; background:#8b5cf6; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:8px;">📱</div>
           <span style="font-size:12px; font-weight:700;">المزيد...</span>
         </div>
       </div>
-      
-      <button onclick="closeShareMenu()" style="width:100%; padding:13px; border:none; border-radius:12px; font-size:14.5px; font-weight:700; color:#8a93a3; background:transparent; cursor:pointer; margin-top:10px;">إلغاء</button>
+      <button class="btnGhost" onclick="closeShareMenu()">إلغاء</button>
     </div>
   `;
   
@@ -3394,36 +3385,13 @@ window.sharePost = function(id) {
 
 window.copyShareLink = function(encFullText) {
   const textToCopy = decodeURIComponent(encFullText);
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      showToast('✅ تم نسخ الرابط! افتح انستجرام أو تيك توك والصقه', 'success', 4000);
-      closeShareMenu();
-    }).catch(() => {
-      fallbackCopy(textToCopy);
-    });
-  } else {
-    fallbackCopy(textToCopy);
-  }
-};
-
-// دالة مساعدة للنسخ لو المتصفح قديم
-function fallbackCopy(text) {
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  textArea.style.position = "fixed";
-  textArea.style.top = "-9999px";
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  try {
-    document.execCommand('copy');
-    showToast('✅ تم نسخ الرابط!', 'success', 4000);
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    showToast('✅ تم نسخ الرابط! افتح انستجرام أو تيك توك والصقه', 'success', 4000);
     closeShareMenu();
-  } catch (err) {
+  }).catch(() => {
     showToast('❌ فشل النسخ، يرجى المحاولة يدوياً', 'error');
-  }
-  document.body.removeChild(textArea);
-}
+  });
+};
 
 window.nativeShare = async function(encText, encUrl) {
   const text = decodeURIComponent(encText);
@@ -3433,9 +3401,7 @@ window.nativeShare = async function(encText, encUrl) {
     try {
       await navigator.share({ title: 'تسوق الآن', text: text, url: url });
       closeShareMenu();
-    } catch (err) { 
-      console.log('Native share cancelled'); 
-    }
+    } catch (err) { console.log('Native share cancelled'); }
   } else {
     copyShareLink(encText + '%0A' + encUrl);
   }
@@ -3444,7 +3410,6 @@ window.nativeShare = async function(encText, encUrl) {
 window.closeShareMenu = function() {
   const menu = document.getElementById('customShareMenu');
   if (menu) menu.remove();
-};
 };/* ============================================
    المتابعة + التقييم
    ============================================ */
