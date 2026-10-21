@@ -3336,21 +3336,18 @@ window.sharePost = async function(id) {
       });
     } catch (err) {
       console.log('فشل المشاركة:', err);
-      // الحل: لو المتصفح رفض المشاركة، بنفتح الواتساب تلقائي
       if (err.name !== 'AbortError') {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       }
     }
   } else {
-    // لو المتصفح مش بيدعم المشاركة (زي الكمبيوتر)
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   }
 };
 
 window.generateStoryImage = async function(id) {
-  // لو مكتبة التصوير مش موجودة، هنطلع رسالة تنبيه
   if (typeof html2canvas === 'undefined') {
-    alert('مكتبة تصوير الستوري لم يتم تحميلها. تأكد من إضافة السطر في index.html');
+    alert('مكتبة تصوير الستوري لم يتم تحميلها. تأكد من إضافة سطر html2canvas في ملف index.html');
     return;
   }
   
@@ -3377,23 +3374,43 @@ window.generateStoryImage = async function(id) {
         ${p.priceType === 'contact' ? '📞 تواصل لمعرفة السعر' : p.price + ' د.ل'}
       </div>
       <div style="font-size: 40px; color: #6b7280; background: #e6f6fe; padding: 15px 30px; border-radius: 20px; display: inline-block;">
-window.sharePost = async function(id) {
-  // 1. تنبيه يظهر فوراً عشان نعرف إن الزر شغال
-  showToast('⏳ جاري تجهيز الرابط...', 'info', 2000);
+        📍 ${p.city || 'ليبيا'}
+      </div>
+    </div>
+    <div style="text-align: center; width: 100%; border-top: 2px dashed #edeff2; padding-top: 30px;">
+      <div style="font-size: 35px; color: #0284c7; font-weight: 800; margin-bottom: 10px;">تصفح المزيد على:</div>
+      <div style="font-size: 45px; color: #1f2937; font-weight: 800; font-family: monospace;">tasawuqnow.com</div>
+    </div>
+  `;
   
-  const p = allPosts.find(x => x.id === id);
-  if (!p) {
-    showToast('❌ لم يتم العثور على الإعلان', 'error');
-    return;
+  document.body.appendChild(storyDiv);
+
+  try {
+    const canvas = await html2canvas(storyDiv, { useCORS: true, scale: 1 });
+    document.body.removeChild(storyDiv);
+
+    canvas.toBlob(async function(blob) {
+      const file = new File([blob], 'tasawuq_story.png', { type: 'image/png' });
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'مشاركة الستوري', text: 'شوف الإعلان ده في تسوق الآن!' });
+        } catch (e) { console.log('المستخدم ألغى المشاركة'); }
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'tasawuq_story.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ تم تحميل الصورة بنجاح', 'success');
+      }
+    }, 'image/png');
+  } catch (err) {
+    console.error('خطأ في إنشاء الصورة:', err);
+    if(document.body.contains(storyDiv)) document.body.removeChild(storyDiv);
+    showToast('❌ حدث خطأ أثناء إنشاء الصورة', 'error');
   }
-  
-  const url = window.location.origin + window.location.pathname + '#post-' + id;
-  const text = `شوف هذا الإعلان على تسوق الآن:\n${p.title}\nالسعر: ${p.priceType === 'contact' ? 'تواصل لمعرفة السعر' : (p.price + ' د.ل')}\n\nالرابط: ${url}`;
-  
-  // 2. فتح الواتساب مباشرة (أقوى طريقة ومفيش متصفح بيمنعها)
-  setTimeout(() => {
-    window.location.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  }, 500);
 };
 /* ============================================
    المتابعة + التقييم
