@@ -899,3 +899,356 @@ html.dark-mode .storeCatTile.active {
   background: #3a2215;
   border-color: #ea580c;
 }
+
+/* =====================================================
+   KSH Restaurant Theme Styles (نموذج متجر KSH بشكل مطعم)
+   ===================================================== */
+.kshCover {
+  height: 180px;
+  background: linear-gradient(135deg, #ffc20e, #ff8a00);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 20px 20px;
+}
+.kshCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kshCoverEmojis {
+  font-size: 52px;
+  letter-spacing: 8px;
+  padding-bottom: 30px;
+}
+.kshInfo {
+  background: var(--card);
+  margin: -36px 12px 0;
+  border-radius: 18px;
+  padding: 14px;
+  position: relative;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+  z-index: 2;
+}
+.kshHead {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.kshLogo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: #ffc20e;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 18px;
+  color: #1c1c1c;
+  flex: none;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.kshLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kshHeadText {
+  flex: 1;
+  min-width: 0;
+}
+.kshHeadText h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.3;
+}
+.kshHeadText p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.kshStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  text-align: center;
+}
+.kshStats small {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-bottom: 2px;
+}
+.kshStats b {
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: 800;
+}
+.kshNav {
+  position: sticky;
+  top: 54px;
+  z-index: 20;
+  background: var(--bg);
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 12px;
+  margin-top: 8px;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.kshNav::-webkit-scrollbar { display: none; }
+.kshNav button {
+  flex: none;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.kshNav button.on {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 800;
+  border-color: var(--text);
+}
+.kshItem {
+  display: flex;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 10px;
+  align-items: center;
+  transition: transform .12s, box-shadow .12s;
+}
+.kshItem:active {
+  transform: scale(.98);
+}
+.kshPic {
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  background: #fef9c3;
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex: none;
+  overflow: hidden;
+}
+html.dark-mode .kshPic {
+  background: #2a2d3d;
+}
+.kshPic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.kshPicEmoji {
+  font-size: 38px;
+}
+.kshAdd {
+  position: absolute;
+  inset-inline-start: 4px;
+  bottom: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: #dc2626;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  transition: transform .1s;
+}
+.kshAdd:active {
+  transform: scale(.9);
+}
+.kshTxt {
+  flex: 1;
+  min-width: 0;
+}
+.kshTxt h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+}
+.kshTxt .kshDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 6px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.kshTxt .opts {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.opts span {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-weight: 600;
+}
+.kshPrice {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 16px;
+}
+.kshBar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  max-width: 560px;
+  margin-inline: auto;
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+  box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+}
+.kshSendBtn {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 13px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(22,163,74,.3);
+  box-sizing: border-box;
+}
+.kshSendBtn:active {
+  transform: scale(.98);
+}
+
+/* =====================================================
+   Restaurant Structure Cards (هيكل المطاعم: غلاف + شعار + اسم)
+   ===================================================== */
+.restaurantStructureCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.restaurantStructureCard:active {
+  transform: scale(.98);
+}
+.rscCover {
+  height: 110px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+}
+.rscCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rscBody {
+  padding: 12px 14px 14px;
+  position: relative;
+}
+.rscLogo {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: #ffc20e;
+  border: 3px solid var(--card);
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  margin-top: -38px;
+  margin-bottom: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 16px;
+  color: #1c1c1c;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+.rscLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rscTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.rscName {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.rscMeta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rscCallBtn {
+  margin-top: 10px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
