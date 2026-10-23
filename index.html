@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -478,10 +478,16 @@ OneSignalDeferred.push(async function(OneSignal){
 </div>
 </div>
 </div>
-<div class="field"><label>🖼️ شعار جديد (اختياري)</label>
+<div class="field"><label>🖼️ شعار المتجر (شعار جديد)</label>
 <div id="editStoreLogoThumbs" class="imgThumbs"></div>
 <div id="editStoreLogoAddTile" class="imgAddTile" onclick="document.getElementById('editStoreLogoFile').click()">📷 تغيير الشعار</div>
 <input id="editStoreLogoFile" type="file" accept="image/*" class="hidden" onchange="handleEditStoreLogo()"></div>
+<div class="field"><label>🖼️ غلاف المتجر (غلاف جديد)</label>
+<div id="editStoreCoverThumbs" class="imgThumbs"></div>
+<div id="editStoreCoverAddTile" class="imgAddTile" onclick="document.getElementById('editStoreCoverFile').click()">📷 تغيير الغلاف</div>
+<input id="editStoreCoverFile" type="file" accept="image/*" class="hidden" onchange="handleEditStoreCover()"></div>
+<input id="directLogoFileInput" type="file" accept="image/*" class="hidden" onchange="handleDirectLogoUpload(event)">
+<input id="directCoverFileInput" type="file" accept="image/*" class="hidden" onchange="handleDirectCoverUpload(event)">
 <button class="btnMain" id="editStoreSubmitBtn" onclick="saveStoreEdits()" style="background:#16a34a">💾 حفظ التعديلات</button>
 <button class="btnGhost" onclick="closeOverlay()">إلغاء</button>
 </div>
