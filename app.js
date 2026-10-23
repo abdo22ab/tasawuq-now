@@ -1405,8 +1405,49 @@ function renderRecentlyViewed(){
    ============================================ */
 const searchInputEl=document.getElementById("searchInput");
 const clearSearchBtnEl=document.getElementById("clearSearchBtn");
-try{const saved=localStorage.getItem('lastSearch');if(saved && searchInputEl){searchInputEl.value=saved;if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';}}catch(e){}
+try{const saved=localStorage.getItem('lastSearch');if(saved && searchInputEl){searchInputEl.value=saved;if(clearSearchBtnEl)clearSearchBtnEl.style.display='flex';if(saved.trim().length>=2)setTimeout(()=>searchServerPosts(saved.trim()),800);}}catch(e){}
 let _searchDebounceTimer=null;
+let _serverSearchCache={};
+let _isSearchingServer=false;
+
+async function searchServerPosts(term){
+  if(!term || term.trim().length < 2) return;
+  const cleanTerm = term.trim().toLowerCase();
+  if(_serverSearchCache[cleanTerm]) return;
+  _serverSearchCache[cleanTerm] = true;
+
+  try {
+    const seenIds = new Set(allPosts.map(p => p.id));
+    const queries = [];
+    const words = cleanTerm.split(/\s+/).filter(w => w.length >= 2);
+    for(const w of words.slice(0, 2)){
+      queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("keywords", "array-contains", w), limit(25)));
+    }
+    queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("brand", "==", term.trim()), limit(25)));
+    queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("title", ">=", term.trim()), where("title", "<=", term.trim() + "\uf8ff"), limit(25)));
+
+    const snaps = await Promise.all(queries.map(q => getDocs(q).catch(() => ({ docs: [] }))));
+    let addedCount = 0;
+    snaps.forEach(snap => {
+      snap.docs.forEach(d => {
+        if(!seenIds.has(d.id)){
+          seenIds.add(d.id);
+          allPosts.push({ id: d.id, ...d.data() });
+          addedCount++;
+        }
+      });
+    });
+
+    if(addedCount > 0){
+      allPosts = sortPosts(allPosts);
+      renderPosts();
+    }
+  } catch(err){
+    console.warn("Server search error:", err);
+  }
+}
+window.searchServerPosts = searchServerPosts;
+
 if(searchInputEl){
   searchInputEl.addEventListener('input',function(){
     const v=this.value||"";
@@ -1414,7 +1455,10 @@ if(searchInputEl){
     if(clearSearchBtnEl)clearSearchBtnEl.style.display=v.length>0?'flex':'none';
     if(typeof showSearchDropdown==='function')showSearchDropdown();
     if(_searchDebounceTimer)clearTimeout(_searchDebounceTimer);
-    _searchDebounceTimer=setTimeout(()=>{if(typeof renderPosts==='function')renderPosts();},300);
+    _searchDebounceTimer=setTimeout(()=>{
+      if(v.trim().length>=2){searchServerPosts(v.trim());}
+      if(typeof renderPosts==='function')renderPosts();
+    },300);
   });
   searchInputEl.addEventListener('focus',function(){if(typeof showSearchDropdown==='function')showSearchDropdown();});
 }
@@ -1455,7 +1499,7 @@ window.showSearchDropdown=function(){
   box.classList.remove("hidden");
 };
 window.hideSearchDropdown=function(){const box=document.getElementById("searchDropdown");if(box)box.classList.add("hidden");};
-window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();renderPosts();};
+window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();if(term&&term.trim().length>=2){searchServerPosts(term.trim());}renderPosts();};
 window.updateClearBtn=function(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";};
 window.clearSearch=function(){const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
 document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
@@ -2491,6 +2535,12 @@ setTimeout(()=>{
   /* ============================================
    حفظ الإعلان (savePost) — مع priceType + negotiable
    ============================================ */
+function generateKeywords(title, description, brand, category, city){
+  const text = `${title||""} ${description||""} ${brand||""} ${category||""} ${city||""}`.toLowerCase();
+  const words = text.replace(/[^a-z0-9\u0621-\u064A\s]/g, " ").split(/\s+/).filter(w => w.length >= 2);
+  return Array.from(new Set(words)).slice(0, 45);
+}
+
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!window._isStorePost;
@@ -2547,17 +2597,18 @@ const images=[];
 for(const item of selectedImages){if(item.type==="existing")images.push(item.url);else{saveBtn.textContent="جاري رفع الصور...";images.push(await uploadToImgBB(item.file));}}
 const finalOriginalPrice=(priceType==="fixed" && originalPrice>Number(price))?originalPrice:0;
 const subCategory=(document.getElementById("storeSubCategory")?.value||"").trim();
+const postKeywords=generateKeywords(title, description, brand, category, city);
 if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
 const newExpires=Date.now()+POST_DURATION_MS;
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
 if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
 await updateDoc(doc(db,"posts",editingPostId),upd);
 }
 else{
   const now=Date.now();
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
   if(isStore){
     base.storeId=storeToUse.id;
     base.storeName=storeToUse.name;
@@ -2648,20 +2699,47 @@ window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await u
 /* ============================================
    الإدارة - المراجعة
    ============================================ */
+let allPendingPosts = [];
+let pendingPostsListenerStarted = false;
+let unsubPendingPosts = null;
+
+function startPendingPostsListener(){
+  if(unsubPendingPosts) return;
+  pendingPostsListenerStarted = true;
+  const q = query(collection(db, "posts"), where("status", "==", "pending"));
+  unsubPendingPosts = onSnapshot(q, snap => {
+    allPendingPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    updateModBadge();
+    const modOverlay = document.getElementById("moderationOverlay");
+    if(modOverlay && !modOverlay.classList.contains("hidden")){
+      renderModeration();
+    }
+  }, err => {
+    console.warn("Pending posts listener error:", err);
+  });
+}
+
+function stopPendingPostsListener(){
+  if(unsubPendingPosts){ unsubPendingPosts(); unsubPendingPosts = null; }
+  pendingPostsListenerStarted = false;
+  allPendingPosts = [];
+}
+
 function renderModeration(){
-const list=document.getElementById("moderationList");if(!list)return;
-const pending=allPosts.filter(p=>getStatus(p)==="pending");
-if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة</div>";return;}
-const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
-const items=pending.map(p=>{
-const imgs=getImages(p);
-const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
-const days=daysLeft(p);
-const expiryInfo=days!=null?`<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days<=0?'#b91c1c':days<=5?'#92400e':'#166534'}">${days<=0?'⏰ منتهي':('⏳ باقي '+days+' يوم')}</div>`:"";
-const tags=(p.storeId?("🏪 "+escapeHtml(p.storeName||"متجر")):((p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"")));
-const adTypeBadge=isWanted(p)?`<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>`:`<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
-const priceTxt=p.priceType==="contact"?"📞 تواصل لمعرفة السعر":(p.price!=null?formatPrice(p.price)+" د.ل":"");
-return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
+  const list=document.getElementById("moderationList");if(!list)return;
+  const pending=allPendingPosts;
+  if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة</div>";return;}
+  const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
+  const items=pending.map(p=>{
+    const imgs=getImages(p);
+    const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
+    const days=daysLeft(p);
+    const expiryInfo=days!=null?`<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days<=0?'#b91c1c':days<=5?'#92400e':'#166534'}">${days<=0?'⏰ منتهي':('⏳ باقي '+days+' يوم')}</div>`:"";
+    const tags=(p.storeId?("🏪 "+escapeHtml(p.storeName||"متجر")):((p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"")));
+    const adTypeBadge=isWanted(p)?`<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>`:`<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
+    const priceTxt=p.priceType==="contact"?"📞 تواصل لمعرفة السعر":(p.price!=null?formatPrice(p.price)+" د.ل":"");
+    return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${adTypeBadge}<span style="font-size:11.5px;color:var(--muted)">${timeAgo(p.createdAt)}</span></div>
 <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
 <div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
@@ -2674,12 +2752,49 @@ ${expiryInfo}
 <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
 <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
 </div></div>`;
-}).join("");
-list.innerHTML=toolbar+items;
+  }).join("");
+  list.innerHTML=toolbar+items;
 }
-window.approveAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){showToast("لا توجد إعلانات","info");return;}if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;let ok=0,fail=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});ok++;}catch(e){fail++;}}showToast(`✅ تم قبول ${ok}`,"success");renderModeration();};
-window.deleteAllPending=async()=>{if(!isAdmin)return;const pending=allPosts.filter(p=>getStatus(p)==="pending");if(pending.length===0){showToast("لا توجد","info");return;}if(!confirm(`رفض ${pending.length} إعلان؟`))return;const reason=prompt("سبب الرفض:","محتوى غير مناسب");if(reason===null)return;let ok=0;for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});ok++;}catch(e){}}showToast(`✅ تم رفض ${ok}`,"success");renderModeration();};
-function updateModBadge(){if(!isAdmin||!moderationBtn)return;const c=allPosts.filter(p=>getStatus(p)==="pending").length;moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";}
+
+window.approveAllPending=async()=>{
+  if(!isAdmin)return;
+  const pending=allPendingPosts.slice();
+  if(pending.length===0){showToast("لا توجد إعلانات","info");return;}
+  if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;
+  let ok=0,fail=0;
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
+      ok++;
+    }catch(e){fail++;}
+  }
+  showToast(`✅ تم قبول ${ok}`,"success");
+  renderModeration();
+};
+
+window.deleteAllPending=async()=>{
+  if(!isAdmin)return;
+  const pending=allPendingPosts.slice();
+  if(pending.length===0){showToast("لا توجد","info");return;}
+  if(!confirm(`رفض ${pending.length} إعلان؟`))return;
+  const reason=prompt("سبب الرفض:","محتوى غير مناسب");
+  if(reason===null)return;
+  let ok=0;
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
+      ok++;
+    }catch(e){}
+  }
+  showToast(`✅ تم رفض ${ok}`,"success");
+  renderModeration();
+};
+
+function updateModBadge(){
+  if(!isAdmin||!moderationBtn)return;
+  const c=allPendingPosts.length;
+  moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";
+}
 
 /* ============================================
    الإبلاغات
@@ -4110,7 +4225,7 @@ window.openAccount=(skipHistory)=>{
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
 };
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
-window.openModeration=()=>{renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
 function closeOverlayDirect(){
@@ -4210,6 +4325,7 @@ window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;co
    ============================================ */
 function startFollowingListener(user){
   stopFollowingListener();
+stopPendingPostsListener();
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
     myFollowing=snap.docs.map(d=>({uid:d.id,...d.data()}));
   },err=>{});
@@ -4609,6 +4725,7 @@ giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
+if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
 const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
 const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
@@ -4643,6 +4760,7 @@ navAccountLabel.textContent="دخول";
 stopProfileListener();
 stopStoreListener();
 stopFollowingListener();
+stopPendingPostsListener();
 if(showOnlyMine)showHome();
 renderPosts();
 }
@@ -5227,6 +5345,8 @@ if (typeof starsText === 'function' && typeof window.starsText === 'undefined') 
 if (typeof startBannerAuto === 'function' && typeof window.startBannerAuto === 'undefined') window.startBannerAuto = startBannerAuto;
 if (typeof startFollowingListener === 'function' && typeof window.startFollowingListener === 'undefined') window.startFollowingListener = startFollowingListener;
 if (typeof startPointsListener === 'function' && typeof window.startPointsListener === 'undefined') window.startPointsListener = startPointsListener;
+if (typeof searchServerPosts === 'function' && typeof window.searchServerPosts === 'undefined') window.searchServerPosts = searchServerPosts;
+if (typeof startPendingPostsListener === 'function' && typeof window.startPendingPostsListener === 'undefined') window.startPendingPostsListener = startPendingPostsListener;
 if (typeof startPostsListener === 'function' && typeof window.startPostsListener === 'undefined') window.startPostsListener = startPostsListener;
 if (typeof startProfileListener === 'function' && typeof window.startProfileListener === 'undefined') window.startProfileListener = startProfileListener;
 if (typeof startReportsListener === 'function' && typeof window.startReportsListener === 'undefined') window.startReportsListener = startReportsListener;
