@@ -989,17 +989,25 @@ function updateCartUI(){
   if(hc)hc.textContent=cnt;
   if(hc)hc.style.display=cnt>0?"flex":"none";
   const fab=document.getElementById("cartFAB");
-  const fabCnt=document.getElementById("cartFABcount");
-  if(fabCnt)fabCnt.textContent=cnt;
   if(fab){
-    if(cart.storeId && cnt>0){fab.classList.remove("fabOff");}
-    else{fab.classList.add("fabOff");}
+    if(cart.storeId && cnt>0){
+      fab.classList.remove("fabOff");
+      const total=cartTotalPrice();
+      fab.innerHTML=`<span>🛒 عرض السلة</span><span class="cartFABcount">${cnt}</span><span class="cartFABtotal">${formatPrice(total)} د.ل</span>`;
+    }else{
+      fab.classList.add("fabOff");
+    }
   }
   document.querySelectorAll(".cartAddBtn").forEach(btn=>{
     const id=btn.dataset.id;
-    const inCart=cart.items.some(i=>i.postId===id);
-    if(inCart){btn.classList.add("added");btn.innerHTML="✅ في السلة";}
-    else{btn.classList.remove("added");btn.innerHTML="🛒 أضف للسلة";}
+    const inCartItem=cart.items.find(i=>i.postId===id);
+    if(inCartItem){
+      btn.classList.add("added");
+      btn.innerHTML=`✅ في السلة (${inCartItem.qty||1})`;
+    }else{
+      btn.classList.remove("added");
+      btn.innerHTML="🛒 أضف للسلة";
+    }
   });
 }
 loadCart();
@@ -1776,6 +1784,14 @@ function renderKshFoodItemHtml(p, canManage){
   const actionsHtml = canManage ? `<div style="display:flex;gap:4px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="padding:4px 8px;border:none;border-radius:6px;background:#eef2ff;color:#0284c7;font-size:11px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="padding:4px 8px;border:none;border-radius:6px;background:#fdeceb;color:#e5484d;font-size:11px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>` : '';
   const priceText = p.priceType === "contact" ? "📞 تواصل" : (p.price != null ? formatPrice(p.price) + " د.ل" : "—");
   const optsHtml = p.brand ? `<div class="opts"><span>${escapeHtml(p.brand)}</span></div>` : '';
+  const inCartItem = cart.items.find(i=>i.postId===p.id);
+  const inCartQty = inCartItem ? (inCartItem.qty || 1) : 0;
+  const addBtnHtml = !isSold ? `
+    <button class="kshAdd${inCartQty > 0 ? ' hasCount' : ''}" onclick="event.stopPropagation();addToCart('${p.id}',event)" aria-label="أضف ${escapeHtml(p.title||'')}">
+      +
+      ${inCartQty > 0 ? `<span class="kshAddBadge">${inCartQty}</span>` : ''}
+    </button>
+  ` : '';
 
   return `
     <div class="kshItem" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
@@ -1788,7 +1804,7 @@ function renderKshFoodItemHtml(p, canManage){
       </div>
       <div class="kshPic">
         ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : '<div class="kshPicEmoji">🍔</div>'}
-        ${!isSold ? `<button class="kshAdd" onclick="event.stopPropagation();addKshOrder('${p.id}','${escapeHtml(p.title||'وجبة')}',${Number(p.price)||0})" aria-label="أضف ${escapeHtml(p.title||'')}">+</button>` : ''}
+        ${addBtnHtml}
       </div>
     </div>
   `;
@@ -1886,8 +1902,10 @@ function renderStoreProducts(){
     const imgs=getImages(p);const th=imgs[0]||"";
     const expired=isExpired(p);const isSold=!!p.sold;
     const canCart=!isSold && canHaveCart(p);
-    const inCart=cart.items.some(i=>i.postId===p.id);
-    const cartBtnHtml=canCart?`<button class="cartAddBtn${inCart?' added':''}" data-id="${p.id}" onclick="event.stopPropagation();addToCart('${p.id}',event)">${inCart?'✅ في السلة':'🛒 أضف للسلة'}</button>`:"";
+    const inCartItem=cart.items.find(i=>i.postId===p.id);
+    const inCart=!!inCartItem;
+    const inCartQty=inCartItem?(inCartItem.qty||1):0;
+    const cartBtnHtml=canCart?`<button class="cartAddBtn${inCart?' added':''}" data-id="${p.id}" onclick="event.stopPropagation();addToCart('${p.id}',event)">${inCart?`✅ في السلة (${inCartQty})`:'🛒 أضف للسلة'}</button>`:"";
     const actionsHtml=canManage?`<div style="display:flex;gap:4px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="flex:1;padding:8px;border:none;border-radius:8px;background:#eef2ff;color:#0284c7;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">✏️</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="flex:1;padding:8px;border:none;border-radius:8px;background:#fdeceb;color:#e5484d;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️</button></div>`:"";
     let cls="card";if(isSold)cls+=" sold";else if(expired)cls+=" expired";
     const discPct=getDiscountPercent(p);
@@ -2862,9 +2880,9 @@ function renderCartUI(){
     return;
   }
   const store=allStores.find(s=>s.id===cart.storeId);
-  const isRestaurant=isRestaurantStore(store);
+  const isRestaurant=isRestaurantStore(store)||Boolean(store&&isRestaurantCategory(store.category));
   if(storeLine){storeLine.style.display="flex";storeLine.classList.toggle("restaurant",isRestaurant);}
-  if(storeNameEl)storeNameEl.textContent=(isRestaurant?"🍽️ ":"")+(cart.storeName||"");
+  if(storeNameEl)storeNameEl.textContent=(isRestaurant?"🍽️ ":"🏪 ")+(cart.storeName||"");
   box.innerHTML=cart.items.map(item=>{
     const qty=item.qty||1;
     return `<div class="cartItemRow"><img class="cImg" src="${escapeHtml(item.image||"")}" onerror="this.style.background='#e6f6fe';this.src=''"><div class="cInfo"><div class="cTitle">${escapeHtml(item.title||"منتج")}</div><div class="cPrice">${formatPrice(item.price||0)} د.ل</div><div class="cartQtyRow"><button class="qtyBtn" onclick="changeQty('${item.postId}',-1)" ${qty<=1?"disabled":""}>−</button><span class="qtyVal">${qty}</span><button class="qtyBtn" onclick="changeQty('${item.postId}',1)">+</button></div></div><button class="cRemove" onclick="removeFromCart('${item.postId}')">🗑️</button></div>`;
@@ -2872,7 +2890,7 @@ function renderCartUI(){
   const total=cartTotalPrice();const cnt=cartTotalCount();
   if(totalBox)totalBox.style.display="flex";
   if(totalEl)totalEl.textContent=formatPrice(total)+" د.ل";
-  if(itemsCountEl)itemsCountEl.textContent=`(${cnt} قطعة)`;
+  if(itemsCountEl)itemsCountEl.textContent=`(${cnt} ${isRestaurant?'وجبة':'قطعة'})`;
   if(isRestaurant){if(callBtn)callBtn.classList.remove("hidden");if(sendBtn)sendBtn.classList.add("hidden");}
   else{if(sendBtn)sendBtn.classList.remove("hidden");if(callBtn)callBtn.classList.add("hidden");}
   if(clearBtn)clearBtn.classList.remove("hidden");
@@ -2881,25 +2899,48 @@ window.addToCart=async(postId,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===postId);
   if(!p)return;
-  if(!p.storeId){showToast("⚠️ السلة متاحة فقط لمنتجات المتاجر","warn");return;}
+  if(!p.storeId){showToast("⚠️ السلة متاحة فقط لمنتجات المتاجر والمطاعم","warn");return;}
   if(p.category==="سيارات ومركبات" || p.category==="دراجات نارية"){showToast("⚠️ السيارات والدراجات النارية لا تدخل السلة","warn");return;}
-  if(p.sold){showToast("⚠️ هذا المنتج تم بيعه","warn");return;}
+  if(p.sold){showToast("⚠️ هذا الصنف تم بيعه أو غير متوفر","warn");return;}
+  const store=allStores.find(s=>s.id===p.storeId);
+  const isRestaurant=isRestaurantStore(store)||isRestaurantCategory(p.category);
+  const storeName=p.storeName||(store?store.name:(isRestaurant?"مطعم":"متجر"));
   if(cart.storeId && cart.storeId!==p.storeId && cart.items.length>0){
-    if(!confirm(`⚠️ سلتك فيها منتجات من متجر "${cart.storeName}"\n\nلإضافة منتج من متجر آخر، يجب إفراغ السلة أولاً.`))return;
+    if(!confirm(`⚠️ سلتك فيها أصناف من "${cart.storeName}"\n\nلإضافة صنف من مكان آخر، يجب إفراغ السلة أولاً.`))return;
     cart.items=[];
   }
   cart.storeId=p.storeId;
-  cart.storeName=p.storeName||"متجر";
-  cart.storePhone=p.storePhone||p.phone||"";
+  cart.storeName=storeName;
+  cart.storePhone=(store?(store.phone||store.storePhone):p.phone)||p.phone||"";
   const existing=cart.items.find(i=>i.postId===postId);
   if(existing){existing.qty=(existing.qty||1)+1;}
   else{const imgs=getImages(p);cart.items.push({postId:p.id,title:p.title||"",price:Number(p.price)||0,image:imgs[0]||"",qty:1});}
   saveCart();updateCartUI();renderCartUI();
-  showToast(`✅ أُضيف: ${p.title||"منتج"}`,"success");
+  if(typeof renderStoreProducts==='function') renderStoreProducts();
+  showToast(`🛒 أُضيف: ${p.title||"الصنف"}`,"success",1400);
 };
-window.removeFromCart=(postId)=>{cart.items=cart.items.filter(i=>i.postId!==postId);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();renderCartUI();};
-window.changeQty=(postId,delta)=>{const item=cart.items.find(i=>i.postId===postId);if(!item)return;const newQty=(item.qty||1)+delta;if(newQty<1)return;item.qty=newQty;saveCart();updateCartUI();renderCartUI();};
-window.clearCart=()=>{if(cart.items.length===0)return;if(!confirm("إفراغ السلة بالكامل؟"))return;cart={storeId:null,storeName:"",storePhone:"",items:[]};saveCart();updateCartUI();renderCartUI();};
+window.removeFromCart=(postId)=>{
+  cart.items=cart.items.filter(i=>i.postId!==postId);
+  if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
+  saveCart();updateCartUI();renderCartUI();
+  if(typeof renderStoreProducts==='function') renderStoreProducts();
+};
+window.changeQty=(postId,delta)=>{
+  const item=cart.items.find(i=>i.postId===postId);
+  if(!item)return;
+  const newQty=(item.qty||1)+delta;
+  if(newQty<1)return;
+  item.qty=newQty;
+  saveCart();updateCartUI();renderCartUI();
+  if(typeof renderStoreProducts==='function') renderStoreProducts();
+};
+window.clearCart=()=>{
+  if(cart.items.length===0)return;
+  if(!confirm("إفراغ السلة بالكامل؟"))return;
+  cart={storeId:null,storeName:"",storePhone:"",items:[]};
+  saveCart();updateCartUI();renderCartUI();
+  if(typeof renderStoreProducts==='function') renderStoreProducts();
+};
 window.sendCartToWhats=()=>{
   if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
   if(!cart.storePhone){showToast("⚠️ لا يوجد رقم هاتف للمتجر","warn");return;}
@@ -3242,21 +3283,13 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
           <div class="storeRatingSection" id="storeRatingSection"></div>
         </div>
         <div class="kshNav" id="kshNav">${navButtonsHtml}</div>
-        <div style="padding:10px 14px 75px">
+        <div style="padding:10px 14px 85px">
           ${storeFilterBar}
           <div id="storeProductsBox"></div>
         </div>
-        ${store.phone ? `
-          <div class="kshBar" id="kshBar">
-            <a href="tel:${formatCallPhone(store.phone)}" class="kshSendBtn" id="kshCallBtn" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
-              <span>📞 اتصال هاتفي لطلب الوجبات</span>
-              <span id="kshBarTot">اتصال مباشر</span>
-            </a>
-          </div>
-        ` : ''}
       `;
       renderStoreProducts();
-      updateKshBar();
+      updateCartUI();
       loadStoreRatings(storeId).then(()=>{
         const sec=document.getElementById("storeRatingSection");
         const inline=document.getElementById("storeRatingInline");
