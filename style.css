@@ -324,9 +324,10 @@ html.dark-mode .catBox .catIconWrap.catIconImg img{mix-blend-mode:normal}
 .recentItem .recentPrice{font-size:11.5px;font-weight:800;color:var(--teal-dark);margin-top:2px}
 
 /* ✅ NEW: السلة والمقارنة العائمة بأنيميشن */
-.cartFAB{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:none;padding:14px 28px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(245,158,11,.5);z-index:45;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:1;transition:opacity .3s ease,transform .3s ease}
+.cartFAB{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;border:none;padding:12px 22px;border-radius:999px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(245,158,11,.45);z-index:95;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:1;transition:opacity .3s ease,transform .3s ease}
 .cartFAB.fabOff{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(30px) scale(.6)}
 .cartFAB .cartFABcount{background:#3a2500;color:#fbbf24;font-size:12px;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 6px;font-weight:800}
+.cartFAB .cartFABtotal{font-size:12.5px;font-weight:800;background:rgba(58,37,0,0.14);padding:2px 8px;border-radius:999px;margin-right:2px}
 .compareFAB{position:fixed;bottom:160px;right:20px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:12px 20px;border-radius:999px;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(139,92,246,.5);z-index:45;display:flex;align-items:center;gap:8px;opacity:1;transition:opacity .3s ease,transform .3s ease}
 .compareFAB.fabOff{opacity:0;pointer-events:none;transform:translateY(30px) scale(.6)}
 
@@ -1083,6 +1084,26 @@ html.dark-mode .kshPic {
 }
 .kshAdd:active {
   transform: scale(.9);
+}
+.kshAddBadge {
+  position: absolute;
+  top: -7px;
+  inset-inline-end: -7px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--card);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  line-height: 1;
+  pointer-events: none;
 }
 .kshTxt {
   flex: 1;
