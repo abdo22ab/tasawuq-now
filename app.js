@@ -27,11 +27,13 @@ const ADMIN_WHATSAPP="218928476784";
 const POST_DURATION_DAYS=30;
 const POST_DURATION_MS=POST_DURATION_DAYS*24*60*60*1000;
 const EXPIRED_GRACE_DAYS=7;
-const RESTAURANT_CATEGORY="مطاعم ومأكولات";
-const RESTAURANT_CATEGORY_LEGACY="مطاعم وغداء";
-function isRestaurantCategory(cat){return cat===RESTAURANT_CATEGORY || cat===RESTAURANT_CATEGORY_LEGACY;}
+const RESTAURANT_CATEGORY="المطاعم والمأكولات";
+const RESTAURANT_CATEGORY_LEGACY="مطاعم ومأكولات";
+const RESTAURANT_CATEGORY_LEGACY2="مطعم مأكولات";
+const RESTAURANT_CATEGORY_LEGACY3="مطاعم وغداء";
+function isRestaurantCategory(cat){return cat===RESTAURANT_CATEGORY || cat===RESTAURANT_CATEGORY_LEGACY || cat===RESTAURANT_CATEGORY_LEGACY2 || cat===RESTAURANT_CATEGORY_LEGACY3;}
 window.isRestaurantCategory=isRestaurantCategory;
-const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","مطاعم ومأكولات","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
+const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","المطاعم والمأكولات","مطعم مأكولات","مطاعم ومأكولات","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
 const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 const MOTORCYCLE_BRANDS=["هوندا","ياماها","سوزوكي","كاوازاكي","BMW","دوكاتي","KTM","هارلي ديفيدسون","تريومف","أبريليا","بياجيو","فيسبا","بولاريس","رويال إنفيلد","بينيللي","هوسكفارنا","CF Moto","بينجو","هوجان","دايون","أخرى"];
 const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / هواوي","Xiaomi / شاومي","Oppo / أوبو","Vivo / فيفو","Realme / ريلمي","Nokia / نوكيا","Infinix / إنفينكس","Tecno / تكنو","Honor / هونر","OnePlus / ون بلس","Google Pixel","Sony / سوني","LG / إل جي","Motorola","HTC","Lenovo","Asus","ZTE","itel","Wiko","Alcatel","TCL","Blackberry","آيباد","تابلت سامسونج","تابلت هواوي","تابلت لينوفو","أخرى"];
@@ -50,7 +52,7 @@ const SUB_CATEGORIES={
 
 const CATEGORIES=[
 {name:"الشركات والمتاجر",icon:"",isStore:true,iconName:"store",color:"#f59e0b"},
-{name:"مطاعم ومأكولات",icon:"🍽️",isRestaurantDirectory:true,iconName:"utensils-crossed",color:"#dc2626",image:"restaurant.png"},
+{name:"المطاعم والمأكولات",icon:"🍽️",isRestaurantDirectory:true,iconName:"utensils-crossed",color:"#dc2626",image:"restaurant.png"},
 {name:"سيارات ومركبات",icon:"🚗",iconName:"car",color:"#3b82f6",image:"car.png"},
 {name:"دراجات نارية",icon:"🏍️",iconName:"bike",color:"#ef4444",image:"motorcycle.png"},
 {name:"دراجات هوائية",icon:"🚲",iconName:"bike",color:"#22c55e",image:"bicycle.png"},
@@ -1172,7 +1174,7 @@ function buildCategoriesGrid(){
   if(!grid)return;
   grid.innerHTML=CATEGORIES.map(c=>{
     if(c.isStore)return `<div class="catBox storeBox" onclick="openStores('stores')">${catIconHtml(c)}<div class="catName">الشركات والمتاجر</div></div>`;
-    if(c.isRestaurantDirectory || c.name==="مطاعم ومأكولات")return `<div class="catBox restaurantBox" onclick="openRestaurants()">${catIconHtml(c)}<div class="catName">المطاعم</div></div>`;
+    if(c.isRestaurantDirectory || isRestaurantCategory(c.name))return `<div class="catBox restaurantBox" onclick="openRestaurants()">${catIconHtml(c)}<div class="catName">المطاعم والمأكولات</div></div>`;
     if(c.name==="الكل")return `<div class="catBox allBox" onclick="openCategory('الكل')">${catIconHtml(c)}<div class="catName">الكل</div></div>`;
     return `<div class="catBox" onclick="openCategory('${c.name.replace(/'/g,"\\'")}')">${catIconHtml(c)}<div class="catName">${c.name}</div></div>`;
   }).join("");
@@ -2227,7 +2229,7 @@ if(isRestaurantCategory(currentCategory)){
     return;
   }
   postsBox.innerHTML=`
-    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">🍽️ دليل المطاعم المعتمدة (${approvedRests.length})</div>
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">🍽️ دليل المطاعم والمأكولات (${approvedRests.length})</div>
     ${approvedRests.map(s=>renderRestaurantStructureCard(s,'home')).join("")}
   `;
   return;
@@ -2273,8 +2275,8 @@ if(currentCategory==="الكل" && !term && !currentStoreFilter && currentCity==
     restaurantsSectionHtml=`
       <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-weight:800;font-size:14px;color:var(--text)">🍽️ المطاعم</div>
-          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12px;font-weight:800;cursor:pointer">عرض كل المطاعم (${approvedRests.length}) ›</button>
+          <div style="font-weight:800;font-size:14px;color:var(--text)">🍽️ المطاعم والمأكولات</div>
+          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12px;font-weight:800;cursor:pointer">عرض كل المطاعم والمأكولات (${approvedRests.length}) ›</button>
         </div>
         <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">
           ${approvedRests.map(s=>{
@@ -2341,7 +2343,7 @@ else if(expired && (isOwner||isAdmin||isMyStorePost))cardClass="expired";
 else if(status==="approved" && isPostFeatured(p))cardClass="featured";
 else if(status==="pending")cardClass="pending";
 else if(status==="rejected")cardClass="rejected";
-const displayCategory=(p.category==="مطاعم وغداء")?"مطاعم ومأكولات":(p.category||"");
+const displayCategory=(p.category==="مطاعم وغداء")?"المطاعم والمأكولات":(p.category||"");
 const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<span class="catTag">${escapeHtml(displayCategory)}</span>`;
 const memberTag=p.sellerMemberNo?`<span class="memberNoBadge" style="margin-left:6px">#${p.sellerMemberNo}</span>`:"";
 const userTag=p.sellerUsername?`<span class="usernameBadge" style="margin-left:6px">@${escapeHtml(p.sellerUsername)}</span>`:"";
@@ -2998,11 +3000,11 @@ window.openStores=(mode='stores',skipHistory)=>{
   if(ss)ss.classList.remove("hidden");
   const titleEl=document.getElementById("storesScreenTitle");
   if(titleEl){
-    titleEl.textContent = window._storesFilterMode === 'restaurants' ? '🍽️ دليل المطاعم' : '🏢 الشركات والمتاجر';
+    titleEl.textContent = window._storesFilterMode === 'restaurants' ? '🍽️ دليل المطاعم والمأكولات' : '🏢 الشركات والمتاجر';
   }
   const searchInput=document.getElementById("storeSearch");
   if(searchInput){
-    searchInput.placeholder = window._storesFilterMode === 'restaurants' ? '🔍 ابحث عن مطعم...' : '🔍 ابحث عن متجر أو شركة...';
+    searchInput.placeholder = window._storesFilterMode === 'restaurants' ? '🔍 ابحث في المطاعم والمأكولات...' : '🔍 ابحث عن متجر أو شركة...';
   }
   if(!unsubStores) startStoresListener();
   renderStoresList();
@@ -3029,7 +3031,7 @@ function renderRestaurantStructureCard(s, backTo='home'){
           ${openBadge}
         </div>
         <div class="rscMeta">
-          <span>📁 ${escapeHtml(s.category||"مطاعم ومأكولات")}</span>
+          <span>📁 ${escapeHtml(s.category||"المطاعم والمأكولات")}</span>
           ${s.city ? `<span>📍 ${escapeHtml(s.city)}</span>` : ''}
           ${hoursText ? `<span>🕐 ${hoursText}</span>` : ''}
         </div>
@@ -3059,7 +3061,7 @@ function renderStoresList(){
       list.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل المتاجر...</div>";
       return;
     }
-    const emptyMsg=mode==='restaurants'?"لا توجد مطاعم معتمدة بعد":"لا توجد متاجر معتمدة بعد";
+    const emptyMsg=mode==='restaurants'?"لا توجد مطاعم ومأكولات معتمدة بعد":"لا توجد متاجر معتمدة بعد";
     list.innerHTML=`<div class='reportsEmpty'>${emptyMsg}</div>`;
     return;
   }
@@ -3185,6 +3187,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     });
     if(isRestaurant){
       window._currentKshOrder = {};
+      const canEditBranding = isOwnerStore || isAdminUser;
+      const logoClickAttr = canEditBranding ? `onclick="triggerStoreLogoDirectChange('${store.id}')" style="cursor:pointer;position:relative" title="اضغط لتغيير الشعار"` : '';
+      const coverClickBadge = canEditBranding ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
+      const logoBadge = canEditBranding ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
+
       const kshCoverHtml = store.cover
         ? `<img src="${escapeHtml(store.cover)}" alt="غلاف المطعم">`
         : `<div class="kshCoverEmojis">🍔🍗🍕</div>`;
@@ -3203,13 +3210,13 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
       box.innerHTML = `
         ${statusNote}${statusNote2}
-        <div class="kshCover">${kshCoverHtml}</div>
+        <div class="kshCover">${kshCoverHtml}${coverClickBadge}</div>
         <div class="kshInfo">
           <div class="kshHead">
-            <div class="kshLogo">${kshLogoHtml}</div>
+            <div class="kshLogo" ${logoClickAttr}>${kshLogoHtml}${logoBadge}</div>
             <div class="kshHeadText">
               <h1>${escapeHtml(store.name||"مطعم")} ${verifiedBadgeLg}</h1>
-              <p>${escapeHtml(store.description || store.category || "مطعم ومأكولات")}</p>
+              <p>${escapeHtml(store.description || store.category || "المطاعم والمأكولات")}</p>
             </div>
           </div>
           <div class="kshStats">
@@ -3264,8 +3271,12 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     }
 
     const prestoCategoriesHtml = renderStoreCategoryTiles(items, availableSubCategories);
+    const canEditBrandingStd = isOwnerStore || isAdminUser;
+    const stdLogoAttr = canEditBrandingStd ? `onclick="triggerStoreLogoDirectChange('${store.id}')" style="cursor:pointer;position:relative" title="اضغط لتغيير الشعار"` : '';
+    const stdCoverBadge = canEditBrandingStd ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
+    const stdLogoBadge = canEditBrandingStd ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
 
-    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
+    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}${stdCoverBadge}</div><div class="logoWrap" ${stdLogoAttr}>${logoHtml}${stdLogoBadge}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
     renderStoreProducts();
     updateCartUI();
     loadStoreRatings(storeId).then(()=>{
@@ -3438,29 +3449,147 @@ window.transferMyPostsToStore=async(storeId)=>{
 };
 
 /* ============================================
-   تعديل المتجر
+   تعديل المتجر وتغيير الشعار والغلاف
    ============================================ */
-window.openEditStore=(storeId)=>{const me=auth.currentUser;if(!me){authOverlay.classList.remove("hidden");return;}const store=allStores.find(s=>s.id===storeId);if(!store){showToast("❌ المتجر غير موجود","error");return;}const isOwnerStore=me.uid===store.ownerUid;if(!isOwnerStore && !isAdmin){showToast("❌ هذا المتجر ليس لك","error");return;}editStoreCurrentId=storeId;editStoreLogoImage=null;document.getElementById("editStoreName").value=store.name||"";document.getElementById("editStoreCategory").value=store.category||"سيارات ومركبات";document.getElementById("editStoreCity").value=store.city||"";document.getElementById("editStoreDescription").value=store.description||"";
-const _erp=document.getElementById("editStoreReceiptPhone");if(_erp)_erp.value=store.receiptPhone||"";
-toggleEditReceiptPhoneField();
-const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";document.getElementById("editStoreCloseTime").value=wh.closeTime||"23:00";document.getElementById("editStoreAlwaysOpen").checked=!!wh.alwaysOpen;
-const bi=store.bankInfo||{};
-document.getElementById("editStoreBankOwner").value=bi.accountOwner||"";
-document.getElementById("editStoreBankName").value=bi.bankName||"";
-document.getElementById("editStoreBankIban").value=bi.iban||"";
-document.getElementById("editStoreBankAccount").value=bi.accountNumber||"";
-loadStoreHelpers(storeId);
-renderEditStoreLogo();closeOverlay();editStoreOverlay.classList.remove("hidden");};
-window.handleEditStoreLogo=()=>{const input=document.getElementById("editStoreLogoFile");const f=input.files[0];if(!f)return;editStoreLogoImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderEditStoreLogo();};
-function renderEditStoreLogo(){const box=document.getElementById("editStoreLogoThumbs");if(!box)return;box.innerHTML=editStoreLogoImage?`<div class="imgThumb"><img src="${editStoreLogoImage.previewUrl}"><button class="rm" onclick="editStoreLogoImage=null;renderEditStoreLogo()">×</button></div>`:"";const tile=document.getElementById("editStoreLogoAddTile");if(tile)tile.classList.toggle("hidden",!!editStoreLogoImage);}
+let editStoreCoverImage=null;
+let _directUploadStoreId = null;
+
+window.triggerStoreLogoDirectChange = (storeId) => {
+  _directUploadStoreId = storeId;
+  const input = document.getElementById("directLogoFileInput");
+  if(input) input.click();
+};
+
+window.handleDirectLogoUpload = async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if(!file || !_directUploadStoreId) return;
+  const storeId = _directUploadStoreId;
+  event.target.value = "";
+  showToast("⏳ جاري رفع وتحديث الشعار...", "info", 3000);
+  try {
+    const url = await uploadToImgBB(file);
+    await updateDoc(doc(db, "stores", storeId), { logo: url });
+    const store = allStores.find(s => s.id === storeId);
+    if(store) store.logo = url;
+    showToast("✅ تم تغيير الشعار بنجاح!", "success");
+    if(window._currentStoreId === storeId){
+      openStore(storeId, true);
+    }
+  } catch(e) {
+    showToast("❌ فشل تحديث الشعار: " + e.message, "error");
+  }
+};
+
+window.triggerStoreCoverDirectChange = (storeId) => {
+  _directUploadStoreId = storeId;
+  const input = document.getElementById("directCoverFileInput");
+  if(input) input.click();
+};
+
+window.handleDirectCoverUpload = async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if(!file || !_directUploadStoreId) return;
+  const storeId = _directUploadStoreId;
+  event.target.value = "";
+  showToast("⏳ جاري رفع وتحديث الغلاف...", "info", 3000);
+  try {
+    const url = await uploadToImgBB(file);
+    await updateDoc(doc(db, "stores", storeId), { cover: url });
+    const store = allStores.find(s => s.id === storeId);
+    if(store) store.cover = url;
+    showToast("✅ تم تغيير الغلاف بنجاح!", "success");
+    if(window._currentStoreId === storeId){
+      openStore(storeId, true);
+    }
+  } catch(e) {
+    showToast("❌ فشل تحديث الغلاف: " + e.message, "error");
+  }
+};
+
+window.openEditStore=(storeId)=>{
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const store=allStores.find(s=>s.id===storeId);
+  if(!store){showToast("❌ المتجر غير موجود","error");return;}
+  const isOwnerStore=me.uid===store.ownerUid || (me.email && store.ownerEmail && me.email===store.ownerEmail);
+  const isAdminUser=me.email===ADMIN_EMAIL || isAdmin;
+  if(!isOwnerStore && !isAdminUser){showToast("❌ هذا المتجر ليس لك","error");return;}
+  editStoreCurrentId=storeId;
+  editStoreLogoImage=null;
+  editStoreCoverImage=null;
+  document.getElementById("editStoreName").value=store.name||"";
+  document.getElementById("editStoreCategory").value=store.category||"المطاعم والمأكولات";
+  document.getElementById("editStoreCity").value=store.city||"";
+  document.getElementById("editStoreDescription").value=store.description||"";
+  const _erp=document.getElementById("editStoreReceiptPhone");if(_erp)_erp.value=store.receiptPhone||"";
+  toggleEditReceiptPhoneField();
+  const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};
+  document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";
+  document.getElementById("editStoreCloseTime").value=wh.closeTime||"23:00";
+  document.getElementById("editStoreAlwaysOpen").checked=!!wh.alwaysOpen;
+  const bi=store.bankInfo||{};
+  document.getElementById("editStoreBankOwner").value=bi.accountOwner||"";
+  document.getElementById("editStoreBankName").value=bi.bankName||"";
+  document.getElementById("editStoreBankIban").value=bi.iban||"";
+  document.getElementById("editStoreBankAccount").value=bi.accountNumber||"";
+  loadStoreHelpers(storeId);
+  renderEditStoreLogo(store.logo);
+  renderEditStoreCover(store.cover);
+  closeOverlay();
+  editStoreOverlay.classList.remove("hidden");
+};
+
+window.handleEditStoreLogo=()=>{
+  const input=document.getElementById("editStoreLogoFile");
+  const f=input.files[0];
+  if(!f)return;
+  editStoreLogoImage={file:f,previewUrl:URL.createObjectURL(f)};
+  input.value="";
+  renderEditStoreLogo();
+};
+
+function renderEditStoreLogo(existingUrl){
+  const box=document.getElementById("editStoreLogoThumbs");
+  if(!box)return;
+  if(editStoreLogoImage){
+    box.innerHTML=`<div class="imgThumb"><img src="${editStoreLogoImage.previewUrl}"><button class="rm" onclick="editStoreLogoImage=null;renderEditStoreLogo()">×</button></div><div style="font-size:11px;color:#16a34a;font-weight:700;margin-top:4px">شعار جديد جاهز للحفظ</div>`;
+  } else if(existingUrl){
+    box.innerHTML=`<div class="imgThumb"><img src="${escapeHtml(existingUrl)}"></div><div style="font-size:11px;color:var(--muted);margin-top:4px">الشعار الحالي</div>`;
+  } else {
+    box.innerHTML="";
+  }
+}
+
+window.handleEditStoreCover=()=>{
+  const input=document.getElementById("editStoreCoverFile");
+  const f=input.files[0];
+  if(!f)return;
+  editStoreCoverImage={file:f,previewUrl:URL.createObjectURL(f)};
+  input.value="";
+  renderEditStoreCover();
+};
+
+function renderEditStoreCover(existingUrl){
+  const box=document.getElementById("editStoreCoverThumbs");
+  if(!box)return;
+  if(editStoreCoverImage){
+    box.innerHTML=`<div class="imgThumb"><img src="${editStoreCoverImage.previewUrl}"><button class="rm" onclick="editStoreCoverImage=null;renderEditStoreCover()">×</button></div><div style="font-size:11px;color:#16a34a;font-weight:700;margin-top:4px">غلاف جديد جاهز للحفظ</div>`;
+  } else if(existingUrl){
+    box.innerHTML=`<div class="imgThumb"><img src="${escapeHtml(existingUrl)}"></div><div style="font-size:11px;color:var(--muted);margin-top:4px">الغلاف الحالي</div>`;
+  } else {
+    box.innerHTML="";
+  }
+}
+
 window.saveStoreEdits=async()=>{
   if(!editStoreCurrentId){showToast("خطأ","error");return;}
   const store=allStores.find(s=>s.id===editStoreCurrentId);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
-  const isOwnerStore=me.uid===store.ownerUid;
-  if(!isOwnerStore && !isAdmin){showToast("❌ غير مصرح","error");return;}
+  const isOwnerStore=me.uid===store.ownerUid || (me.email && store.ownerEmail && me.email===store.ownerEmail);
+  const isAdminUser=me.email===ADMIN_EMAIL || isAdmin;
+  if(!isOwnerStore && !isAdminUser){showToast("❌ غير مصرح","error");return;}
   const newName=document.getElementById("editStoreName").value.trim();
   const newCategory=document.getElementById("editStoreCategory").value;
   const newCity=document.getElementById("editStoreCity").value;
@@ -3483,13 +3612,22 @@ window.saveStoreEdits=async()=>{
       iban:(document.getElementById("editStoreBankIban")?.value||"").trim().slice(0,34),
       accountNumber:(document.getElementById("editStoreBankAccount")?.value||"").trim().slice(0,30)
     }};
-    if(editStoreLogoImage){btn.textContent="⏳ جاري رفع الشعار...";updates.logo=await uploadToImgBB(editStoreLogoImage.file);}
+    if(editStoreLogoImage){
+      btn.textContent="⏳ جاري رفع الشعار الجديد...";
+      updates.logo=await uploadToImgBB(editStoreLogoImage.file);
+      store.logo=updates.logo;
+    }
+    if(editStoreCoverImage){
+      btn.textContent="⏳ جاري رفع الغلاف الجديد...";
+      updates.cover=await uploadToImgBB(editStoreCoverImage.file);
+      store.cover=updates.cover;
+    }
     btn.textContent="⏳ جاري الحفظ...";
     await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
     if(store.name!==newName){
       try{const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);for(const p of storePosts){try{await updateDoc(doc(db,"posts",p.id),{storeName:newName});}catch(e){}}}catch(e){}
     }
-    showToast("✅ تم حفظ التعديلات بنجاح","success");
+    showToast("✅ تم حفظ التعديلات والشعار بنجاح","success");
     closeOverlay();
     if(window._currentStoreId===editStoreCurrentId){setTimeout(()=>openStore(editStoreCurrentId,true),300);}
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
@@ -3885,7 +4023,7 @@ window.onCategoryChange=()=>{
   if(!cr)return;
   cr.innerHTML=CATEGORIES.map((c,i)=>{
     if(c.isStore)return `<button class="catChip storeChip" onclick="openStores('stores')">🏢 الشركات والمتاجر</button>`;
-    if(c.isRestaurantDirectory || c.name==="مطاعم ومأكولات")return `<button class="catChip restaurantChip" onclick="openRestaurants()">🍽️ المطاعم</button>`;
+    if(c.isRestaurantDirectory || isRestaurantCategory(c.name))return `<button class="catChip restaurantChip" onclick="openRestaurants()">🍽️ المطاعم والمأكولات</button>`;
     const isActive = c.name === "الكل";
     return `<button class="catChip${isActive?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')"><span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:${c.color||'#38bdf8'};align-items:center;justify-content:center;margin-left:4px;flex:0 0 auto"><i data-lucide="${c.iconName||'circle'}" style="width:10px;height:10px;color:#fff"></i></span>${c.name}</button>`;
   }).join("");
@@ -4001,30 +4139,31 @@ window.saveMyPhone=async()=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
   const input=document.getElementById("myPhone");
-  const v=validatePhone(input.value);
+  if(!input)return;
+  const raw=(input.value||"").trim();
+  const v=validatePhone(raw);
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
   const oldPhone=(myProfile&&myProfile.phone)||"";
-  const editsCount=(myProfile&&myProfile.phoneEditsCount)||0;
-  if(oldPhone && normalizePhone(oldPhone)===v.value){showToast("هذا رقمك الحالي بالفعل","info");return;}
-  if(oldPhone && editsCount>=1){
-    const msg=`📱 طلب تعديل رقم واتساب\n\n👤 الاسم: ${(myProfile&&myProfile.name)||''}\n🔢 رقم العضوية: #${(myProfile&&myProfile.memberNo)||''}\n🏷️ اسم المستخدم: @${(myProfile&&myProfile.username)||'—'}\n📱 الرقم الحالي: ${oldPhone}\n📱 الرقم الجديد: ${v.value}`;
-    if(confirm(`⚠️ لقد استخدمت فرصتك الوحيدة لتعديل الرقم.\n\n💬 للتواصل مع الإدارة عبر واتساب؟`)){
-      window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank');
-    }
-    return;
+  const cleanNew=v.value;
+  const cleanOld=oldPhone?normalizePhone(oldPhone):"";
+  if(cleanOld && cleanOld===cleanNew){showToast("هذا رقمك الحالي بالفعل","info");return;}
+
+  let confirmMsg="";
+  if(!cleanOld){
+    confirmMsg=`هل تريد حفظ وربط رقم الواتساب: ${cleanNew} بحسابك؟\n\n⚠️ سيتم ربط هذا الرقم بحسابك هذا فقط ولا يمكن لأي حساب آخر استخدامه.`;
+  }else{
+    confirmMsg=`هل تريد تغيير رقمك إلى: ${cleanNew}؟\n\n⚠️ سيتم فك ارتباط رقمك السابق (${cleanOld}) وإتاحته لأي حساب آخر، وربط الرقم الجديد بحسابك الحالي فقط.`;
   }
-  let confirmMsg,updates;
-  if(!oldPhone){confirmMsg=`هل تريد حفظ رقم الواتساب: ${v.value}؟\n\n⚠️ سيظهر في كل إعلاناتك.`;updates={phone:v.value};}
-  else{confirmMsg=`هل تريد تغيير رقم الواتساب من ${oldPhone} إلى ${v.value}؟\n\n⚠️ هذه فرصتك الوحيدة للتعديل!`;updates={phone:v.value,phoneEditsCount:1};}
   if(!confirm(confirmMsg))return;
-  try{
-    await updateDoc(doc(db,"profiles",me.uid),updates);
-    const mine=allPosts.filter(p=>p.uid===me.uid);
-    await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:v.value})));
-    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{phone:v.value});}catch(e){}}
-    if(input)input.value=v.value;
-    showToast("✅ تم حفظ رقم الواتساب: "+v.value,"success");
-  }catch(e){showToast("❌ خطأ: "+e.message,"error");}
+
+  showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
+  const res=await reservePhone(me,cleanNew,cleanOld);
+  if(res.ok){
+    if(input)input.value=res.value;
+    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+res.value,"success");
+  }else{
+    showToast("❌ "+res.msg,"error",4500);
+  }
 };
 
 /* ============================================
@@ -4179,7 +4318,134 @@ return{ok:true,value:u};
 }catch(e){if(e.message==="TAKEN")return{ok:false,msg:"هذا الاسم محجوز، جرّب اسم ثاني"};return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};}
 }
 
-function startProfileListener(user){stopProfileListener();profileCreateTried=false;let assignAttempted=false;unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{if(snap.exists()){myProfile=snap.data();const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone||"";if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}if(!unsubStore){startStoreListener(user.uid);}}else if(!profileCreateTried){profileCreateTried=true;assignMemberNumber(user).catch(e=>{});}},err=>{});}
+async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
+  if(!user)return{ok:false,msg:"يجب تسجيل الدخول أولاً"};
+  const v=validatePhone(newPhoneRaw);
+  if(!v.ok)return{ok:false,msg:v.msg};
+  const cleanNew=v.value;
+  const cleanOld=oldPhoneRaw?normalizePhone(oldPhoneRaw):"";
+  if(cleanOld && cleanOld===cleanNew){return{ok:true,value:cleanNew,unchanged:true};}
+
+  try{
+    const q1=query(collection(db,"profiles"),where("phone","==",cleanNew));
+    const q1Snap=await getDocs(q1);
+    let takenByOther=false;
+    q1Snap.forEach(d=>{if(d.id!==user.uid)takenByOther=true;});
+    if(takenByOther){
+      return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
+    }
+
+    const callFormat=formatCallPhone(cleanNew);
+    if(callFormat && callFormat!==cleanNew){
+      const q2=query(collection(db,"profiles"),where("phone","==",callFormat));
+      const q2Snap=await getDocs(q2);
+      q2Snap.forEach(d=>{if(d.id!==user.uid)takenByOther=true;});
+      if(takenByOther){
+        return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
+      }
+    }
+
+    const phoneRef=doc(db,"phones",cleanNew);
+    const profileRef=doc(db,"profiles",user.uid);
+
+    await runTransaction(db,async (transaction)=>{
+      const phoneSnap=await transaction.get(phoneRef);
+      const profileSnap=await transaction.get(profileRef);
+      if(phoneSnap.exists() && phoneSnap.data().uid && phoneSnap.data().uid!==user.uid){
+        throw new Error("TAKEN");
+      }
+      const now=Date.now();
+      transaction.set(phoneRef,{
+        uid:user.uid,
+        email:user.email||"",
+        phone:cleanNew,
+        linkedAt:now
+      });
+      if(profileSnap.exists()){
+        transaction.update(profileRef,{phone:cleanNew});
+      }else{
+        transaction.set(profileRef,{
+          name:defaultName(user),
+          createdAt:profileCreatedAt(user),
+          memberNo:1001,
+          username:"",
+          storeId:null,
+          phone:cleanNew,
+          phoneEditsCount:0
+        });
+      }
+    });
+
+    if(cleanOld && cleanOld!==cleanNew){
+      try{
+        const oldPhoneRef=doc(db,"phones",cleanOld);
+        const oldSnap=await getDoc(oldPhoneRef);
+        if(oldSnap.exists() && oldSnap.data().uid===user.uid){
+          await deleteDoc(oldPhoneRef);
+        }
+      }catch(e){}
+
+      const oldCall=formatCallPhone(cleanOld);
+      if(oldCall && oldCall!==cleanOld){
+        try{
+          const oldCallRef=doc(db,"phones",oldCall);
+          const oldCallSnap=await getDoc(oldCallRef);
+          if(oldCallSnap.exists() && oldCallSnap.data().uid===user.uid){
+            await deleteDoc(oldCallRef);
+          }
+        }catch(e){}
+      }
+    }
+
+    try{
+      const mine=allPosts.filter(p=>p.uid===user.uid);
+      await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew})));
+    }catch(e){}
+    if(myStore){
+      try{
+        await updateDoc(doc(db,"stores",myStore.id),{phone:cleanNew});
+      }catch(e){}
+    }
+    if(myProfile){
+      myProfile.phone=cleanNew;
+    }
+    return{ok:true,value:cleanNew};
+  }catch(e){
+    if(e.message==="TAKEN"){
+      return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
+    }
+    return{ok:false,msg:"تعذر حفظ رقم الهاتف: "+(e.message||"خطأ غير متوقع")};
+  }
+}
+
+function startProfileListener(user){
+  stopProfileListener();
+  profileCreateTried=false;
+  let assignAttempted=false;
+  unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
+    if(snap.exists()){
+      myProfile=snap.data();
+      const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
+      const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
+      const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone||"";
+      if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}
+      if(myProfile.phone){
+        const cleanPh=normalizePhone(myProfile.phone);
+        if(cleanPh){
+          getDoc(doc(db,"phones",cleanPh)).then(pSnap=>{
+            if(!pSnap.exists()){
+              setDoc(doc(db,"phones",cleanPh),{uid:user.uid,email:user.email||"",phone:cleanPh,linkedAt:Date.now()}).catch(e=>{});
+            }
+          }).catch(e=>{});
+        }
+      }
+      if(!unsubStore){startStoreListener(user.uid);}
+    }else if(!profileCreateTried){
+      profileCreateTried=true;
+      assignMemberNumber(user).catch(e=>{});
+    }
+  },err=>{});
+}
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
 function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
@@ -4910,6 +5176,7 @@ if (typeof renderStoreProducts === 'function' && typeof window.renderStoreProduc
 if (typeof renderStoresList === 'function' && typeof window.renderStoresList === 'undefined') window.renderStoresList = renderStoresList;
 if (typeof renderStoresModeration === 'function' && typeof window.renderStoresModeration === 'undefined') window.renderStoresModeration = renderStoresModeration;
 if (typeof renderSubCats === 'function' && typeof window.renderSubCats === 'undefined') window.renderSubCats = renderSubCats;
+if (typeof reservePhone === 'function' && typeof window.reservePhone === 'undefined') window.reservePhone = reservePhone;
 if (typeof reserveUsername === 'function' && typeof window.reserveUsername === 'undefined') window.reserveUsername = reserveUsername;
 if (typeof saveCart === 'function' && typeof window.saveCart === 'undefined') window.saveCart = saveCart;
 if (typeof saveCompare === 'function' && typeof window.saveCompare === 'undefined') window.saveCompare = saveCompare;
