@@ -49,16 +49,16 @@ const SUB_CATEGORIES={
 };
 
 const CATEGORIES=[
-{name:"الكل",icon:"✨",iconName:"layout-grid",color:"#38bdf8"},
-{name:"🏪 المتاجر",icon:"",isStore:true,iconName:"store",color:"#f59e0b"},
+{name:"الشركات والمتاجر",icon:"",isStore:true,iconName:"store",color:"#f59e0b"},
+{name:"مطاعم ومأكولات",icon:"🍽️",isRestaurantDirectory:true,iconName:"utensils-crossed",color:"#dc2626",image:"restaurant.png"},
 {name:"سيارات ومركبات",icon:"🚗",iconName:"car",color:"#3b82f6",image:"car.png"},
 {name:"دراجات نارية",icon:"🏍️",iconName:"bike",color:"#ef4444",image:"motorcycle.png"},
 {name:"دراجات هوائية",icon:"🚲",iconName:"bike",color:"#22c55e",image:"bicycle.png"},
+{name:"موبايل وتابلت",icon:"📱",iconName:"smartphone",color:"#a855f7",image:"phone.png"},
+{name:"لابتوب وكمبيوتر",icon:"💻",iconName:"laptop",color:"#0284c7",image:"laptop.png"},
 {name:"الخدمات",icon:"🛠️",iconName:"wrench",color:"#ea580c",image:"services.png"},
 {name:"عقارات للبيع",icon:"🏠",iconName:"home",color:"#10b981",image:"house.png"},
 {name:"عقارات للإيجار",icon:"🔑",iconName:"key",color:"#059669",image:"house.png"},
-{name:"موبايل وتابلت",icon:"📱",iconName:"smartphone",color:"#a855f7",image:"phone.png"},
-{name:"لابتوب وكمبيوتر",icon:"💻",iconName:"laptop",color:"#0284c7",image:"laptop.png"},
 {name:"ألعاب وألعاب الفيديو",icon:"🎮",iconName:"gamepad-2",color:"#8b5cf6",image:"games.png"},
 {name:"أجهزة منزلية",icon:"🧊",iconName:"refrigerator",color:"#0891b2",image:"appliances.png"},
 {name:"ملابس رجالية",icon:"👔",iconName:"shirt",color:"#0f766e",image:"men-clothes.png"},
@@ -66,10 +66,10 @@ const CATEGORIES=[
 {name:"ملابس أطفال",icon:"👶",iconName:"baby",color:"#f59e0b",image:"kids-clothes.png"},
 {name:"جمال وصحة",icon:"💆",iconName:"sparkles",color:"#ec4899",image:"beauty.png"},
 {name:"مكياج",icon:"💄",iconName:"palette",color:"#e11d48",image:"makeup.png"},
-{name:"مطاعم ومأكولات",icon:"🍽️",iconName:"utensils-crossed",color:"#dc2626",image:"restaurant.png"},
 {name:"إلكترونيات",icon:"🔌",iconName:"plug",color:"#0ea5e9",image:"electronics.png"},
 {name:"الحيوانات والطيور",icon:"🐾",iconName:"paw-print",color:"#8b5cf6",image:"animals.png"},
-{name:"العطور",icon:"🌸",iconName:"spray-can",color:"#ec4899",image:"perfume.png"}
+{name:"العطور",icon:"🌸",iconName:"spray-can",color:"#ec4899",image:"perfume.png"},
+{name:"الكل",icon:"✨",iconName:"layout-grid",color:"#38bdf8"}
 ];
 
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
@@ -1171,7 +1171,8 @@ function buildCategoriesGrid(){
   const grid=document.getElementById("categoriesGrid");
   if(!grid)return;
   grid.innerHTML=CATEGORIES.map(c=>{
-    if(c.isStore)return `<div class="catBox storeBox" onclick="openStores()">${catIconHtml(c)}<div class="catName">الشركات والمتاجر</div></div>`;
+    if(c.isStore)return `<div class="catBox storeBox" onclick="openStores('stores')">${catIconHtml(c)}<div class="catName">الشركات والمتاجر</div></div>`;
+    if(c.isRestaurantDirectory || c.name==="مطاعم ومأكولات")return `<div class="catBox restaurantBox" onclick="openRestaurants()">${catIconHtml(c)}<div class="catName">المطاعم</div></div>`;
     if(c.name==="الكل")return `<div class="catBox allBox" onclick="openCategory('الكل')">${catIconHtml(c)}<div class="catName">الكل</div></div>`;
     return `<div class="catBox" onclick="openCategory('${c.name.replace(/'/g,"\\'")}')">${catIconHtml(c)}<div class="catName">${c.name}</div></div>`;
   }).join("");
@@ -1744,29 +1745,55 @@ function renderStoreCategoryTiles(items, categories){
   `;
 }
 
-function renderPrestoFoodItemHtml(p, canManage){
+window._currentKshOrder = {};
+window.addKshOrder = function(id, title, price){
+  window._currentKshOrder[id] = window._currentKshOrder[id] || { title, price: Number(price)||0, count: 0 };
+  window._currentKshOrder[id].count++;
+  updateKshBar();
+  showToast(`أضيف: ${title} (اضغط اتصال بالأسفل للطلب)`, "success", 1600);
+};
+
+window.updateKshBar = function(){
+  const barTot = document.getElementById("kshBarTot");
+  if(!barTot) return;
+  let total = 0, count = 0;
+  for(const k in window._currentKshOrder){
+    total += window._currentKshOrder[k].price * window._currentKshOrder[k].count;
+    count += window._currentKshOrder[k].count;
+  }
+  if(count > 0){
+    barTot.textContent = `${formatPrice(total)} د.ل (${count} وجبة)`;
+  } else {
+    barTot.textContent = "اتصال مباشر";
+  }
+};
+
+function renderKshFoodItemHtml(p, canManage){
   const imgs = getImages(p); const th = imgs[0] || '';
   const isSold = !!p.sold;
-  const canCart = !isSold && canHaveCart(p);
-  const inCart = cart.items.some(i => i.postId === p.id);
-  const cartBtn = canCart ? `<button class="foodAddBtn${inCart ? ' inCart' : ''}" title="${inCart ? 'في السلة' : 'أضف للسلة'}" onclick="event.stopPropagation();addToCart('${p.id}',event)">${inCart ? '✓' : '+'}</button>` : '';
-  const actionsHtml = canManage ? `<div style="display:flex;gap:6px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="padding:4px 8px;border:none;border-radius:6px;background:#eef2ff;color:#0284c7;font-size:11px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="padding:4px 8px;border:none;border-radius:6px;background:#fdeceb;color:#e5484d;font-size:11px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>` : '';
+  const actionsHtml = canManage ? `<div style="display:flex;gap:4px;margin-top:6px"><button onclick="event.stopPropagation();closeOverlay();setTimeout(()=>editPost('${p.id}'),200)" style="padding:4px 8px;border:none;border-radius:6px;background:#eef2ff;color:#0284c7;font-size:11px;font-weight:800;cursor:pointer">✏️ تعديل</button><button onclick="event.stopPropagation();deleteStoreProduct('${p.id}')" style="padding:4px 8px;border:none;border-radius:6px;background:#fdeceb;color:#e5484d;font-size:11px;font-weight:800;cursor:pointer">🗑️ حذف</button></div>` : '';
   const priceText = p.priceType === "contact" ? "📞 تواصل" : (p.price != null ? formatPrice(p.price) + " د.ل" : "—");
+  const optsHtml = p.brand ? `<div class="opts"><span>${escapeHtml(p.brand)}</span></div>` : '';
 
   return `
-    <div class="prestoFoodItem" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
-      <div class="foodInfo">
-        <div class="foodTitle">${escapeHtml(p.title || 'بدون عنوان')}</div>
-        ${p.description ? `<div class="foodDesc">${escapeHtml(p.description)}</div>` : ''}
-        <div class="foodPrice">${priceText}</div>
+    <div class="kshItem" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
+      <div class="kshTxt">
+        <h3>${escapeHtml(p.title || 'وجبة')}</h3>
+        ${p.description ? `<p class="kshDesc">${escapeHtml(p.description)}</p>` : ''}
+        ${optsHtml}
+        <div class="kshPrice">${priceText}</div>
         ${actionsHtml}
       </div>
-      <div class="foodImgWrap">
-        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : `<div class="foodImgPlaceholder">🍔</div>`}
-        ${cartBtn}
+      <div class="kshPic">
+        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : '<div class="kshPicEmoji">🍔</div>'}
+        ${!isSold ? `<button class="kshAdd" onclick="event.stopPropagation();addKshOrder('${p.id}','${escapeHtml(p.title||'وجبة')}',${Number(p.price)||0})" aria-label="أضف ${escapeHtml(p.title||'')}">+</button>` : ''}
       </div>
     </div>
   `;
+}
+
+function renderPrestoFoodItemHtml(p, canManage){
+  return renderKshFoodItemHtml(p, canManage);
 }
 
 window.applyStoreProductFilter=()=>{
@@ -1827,7 +1854,7 @@ function renderStoreProducts(){
     `;
   }
 
-  // إذا كان مطعماً: عرض بنمط بريستو
+  // إذا كان مطعماً: عرض بنمط KSH
   if(isRestaurant){
     if(currentStoreSubCategory === 'all' && !currentStoreSearch){
       const groups = {};
@@ -1840,17 +1867,13 @@ function renderStoreProducts(){
       let html = filterBanner;
       Object.keys(groups).forEach(catName => {
         const groupItems = groups[catName];
-        html += `<div class="foodSectionTitle">${escapeHtml(catName)}</div>`;
-        html += `<div class="foodSectionList">`;
-        html += groupItems.map(p => renderPrestoFoodItemHtml(p, canManage)).join('');
-        html += `</div>`;
+        html += `<h2 style="font-size:17px;font-weight:800;margin:18px 0 10px;border-inline-start:4px solid #dc2626;padding-inline-start:8px;color:var(--text)">${escapeHtml(catName)}</h2>`;
+        html += groupItems.map(p => renderKshFoodItemHtml(p, canManage)).join('');
       });
       box.innerHTML = html;
     } else {
       let html = filterBanner;
-      html += `<div class="foodSectionList">`;
-      html += items.map(p => renderPrestoFoodItemHtml(p, canManage)).join('');
-      html += `</div>`;
+      html += items.map(p => renderKshFoodItemHtml(p, canManage)).join('');
       box.innerHTML = html;
     }
     return;
@@ -2189,6 +2212,27 @@ if(allPosts.length===0 && !showOnlyFavorites && !_postsLoadedOnce){renderSkeleto
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
 const me=auth.currentUser;
+
+// إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
+if(isRestaurantCategory(currentCategory)){
+  let approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
+  if(term){
+    approvedRests=approvedRests.filter(s=>(s.name||"").toLowerCase().includes(term)||(s.city||"").toLowerCase().includes(term));
+  }
+  if(currentCity!=="الكل"){
+    approvedRests=approvedRests.filter(s=>s.city===currentCity);
+  }
+  if(approvedRests.length===0){
+    postsBox.innerHTML=buildEmptyState('🍽️','لا توجد مطاعم مطابقة','تصفح باقي الأقسام أو امسح البحث','🏠 كل الأقسام','showCategoriesScreen()',true);
+    return;
+  }
+  postsBox.innerHTML=`
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">🍽️ دليل المطاعم المعتمدة (${approvedRests.length})</div>
+    ${approvedRests.map(s=>renderRestaurantStructureCard(s,'home')).join("")}
+  `;
+  return;
+}
+
 let list=allPosts.filter(p=>{
   const status=getStatus(p);
   const isOwner=me&&p.uid===me.uid;
@@ -2197,10 +2241,16 @@ let list=allPosts.filter(p=>{
   if(expired && !isOwner && !isAdmin && !isMyStorePost)return false;
   if(status!=="approved" && !isOwner && !isAdmin && !isMyStorePost)return false;
   if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;
+
+  // استبعاد وجبات المطاعم الفردية من قسم الكل عشان ما تتبعثرش وسط الإعلانات
+  const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
+  const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
+  if(!currentStoreFilter && isRestaurantPost && (currentCategory==="الكل" || !isRestaurantCategory(currentCategory))){
+    return false;
+  }
+
   if(!currentStoreFilter && currentCategory!=="الكل"){
-    if(isRestaurantCategory(currentCategory)){
-      if(!isRestaurantCategory(p.category))return false;
-    }else if(p.category!==currentCategory)return false;
+    if(p.category!==currentCategory)return false;
   }
   if(currentSubCategory!=="الكل" && p.brand!==currentSubCategory)return false;
   if(currentCity!=="الكل" && p.city!==currentCity)return false;
@@ -2214,22 +2264,55 @@ let list=allPosts.filter(p=>{
   return true;
 });
 list=sortPosts(list);
+
+// في قسم الكل: إضافة شريط كروت المطاعم في الأعلى كهيكل (غلاف + شعار + اسم)
+let restaurantsSectionHtml='';
+if(currentCategory==="الكل" && !term && !currentStoreFilter && currentCity==="الكل" && currentPriceMin==null && currentPriceMax==null && !showOnlyFavorites && !showOnlyMine){
+  const approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
+  if(approvedRests.length>0){
+    restaurantsSectionHtml=`
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:800;font-size:14px;color:var(--text)">🍽️ المطاعم</div>
+          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12px;font-weight:800;cursor:pointer">عرض كل المطاعم (${approvedRests.length}) ›</button>
+        </div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">
+          ${approvedRests.map(s=>{
+            const coverHtml=s.cover?`<img src="${escapeHtml(s.cover)}" style="width:100%;height:100%;object-fit:cover">`:'🍔🍗🍕';
+            const logoHtml=s.logo?`<img src="${escapeHtml(s.logo)}" style="width:100%;height:100%;object-fit:cover">`:'🍽️';
+            return `
+              <div onclick="openStore('${s.id}',false,'home')" style="flex:0 0 160px;background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+                <div style="height:65px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;font-size:22px;overflow:hidden">${coverHtml}</div>
+                <div style="padding:8px;position:relative">
+                  <div style="width:34px;height:34px;border-radius:10px;background:#ffc20e;border:2px solid var(--card);margin-top:-24px;overflow:hidden;display:grid;place-items:center;font-size:12px;font-weight:800">${logoHtml}</div>
+                  <div style="font-weight:800;font-size:12.5px;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name||"مطعم")}</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(s.city||"ليبيا")}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+
 if(list.length===0){
   /* ✅ المنطق الآمن للصفحة الفارغة */
   if(showOnlyFavorites){
-    postsBox.innerHTML=buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
+    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
   }else if(showOnlyMine){
-    postsBox.innerHTML=buildEmptyState('📝','لسه ما نشرت إعلانات','ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة','➕ أنشر إعلانك الأول','startAddPost()');
+    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📝','لسه ما نشرت إعلانات','ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة','➕ أنشر إعلانك الأول','startAddPost()');
   }else if(term){
-    postsBox.innerHTML=buildEmptyState('🔍','لا توجد نتائج','لم نجد إعلانات تطابق "'+escapeHtml(term)+'"<br>جرّب كلمة بحث أخرى','🔄 مسح البحث','clearSearch()',true);
+    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('🔍','لا توجد نتائج','لم نجد إعلانات تطابق "'+escapeHtml(term)+'"<br>جرّب كلمة بحث أخرى','🔄 مسح البحث','clearSearch()',true);
   }else if(currentCity!=="الكل"){
-    postsBox.innerHTML=buildEmptyState('📍','لا توجد إعلانات في '+escapeHtml(currentCity),'كن أول من ينشر إعلاناً<br>في هذه المدينة','➕ أنشر إعلان هنا','startAddPost()');
+    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📍','لا توجد إعلانات في '+escapeHtml(currentCity),'كن أول من ينشر إعلاناً<br>في هذه المدينة','➕ أنشر إعلان هنا','startAddPost()');
   }else{
-    postsBox.innerHTML=buildEmptyState('📭','لا توجد إعلانات هنا حالياً','كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!','➕ كن أول من ينشر إعلاناً','startAddPost()');
+    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📭','لا توجد إعلانات هنا حالياً','كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!','➕ كن أول من ينشر إعلاناً','startAddPost()');
   }
   return;
 }
-postsBox.innerHTML=list.map(p=>{
+postsBox.innerHTML=restaurantsSectionHtml+list.map(p=>{
 const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&p.uid===me.uid;const isMyStorePost=myStore&&p.storeId===myStore.id;const canDelete=isAdmin||isOwner||isMyStorePost;
 const expired=isExpired(p);const days=daysLeft(p);const isSold=!!p.sold;
 const wanted=isWanted(p);
@@ -2905,28 +2988,83 @@ function startStoresListener(){
     renderStoresList();
   });
 }
-window.openStores=(skipHistory)=>{
+window._storesFilterMode = 'stores';
+window.openStores=(mode='stores',skipHistory)=>{
+  window._storesFilterMode = (mode === 'restaurants') ? 'restaurants' : 'stores';
   document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
   categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
   const ss=document.getElementById("storesScreen");
   if(ss)ss.classList.remove("hidden");
+  const titleEl=document.getElementById("storesScreenTitle");
+  if(titleEl){
+    titleEl.textContent = window._storesFilterMode === 'restaurants' ? '🍽️ دليل المطاعم' : '🏢 الشركات والمتاجر';
+  }
+  const searchInput=document.getElementById("storeSearch");
+  if(searchInput){
+    searchInput.placeholder = window._storesFilterMode === 'restaurants' ? '🔍 ابحث عن مطعم...' : '🔍 ابحث عن متجر أو شركة...';
+  }
   if(!unsubStores) startStoresListener();
   renderStoresList();
   window.scrollTo(0,0);
   hideFloatingButtons();
-  if(!skipHistory) pushNavState({ screen: 'stores' }, '#stores');
+  if(!skipHistory) pushNavState({ screen: 'stores', mode: window._storesFilterMode }, '#stores' + (window._storesFilterMode ? '-' + window._storesFilterMode : ''));
 };
+window.openRestaurants=(skipHistory)=>openStores('restaurants',skipHistory);
+
+function renderRestaurantStructureCard(s, backTo='home'){
+  const coverHtml=s.cover?`<img src="${escapeHtml(s.cover)}" onerror="this.parentElement.innerHTML='🍽️'">`:"🍔🍗🍕";
+  const logoHtml=s.logo?`<img src="${escapeHtml(s.logo)}" onerror="this.parentElement.innerHTML='🍽️'">`:"🍽️";
+  const verifiedBadge=s.verified?`<span class="verifiedBadge" title="مطعم موثق"></span>`:"";
+  const hoursText=formatStoreHours(s);
+  const openBadge=openBadgeHTML(s);
+  const callBtn=s.phone?`<a href="tel:${formatCallPhone(s.phone)}" class="rscCallBtn" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(s.id)}','store')">📞 اتصال هاتفي للطلب</a>`:"";
+  return `
+    <div class="restaurantStructureCard" onclick="openStore('${s.id}',false,'${backTo}')">
+      <div class="rscCover">${coverHtml}</div>
+      <div class="rscBody">
+        <div class="rscLogo">${logoHtml}</div>
+        <div class="rscTitleRow">
+          <div class="rscName">${escapeHtml(s.name||"مطعم")} ${verifiedBadge}</div>
+          ${openBadge}
+        </div>
+        <div class="rscMeta">
+          <span>📁 ${escapeHtml(s.category||"مطاعم ومأكولات")}</span>
+          ${s.city ? `<span>📍 ${escapeHtml(s.city)}</span>` : ''}
+          ${hoursText ? `<span>🕐 ${hoursText}</span>` : ''}
+        </div>
+        ${s.description ? `<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4">${escapeHtml(s.description)}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          ${callBtn}
+          <span style="font-size:12.5px;font-weight:800;color:var(--teal-dark)">عرض المنيو والوجبات ›</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderStoresList(){
   const list=document.getElementById("storesList");if(!list)return;
   const term=(document.getElementById("storeSearch")?.value||"").trim().toLowerCase();
-  const approved=allStores.filter(s=>s.status==="approved").filter(s=>!term || (s.name||"").toLowerCase().includes(term) || (s.category||"").toLowerCase().includes(term) || (s.city||"").toLowerCase().includes(term));
+  const mode=window._storesFilterMode||'stores';
+  let approved=allStores.filter(s=>s.status==="approved");
+  if(mode==='restaurants'){
+    approved=approved.filter(s=>isRestaurantStore(s));
+  } else if(mode==='stores'){
+    approved=approved.filter(s=>!isRestaurantStore(s));
+  }
+  approved=approved.filter(s=>!term || (s.name||"").toLowerCase().includes(term) || (s.category||"").toLowerCase().includes(term) || (s.city||"").toLowerCase().includes(term));
   if(approved.length===0){
     if(!storesLoadedInitially && allStores.length===0){
       list.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل المتاجر...</div>";
       return;
     }
-    list.innerHTML="<div class='reportsEmpty'>لا توجد متاجر معتمدة بعد</div>";
+    const emptyMsg=mode==='restaurants'?"لا توجد مطاعم معتمدة بعد":"لا توجد متاجر معتمدة بعد";
+    list.innerHTML=`<div class='reportsEmpty'>${emptyMsg}</div>`;
+    return;
+  }
+  if(mode==='restaurants'){
+    list.innerHTML=approved.map(s=>renderRestaurantStructureCard(s,'stores')).join("");
     return;
   }
   list.innerHTML=approved.map(s=>{
@@ -2935,8 +3073,7 @@ function renderStoresList(){
     const openBadge=openBadgeHTML(s);
     const hoursText=formatStoreHours(s);
     const verifiedBadge=s.verified?`<span class="verifiedBadge" title="متجر موثق"></span>`:"";
-    const isRest=isRestaurantStore(s);
-    const badgeHTML=isRest?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
+    const badgeHTML=`<span class="storeBadge">🏢 شركة/متجر</span>`;
     const storePostsCount=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved").length;
     const storeTier=typeof renderSellerTierBadge === 'function' ? renderSellerTierBadge(s.ownerUid,storePostsCount) : "";
     return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
@@ -3046,9 +3183,87 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       const cat = getProductSubCategory(p, isRestaurant);
       if(cat && !availableSubCategories.includes(cat)) availableSubCategories.push(cat);
     });
-    const prestoCategoriesHtml = isRestaurant 
-      ? (renderRestaurantPopular(items) + renderRestaurantTabs(items, availableSubCategories))
-      : renderStoreCategoryTiles(items, availableSubCategories);
+    if(isRestaurant){
+      window._currentKshOrder = {};
+      const kshCoverHtml = store.cover
+        ? `<img src="${escapeHtml(store.cover)}" alt="غلاف المطعم">`
+        : `<div class="kshCoverEmojis">🍔🍗🍕</div>`;
+      const kshLogoHtml = store.logo
+        ? `<img src="${escapeHtml(store.logo)}" alt="شعار">`
+        : `<div style="font-weight:800;font-size:18px">${escapeHtml((store.name||'KSH').slice(0,3))}</div>`;
+      const hoursFormatted = formatStoreHours(store) || "12:00 – 02:00";
+      const deliveryFormatted = store.deliveryCompany ? escapeHtml(store.deliveryCompany) : "داخلي / شركات";
+
+      const navButtonsHtml = `
+        <button class="${currentStoreSubCategory==='all'?'on':''}" onclick="setStoreSubCategory('all')">الكل</button>
+        ${availableSubCategories.map(cat => `
+          <button class="${currentStoreSubCategory===cat?'on':''}" onclick="setStoreSubCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</button>
+        `).join('')}
+      `;
+
+      box.innerHTML = `
+        ${statusNote}${statusNote2}
+        <div class="kshCover">${kshCoverHtml}</div>
+        <div class="kshInfo">
+          <div class="kshHead">
+            <div class="kshLogo">${kshLogoHtml}</div>
+            <div class="kshHeadText">
+              <h1>${escapeHtml(store.name||"مطعم")} ${verifiedBadgeLg}</h1>
+              <p>${escapeHtml(store.description || store.category || "مطعم ومأكولات")}</p>
+            </div>
+          </div>
+          <div class="kshStats">
+            <div><small>الحد الأدنى</small><b>بدون حد</b></div>
+            <div><small>ساعات العمل</small><b>${hoursFormatted}</b></div>
+            <div><small>التوصيل</small><b>${deliveryFormatted}</b></div>
+          </div>
+          ${store.phone ? `
+            <div style="margin-top:12px">
+              <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
+                📞 اتصال هاتفي مباشر بالمطعم (${escapeHtml(store.phone)})
+              </a>
+            </div>
+          ` : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            ${transferBtn}
+            <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ تقييم</button>
+            <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#0284c7">📱 QR</button>
+            ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المطعم</button>`:""}
+            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة وجبة</button>`:""}
+          </div>
+          <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
+          <div class="storeRatingSection" id="storeRatingSection"></div>
+        </div>
+        <div class="kshNav" id="kshNav">${navButtonsHtml}</div>
+        <div style="padding:10px 14px 75px">
+          ${storeFilterBar}
+          <div id="storeProductsBox"></div>
+        </div>
+        ${store.phone ? `
+          <div class="kshBar" id="kshBar">
+            <a href="tel:${formatCallPhone(store.phone)}" class="kshSendBtn" id="kshCallBtn" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
+              <span>📞 اتصال هاتفي لطلب الوجبات</span>
+              <span id="kshBarTot">اتصال مباشر</span>
+            </a>
+          </div>
+        ` : ''}
+      `;
+      renderStoreProducts();
+      updateKshBar();
+      loadStoreRatings(storeId).then(()=>{
+        const sec=document.getElementById("storeRatingSection");
+        const inline=document.getElementById("storeRatingInline");
+        const ratings=allStoreRatings[storeId]||[];
+        if(!sec) return;
+        if(ratings.length===0){ sec.innerHTML='<h4>⭐ التقييمات</h4><div style="color:var(--muted);font-size:13px">لا توجد تقييمات بعد</div>'; return; }
+        const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
+        sec.innerHTML=`<h4>⭐ التقييمات (${ratings.length}) — متوسط ${avg.toFixed(1)}/5</h4>`+ratings.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${escapeHtml(r.raterName||"مستخدم")}</b><span style="color:#f5a623">${"★".repeat(r.stars||0)}${"☆".repeat(5-(r.stars||0))}</span></div>${r.comment?`<div style="font-size:13px;margin-top:4px">${escapeHtml(r.comment)}</div>`:""}</div>`).join("");
+      }).catch(e=>console.warn("Ratings error:",e));
+      hideFloatingButtons();
+      return;
+    }
+
+    const prestoCategoriesHtml = renderStoreCategoryTiles(items, availableSubCategories);
 
     box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}</div><div class="logoWrap">${logoHtml}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
     renderStoreProducts();
@@ -3078,6 +3293,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 function backFromStoreDirect(){
   const sc=document.getElementById("storeScreen");
   if(sc)sc.classList.add("hidden");
+  window._currentKshOrder = {};
   if(window._storeBackTo==="stores"){const ss=document.getElementById("storesScreen");if(ss)ss.classList.remove("hidden");}
   else if(window._storeBackTo==="home"){home.classList.remove("hidden");showFloatingButtons();}
   else if(window._storeBackTo==="post"){postOverlay.classList.remove("hidden");}
@@ -3668,15 +3884,17 @@ window.onCategoryChange=()=>{
   const cr=document.getElementById("catsRow");
   if(!cr)return;
   cr.innerHTML=CATEGORIES.map((c,i)=>{
-    if(c.isStore)return `<button class="catChip storeChip" onclick="openStores()">🏢 الشركات والمتاجر</button>`;
-    return `<button class="catChip${i===0?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')"><span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:${c.color||'#38bdf8'};align-items:center;justify-content:center;margin-left:4px;flex:0 0 auto"><i data-lucide="${c.iconName||'circle'}" style="width:10px;height:10px;color:#fff"></i></span>${c.name}</button>`;
+    if(c.isStore)return `<button class="catChip storeChip" onclick="openStores('stores')">🏢 الشركات والمتاجر</button>`;
+    if(c.isRestaurantDirectory || c.name==="مطاعم ومأكولات")return `<button class="catChip restaurantChip" onclick="openRestaurants()">🍽️ المطاعم</button>`;
+    const isActive = c.name === "الكل";
+    return `<button class="catChip${isActive?" active":""}" data-cat="${c.name}" onclick="filterCategory('${c.name.replace(/'/g,"\\'")}')"><span style="display:inline-flex;width:16px;height:16px;border-radius:50%;background:${c.color||'#38bdf8'};align-items:center;justify-content:center;margin-left:4px;flex:0 0 auto"><i data-lucide="${c.iconName||'circle'}" style="width:10px;height:10px;color:#fff"></i></span>${c.name}</button>`;
   }).join("");
   if(window.lucide) lucide.createIcons();
 })();
 setTimeout(updateClearBtn,500);
 setTimeout(updateCompareUI,300);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
-window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")));renderSubCats();renderPosts();};
+window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")&&!b.classList.contains("restaurantChip")));renderSubCats();renderPosts();};
 function renderSubCats(){
   if(!subCatsRow)return;
   const subs=SUB_CATEGORIES[currentCategory];
