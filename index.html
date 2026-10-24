@@ -282,10 +282,16 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="sheet">
 <div id="authOptions">
 <h3 style="text-align:center">تسجيل الدخول</h3>
-<p style="font-size:13px;color:var(--muted);margin:0 0 14px;text-align:center">سجّل دخولك بحساب Google للاستمرار</p>
+<p style="font-size:13px;color:var(--muted);margin:0 0 14px;text-align:center">سجّل دخولك بحساب Google أو البريد الإلكتروني</p>
 <button class="authOption" onclick="loginWithGoogle()">🔵 المتابعة باستخدام Google</button>
-<button class="authOption disabled" onclick="alert('قريباً')"><span class="soonBadge">قريباً</span><span class="icon">📱</span> المتابعة برقم الهاتف</button>
-<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إلغاء</button>
+<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+  <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center">أو الدخول السريع عبر البريد الإلكتروني</div>
+  <div style="display:flex;gap:8px">
+    <input type="email" id="magicEmailInput" placeholder="name@example.com" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px">
+    <button type="button" class="btnMain" style="padding:8px 14px;font-size:13px;width:auto;margin:0" onclick="loginWithEmail()">إرسال الرابط</button>
+  </div>
+</div>
+<button class="btnGhost" style="background:transparent;color:var(--muted);margin-top:12px" onclick="closeOverlay()">إلغاء</button>
 </div>
 </div>
 </div>
@@ -606,7 +612,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <h2>2. كيف نستخدم بياناتك</h2>
 <ul><li>لعرض إعلاناتك مع رقم الواتساب للتواصل.</li><li>لتحسين تجربة الاستخدام.</li></ul>
 <h2>3. أين تُخزّن البيانات</h2>
-<p>تُخزّن بياناتك بشكل آمن على خدمات <b>Google Firebase</b>، والصور على خدمة استضافة سحابية مخصصة للصور.</p>
+<p>تُخزّن بياناتك بشكل آمن على سحابة <b>Supabase</b> المشفرة، والصور على خدمة استضافة سحابية مخصصة للصور.</p>
 <h2>4. المشاركة مع أطراف ثالثة</h2>
 <p>لا نبيع أو نشارك بياناتك مع أي طرف ثالث.</p>
 <h2>5. تواصل معنا</h2>
@@ -777,7 +783,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=6"></script>
+<script type="module" src="app.js?v=7"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
