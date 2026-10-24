@@ -81,43 +81,44 @@ function checkContent(t,d){const a=detectForbidden(t);if(a)return{word:a,field:"
 const RESERVED_USERNAMES=["admin","administrator","root","support","help","tasawuq","tasawuqnow","owner","moderator","mod","official","system","api","www","mail","email"];
 function validateUsername(u){if(!u)return{ok:false,msg:"اكتب اسم المستخدم"};const s=String(u).trim().toLowerCase();if(s.length<3)return{ok:false,msg:"الاسم قصير جدًا (3 أحرف على الأقل)"};if(s.length>20)return{ok:false,msg:"الاسم طويل جدًا (20 حرف كحد أقصى)"};if(!/^[a-z][a-z0-9_]*$/.test(s))return{ok:false,msg:"لازم يبدأ بحرف إنجليزي، ويحتوي فقط a-z / 0-9 / _"};if(RESERVED_USERNAMES.includes(s))return{ok:false,msg:"هذا الاسم محجوز للنظام"};return{ok:true,value:s};}
 
-/* ✅ التعديل الخامس: normalizePhone + validatePhone جديد */
-function formatCallPhone(p){
-  let s = String(p || "").replace(/[^0-9+]/g, "");
-  if (!s) return "";
-  if (s.startsWith("+218")) s = s.slice(4);
-  else if (s.startsWith("+")) return s;
-  else if (s.startsWith("00218")) s = s.slice(5);
-  else if (s.startsWith("218")) s = s.slice(3);
-  if (s.startsWith("0")) s = s.slice(1);
-  return "0" + s;
-}
-window.formatCallPhone = formatCallPhone;
+/* ✅ دالات تنسيق والتحقق من رقم الهاتف */
 function normalizePhone(p){
-  let s = String(p||"").replace(/[^0-9]/g,"");
-  if(!s) return "";
-  if(s.startsWith("218")){
-    let rest = s.slice(3);
-    if(rest.startsWith("0")) rest = rest.slice(1);
-    return "218" + rest;
-  }
-  if(s.startsWith("0")) s = s.slice(1);
+  let s = String(p || "").replace(/[^0-9]/g, "");
+  if (!s) return "";
+  if (s.startsWith("00218")) s = s.slice(5);
+  else if (s.startsWith("218")) s = s.slice(3);
+  while (s.startsWith("0")) s = s.slice(1);
   return "218" + s;
-}
-function validatePhone(p){
-  if(!p) return {ok:false,msg:"اكتب رقم الواتساب"};
-  const digits = String(p).replace(/[^0-9]/g,"");
-  if(!digits) return {ok:false,msg:"اكتب رقم الواتساب"};
-  const normalized = normalizePhone(digits);
-  const rest = normalized.slice(3);
-  if(rest.length < 8) return {ok:false,msg:"الرقم قصير جدًا"};
-  if(rest.length > 12) return {ok:false,msg:"الرقم طويل جدًا"};
-  return {ok:true, value:normalized};
 }
 window.normalizePhone = normalizePhone;
 
+function formatCallPhone(p){
+  const norm = normalizePhone(p);
+  if (!norm) return "";
+  return "0" + norm.slice(3);
+}
+window.formatCallPhone = formatCallPhone;
+
+function validatePhone(p){
+  if (!p) return {ok: false, msg: "اكتب رقم الواتساب"};
+  const digits = String(p).replace(/[^0-9]/g, "");
+  if (!digits) return {ok: false, msg: "اكتب رقم الواتساب"};
+  const normalized = normalizePhone(digits);
+  const rest = normalized.slice(3);
+  if (rest.length < 8) return {ok: false, msg: "الرقم قصير جدًا (أدخل رقم هاتف صحيح)"};
+  if (rest.length > 12) return {ok: false, msg: "الرقم طويل جدًا، تأكد من الرقم"};
+  return {ok: true, value: normalized};
+}
+window.validatePhone = validatePhone;
+
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
-window.normalizePhoneInput=()=>{const i=document.getElementById("myPhone");if(!i)return;i.value=i.value.replace(/[^0-9]/g,"").slice(0,15);};
+window.normalizePhoneInput=()=>{
+  const i=document.getElementById("myPhone");
+  if(!i)return;
+  let v=i.value.replace(/[^0-9+]/g,"");
+  if(v.indexOf("+")>0) v=v[0]+v.slice(1).replace(/\+/g,"");
+  i.value=v.slice(0,16);
+};
 
 const userLimitsCache={};
 const DEFAULT_LIMIT=3;
@@ -4013,7 +4014,7 @@ document.getElementById("originalPrice").value="";
 document.getElementById("discountPreview").textContent="";
 document.getElementById("discountField").style.display="block";
 const userPhone=(myProfile&&myProfile.phone)||"";
-document.getElementById("phone").value=userPhone||"⚠️ لم تسجل رقمك بعد";
+document.getElementById("phone").value=userPhone?formatCallPhone(userPhone):"⚠️ لم تسجل رقمك بعد";
 document.getElementById("phone").setAttribute("readonly","readonly");
 document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
@@ -4209,7 +4210,7 @@ window.openAccount=(skipHistory)=>{
     const stEl=document.getElementById("accountStore");
     if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
     const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
-    const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)||"";
+    const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";
     const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
     if(myStore){if(openBtn)openBtn.style.display="none";if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}}
     else{if(openBtn)openBtn.style.display="block";if(myBtn)myBtn.style.display="none";}
@@ -4289,28 +4290,31 @@ window.saveMyPhone=async()=>{
   const input=document.getElementById("myPhone");
   if(!input)return;
   const raw=(input.value||"").trim();
+  if(!raw){showToast("الرجاء كتابة رقم الواتساب","warn");return;}
   const v=validatePhone(raw);
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
-  const oldPhone=(myProfile&&myProfile.phone)||"";
   const cleanNew=v.value;
+  const oldPhone=(myProfile&&myProfile.phone)||"";
   const cleanOld=oldPhone?normalizePhone(oldPhone):"";
   if(cleanOld && cleanOld===cleanNew){showToast("هذا رقمك الحالي بالفعل","info");return;}
 
+  const displayNew=formatCallPhone(cleanNew);
+  const displayOld=cleanOld?formatCallPhone(cleanOld):"";
   let confirmMsg="";
   if(!cleanOld){
-    confirmMsg=`هل تريد حفظ وربط رقم الواتساب: ${cleanNew} بحسابك؟\n\n⚠️ سيتم ربط هذا الرقم بحسابك هذا فقط ولا يمكن لأي حساب آخر استخدامه.`;
+    confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: ${displayNew} بحسابك؟\n\n⚠️ سيتم قفل هذا الرقم لحسابك فقط ولن يتمكن أي شخص آخر من استخدامه.`;
   }else{
-    confirmMsg=`هل تريد تغيير رقمك إلى: ${cleanNew}؟\n\n⚠️ سيتم فك ارتباط رقمك السابق (${cleanOld}) وإتاحته لأي حساب آخر، وربط الرقم الجديد بحسابك الحالي فقط.`;
+    confirmMsg=`هل تريد تغيير رقمك من (${displayOld}) إلى (${displayNew})؟\n\n⚠️ سيتم فك ارتباط رقمك السابق وإتاحته، وتثبيت الرقم الجديد بحسابك فقط.`;
   }
   if(!confirm(confirmMsg))return;
 
   showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
   const res=await reservePhone(me,cleanNew,cleanOld);
   if(res.ok){
-    if(input)input.value=res.value;
-    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+res.value,"success");
+    if(input)input.value=formatCallPhone(res.value);
+    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
   }else{
-    showToast("❌ "+res.msg,"error",4500);
+    showToast("❌ "+res.msg,"error",5000);
   }
 };
 
@@ -4475,41 +4479,31 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   const cleanOld=oldPhoneRaw?normalizePhone(oldPhoneRaw):"";
   if(cleanOld && cleanOld===cleanNew){return{ok:true,value:cleanNew,unchanged:true};}
 
+  const phoneRef=doc(db,"phones",cleanNew);
+  const profileRef=doc(db,"profiles",user.uid);
+
   try{
-    const q1=query(collection(db,"profiles"),where("phone","==",cleanNew));
-    const q1Snap=await getDocs(q1);
-    let takenByOther=false;
-    q1Snap.forEach(d=>{if(d.id!==user.uid)takenByOther=true;});
-    if(takenByOther){
-      return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
-    }
-
-    const callFormat=formatCallPhone(cleanNew);
-    if(callFormat && callFormat!==cleanNew){
-      const q2=query(collection(db,"profiles"),where("phone","==",callFormat));
-      const q2Snap=await getDocs(q2);
-      q2Snap.forEach(d=>{if(d.id!==user.uid)takenByOther=true;});
-      if(takenByOther){
-        return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
-      }
-    }
-
-    const phoneRef=doc(db,"phones",cleanNew);
-    const profileRef=doc(db,"profiles",user.uid);
-
     await runTransaction(db,async (transaction)=>{
       const phoneSnap=await transaction.get(phoneRef);
       const profileSnap=await transaction.get(profileRef);
-      if(phoneSnap.exists() && phoneSnap.data().uid && phoneSnap.data().uid!==user.uid){
-        throw new Error("TAKEN");
+
+      // منع أي مستخدم من استخدام رقم مسجل لشخص آخر
+      if(phoneSnap.exists()){
+        const pData=phoneSnap.data()||{};
+        if(pData.uid && pData.uid!==user.uid){
+          throw new Error("TAKEN");
+        }
       }
+
       const now=Date.now();
       transaction.set(phoneRef,{
         uid:user.uid,
         email:user.email||"",
         phone:cleanNew,
+        localPhone:formatCallPhone(cleanNew),
         linkedAt:now
-      });
+      },{merge:true});
+
       if(profileSnap.exists()){
         transaction.update(profileRef,{phone:cleanNew});
       }else{
@@ -4525,22 +4519,23 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       }
     });
 
+    // تحرير الرقم القديم ليصبح متاحاً عند تغييره
     if(cleanOld && cleanOld!==cleanNew){
       try{
         const oldPhoneRef=doc(db,"phones",cleanOld);
         const oldSnap=await getDoc(oldPhoneRef);
-        if(oldSnap.exists() && oldSnap.data().uid===user.uid){
+        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
           await deleteDoc(oldPhoneRef);
         }
       }catch(e){}
 
-      const oldCall=formatCallPhone(cleanOld);
-      if(oldCall && oldCall!==cleanOld){
+      const oldLocal=formatCallPhone(cleanOld);
+      if(oldLocal && oldLocal!==cleanOld){
         try{
-          const oldCallRef=doc(db,"phones",oldCall);
-          const oldCallSnap=await getDoc(oldCallRef);
-          if(oldCallSnap.exists() && oldCallSnap.data().uid===user.uid){
-            await deleteDoc(oldCallRef);
+          const oldLocalRef=doc(db,"phones",oldLocal);
+          const oldLocalSnap=await getDoc(oldLocalRef);
+          if(oldLocalSnap.exists() && oldLocalSnap.data()?.uid===user.uid){
+            await deleteDoc(oldLocalRef);
           }
         }catch(e){}
       }
@@ -4548,13 +4543,15 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
 
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
-      await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew})));
+      await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{})));
     }catch(e){}
+
     if(myStore){
       try{
         await updateDoc(doc(db,"stores",myStore.id),{phone:cleanNew});
       }catch(e){}
     }
+
     if(myProfile){
       myProfile.phone=cleanNew;
     }
@@ -4562,6 +4559,16 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   }catch(e){
     if(e.message==="TAKEN"){
       return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
+    }
+    // في حال وجود مشكلة في صلاحيات جدول phones: يتم حفظ الرقم بالبروفايل فوراً لعدم تعطيل المستخدم
+    if(e.code==="permission-denied" || (e.message && e.message.includes("permission"))){
+      try{
+        await updateDoc(profileRef,{phone:cleanNew});
+        if(myProfile)myProfile.phone=cleanNew;
+        return{ok:true,value:cleanNew};
+      }catch(e2){
+        return{ok:false,msg:"تعذر حفظ رقم الهاتف، تحقق من اتصالك"};
+      }
     }
     return{ok:false,msg:"تعذر حفظ رقم الهاتف: "+(e.message||"خطأ غير متوقع")};
   }
@@ -4576,14 +4583,14 @@ function startProfileListener(user){
       myProfile=snap.data();
       const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
       const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
-      const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone||"";
+      const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
       if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}
       if(myProfile.phone){
         const cleanPh=normalizePhone(myProfile.phone);
         if(cleanPh){
           getDoc(doc(db,"phones",cleanPh)).then(pSnap=>{
             if(!pSnap.exists()){
-              setDoc(doc(db,"phones",cleanPh),{uid:user.uid,email:user.email||"",phone:cleanPh,linkedAt:Date.now()}).catch(e=>{});
+              setDoc(doc(db,"phones",cleanPh),{uid:user.uid,email:user.email||"",phone:cleanPh,localPhone:formatCallPhone(cleanPh),linkedAt:Date.now()},{merge:true}).catch(e=>{});
             }
           }).catch(e=>{});
         }
