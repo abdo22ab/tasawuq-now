@@ -1,7 +1,29 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,collection,addDoc,setDoc,getDoc,getDocs,query,where,updateDoc,onSnapshot,deleteDoc,doc,increment,runTransaction,orderBy,limit,startAfter } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-import { getAI,getGenerativeModel,GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
+import {
+  supabase,
+  auth,
+  db,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  increment,
+  runTransaction,
+  onAuthStateChanged,
+  signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
+  objectFromDb
+} from "./supabase-adapter.js";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -12,14 +34,7 @@ try {
   }
 } catch(e){}
 
-const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
-const app=initializeApp(firebaseConfig);
-
-/* ⚠️ App Check معطّل مؤقتاً */
-console.log('ℹ️ App Check متوقف — البوت يشتغل بدون حماية إضافية');
-
-const auth=getAuth();
-const db=getFirestore();
+console.log('🚀 تسوق الآن يعمل بالكامل عبر Supabase');
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
@@ -1419,25 +1434,25 @@ async function searchServerPosts(term){
 
   try {
     const seenIds = new Set(allPosts.map(p => p.id));
-    const queries = [];
-    const words = cleanTerm.split(/\s+/).filter(w => w.length >= 2);
-    for(const w of words.slice(0, 2)){
-      queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("keywords", "array-contains", w), limit(25)));
-    }
-    queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("brand", "==", term.trim()), limit(25)));
-    queries.push(query(collection(db, "posts"), where("status", "==", "approved"), where("title", ">=", term.trim()), where("title", "<=", term.trim() + "\uf8ff"), limit(25)));
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('status', 'approved')
+      .or(`title.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%,brand.ilike.%${cleanTerm}%,category.ilike.%${cleanTerm}%,city.ilike.%${cleanTerm}%`)
+      .order('created_at', { ascending: false })
+      .limit(30);
 
-    const snaps = await Promise.all(queries.map(q => getDocs(q).catch(() => ({ docs: [] }))));
     let addedCount = 0;
-    snaps.forEach(snap => {
-      snap.docs.forEach(d => {
-        if(!seenIds.has(d.id)){
-          seenIds.add(d.id);
-          allPosts.push({ id: d.id, ...d.data() });
+    if (!error && data) {
+      data.forEach(item => {
+        const p = objectFromDb(item);
+        if(!seenIds.has(p.id)){
+          seenIds.add(p.id);
+          allPosts.push(p);
           addedCount++;
         }
       });
-    });
+    }
 
     if(addedCount > 0){
       allPosts = sortPosts(allPosts);
@@ -2174,36 +2189,22 @@ async function loadPostsBatch(isInitial = false) {
   }
 
   try {
-    let q;
-    if (isInitial || !lastVisiblePostDoc) {
-      q = query(
-        collection(db, "posts"),
-        orderBy("createdAt", "desc"),
-        limit(POSTS_BATCH_SIZE)
-      );
-    } else {
-      q = query(
-        collection(db, "posts"),
-        orderBy("createdAt", "desc"),
-        startAfter(lastVisiblePostDoc),
-        limit(POSTS_BATCH_SIZE)
-      );
-    }
+    const from = isInitial ? 0 : allPosts.length;
+    const to = from + POSTS_BATCH_SIZE - 1;
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
-    const snap = await getDocs(q);
-    const newDocs = snap.docs;
+    if (error) throw error;
+    const fetchedPosts = (data || []).map(objectFromDb);
 
-    if (newDocs.length < POSTS_BATCH_SIZE) {
+    if (fetchedPosts.length < POSTS_BATCH_SIZE) {
       hasMorePosts = false;
     } else {
       hasMorePosts = true;
     }
-
-    if (newDocs.length > 0) {
-      lastVisiblePostDoc = newDocs[newDocs.length - 1];
-    }
-
-    const fetchedPosts = newDocs.map(d => ({ id: d.id, ...d.data() }));
 
     if (isInitial) {
       allPosts = fetchedPosts;
@@ -4773,11 +4774,45 @@ renderPosts();
 }
 });
 
-window.logout=()=>{Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);try{sessionStorage.removeItem('_tempStoreData');}catch(e){}signOut(auth);};
+window.logout=async()=>{
+  Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
+  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  await signOut(auth);
+};
 
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
-window.loginWithGoogle=async()=>{try{await signInWithPopup(auth,googleProvider);}catch(e){if(e.code==="auth/popup-closed-by-user"){}else if(e.code==="auth/popup-blocked")showToast("الرجاء السماح بالنوافذ المنبثقة","warn");else if(e.code==="auth/unauthorized-domain")showToast("هذا النطاق غير مصرح به","error");else showToast("تعذر تسجيل الدخول: "+e.code,"error");}};
+window.loginWithGoogle=async()=>{
+  try{
+    await signInWithPopup(auth,googleProvider);
+  }catch(e){
+    if(e.code==="auth/popup-closed-by-user"){}
+    else if(e.code==="auth/popup-blocked")showToast("الرجاء السماح بالنوافذ المنبثقة","warn");
+    else if(e.code==="auth/unauthorized-domain")showToast("هذا النطاق غير مصرح به","error");
+    else showToast("تعذر تسجيل الدخول: "+(e.message||e.code||"خطأ"),"error");
+  }
+};
+
+window.loginWithEmail=async()=>{
+  const input=document.getElementById("magicEmailInput");
+  const email=(input?.value||"").trim();
+  if(!email || !email.includes("@")){
+    showToast("الرجاء إدخال بريد إلكتروني صحيح","warn");
+    return;
+  }
+  try{
+    showToast("⏳ جاري إرسال رابط الدخول...","info");
+    const { error }=await supabase.auth.signInWithOtp({
+      email,
+      options:{ emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+    if(error) throw error;
+    showToast("✅ تم إرسال رابط الدخول إلى بريدك الإلكتروني! تفقد صندوق الوارد أو البريد غير الهام.","success",7000);
+    closeOverlay();
+  }catch(err){
+    showToast("تعذر الإرسال: "+(err.message||err),"error");
+  }
+};
 
 /* ============================================
    📢 إشعارات داخل التطبيق (In-App)
