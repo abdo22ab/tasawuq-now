@@ -749,8 +749,7 @@ setInterval(updateWheelBadge, 30000);
 /* ============================================
    🤖 المساعد الذكي
    ============================================ */
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-
+let ai = null;
 const AI_MODELS_LIST = [
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
@@ -761,7 +760,7 @@ try{ _workingModel = localStorage.getItem('aiWorkingModel') || null; }catch(e){}
 
 let aiModel = null;
 function createAIModel(modelName){
-  return getGenerativeModel(ai, { model: modelName });
+  return null;
 }
 
 if(_workingModel){
