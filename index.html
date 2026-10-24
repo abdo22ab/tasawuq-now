@@ -314,7 +314,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
 <div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
 <button class="btnGhost accountBtn" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
-<div class="field" style="margin-top:12px;margin-bottom:8px"><label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label><input id="myPhone" class="phoneInput" maxlength="15" placeholder="218912345678" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تحويله تلقائياً</div></div>
+<div class="field" style="margin-top:12px;margin-bottom:8px"><label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label><input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div></div>
 <button class="btnGhost accountBtn" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
 <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
 <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
