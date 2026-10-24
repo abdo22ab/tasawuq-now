@@ -1,0 +1,504 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+export const SUPABASE_URL = "https://jtpfpqalibbwdbirzdnk.supabase.co";
+export const SUPABASE_ANON_KEY = "sb_publishable_6N_kXZ3e5fB4XM7xKKfT-g_7AHN25Tp";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+window.supabase = supabase;
+
+const TABLE_MAP = {
+  posts: "posts",
+  stores: "stores",
+  profiles: "profiles",
+  phones: "phones",
+  usernames: "usernames",
+  userLimits: "user_limits",
+  user_limits: "user_limits",
+  reports: "reports",
+  feedback: "feedback",
+  counters: "counters"
+};
+
+function getTableName(col) {
+  return TABLE_MAP[col] || col;
+}
+
+function toSnake(str) {
+  if (str === "memberNo") return "member_no";
+  if (str === "storeLimit") return "store_limit";
+  if (str === "priceType") return "price_type";
+  if (str === "originalPrice") return "original_price";
+  if (str === "subCategory") return "sub_category";
+  if (str === "imageUrl") return "image_url";
+  if (str === "adType") return "ad_type";
+  if (str === "rejectReason") return "reject_reason";
+  if (str === "whatsappClicks") return "whatsapp_clicks";
+  if (str === "favoritesCount") return "favorites_count";
+  if (str === "featuredUntil") return "featured_until";
+  if (str === "featuredPlan") return "featured_plan";
+  if (str === "soldAt") return "sold_at";
+  if (str === "createdAt") return "created_at";
+  if (str === "expiresAt") return "expires_at";
+  if (str === "termsAcceptedAt") return "terms_accepted_at";
+  if (str === "storeId") return "store_id";
+  if (str === "storeName") return "store_name";
+  if (str === "storeCategory") return "store_category";
+  if (str === "sellerName") return "seller_name";
+  if (str === "sellerUsername") return "seller_username";
+  if (str === "sellerMemberNo") return "seller_member_no";
+  if (str === "wasEdited") return "was_edited";
+  if (str === "editedAt") return "edited_at";
+  if (str === "ownerUid") return "owner_uid";
+  if (str === "ownerUsername") return "owner_username";
+  if (str === "ownerMemberNo") return "owner_member_no";
+  if (str === "ownerEmail") return "owner_email";
+  if (str === "receiptPhone") return "receipt_phone";
+  if (str === "workingHours") return "working_hours";
+  if (str === "deliveryCompany") return "delivery_company";
+  if (str === "bankInfo") return "bank_info";
+  if (str === "approvedAt") return "approved_at";
+  if (str === "phoneEditsCount") return "phone_edits_count";
+  if (str === "localPhone") return "local_phone";
+  if (str === "linkedAt") return "linked_at";
+  if (str === "updatedAt") return "updated_at";
+  if (str === "postId") return "post_id";
+  if (str === "postTitle") return "post_title";
+  if (str === "reporterUid") return "reporter_uid";
+  if (str === "reporterName") return "reporter_name";
+  if (str === "userName") return "user_name";
+  if (str === "userPhone") return "user_phone";
+  if (str === "lastNumber") return "last_number";
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+}
+
+function toCamel(str) {
+  if (str === "member_no") return "memberNo";
+  if (str === "store_limit") return "storeLimit";
+  if (str === "price_type") return "priceType";
+  if (str === "original_price") return "originalPrice";
+  if (str === "sub_category") return "subCategory";
+  if (str === "image_url") return "imageUrl";
+  if (str === "ad_type") return "adType";
+  if (str === "reject_reason") return "rejectReason";
+  if (str === "whatsapp_clicks") return "whatsappClicks";
+  if (str === "favorites_count") return "favoritesCount";
+  if (str === "featured_until") return "featuredUntil";
+  if (str === "featured_plan") return "featuredPlan";
+  if (str === "sold_at") return "soldAt";
+  if (str === "created_at") return "createdAt";
+  if (str === "expires_at") return "expiresAt";
+  if (str === "terms_accepted_at") return "termsAcceptedAt";
+  if (str === "store_id") return "storeId";
+  if (str === "store_name") return "storeName";
+  if (str === "store_category") return "storeCategory";
+  if (str === "seller_name") return "sellerName";
+  if (str === "seller_username") return "sellerUsername";
+  if (str === "seller_member_no") return "sellerMemberNo";
+  if (str === "was_edited") return "wasEdited";
+  if (str === "edited_at") return "editedAt";
+  if (str === "owner_uid") return "ownerUid";
+  if (str === "owner_username") return "ownerUsername";
+  if (str === "owner_member_no") return "ownerMemberNo";
+  if (str === "owner_email") return "ownerEmail";
+  if (str === "receipt_phone") return "receiptPhone";
+  if (str === "working_hours") return "workingHours";
+  if (str === "delivery_company") return "deliveryCompany";
+  if (str === "bank_info") return "bankInfo";
+  if (str === "approved_at") return "approvedAt";
+  if (str === "phone_edits_count") return "phoneEditsCount";
+  if (str === "local_phone") return "localPhone";
+  if (str === "linked_at") return "linkedAt";
+  if (str === "updated_at") return "updatedAt";
+  if (str === "post_id") return "postId";
+  if (str === "post_title") return "postTitle";
+  if (str === "reporter_uid") return "reporterUid";
+  if (str === "reporter_name") return "reporterName";
+  if (str === "user_name") return "userName";
+  if (str === "user_phone") return "userPhone";
+  if (str === "last_number") return "lastNumber";
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+export function objectToDb(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+  const res = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue;
+    const dbKey = toSnake(k);
+    res[dbKey] = v;
+  }
+  return res;
+}
+
+export function objectFromDb(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return obj;
+  const res = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const appKey = toCamel(k);
+    res[appKey] = v;
+  }
+  if (res.images && typeof res.images === "string") {
+    try { res.images = JSON.parse(res.images); } catch(e){ res.images = []; }
+  }
+  if (!res.images) res.images = [];
+  if (res.keywords && typeof res.keywords === "string") {
+    try { res.keywords = JSON.parse(res.keywords); } catch(e){ res.keywords = []; }
+  }
+  if (!res.keywords) res.keywords = [];
+  if (res.helpers && typeof res.helpers === "string") {
+    try { res.helpers = JSON.parse(res.helpers); } catch(e){ res.helpers = []; }
+  }
+  if (res.price != null) res.price = Number(res.price);
+  if (res.originalPrice != null) res.originalPrice = Number(res.originalPrice);
+  if (res.views != null) res.views = Number(res.views);
+  if (res.whatsappClicks != null) res.whatsappClicks = Number(res.whatsappClicks);
+  if (res.favoritesCount != null) res.favoritesCount = Number(res.favoritesCount);
+  if (res.createdAt != null) res.createdAt = Number(res.createdAt);
+  if (res.expiresAt != null) res.expiresAt = Number(res.expiresAt);
+  if (res.featuredUntil != null) res.featuredUntil = Number(res.featuredUntil);
+  if (res.soldAt != null) res.soldAt = Number(res.soldAt);
+  if (res.memberNo != null) res.memberNo = Number(res.memberNo);
+  if (res.lastNumber != null) res.lastNumber = Number(res.lastNumber);
+  return res;
+}
+
+function makeDocSnap(id, data) {
+  const exists = !!data;
+  return {
+    id,
+    exists: () => exists,
+    data: () => (exists ? { ...data } : undefined)
+  };
+}
+
+function makeQuerySnap(docsArray) {
+  return {
+    docs: docsArray,
+    empty: docsArray.length === 0,
+    size: docsArray.length,
+    forEach: (cb) => docsArray.forEach(cb)
+  };
+}
+
+export class DocRef {
+  constructor(collectionName, id) {
+    this.collectionName = collectionName;
+    this.id = String(id || "");
+    this.table = getTableName(collectionName);
+  }
+}
+
+export class CollectionRef {
+  constructor(collectionName) {
+    this.collectionName = collectionName;
+    this.table = getTableName(collectionName);
+  }
+}
+
+export function doc(dbInstance, collectionName, id) {
+  if (!id) {
+    id = "doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7);
+  }
+  return new DocRef(collectionName, id);
+}
+
+export function collection(dbInstance, collectionName) {
+  return new CollectionRef(collectionName);
+}
+
+export class QueryBuilder {
+  constructor(target) {
+    if (target instanceof CollectionRef) {
+      this.collectionName = target.collectionName;
+      this.table = target.table;
+    } else if (target instanceof QueryBuilder) {
+      this.collectionName = target.collectionName;
+      this.table = target.table;
+      this.filters = [...target.filters];
+      this.orderBys = [...target.orderBys];
+      this.limitVal = target.limitVal;
+    }
+    this.filters = this.filters || [];
+    this.orderBys = this.orderBys || [];
+    this.limitVal = this.limitVal || null;
+  }
+}
+
+export function query(target, ...operations) {
+  const qb = new QueryBuilder(target);
+  for (const op of operations) {
+    if (!op) continue;
+    if (op.type === "where") qb.filters.push(op);
+    else if (op.type === "orderBy") qb.orderBys.push(op);
+    else if (op.type === "limit") qb.limitVal = op.value;
+  }
+  return qb;
+}
+
+export function where(field, op, value) {
+  return { type: "where", field: toSnake(field), op, value };
+}
+
+export function orderBy(field, direction = "asc") {
+  return { type: "orderBy", field: toSnake(field), ascending: String(direction).toLowerCase() !== "desc" };
+}
+
+export function limit(n) {
+  return { type: "limit", value: n };
+}
+
+export function startAfter(docSnap) {
+  return { type: "startAfter", doc: docSnap };
+}
+
+export async function getDoc(docRef) {
+  if (!docRef || !docRef.id) return makeDocSnap("", null);
+  const table = docRef.table;
+  try {
+    let req = supabase.from(table).select("*");
+    if (table === "phones") req = req.eq("phone", docRef.id);
+    else if (table === "usernames") req = req.eq("username", docRef.id);
+    else if (table === "user_limits") req = req.eq("uid", docRef.id);
+    else req = req.eq("id", docRef.id);
+
+    const { data, error } = await req.maybeSingle();
+    if (error || !data) return makeDocSnap(docRef.id, null);
+    return makeDocSnap(docRef.id, objectFromDb(data));
+  } catch (err) {
+    return makeDocSnap(docRef.id, null);
+  }
+}
+
+export async function getDocs(target) {
+  let table = "";
+  let filters = [];
+  let orderBys = [];
+  let limitVal = null;
+
+  if (target instanceof CollectionRef) {
+    table = target.table;
+  } else if (target instanceof QueryBuilder) {
+    table = target.table;
+    filters = target.filters;
+    orderBys = target.orderBys;
+    limitVal = target.limitVal;
+  } else {
+    return makeQuerySnap([]);
+  }
+
+  try {
+    let req = supabase.from(table).select("*");
+
+    for (const f of filters) {
+      if (f.op === "==") req = req.eq(f.field, f.value);
+      else if (f.op === "!=") req = req.neq(f.field, f.value);
+      else if (f.op === ">") req = req.gt(f.field, f.value);
+      else if (f.op === ">=") req = req.gte(f.field, f.value);
+      else if (f.op === "<") req = req.lt(f.field, f.value);
+      else if (f.op === "<=") req = req.lte(f.field, f.value);
+      else if (f.op === "array-contains") req = req.contains(f.field, [f.value]);
+    }
+
+    for (const o of orderBys) {
+      req = req.order(o.field, { ascending: o.ascending });
+    }
+
+    if (limitVal) {
+      req = req.limit(limitVal);
+    }
+
+    const { data, error } = await req;
+    if (error || !data) return makeQuerySnap([]);
+
+    const docs = data.map(item => {
+      const id = item.id || item.phone || item.username || item.uid;
+      return makeDocSnap(id, objectFromDb(item));
+    });
+    return makeQuerySnap(docs);
+  } catch (err) {
+    return makeQuerySnap([]);
+  }
+}
+
+export async function setDoc(docRef, data, options = {}) {
+  const row = objectToDb(data);
+  const table = docRef.table;
+
+  if (table === "phones") row.phone = docRef.id;
+  else if (table === "usernames") row.username = docRef.id;
+  else if (table === "user_limits") row.uid = docRef.id;
+  else row.id = docRef.id;
+
+  const { error } = await supabase.from(table).upsert(row);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+export async function addDoc(colRef, data) {
+  const row = objectToDb(data);
+  const table = colRef.table;
+  const newId = row.id || ("doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7));
+  row.id = newId;
+
+  const { error } = await supabase.from(table).insert(row);
+  if (error) throw new Error(error.message);
+  return new DocRef(colRef.collectionName, newId);
+}
+
+export async function updateDoc(docRef, data) {
+  const row = objectToDb(data);
+  const table = docRef.table;
+
+  // Handle increment fields:
+  for (const [k, v] of Object.entries(row)) {
+    if (v && v.__type === "increment") {
+      const { data: cur } = await supabase.from(table).select(k).eq("id", docRef.id).maybeSingle();
+      const curVal = cur && cur[k] != null ? Number(cur[k]) : 0;
+      row[k] = curVal + v.value;
+    }
+  }
+
+  let req = supabase.from(table).update(row);
+  if (table === "phones") req = req.eq("phone", docRef.id);
+  else if (table === "usernames") req = req.eq("username", docRef.id);
+  else if (table === "user_limits") req = req.eq("uid", docRef.id);
+  else req = req.eq("id", docRef.id);
+
+  const { error } = await req;
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+export async function deleteDoc(docRef) {
+  const table = docRef.table;
+  let req = supabase.from(table).delete();
+  if (table === "phones") req = req.eq("phone", docRef.id);
+  else if (table === "usernames") req = req.eq("username", docRef.id);
+  else if (table === "user_limits") req = req.eq("uid", docRef.id);
+  else req = req.eq("id", docRef.id);
+
+  const { error } = await req;
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+export function onSnapshot(target, onNext, onError) {
+  const isDoc = target instanceof DocRef;
+  const table = isDoc ? target.table : (target instanceof CollectionRef ? target.table : target.table);
+
+  const doFetch = async () => {
+    try {
+      if (isDoc) {
+        const snap = await getDoc(target);
+        onNext(snap);
+      } else {
+        const snap = await getDocs(target);
+        onNext(snap);
+      }
+    } catch (e) {
+      if (onError) onError(e);
+    }
+  };
+
+  doFetch();
+
+  const channelName = "rt_" + table + "_" + Math.random().toString(36).substr(2, 6);
+  const channel = supabase
+    .channel(channelName)
+    .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+      doFetch();
+    })
+    .subscribe();
+
+  return () => {
+    try { supabase.removeChannel(channel); } catch(e){}
+  };
+}
+
+export function increment(n) {
+  return { __type: "increment", value: n };
+}
+
+export async function runTransaction(dbInstance, updateFunction) {
+  const transaction = {
+    get: async (ref) => await getDoc(ref),
+    set: async (ref, data) => await setDoc(ref, data),
+    update: async (ref, data) => await updateDoc(ref, data),
+    delete: async (ref) => await deleteDoc(ref)
+  };
+  return await updateFunction(transaction);
+}
+
+export const auth = {
+  currentUser: null
+};
+
+const authListeners = new Set();
+
+function notifyAuthListeners() {
+  for (const cb of authListeners) {
+    try { cb(auth.currentUser); } catch(e){}
+  }
+}
+
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (session && session.user) {
+    const u = session.user;
+    auth.currentUser = {
+      uid: u.id,
+      email: u.email || "",
+      displayName: u.user_metadata?.full_name || u.user_metadata?.name || (u.email ? u.email.split("@")[0] : "مستخدم")
+    };
+  } else {
+    auth.currentUser = null;
+  }
+  notifyAuthListeners();
+});
+
+supabase.auth.getSession().then(({ data }) => {
+  if (data && data.session && data.session.user) {
+    const u = data.session.user;
+    auth.currentUser = {
+      uid: u.id,
+      email: u.email || "",
+      displayName: u.user_metadata?.full_name || u.user_metadata?.name || (u.email ? u.email.split("@")[0] : "مستخدم")
+    };
+    notifyAuthListeners();
+  }
+});
+
+export function onAuthStateChanged(authInstance, callback) {
+  authListeners.add(callback);
+  callback(auth.currentUser);
+  return () => authListeners.delete(callback);
+}
+
+export class GoogleAuthProvider {
+  setCustomParameters() {}
+}
+
+export async function signInWithPopup(authInstance, provider) {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin + window.location.pathname
+    }
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signOut(authInstance) {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+  auth.currentUser = null;
+  notifyAuthListeners();
+}
+
+export const db = {};
