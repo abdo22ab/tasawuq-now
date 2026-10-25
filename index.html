@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=12">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -204,6 +204,9 @@ OneSignalDeferred.push(async function(OneSignal){
 <select id="category" onchange="onCategoryChange()"></select></div>
 
 <div class="field hidden" id="brandField"><label id="brandLabel">الماركة</label><select id="brand"></select></div>
+
+<!-- حركات السوق المفتوح (المواصفات الذكية الديناميكية) -->
+<div id="dynamicSpecsContainer" class="dynamicSpecsContainer hidden"></div>
 <div class="field hidden" id="storeSubCategoryField">
   <label>قسم المنتج داخل المتجر (اختياري)</label>
   <input type="text" id="storeSubCategory" placeholder="مثال: برجر، ساندوتشات، كفرات، شواحن...">
@@ -776,7 +779,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=11"></script>
+<script type="module" src="app.js?v=12"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
