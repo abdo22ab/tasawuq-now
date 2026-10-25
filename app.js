@@ -4653,6 +4653,7 @@ window.openAccount=(skipHistory)=>{
     const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
     const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
     const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
+    const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
     accountOverlay.classList.remove("hidden");
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
