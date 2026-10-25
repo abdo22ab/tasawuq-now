@@ -186,7 +186,37 @@ html.dark-mode .adminRow{background:#131a28}
 <span class="badge" id="storesBadge" style="display:none">0</span>
 <div class="arrow">▼</div>
 </div>
-<div class="sectionBody"><div id="storesList"><div class="listEmpty">اضغط لتحميل</div></div></div>
+<div class="sectionBody">
+<button class="btn btn-warning" onclick="toggleAdminCreateStoreForm()" style="width:100%;margin-bottom:12px;font-weight:800;font-size:14px;padding:12px">➕ إنشاء صفحة متجر أو مطعم نيابة عن العميل</button>
+<div id="adminCreateStoreBox" style="display:none;background:#f8fafc;border:2px solid #0284c7;border-radius:12px;padding:14px;margin-bottom:14px">
+  <div style="font-weight:800;font-size:15px;color:#0369a1;margin-bottom:10px">👑 إنشاء صفحة جديدة واعتمادها فوراً نيابة عن العميل</div>
+  <div class="field"><label id="admStoreNameLabel">اسم المطعم / المتجر</label><input id="admStoreName" placeholder="مثال: مطعم الفصول الأربعة" maxlength="40"></div>
+  <div class="field"><label>النشاط / القسم</label>
+    <select id="admStoreCategory" onchange="onAdminStoreCatChange()">
+      <option value="المطاعم والمأكولات">المطاعم والمأكولات</option>
+      <option value="سيارات ومركبات">سيارات ومركبات</option>
+      <option value="موبايل وتابلت">موبايل وتابلت</option>
+      <option value="لابتوب وكمبيوتر">لابتوب وكمبيوتر</option>
+      <option value="عقارات للبيع">عقارات للبيع</option>
+      <option value="عقارات للإيجار">عقارات للإيجار</option>
+      <option value="أجهزة منزلية">أجهزة منزلية</option>
+      <option value="ألعاب وألعاب الفيديو">ألعاب وألعاب الفيديو</option>
+      <option value="ملابس رجالية">ملابس رجالية</option>
+      <option value="ملابس نسائية">ملابس نسائية</option>
+      <option value="الخدمات">الخدمات</option>
+      <option value="أخرى">أخرى</option>
+    </select>
+  </div>
+  <div class="field" id="admCallPhoneField"><label>📞 رقم الاتصال المباشر (لطلب الأوردر فقط عبر الهاتف)</label><input id="admCallPhone" placeholder="مثال: 0912345678" maxlength="15"></div>
+  <div class="field" id="admPhoneField"><label id="admPhoneLabel">🧾 رقم الواتساب (لاستلام واصل التحويل المصرفي فقط)</label><input id="admPhone" placeholder="مثال: 0923456789" maxlength="15"><div id="admPhoneHelp" style="font-size:11px;color:var(--muted);margin-top:4px">💡 طلب الأوردر بالهاتف فقط، هذا الرقم مخصص لإرسال واصل التحويل</div></div>
+  <div class="field"><label>📧 البريد الإلكتروني لصاحب المتجر (اختياري - اتركه فارغاً)</label><input id="admOwnerEmail" type="email" placeholder="owner@gmail.com (اتركه فارغاً إذا لم يكن لديه حساب)" dir="ltr" style="text-align:left"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 إذا العميل مش فاضي ومسجلش حساب، اتركه فارغاً</div></div>
+  <div class="field"><label>المدينة</label><input id="admStoreCity" placeholder="طرابلس، بنغازي، مصراتة..."></div>
+  <div class="field"><label>الوصف</label><textarea id="admStoreDesc" rows="3" placeholder="نبذة عن المتجر أو المطعم..."></textarea></div>
+  <div class="field"><label>🖼️ شعار المتجر (أو اختر صورة من جهازك)</label><input id="admStoreLogo" placeholder="https://i.ibb.co/... أو اختر ملف"><input type="file" id="admStoreLogoFile" accept="image/*" style="margin-top:4px" onchange="handleAdminStoreLogoFile(this)"></div>
+  <div class="field"><label>🖼️ غلاف المتجر (اختياري)</label><input id="admStoreCover" placeholder="https://i.ibb.co/... أو اختر ملف"><input type="file" id="admStoreCoverFile" accept="image/*" style="margin-top:4px" onchange="handleAdminStoreCoverFile(this)"></div>
+  <button class="btn btn-success" id="btnAdminSubmitStore" onclick="submitStoreFromAdmin()" style="width:100%;font-weight:800;font-size:14px;padding:12px;margin-top:8px">🚀 إنشاء واعتماد المتجر فوراً</button>
+</div>
+<div id="storesList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
 <div class="section" id="secExpired">
@@ -761,7 +791,7 @@ function renderStoresList(){
           <div style="font-size:12px;color:var(--muted);margin-top:2px">📦 ${count} منتج</div>
         </div>
       </div>
-      <div class="itMeta">☎️ ${esc(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}${s.rejectReason?"<br>📝 "+esc(s.rejectReason):""}</div>
+      <div class="itMeta">💬 واتساب: ${esc(s.phone||"")}${s.callPhone?" · 📞 هاتف: "+esc(s.callPhone):""}${s.ownerEmail?" · 📧 "+esc(s.ownerEmail):" · 📧 الإيميل: <i>(فارغ)</i>"} · ⏰ ${timeAgo(s.createdAt)}${s.rejectReason?"<br>📝 "+esc(s.rejectReason):""}</div>
       ${bankHtml}
       <div class="itActions" style="grid-template-columns:1fr 1fr">
         ${s.status!=="approved"?`<button class="approve" onclick="approveOneStore('${s.id}')">✅ موافقة</button>`:""}
@@ -769,6 +799,7 @@ function renderStoresList(){
         <button class="view" onclick="window.open('https://tasawuqnow.com/#store-${s.id}','_blank')">👁️ عرض</button>
         <button class="delete" onclick="deleteOneStore('${s.id}')">🗑️ حذف</button>
       </div>
+      <button class="btn btn-warning" style="width:100%;margin-top:6px;font-weight:700" onclick="window.open('https://tasawuqnow.com/#store-${s.id}','_blank')">➕ إضافة منتجات / وجبات لهذا المتجر</button>
       <div style="margin-top:6px">
         ${s.verified?`<button class="btn btn-warning" style="width:100%;padding:10px;font-size:12.5px;margin:0" onclick="unverifyStore('${s.id}')">❌ إلغاء التوثيق</button>`:`<button class="btn btn-primary" style="width:100%;padding:10px;font-size:12.5px;margin:0;background:#1877F2" onclick="verifyStore('${s.id}')">🔵 توثيق المتجر</button>`}
       </div>
@@ -811,6 +842,109 @@ window.unverifyStore=async(id)=>{
   if(!store)return;
   if(!confirm(`❌ إلغاء توثيق:\n${store.name}؟`))return;
   try{await updateDoc(doc(db,"stores",id),{verified:false,verifiedAt:null});alert("✅");}catch(e){alert("❌ خطأ: "+e.message);}
+};
+
+window.toggleAdminCreateStoreForm=()=>{
+  const b=document.getElementById("adminCreateStoreBox");
+  if(!b)return;
+  b.style.display=(b.style.display==="none"||!b.style.display)?"block":"none";
+};
+
+window.onAdminStoreCatChange=()=>{
+  const cat=document.getElementById("admStoreCategory")?.value;
+  const isRest=(cat==="المطاعم والمأكولات"||cat==="مطاعم ومأكولات");
+  const cField=document.getElementById("admCallPhoneField");
+  if(cField)cField.style.display=isRest?"block":"none";
+  const pLbl=document.getElementById("admPhoneLabel");
+  if(pLbl)pLbl.textContent=isRest?"🧾 رقم الواتساب (لاستلام واصل التحويل المصرفي فقط)":"📱 رقم الهاتف والواتساب (الاتصال والواتساب واحد)";
+  const pHelp=document.getElementById("admPhoneHelp");
+  if(pHelp)pHelp.textContent=isRest?"💡 طلب الأوردر يكون بالاتصال الهاتفي فقط. هذا الرقم مخصص لإرسال واصل التحويل المصرفي.":"💡 في المتاجر والشركات، رقم الواتساب والاتصال موحّد";
+  const nLbl=document.getElementById("admStoreNameLabel");
+  if(nLbl)nLbl.textContent=isRest?"اسم المطعم":"اسم المتجر / الشركة";
+};
+
+window.handleAdminStoreLogoFile=async(input)=>{
+  const f=input.files[0];
+  if(!f)return;
+  try{
+    input.disabled=true;
+    const url=await uploadToImgBB(f);
+    document.getElementById("admStoreLogo").value=url;
+    alert("✅ تم رفع الشعار بنجاح!");
+  }catch(e){alert("خطأ برفع الشعار: "+e.message);}
+  finally{input.disabled=false;}
+};
+
+window.handleAdminStoreCoverFile=async(input)=>{
+  const f=input.files[0];
+  if(!f)return;
+  try{
+    input.disabled=true;
+    const url=await uploadToImgBB(f);
+    document.getElementById("admStoreCover").value=url;
+    alert("✅ تم رفع الغلاف بنجاح!");
+  }catch(e){alert("خطأ برفع الغلاف: "+e.message);}
+  finally{input.disabled=false;}
+};
+
+window.submitStoreFromAdmin=async()=>{
+  const name=document.getElementById("admStoreName")?.value.trim();
+  const category=document.getElementById("admStoreCategory")?.value;
+  const isRest=(category==="المطاعم والمأكولات"||category==="مطاعم ومأكولات");
+  const callPhone=document.getElementById("admCallPhone")?.value.trim();
+  const phone=document.getElementById("admPhone")?.value.trim();
+  const email=document.getElementById("admOwnerEmail")?.value.trim();
+  const city=document.getElementById("admStoreCity")?.value.trim();
+  const description=document.getElementById("admStoreDesc")?.value.trim();
+  const logo=document.getElementById("admStoreLogo")?.value.trim();
+  const cover=document.getElementById("admStoreCover")?.value.trim();
+
+  if(!name){alert("⚠️ أدخل اسم المتجر / المطعم");return;}
+  if(!phone){alert(isRest?"⚠️ أدخل رقم الواتساب للمطعم":"⚠️ أدخل رقم الهاتف والواتساب");return;}
+  if(!city){alert("⚠️ أدخل المدينة");return;}
+
+  const btn=document.getElementById("btnAdminSubmitStore");
+  btn.disabled=true;btn.textContent="⏳ جاري الإنشاء...";
+  try{
+    const finalCallPhone = isRest ? (callPhone || phone) : phone;
+    const storeData={
+      ownerUid:"admin_client_"+Date.now(),
+      ownerUsername:"",
+      ownerMemberNo:null,
+      ownerEmail:email||"",
+      createdByAdmin:true,
+      name,
+      category,
+      city,
+      phone,
+      callPhone:finalCallPhone,
+      receiptPhone:"",
+      description:description||"",
+      logo:logo||"https://i.ibb.co/vzG7Z1C/store-placeholder.png",
+      cover:cover||"",
+      workingHours:{openTime:"09:00",closeTime:"23:00",alwaysOpen:false},
+      deliveryCompany:"",
+      bankInfo:{},
+      helpers:[],
+      status:"approved",
+      rejectReason:"",
+      createdAt:Date.now(),
+      approvedAt:Date.now(),
+      verified:true
+    };
+    const ref=await addDoc(collection(db,"stores"),storeData);
+    alert(`✅ تم إنشاء واعتماد "${name}" بنجاح!\n\nيمكنك الآن الضغط على زر "➕ إضافة منتجات / وجبات لهذا المتجر" لإضافة كل الأصناف والوجبات مباشرة.`);
+    document.getElementById("admStoreName").value="";
+    if(document.getElementById("admCallPhone"))document.getElementById("admCallPhone").value="";
+    document.getElementById("admPhone").value="";
+    document.getElementById("admOwnerEmail").value="";
+    document.getElementById("admStoreCity").value="";
+    document.getElementById("admStoreDesc").value="";
+    document.getElementById("admStoreLogo").value="";
+    document.getElementById("admStoreCover").value="";
+    document.getElementById("adminCreateStoreBox").style.display="none";
+  }catch(e){alert("❌ خطأ: "+e.message);}
+  finally{btn.disabled=false;btn.textContent="🚀 إنشاء واعتماد المتجر فوراً";}
 };
 
 /* ===== Expired ===== */
