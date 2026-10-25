@@ -22,7 +22,17 @@ const TABLE_MAP = {
   user_limits: "user_limits",
   reports: "reports",
   feedback: "feedback",
-  counters: "counters"
+  counters: "counters",
+  ratings: "ratings",
+  storeRatings: "store_ratings",
+  store_ratings: "store_ratings",
+  app_notifications: "app_notifications",
+  settings: "settings",
+  userPoints: "user_points",
+  user_points: "user_points",
+  userRedemptions: "user_redemptions",
+  user_redemptions: "user_redemptions",
+  user_follows: "user_follows"
 };
 
 function getTableName(col) {
@@ -191,6 +201,7 @@ export class DocRef {
     this.collectionName = collectionName;
     this.id = String(id || "");
     this.table = getTableName(collectionName);
+    this.customFields = null;
   }
 }
 
@@ -198,18 +209,49 @@ export class CollectionRef {
   constructor(collectionName) {
     this.collectionName = collectionName;
     this.table = getTableName(collectionName);
+    this.defaultFilter = null;
   }
 }
 
-export function doc(dbInstance, collectionName, id) {
-  if (!id) {
-    id = "doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7);
+export function doc(dbInstance, ...paths) {
+  if (paths.length === 1) {
+    return new DocRef(paths[0], "doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7));
   }
-  return new DocRef(collectionName, id);
+  if (paths.length === 2) {
+    return new DocRef(paths[0], paths[1] || ("doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7)));
+  }
+  if (paths.length >= 4 && paths[2] === "following") {
+    const followerUid = paths[1];
+    const sellerUid = paths[3];
+    const ref = new DocRef("user_follows", `${followerUid}_${sellerUid}`);
+    ref.customFields = { follower_uid: followerUid, seller_uid: sellerUid };
+    return ref;
+  }
+  if (paths.length >= 4 && paths[2] === "followers") {
+    const sellerUid = paths[1];
+    const followerUid = paths[3];
+    const ref = new DocRef("user_follows", `${followerUid}_${sellerUid}`);
+    ref.customFields = { follower_uid: followerUid, seller_uid: sellerUid };
+    return ref;
+  }
+  return new DocRef(paths[paths.length - 2], paths[paths.length - 1]);
 }
 
-export function collection(dbInstance, collectionName) {
-  return new CollectionRef(collectionName);
+export function collection(dbInstance, ...paths) {
+  if (paths.length <= 1) {
+    return new CollectionRef(paths[0] || "");
+  }
+  if (paths.length >= 3 && paths[2] === "following") {
+    const col = new CollectionRef("user_follows");
+    col.defaultFilter = { key: "follower_uid", op: "==", val: paths[1] };
+    return col;
+  }
+  if (paths.length >= 3 && paths[2] === "followers") {
+    const col = new CollectionRef("user_follows");
+    col.defaultFilter = { key: "seller_uid", op: "==", val: paths[1] };
+    return col;
+  }
+  return new CollectionRef(paths[paths.length - 1]);
 }
 
 export class QueryBuilder {
@@ -283,6 +325,9 @@ export async function getDocs(target) {
 
   if (target instanceof CollectionRef) {
     table = target.table;
+    if (target.defaultFilter) {
+      filters.push({ type: "where", field: target.defaultFilter.key, op: target.defaultFilter.op, value: target.defaultFilter.val });
+    }
   } else if (target instanceof QueryBuilder) {
     table = target.table;
     filters = target.filters;
@@ -334,6 +379,10 @@ export async function setDoc(docRef, data, options = {}) {
   else if (table === "usernames") row.username = docRef.id;
   else if (table === "user_limits") row.uid = docRef.id;
   else row.id = docRef.id;
+
+  if (docRef.customFields) {
+    Object.assign(row, docRef.customFields);
+  }
 
   const { error } = await supabase.from(table).upsert(row);
   if (error) throw new Error(error.message);
@@ -435,70 +484,26 @@ export async function runTransaction(dbInstance, updateFunction) {
   return await updateFunction(transaction);
 }
 
-export const auth = {
-  currentUser: null
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",
+  authDomain: "tasawuq-now-eb955.firebaseapp.com",
+  projectId: "tasawuq-now-eb955",
+  storageBucket: "tasawuq-now-eb955.firebasestorage.app",
+  messagingSenderId: "786110830242",
+  appId: "1:786110830242:web:15a4752cd9b5db3f0129fb"
 };
 
-const authListeners = new Set();
-
-function notifyAuthListeners() {
-  for (const cb of authListeners) {
-    try { cb(auth.currentUser); } catch(e){}
-  }
-}
-
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (session && session.user) {
-    const u = session.user;
-    auth.currentUser = {
-      uid: u.id,
-      email: u.email || "",
-      displayName: u.user_metadata?.full_name || u.user_metadata?.name || (u.email ? u.email.split("@")[0] : "مستخدم")
-    };
-  } else {
-    auth.currentUser = null;
-  }
-  notifyAuthListeners();
-});
-
-supabase.auth.getSession().then(({ data }) => {
-  if (data && data.session && data.session.user) {
-    const u = data.session.user;
-    auth.currentUser = {
-      uid: u.id,
-      email: u.email || "",
-      displayName: u.user_metadata?.full_name || u.user_metadata?.name || (u.email ? u.email.split("@")[0] : "مستخدم")
-    };
-    notifyAuthListeners();
-  }
-});
-
-export function onAuthStateChanged(authInstance, callback) {
-  authListeners.add(callback);
-  callback(auth.currentUser);
-  return () => authListeners.delete(callback);
-}
-
-export class GoogleAuthProvider {
-  setCustomParameters() {}
-}
-
-export async function signInWithPopup(authInstance, provider) {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin + window.location.pathname
-    }
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function signOut(authInstance) {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-  auth.currentUser = null;
-  notifyAuthListeners();
-}
+const fbApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const auth = getAuth(fbApp);
+export { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup };
 
 export const db = {};
