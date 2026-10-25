@@ -1337,6 +1337,8 @@ if (typeof window !== 'undefined') {
 
 function showCategoriesScreenDirect(){
   showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
+  const cr=document.getElementById("catsRow");
+  if(cr) cr.classList.remove("hidden");
   categoriesScreen.classList.remove("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
@@ -1361,6 +1363,8 @@ function openCategoryDirect(cat){
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("scroll");
+  const cr=document.getElementById("catsRow");
+  if(cr) cr.classList.toggle("hidden", cat!=="الكل");
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
   renderSubCats();renderPosts();updateCartUI();window.scrollTo(0,0);
   hideFloatingButtons();
@@ -4472,11 +4476,11 @@ window.scrollTo(0,0);
 /* ============================================
    شاشات: إعلاناتي + المفضلة + متابَعين
    ============================================ */
-function showMyPostsDirect(){if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("mine");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
+function showMyPostsDirect(){if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;const cr=document.getElementById("catsRow");if(cr)cr.classList.add("hidden");renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("mine");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
 window.showMyPostsDirect=showMyPostsDirect;
 window.showMyPosts=(skipHistory)=>{showMyPostsDirect();if(!skipHistory&&auth.currentUser)pushNavState({screen:'mine'},'#my-posts');};
 
-function showFavoritesDirect(){if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("fav");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
+function showFavoritesDirect(){if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;const cr=document.getElementById("catsRow");if(cr)cr.classList.add("hidden");renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("fav");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
 window.showFavoritesDirect=showFavoritesDirect;
 window.showFavorites=(skipHistory)=>{showFavoritesDirect();if(!skipHistory)pushNavState({screen:'fav'},'#favorites');};
 
@@ -4601,7 +4605,15 @@ window.onCategoryChange=()=>{
 setTimeout(updateClearBtn,500);
 setTimeout(updateCompareUI,300);
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
-window.filterCategory=(cat)=>{currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")&&!b.classList.contains("restaurantChip")));renderSubCats();renderPosts();};
+window.filterCategory=(cat)=>{
+  currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;
+  const titleEl=document.getElementById("categoryTitle");
+  if(titleEl)titleEl.textContent=cat==="الكل"?"كل الإعلانات":cat;
+  const cr=document.getElementById("catsRow");
+  if(cr) cr.classList.toggle("hidden", cat!=="الكل");
+  document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")&&!b.classList.contains("restaurantChip")));
+  renderSubCats();renderPosts();
+};
 function renderSubCats(){
   if(!subCatsRow)return;
   const subs=SUB_CATEGORIES[currentCategory];
