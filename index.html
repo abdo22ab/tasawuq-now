@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=20">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -551,7 +551,7 @@ OneSignalDeferred.push(async function(OneSignal){
 </div>
 </div>
 
-<div id="cartOverlay" class="overlay hidden"><div class="sheet">
+<div id="cartOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh;overflow-y:auto">
 <h3 style="text-align:center">🛒 سلتك</h3>
 <div class="cartStoreLine" id="cartStoreLine" style="display:none">🏪 <span id="cartStoreName"></span></div>
 <div id="cartItemsBox" class="cartSheetBody"></div>
@@ -559,11 +559,11 @@ OneSignalDeferred.push(async function(OneSignal){
 <div><div>💰 المجموع:</div><div class="cartItemsCount" id="cartItemsCount"></div></div>
 <div class="totalPrice" id="cartTotal">0 د.ل</div>
 </div>
-<div style="display:grid;gap:8px;margin-top:12px">
+<div style="display:grid;gap:8px;margin-top:12px;padding-bottom:12px">
 <button class="btnWhatsBig hidden" id="cartSendBtn" onclick="sendCartToWhats()">📱 إرسال الطلب عبر واتساب</button>
 <button class="btnCallBig hidden" id="cartCallBtn" onclick="sendCartToCall()">📞 اتصال هاتفي للطلب</button>
 <button class="btnClearCart hidden" id="cartClearBtn" onclick="clearCart()">🗑️ إفراغ السلة</button>
-<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+<button class="btnGhost" style="background:transparent;color:var(--muted);margin-top:2px" onclick="closeOverlay()">إغلاق</button>
 </div>
 </div></div>
 
@@ -789,7 +789,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=19"></script>
+<script type="module" src="app.js?v=20"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
