@@ -61,8 +61,12 @@ const PERFUME_TYPES=["عطور رجالية","عطور نسائية","عطور �
 const SUB_CATEGORIES={
   "سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
   "دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},
-  "موبايل وتابلت":{title:"📱 اختر الماركة:",items:PHONE_BRANDS},
-  "لابتوب وكمبيوتر":{title:"💻 اختر الماركة:",items:COMPUTER_BRANDS},
+  "موبايل وتابلت":{title:"📱 النوع والماركة:",items:["📱 هواتف ذكية","📟 أجهزة تابلت وآيباد","⌚ ساعات وإكسسوارات",...PHONE_BRANDS]},
+  "لابتوب وكمبيوتر":{title:"💻 النوع والماركة:",items:["💻 لابتوب محمول","🖥️ كمبيوتر مكتبي (PC)","🎮 تجميعات ألعاب",...COMPUTER_BRANDS]},
+  "عقارات للبيع":{title:"🏠 نوع العقار:",items:["شقق للبيع","فلل ومنازل","أراضي للبيع","محلات ومعارض","مكاتب إدارية","استراحات ومزارع","عمارات كاملة"]},
+  "عقارات للإيجار":{title:"🔑 نوع العقار:",items:["شقق للإيجار","فلل للإيجار","محلات تجارية","مكاتب إدارية","استراحات للإيجار"]},
+  "أجهزة منزلية":{title:"🧊 نوع الجهاز:",items:["ثلاجات ومجمدات","غسالات ونشافات","أفران وميكروويف","شاشات وتلفزيونات","مكيفات وتدفئة","أجهزة ومطابخ"]},
+  "ألعاب وألعاب الفيديو":{title:"🎮 المنصة والنوع:",items:["PlayStation 5","PlayStation 4","Xbox Series X/S","Nintendo Switch","أشرطة وألعاب","إكسسوارات ودراعات"]},
   "الحيوانات والطيور":{title:"🐾 اختر النوع:",items:ANIMAL_TYPES},
   "العطور":{title:"🌸 اختر النوع:",items:PERFUME_TYPES}
 };
@@ -2278,6 +2282,374 @@ function startPostsListener(){
 function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
 
 /* ============================================
+   حركات ومواصفات السوق المفتوح الذكية (OpenSooq Smart Specs)
+   ============================================ */
+
+let currentFormSpecsState = {};
+window.currentFormSpecsState = currentFormSpecsState;
+
+window.selectSpecChip = (field, val, btn) => {
+  const group = btn.closest('.specChipsRow');
+  if (!group) return;
+  const isAlreadyActive = btn.classList.contains('active');
+  group.querySelectorAll('.specFormChip').forEach(c => c.classList.remove('active'));
+  if (!isAlreadyActive) {
+    btn.classList.add('active');
+    currentFormSpecsState[field] = val;
+  } else {
+    delete currentFormSpecsState[field];
+  }
+};
+
+window.switchSpecsSubType = (subType) => {
+  currentFormSpecsState.subType = subType;
+  renderDynamicSpecsForm("موبايل وتابلت", currentFormSpecsState);
+};
+
+function renderSpecChipGroup(field, label, options, selectedVal) {
+  return `
+    <div class="specFormGroup">
+      <label>${label}</label>
+      <div class="specChipsRow" data-field="${field}">
+        ${options.map(opt => {
+          const isActive = (selectedVal === opt);
+          return `<button type="button" class="specFormChip ${isActive ? 'active' : ''}" onclick="selectSpecChip('${field}', '${opt.replace(/'/g, "\\'")}', this)">${opt}</button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderYearSelect(selectedYear) {
+  const years = [];
+  for (let y = 2026; y >= 1995; y--) years.push(String(y));
+  years.push("قبل 1995");
+  return `
+    <div class="specFormGroup">
+      <label>📅 سنة الصنع (الموديل)</label>
+      <div class="specInputWrap">
+        <select id="spec_year" onchange="currentFormSpecsState.year = this.value">
+          <option value="">اختر سنة الموديل</option>
+          ${years.map(y => `<option value="${y}" ${selectedYear === y ? 'selected' : ''}>${y}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+  `;
+}
+
+function renderDynamicSpecsForm(category, existingSpecs) {
+  const container = document.getElementById("dynamicSpecsContainer");
+  if (!container) return;
+  
+  if (existingSpecs) {
+    currentFormSpecsState = { ...existingSpecs, _category: category };
+  } else if (!currentFormSpecsState || currentFormSpecsState._category !== category) {
+    currentFormSpecsState = { _category: category };
+  }
+  
+  const s = currentFormSpecsState;
+  
+  // 1. موبايل وتابلت
+  if (category === "موبايل وتابلت") {
+    container.classList.remove("hidden");
+    const subType = s.subType || "هاتف";
+    s.subType = subType;
+    
+    let subHtml = "";
+    if (subType === "هاتف") {
+      subHtml = `
+        ${renderSpecChipGroup("storage", "💾 المساحة التخزينية", ["32 جيجا", "64 جيجا", "128 جيجا", "256 جيجا", "512 جيجا", "1 تيرابايت"], s.storage)}
+        ${renderSpecChipGroup("condition", "✨ حالة الجهاز", ["جديد بالعلبة", "كسر زيرو (كالجديد)", "مستعمل ممتاز", "مستعمل جيد", "يحتاج صيانة"], s.condition)}
+        ${renderSpecChipGroup("battery", "🔋 نسبة صحة البطارية", ["100%", "95-99%", "90-94%", "85-89%", "80-84%", "أقل من 80%"], s.battery)}
+        ${renderSpecChipGroup("ram", "🧠 الرام (RAM)", ["4 جيجا", "6 جيجا", "8 جيجا", "12 جيجا", "16 جيجا"], s.ram)}
+        ${renderSpecChipGroup("sim", "📶 شريحة الاتصال (SIM)", ["شريحة واحدة", "شريحتين (Dual SIM)", "شريحة إلكترونية eSIM"], s.sim)}
+        ${renderSpecChipGroup("accessories", "📦 الملحقات المرفقة", ["العلبة كاملة مع الشاحن", "العلبة فقط", "شاحن فقط", "الجهاز فقط"], s.accessories)}
+      `;
+    } else if (subType === "تابلت") {
+      subHtml = `
+        ${renderSpecChipGroup("conn", "📶 نوع الاتصال والشبكة", ["واي فاي فقط (Wi-Fi)", "شريحة + واي فاي (Cellular + Wi-Fi)"], s.conn)}
+        ${renderSpecChipGroup("storage", "💾 المساحة التخزينية", ["32 جيجا", "64 جيجا", "128 جيجا", "256 جيجا", "512 جيجا", "1 تيرابايت"], s.storage)}
+        ${renderSpecChipGroup("condition", "✨ حالة التابلت", ["جديد بالعلبة", "كسر زيرو (كالجديد)", "مستعمل ممتاز", "مستعمل جيد"], s.condition)}
+        ${renderSpecChipGroup("screenSize", "📺 مقاس الشاشة", ["8 بوصة وأقل", "10 إلى 11 بوصة", "12 بوصة وأكثر"], s.screenSize)}
+        ${renderSpecChipGroup("accessories", "📦 الملحقات", ["مع قلم أصلي (Stylus)", "مع كيبورد أصلي", "العلبة كاملة والشاحن", "الجهاز فقط"], s.accessories)}
+      `;
+    } else {
+      subHtml = `
+        ${renderSpecChipGroup("itemType", "⌚ نوع الملحق أو الإكسسوار", ["ساعة ذكية", "سماعات لاسلكية", "شاحن وبطارية باور بنك", "كفر وحماية شاشة", "أخرى"], s.itemType)}
+        ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد بالعلبة", "كسر زيرو", "مستعمل ممتاز"], s.condition)}
+      `;
+    }
+    
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">📱 مواصفات وتفاصيل الجهاز</span>
+      </div>
+      <div class="specsSegmented">
+        <button type="button" class="specSegBtn ${subType === 'هاتف' ? 'active' : ''}" onclick="switchSpecsSubType('هاتف')">📱 هواتف ذكية (موبايل)</button>
+        <button type="button" class="specSegBtn ${subType === 'تابلت' ? 'active' : ''}" onclick="switchSpecsSubType('تابلت')">📟 أجهزة تابلت وآيباد</button>
+        <button type="button" class="specSegBtn ${subType === 'إكسسوارات' ? 'active' : ''}" onclick="switchSpecsSubType('إكسسوارات')">⌚ ساعات وإكسسوارات</button>
+      </div>
+      <div id="subTypeFieldsContainer">
+        ${subHtml}
+      </div>
+    `;
+    return;
+  }
+  
+  // 2. سيارات ومركبات
+  if (category === "سيارات ومركبات") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">🚗 مواصفات وبيانات السيارة</span>
+      </div>
+      ${renderYearSelect(s.year)}
+      <div class="specFormGroup">
+        <label>🛣️ العداد / المسافة المقطوعة (كم)</label>
+        <div class="specInputWrap" style="margin-bottom:6px">
+          <input type="text" id="spec_odometer_input" placeholder="مثال: 75,000 كم" value="${s.odometer || ''}" oninput="currentFormSpecsState.odometer = this.value">
+        </div>
+        <div class="specChipsRow" data-field="odometer">
+          ${["أصفار (زيرو)", "أقل من 30,000 كم", "30,000 - 60,000 كم", "60,000 - 100,000 كم", "100,000 - 150,000 كم", "150,000 - 200,000 كم", "أكثر من 200,000 كم"].map(opt => `
+            <button type="button" class="specFormChip ${s.odometer === opt ? 'active' : ''}" onclick="document.getElementById('spec_odometer_input').value='${opt}'; selectSpecChip('odometer', '${opt}', this)">${opt}</button>
+          `).join('')}
+        </div>
+      </div>
+      ${renderSpecChipGroup("transmission", "⚙️ ناقل الحركة (الكمبيو / الجير)", ["⚙️ أوتوماتيك", "🕹️ عادي / مانيوال"], s.transmission)}
+      ${renderSpecChipGroup("fuel", "⛽ نوع الوقود", ["⛽ بنزين", "🛢️ ديزل / نافطة", "🔋 هايبرد (هجين)", "⚡ كهرباء بالكامل"], s.fuel)}
+      ${renderSpecChipGroup("bodyCondition", "🎨 حالة الهيكل والطلاء", ["✨ فابريكا خالي من الحوادث", "🎨 طلاء جزئي نظافة", "🔨 به صدمات خفيفة", "⚠️ يحتاج صيانة"], s.bodyCondition)}
+      ${renderSpecChipGroup("origin", "🌐 المواصفات الإقليمية / الوارد", ["كندا / أمريكا", "أوروبا / ألمانيا", "الخليج", "وكالة محلي (ليبيا)", "كوري"], s.origin)}
+    `;
+    return;
+  }
+  
+  // 3. دراجات نارية
+  if (category === "دراجات نارية") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">🏍️ مواصفات الدراجة النارية</span>
+      </div>
+      ${renderYearSelect(s.year)}
+      ${renderSpecChipGroup("cc", "⚡ سعة المحرك (CC)", ["50cc وأقل", "125-150cc", "200-250cc", "400-500cc", "600-750cc", "1000cc فأكثر"], s.cc)}
+      ${renderSpecChipGroup("odometer", "🛣️ العداد (كم)", ["أصفار (زيرو)", "أقل من 10,000 كم", "10,000 - 30,000 كم", "أكثر من 30,000 كم"], s.odometer)}
+      ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد زيرو", "كسر زيرو", "مستعمل ممتاز", "مستعمل"], s.condition)}
+    `;
+    return;
+  }
+  
+  // 4. عقارات للبيع & عقارات للإيجار
+  if (category === "عقارات للبيع" || category === "عقارات للإيجار") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">🏠 مواصفات وتفاصيل العقار</span>
+      </div>
+      ${renderSpecChipGroup("propertyType", "🏢 نوع العقار", ["شقة", "فيلا / منزل مستقل", "أرض", "محل / معرض تجاري", "مكتب إداري", "استراحة / مزرعة", "عمارة كاملة"], s.propertyType)}
+      <div class="specFormGroup">
+        <label>📐 المساحة الإجمالية (م²)</label>
+        <div class="specInputWrap">
+          <input type="number" id="spec_area" placeholder="مثال: 150" value="${s.area || ''}" oninput="currentFormSpecsState.area = this.value">
+        </div>
+      </div>
+      ${renderSpecChipGroup("rooms", "🛏️ عدد الغرف", ["1", "2", "3", "4", "5", "6+ غرف"], s.rooms)}
+      ${renderSpecChipGroup("baths", "🚿 دورات المياه", ["1", "2", "3", "4+"], s.baths)}
+      ${renderSpecChipGroup("floor", "🏢 الطابق / الدور", ["أرضي", "طابق أول", "طابق ثاني", "طابق ثالث", "طابق 4 فأعلى", "روف / سطح"], s.floor)}
+      ${renderSpecChipGroup("furnished", "🛋️ حالة الفرش", ["مفروش بالكامل", "نصف مفروش", "غير مفروش (فارغ)"], s.furnished)}
+      ${renderSpecChipGroup("finishing", "💎 التشطيب", ["سوبر ديلوكس / VIP", "تشطيب ممتاز", "عادي", "عظم / غير مشطب"], s.finishing)}
+    `;
+    return;
+  }
+  
+  // 5. لابتوب وكمبيوتر
+  if (category === "لابتوب وكمبيوتر") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">💻 مواصفات الحاسوب والجهاز</span>
+      </div>
+      ${renderSpecChipGroup("deviceType", "💻 نوع الجهاز", ["لابتوب محمول", "كمبيوتر مكتبي (PC)", "تجميعة ألعاب (Gaming)", "شاشة وملحقات"], s.deviceType)}
+      ${renderSpecChipGroup("cpu", "⚡ المعالج (CPU)", ["Core i9", "Core i7", "Core i5", "Core i3", "AMD Ryzen 7/9", "AMD Ryzen 5", "Apple M1/M2/M3/M4"], s.cpu)}
+      ${renderSpecChipGroup("ram", "🧠 الرام (RAM)", ["8 جيجا", "16 جيجا", "32 جيجا", "64 جيجا"], s.ram)}
+      ${renderSpecChipGroup("storage", "⚡ سعة ونوع التخزين", ["256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "HDD عادي"], s.storage)}
+      ${renderSpecChipGroup("gpu", "🎮 كرت الشاشة", ["مدمج (Internal)", "NVIDIA RTX", "NVIDIA GTX", "AMD Radeon"], s.gpu)}
+      ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد بالعلبة", "كسر زيرو (كالجديد)", "مستعمل ممتاز", "مستعمل جيد"], s.condition)}
+    `;
+    return;
+  }
+  
+  // 6. أجهزة منزلية
+  if (category === "أجهزة منزلية") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">🧊 نوع وحالة الجهاز</span>
+      </div>
+      ${renderSpecChipGroup("applianceType", "🧊 نوع الجهاز", ["ثلاجات ومجمدات", "غسالات ونشافات", "أفران وغاز وميكروويف", "شاشات وتلفزيونات", "مكيفات وتدفئة", "أجهزة ومطابخ"], s.applianceType)}
+      ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد بالكرتونة", "مستعمل كالجديد", "مستعمل شغال", "يحتاج صيانة"], s.condition)}
+    `;
+    return;
+  }
+  
+  // 7. ألعاب وألعاب الفيديو
+  if (category === "ألعاب وألعاب الفيديو") {
+    container.classList.remove("hidden");
+    container.innerHTML = `
+      <div class="specsHeader">
+        <span class="specsHeaderTitle">🎮 المنصة وحالة الجهاز</span>
+      </div>
+      ${renderSpecChipGroup("console", "🎮 المنصة / الجهاز", ["PlayStation 5 (PS5)", "PlayStation 4 (PS4)", "Xbox Series X/S", "Nintendo Switch", "أشرطة وأسطوانات ألعاب", "دراعات وملحقات"], s.console)}
+      ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد بالعلبة", "كسر زيرو", "مستعمل ممتاز"], s.condition)}
+    `;
+    return;
+  }
+  
+  // أي تصنيف آخر
+  container.classList.add("hidden");
+  container.innerHTML = "";
+}
+
+function collectDynamicSpecs(category) {
+  const container = document.getElementById("dynamicSpecsContainer");
+  if (!container || container.classList.contains("hidden")) return {};
+  
+  const result = { ...currentFormSpecsState };
+  delete result._category;
+  
+  const odoInput = document.getElementById("spec_odometer_input");
+  if (odoInput && odoInput.value.trim()) result.odometer = odoInput.value.trim();
+  
+  const areaInput = document.getElementById("spec_area");
+  if (areaInput && areaInput.value.trim()) result.area = areaInput.value.trim();
+  
+  const yearSelect = document.getElementById("spec_year");
+  if (yearSelect && yearSelect.value) result.year = yearSelect.value;
+  
+  return result;
+}
+
+function renderCardSpecs(p) {
+  if (!p.specs || typeof p.specs !== "object") return "";
+  const s = p.specs;
+  const pills = [];
+  
+  if (s.subType === "هاتف") {
+    if (s.storage) pills.push(`💾 ${escapeHtml(s.storage)}`);
+    if (s.battery) pills.push(`🔋 ${escapeHtml(s.battery)}`);
+    if (s.condition && !s.condition.includes("يحتاج")) pills.push(`✨ ${escapeHtml(s.condition.split(' ')[0])}`);
+    if (s.ram) pills.push(`🧠 ${escapeHtml(s.ram)}`);
+  } else if (s.subType === "تابلت") {
+    pills.push(`📟 تابلت`);
+    if (s.conn) pills.push(`📶 ${escapeHtml(s.conn.split(' ')[0])}`);
+    if (s.storage) pills.push(`💾 ${escapeHtml(s.storage)}`);
+    if (s.screenSize) pills.push(`📺 ${escapeHtml(s.screenSize)}`);
+  } else if (s.subType === "إكسسوارات") {
+    if (s.itemType) pills.push(`⌚ ${escapeHtml(s.itemType)}`);
+    if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
+  }
+  
+  if (p.category === "سيارات ومركبات") {
+    if (s.year) pills.push(`📅 ${escapeHtml(s.year)}`);
+    if (s.odometer) pills.push(`🛣️ ${escapeHtml(s.odometer.replace(/أصفار \(زيرو\)/, 'زيرو'))}`);
+    if (s.transmission) pills.push(`${escapeHtml(s.transmission.split(' ')[0])}`);
+    if (s.fuel) pills.push(`${escapeHtml(s.fuel.split(' ')[0])}`);
+  }
+  
+  if (p.category === "دراجات نارية") {
+    if (s.cc) pills.push(`🏍️ ${escapeHtml(s.cc)}`);
+    if (s.year) pills.push(`📅 ${escapeHtml(s.year)}`);
+    if (s.odometer) pills.push(`🛣️ ${escapeHtml(s.odometer)}`);
+  }
+  
+  if (p.category === "عقارات للبيع" || p.category === "عقارات للإيجار") {
+    if (s.propertyType) pills.push(`${escapeHtml(s.propertyType)}`);
+    if (s.area) pills.push(`📐 ${escapeHtml(s.area)} م²`);
+    if (s.rooms) pills.push(`🛏️ ${escapeHtml(s.rooms)} غرف`);
+    if (s.furnished) pills.push(`${escapeHtml(s.furnished.split(' ')[0])}`);
+  }
+  
+  if (p.category === "لابتوب وكمبيوتر") {
+    if (s.cpu) pills.push(`💻 ${escapeHtml(s.cpu)}`);
+    if (s.ram) pills.push(`🧠 ${escapeHtml(s.ram)}`);
+    if (s.storage) pills.push(`⚡ ${escapeHtml(s.storage)}`);
+  }
+  
+  if (p.category === "أجهزة منزلية") {
+    if (s.applianceType) pills.push(`🧊 ${escapeHtml(s.applianceType)}`);
+    if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
+  }
+  
+  if (p.category === "ألعاب وألعاب الفيديو") {
+    if (s.console) pills.push(`🎮 ${escapeHtml(s.console)}`);
+    if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
+  }
+  
+  if (pills.length === 0) return "";
+  return `<div class="specsRow">${pills.slice(0, 4).map(pill => `<span class="specPill">${pill}</span>`).join('')}</div>`;
+}
+
+function renderDetailsSpecs(p) {
+  if (!p.specs || typeof p.specs !== "object" || Object.keys(p.specs).length === 0) return "";
+  const s = p.specs;
+  const items = [];
+  
+  const labelsMap = {
+    subType: "القسم الفرعي",
+    storage: "المساحة التخزينية",
+    condition: "الحالة العامة",
+    battery: "صحة البطارية",
+    ram: "الرام (RAM)",
+    sim: "شريحة الاتصال",
+    accessories: "الملحقات المرفقة",
+    conn: "نوع الاتصال والشبكة",
+    screenSize: "حجم الشاشة",
+    itemType: "نوع الملحق",
+    year: "سنة الصنع (الموديل)",
+    odometer: "العداد / الممشى",
+    transmission: "ناقل الحركة",
+    fuel: "نوع الوقود",
+    bodyCondition: "حالة الهيكل والطلاء",
+    origin: "المواصفات الإقليمية",
+    cc: "سعة المحرك (CC)",
+    propertyType: "نوع العقار",
+    area: "المساحة الإجمالية",
+    rooms: "عدد الغرف",
+    baths: "دورات المياه",
+    floor: "الطابق / الدور",
+    furnished: "الفرش والأثاث",
+    finishing: "نوع التشطيب",
+    deviceType: "نوع الجهاز",
+    cpu: "المعالج (CPU)",
+    gpu: "كرت الشاشة",
+    applianceType: "نوع الجهاز",
+    console: "المنصة / الجهاز"
+  };
+  
+  for (const [key, val] of Object.entries(s)) {
+    if (!val || key === "subCategory" || key === "_category") continue;
+    const label = labelsMap[key] || key;
+    let displayVal = String(val);
+    if (key === "area") displayVal += " م²";
+    items.push(`
+      <div class="specGridItem">
+        <span class="specLabel">${escapeHtml(label)}</span>
+        <span class="specValue">${escapeHtml(displayVal)}</span>
+      </div>
+    `);
+  }
+  
+  if (items.length === 0) return "";
+  return `
+    <div class="specsDetailsBox">
+      <div class="specsDetailsTitle"><i data-lucide="layers" style="width:16px;height:16px"></i> المواصفات والتفاصيل</div>
+      <div class="specsGrid">
+        ${items.join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================
    عرض الإعلانات (renderPosts) — مع الصفحة الفارغة الآمنة
    ============================================ */
 function renderPosts(){
@@ -2325,7 +2697,27 @@ let list=allPosts.filter(p=>{
   if(!currentStoreFilter && currentCategory!=="الكل"){
     if(p.category!==currentCategory)return false;
   }
-  if(currentSubCategory!=="الكل" && p.brand!==currentSubCategory)return false;
+  if(currentSubCategory!=="الكل"){
+    const sc = currentSubCategory.toLowerCase();
+    const matchBrand = (p.brand||"").toLowerCase() === sc;
+    const matchSubCat = (p.subCategory||"").toLowerCase().includes(sc) || sc.includes((p.subCategory||"").toLowerCase());
+    const s = p.specs || {};
+    const matchSpecs = (
+      (s.subType && (s.subType.toLowerCase().includes(sc) || sc.includes(s.subType.toLowerCase()))) ||
+      (s.propertyType && (s.propertyType.toLowerCase().includes(sc) || sc.includes(s.propertyType.toLowerCase()))) ||
+      (s.deviceType && (s.deviceType.toLowerCase().includes(sc) || sc.includes(s.deviceType.toLowerCase()))) ||
+      (s.applianceType && (s.applianceType.toLowerCase().includes(sc) || sc.includes(s.applianceType.toLowerCase()))) ||
+      (s.console && (s.console.toLowerCase().includes(sc) || sc.includes(s.console.toLowerCase())))
+    );
+    const matchSemantic = 
+      (sc.includes("هواتف") && (s.subType === "هاتف" || (p.title||"").toLowerCase().includes("ايفون") || (p.title||"").toLowerCase().includes("سامسونج") || (p.title||"").toLowerCase().includes("شاومي") || (p.title||"").toLowerCase().includes("تلفون") || (p.title||"").toLowerCase().includes("هاتف"))) ||
+      (sc.includes("تابلت") && (s.subType === "تابلت" || (p.title||"").toLowerCase().includes("تابلت") || (p.title||"").toLowerCase().includes("ايباد") || (p.title||"").toLowerCase().includes("آيباد") || (p.title||"").toLowerCase().includes("لوحي"))) ||
+      (sc.includes("ساعات") && (s.subType === "إكسسوارات" || (p.title||"").toLowerCase().includes("ساعة") || (p.title||"").toLowerCase().includes("سماعة"))) ||
+      (sc.includes("شقق") && (s.propertyType?.includes("شقة") || (p.title||"").toLowerCase().includes("شقة") || (p.title||"").toLowerCase().includes("شقق"))) ||
+      (sc.includes("فلل") && (s.propertyType?.includes("فيلا") || (p.title||"").toLowerCase().includes("فيلا") || (p.title||"").toLowerCase().includes("منزل"))) ||
+      (sc.includes("أراضي") && (s.propertyType?.includes("أرض") || (p.title||"").toLowerCase().includes("أرض")));
+    if(!matchBrand && !matchSubCat && !matchSpecs && !matchSemantic) return false;
+  }
   if(currentCity!=="الكل" && p.city!==currentCity)return false;
   if(showOnlyMine && p.uid!==me?.uid)return false;
   if(showOnlyFavorites && !favs.includes(p.id))return false;
@@ -2439,7 +2831,7 @@ if(p.priceType==="contact"){
 }else{
   priceHTML=`<div class="price">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadge}</div>`;
 }
-return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
+return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
 
@@ -2527,8 +2919,9 @@ if(p.priceType==="contact"){
   priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
 }
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
+if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
 if(!skipHistory) pushNavState({ screen: 'post', id: id }, '#post-' + id);
 setTimeout(()=>{
@@ -2544,8 +2937,15 @@ setTimeout(()=>{
   /* ============================================
    حفظ الإعلان (savePost) — مع priceType + negotiable
    ============================================ */
-function generateKeywords(title, description, brand, category, city){
-  const text = `${title||""} ${description||""} ${brand||""} ${category||""} ${city||""}`.toLowerCase();
+function generateKeywords(title, description, brand, category, city, specs){
+  let specsText = "";
+  if(specs && typeof specs === "object") {
+    specsText = Object.values(specs).filter(v => v && typeof v === "string").join(" ");
+  }
+  const text = `${title||""} ${description||""} ${brand||""} ${category||""} ${city||""} ${specsText}`.toLowerCase();
+  const words = text.replace(/[^a-z0-9\u0621-\u064A\s]/g, " ").split(/\s+/).filter(w => w.length >= 2);
+  return Array.from(new Set(words)).slice(0, 45);
+}
   const words = text.replace(/[^a-z0-9\u0621-\u064A\s]/g, " ").split(/\s+/).filter(w => w.length >= 2);
   return Array.from(new Set(words)).slice(0, 45);
 }
@@ -2605,19 +3005,26 @@ try{
 const images=[];
 for(const item of selectedImages){if(item.type==="existing")images.push(item.url);else{saveBtn.textContent="جاري رفع الصور...";images.push(await uploadToImgBB(item.file));}}
 const finalOriginalPrice=(priceType==="fixed" && originalPrice>Number(price))?originalPrice:0;
-const subCategory=(document.getElementById("storeSubCategory")?.value||"").trim();
-const postKeywords=generateKeywords(title, description, brand, category, city);
+const specs=collectDynamicSpecs(category);
+let subCategory=(document.getElementById("storeSubCategory")?.value||"").trim();
+if(!subCategory){
+  if(specs.subType) subCategory=specs.subType;
+  else if(specs.propertyType) subCategory=specs.propertyType;
+  else if(specs.applianceType) subCategory=specs.applianceType;
+  else if(specs.console) subCategory=specs.console;
+}
+const postKeywords=generateKeywords(title, description, brand, category, city, specs);
 if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
 const newExpires=Date.now()+POST_DURATION_MS;
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData,editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
 if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
 await updateDoc(doc(db,"posts",editingPostId),upd);
 }
 else{
   const now=Date.now();
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
   if(isStore){
     base.storeId=storeToUse.id;
     base.storeName=storeToUse.name;
@@ -2649,6 +3056,9 @@ const _cCb2=document.getElementById("contactPrice");if(_cCb2)_cCb2.checked=false
 const _nCb2=document.getElementById("negotiablePrice");if(_nCb2)_nCb2.checked=false;
 onPriceTypeChange();
 selectedImages=[];renderImagePicker();
+currentFormSpecsState={};
+const _dynC=document.getElementById("dynamicSpecsContainer");
+if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}
 if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
 }catch(e){showToast("خطأ أثناء الحفظ: "+e.message,"error");}
 finally{
@@ -3964,6 +4374,7 @@ const radio=document.querySelector(`input[name="adType"][value="${adTypeVal}"]`)
 if(radio)radio.checked=true;
 onAdTypeChange();
 onCategoryChange();if(post.brand)document.getElementById("brand").value=post.brand;
+renderDynamicSpecsForm(post.category, post.specs);
 const subCatField=document.getElementById("storeSubCategoryField");
 const subCatInput=document.getElementById("storeSubCategory");
 const subCatTags=document.getElementById("storeSubCategoryTags");
@@ -4054,7 +4465,10 @@ onAdTypeChange();
 const _cCbS=document.getElementById("contactPrice");if(_cCbS)_cCbS.checked=false;
 const _nCbS=document.getElementById("negotiablePrice");if(_nCbS)_nCbS.checked=false;
 onPriceTypeChange();
-selectedImages=[];renderImagePicker();onCategoryChange();openFormScreen();
+selectedImages=[];renderImagePicker();
+currentFormSpecsState={};
+const _dynC=document.getElementById("dynamicSpecsContainer");
+if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}onCategoryChange();openFormScreen();
 window.scrollTo(0,0);
 };
 
@@ -4173,6 +4587,7 @@ window.onCategoryChange=()=>{
   }else{
     bf.classList.add("hidden");document.getElementById("brand").value="";
   }
+  renderDynamicSpecsForm(cat, currentFormSpecsState && currentFormSpecsState._category === cat ? currentFormSpecsState : null);
 };
 
 (function(){
