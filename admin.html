@@ -278,17 +278,27 @@ html.dark-mode .adminRow{background:#131a28}
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth,onAuthStateChanged,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore,doc,getDoc,setDoc,deleteDoc,collection,getDocs,query,where,onSnapshot,updateDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import {
+  db,
+  auth,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "./supabase-adapter.js";
 
-const firebaseConfig={apiKey:"AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",authDomain:"tasawuq-now-eb955.firebaseapp.com",projectId:"tasawuq-now-eb955",storageBucket:"tasawuq-now-eb955.firebasestorage.app",messagingSenderId:"786110830242",appId:"1:786110830242:web:15a4752cd9b5db3f0129fb"};
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth();
-const db=getFirestore();
 
 let currentUser=null;
 let currentImages=[];
@@ -467,8 +477,21 @@ window.applyPhoneChange = async (uid) => {
 async function loadBanner(){
   try{
     const snap=await getDoc(doc(db,"settings","banner"));
-    if(snap.exists() && Array.isArray(snap.data().images)){
-      currentImages=snap.data().images.map(x=>({url:x.url||"",link:x.link||"",isNew:false}));
+    if(snap.exists()){
+      const data=snap.data() || {};
+      let imgs=data.images;
+      if(typeof imgs==="string"){
+        try{imgs=JSON.parse(imgs);}catch(e){}
+      }
+      if(Array.isArray(imgs)){
+        currentImages=imgs.map(x=>({url:x.url||"",link:x.link||"",isNew:false}));
+      }else if(imgs && typeof imgs==="object" && imgs.url){
+        currentImages=[{url:imgs.url,link:imgs.link||"",isNew:false}];
+      }else if(data.url){
+        currentImages=[{url:data.url,link:data.link||"",isNew:false}];
+      }else{
+        currentImages=[];
+      }
     }else{currentImages=[];}
     hasBannerChanges=false;
     renderBannerImages();
@@ -679,7 +702,7 @@ window.approveAllPending=async()=>{
   if(pending.length===0){alert("لا توجد");return;}
   if(!confirm(`موافقة على ${pending.length}؟`))return;
   let ok=0,fail=0;
-  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});ok++;}catch(e){fail++;}}
+  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});if(p)await sendPostToTelegram(p);ok++;}catch(e){fail++;}}
   alert(`✅ ${ok}${fail?`\n❌ ${fail}`:''}`);
 };
 window.rejectAllPending=async()=>{
