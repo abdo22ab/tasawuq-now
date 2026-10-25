@@ -5048,9 +5048,27 @@ let bannerTimer=null;
 async function loadBanner(){
   try{
     const snap=await getDoc(doc(db,"settings","banner"));
-    if(snap.exists()){const data=snap.data();bannerImages=Array.isArray(data.images)?data.images:[];}
-    else{bannerImages=[];}
-  }catch(e){bannerImages=[];}
+    if(snap.exists()){
+      const data=snap.data() || {};
+      let imgs=data.images;
+      if(typeof imgs==="string"){
+        try{imgs=JSON.parse(imgs);}catch(e){}
+      }
+      if(Array.isArray(imgs)){
+        bannerImages=imgs;
+      }else if(imgs && typeof imgs==="object" && imgs.url){
+        bannerImages=[imgs];
+      }else if(data.url){
+        bannerImages=[{url:data.url,link:data.link||""}];
+      }else{
+        bannerImages=[];
+      }
+    }else{
+      bannerImages=[];
+    }
+  }catch(e){
+    bannerImages=[];
+  }
   renderBanner();
 }
 function renderBanner(){
@@ -5060,10 +5078,16 @@ function renderBanner(){
   const dotsBox=document.getElementById("bannerDots");
   if(!carousel||!empty||!slidesBox||!dotsBox)return;
   const validImgs=bannerImages.filter(x=>x && x.url);
-  if(validImgs.length===0){carousel.classList.add("hidden");empty.classList.remove("hidden");return;}
-  carousel.classList.remove("hidden");empty.classList.add("hidden");
+  if(validImgs.length===0){
+    carousel.classList.add("hidden");
+    if(typeof isAdmin!=="undefined" && isAdmin) empty.classList.remove("hidden");
+    else empty.classList.add("hidden");
+    return;
+  }
+  carousel.classList.remove("hidden");
+  empty.classList.add("hidden");
   slidesBox.innerHTML=validImgs.map(img=>{
-    const imgTag=`<img src="${escapeHtml(img.url)}" onerror="this.parentElement.innerHTML=''" loading="lazy">`;
+    const imgTag=`<img src="${escapeHtml(img.url)}" onerror="this.parentElement.style.display='none'" loading="lazy">`;
     if(img.link && img.link.trim()){return `<div class="bSlide" onclick="window.open('${escapeHtml(img.link)}','_blank')">${imgTag}</div>`;}
     return `<div class="bSlide">${imgTag}</div>`;
   }).join("");
