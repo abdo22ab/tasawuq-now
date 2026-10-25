@@ -1016,8 +1016,9 @@ function updateCartUI(){
   if(hc)hc.textContent=cnt;
   if(hc)hc.style.display=cnt>0?"flex":"none";
   const fab=document.getElementById("cartFAB");
+  const cartOverlayOpen=document.getElementById("cartOverlay") && !document.getElementById("cartOverlay").classList.contains("hidden");
   if(fab){
-    if(cart.storeId && cnt>0){
+    if(cart.storeId && cnt>0 && !cartOverlayOpen){
       fab.classList.remove("fabOff");
       const total=cartTotalPrice();
       fab.innerHTML=`<span>🛒 عرض السلة</span><span class="cartFABcount">${cnt}</span><span class="cartFABtotal">${formatPrice(total)} د.ل</span>`;
@@ -2750,32 +2751,19 @@ let list=allPosts.filter(p=>{
 });
 list=sortPosts(list);
 
-// في قسم الكل: إضافة شريط كروت المطاعم في الأعلى كهيكل (غلاف + شعار + اسم)
+// في قسم الكل: عرض كروت المطاعم عريضة وواسعة (غلاف + شعار + تفاصيل + اتصال) فقط لقسم المطاعم
 let restaurantsSectionHtml='';
 if(currentCategory==="الكل" && !term && !currentStoreFilter && currentCity==="الكل" && currentPriceMin==null && currentPriceMax==null && !showOnlyFavorites && !showOnlyMine){
   const approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
   if(approvedRests.length>0){
     restaurantsSectionHtml=`
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div style="font-weight:800;font-size:14px;color:var(--text)">🍽️ المطاعم والمأكولات</div>
-          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12px;font-weight:800;cursor:pointer">عرض كل المطاعم والمأكولات (${approvedRests.length}) ›</button>
+      <div style="margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 12px;padding:0 4px">
+          <div style="font-weight:900;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px">🍽️ المطاعم والمأكولات</div>
+          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12.5px;font-weight:800;cursor:pointer">عرض كل المطاعم (${approvedRests.length}) ›</button>
         </div>
-        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">
-          ${approvedRests.map(s=>{
-            const coverHtml=s.cover?`<img src="${escapeHtml(s.cover)}" style="width:100%;height:100%;object-fit:cover">`:'🍔🍗🍕';
-            const logoHtml=s.logo?`<img src="${escapeHtml(s.logo)}" style="width:100%;height:100%;object-fit:cover">`:'🍽️';
-            return `
-              <div onclick="openStore('${s.id}',false,'home')" style="flex:0 0 160px;background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.05)">
-                <div style="height:65px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;font-size:22px;overflow:hidden">${coverHtml}</div>
-                <div style="padding:8px;position:relative">
-                  <div style="width:34px;height:34px;border-radius:10px;background:#ffc20e;border:2px solid var(--card);margin-top:-24px;overflow:hidden;display:grid;place-items:center;font-size:12px;font-weight:800">${logoHtml}</div>
-                  <div style="font-weight:800;font-size:12.5px;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name||"مطعم")}</div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml(s.city||"ليبيا")}</div>
-                </div>
-              </div>
-            `;
-          }).join('')}
+        <div class="homeRestaurantsList" style="display:flex;flex-direction:column;gap:12px">
+          ${approvedRests.map(s=>renderRestaurantStructureCard(s,'home')).join("")}
         </div>
       </div>
     `;
@@ -3422,7 +3410,13 @@ window.submitNotification=async()=>{
    السلة الكاملة
    ============================================ */
 function canHaveCart(post){if(!post)return false;if(!post.storeId)return false;if(post.category==="سيارات ومركبات")return false;if(post.category==="دراجات نارية")return false;return CART_ALLOWED_CATEGORIES.includes(post.category);}
-window.openCart=(skipHistory)=>{renderCartUI();cartOverlay.classList.remove("hidden");if(!skipHistory) pushNavState({ screen: 'cart' }, '#cart');};
+window.openCart=(skipHistory)=>{
+  const fab=document.getElementById("cartFAB");
+  if(fab)fab.classList.add("fabOff");
+  renderCartUI();
+  cartOverlay.classList.remove("hidden");
+  if(!skipHistory) pushNavState({ screen: 'cart' }, '#cart');
+};
 function renderCartUI(){
   const box=document.getElementById("cartItemsBox");
   const storeLine=document.getElementById("cartStoreLine");
@@ -3625,7 +3619,8 @@ function renderRestaurantStructureCard(s, backTo='home'){
   const verifiedBadge=s.verified?`<span class="verifiedBadge" title="مطعم موثق"></span>`:"";
   const hoursText=formatStoreHours(s);
   const openBadge=openBadgeHTML(s);
-  const callBtn=s.phone?`<a href="tel:${formatCallPhone(s.phone)}" class="rscCallBtn" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(s.id)}','store')">📞 اتصال هاتفي للطلب</a>`:"";
+  const restCallNumber=s.callPhone||s.phone;
+  const callBtn=restCallNumber?`<a href="tel:${formatCallPhone(restCallNumber)}" class="rscCallBtn" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(s.id)}','store')">📞 اتصال هاتفي للطلب</a>`:"";
   return `
     <div class="restaurantStructureCard" onclick="openStore('${s.id}',false,'${backTo}')">
       <div class="rscCover">${coverHtml}</div>
@@ -3675,6 +3670,9 @@ function renderStoresList(){
     return;
   }
   list.innerHTML=approved.map(s=>{
+    if(isRestaurantStore(s)){
+      return renderRestaurantStructureCard(s,'stores');
+    }
     const logo=s.logo?`<img src="${escapeHtml(s.logo)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
     const count=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved" && !isExpired(p) && !p.sold).length;
     const openBadge=openBadgeHTML(s);
@@ -4810,6 +4808,7 @@ function closeOverlayDirect(){
   updateSEOMeta(null);
   pendingAction=null;
   document.body.style.overflow="";
+  updateCartUI();
 }
 window.closeOverlayDirect=closeOverlayDirect;
 window.closeOverlay=()=>{
