@@ -2946,9 +2946,6 @@ function generateKeywords(title, description, brand, category, city, specs){
   const words = text.replace(/[^a-z0-9\u0621-\u064A\s]/g, " ").split(/\s+/).filter(w => w.length >= 2);
   return Array.from(new Set(words)).slice(0, 45);
 }
-  const words = text.replace(/[^a-z0-9\u0621-\u064A\s]/g, " ").split(/\s+/).filter(w => w.length >= 2);
-  return Array.from(new Set(words)).slice(0, 45);
-}
 
 window.savePost=async()=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
