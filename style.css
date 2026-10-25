@@ -1191,6 +1191,58 @@ html.dark-mode .kshPic {
 /* =====================================================
    Restaurant Structure Cards (هيكل المطاعم: غلاف + شعار + اسم)
    ===================================================== */
+.homeRestaurantsContainer {
+  padding: 4px 16px 14px;
+  box-sizing: border-box;
+  width: 100%;
+}
+@media (min-width: 700px) {
+  .homeRestaurantsContainer {
+    padding: 6px 24px 18px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+@media (min-width: 1000px) {
+  .homeRestaurantsContainer {
+    padding: 6px 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+.homeRestaurantsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0 2px;
+}
+.homeRestaurantsTitle {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.homeRestaurantsSeeAll {
+  border: none;
+  background: none;
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.homeRestaurantsSeeAll:hover {
+  text-decoration: underline;
+}
+.homeRestaurantsList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .restaurantStructureCard {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1200,12 +1252,15 @@ html.dark-mode .kshPic {
   margin-bottom: 12px;
   cursor: pointer;
   transition: transform .15s, box-shadow .15s;
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
 }
 .restaurantStructureCard:active {
-  transform: scale(.98);
+  transform: scale(.99);
 }
 .rscCover {
-  height: 110px;
+  height: 125px;
   background: linear-gradient(135deg, #f59e0b, #ef4444);
   position: relative;
   overflow: hidden;
