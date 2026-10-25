@@ -330,7 +330,8 @@ OneSignalDeferred.push(async function(OneSignal){
 <button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
 <button id="dashboardBtn" class="btnGhost hidden" onclick="openDashboard()" style="background:#ede9fe;color:#6d28d9">📈 لوحة الإحصائيات</button>
   <button id="sendNotifBtn" class="btnGhost hidden" onclick="openSendNotification()" style="background:#fef3c7;color:#92400e">📢 إرسال إشعار للمستخدمين</button>
-  <button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
+<button id="adminCreateStoreBtn" class="btnGhost hidden" onclick="startOpenStore(true)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800">➕ فتح صفحة مطعم/متجر لعميل (أدمن)</button>
+<button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
 <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
 </div>
@@ -386,12 +387,16 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- ============================================ -->
 <div id="openStoreOverlay" class="overlay hidden">
 <div class="sheet" style="max-height:92vh">
-<h3 style="text-align:center">🏪 فتح متجر جديد</h3>
-<p style="font-size:12.5px;color:#166534;background:#f0fdf4;padding:10px;border-radius:10px;line-height:1.8;margin-bottom:14px;text-align:center">✅ إعلاناتك الفردية مش هتتحذف — تقدر تنقلها لمتجرك بضغطة زر من صفحة المتجر بعد الموافقة، أو تسيبها فردية زي ما هي.</p><div class="field"><label>اسم المتجر</label><input id="storeName" maxlength="40" placeholder="مثال: قراند الخراز"></div>
+<h3 id="openStoreModalTitle" style="text-align:center">🏪 فتح متجر جديد</h3>
+<div id="adminStoreCreationNotice" class="hidden" style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;padding:12px;border-radius:12px;font-size:13px;font-weight:700;margin-bottom:14px;border:1px solid #f59e0b;line-height:1.7">👑 <b>وضع المسؤول:</b> إنشاء صفحة متجر أو مطعم نيابة عن العميل — يتم الاعتماد فوراً، وتستطيع إضافة كل المنتجات والوجبات له مباشرة. الإيميل اختياري.</div>
+<p id="openStoreRegularNotice" style="font-size:12.5px;color:#166534;background:#f0fdf4;padding:10px;border-radius:10px;line-height:1.8;margin-bottom:14px;text-align:center">✅ إعلاناتك الفردية مش هتتحذف — تقدر تنقلها لمتجرك بضغطة زر من صفحة المتجر بعد الموافقة، أو تسيبها فردية زي ما هي.</p>
+<div class="field"><label id="storeNameLabel">اسم المتجر / المطعم</label><input id="storeName" maxlength="40" placeholder="مثال: قراند الخراز"></div>
 <div class="field"><label>التصنيف</label>
 <select id="storeCategory" onchange="toggleReceiptPhoneField()"></select></div>
+<div class="field" id="storeOwnerEmailField" style="display:none"><label>📧 البريد الإلكتروني لصاحب المتجر (اختياري)</label><input id="storeOwnerEmail" type="email" placeholder="owner@gmail.com (اتركه فارغاً إذا لم يكن لديه حساب)" style="direction:ltr;text-align:left"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اتركه فارغاً إذا كان صاحب المطعم/المتجر مش فاضي وما عنداش حساب مسجل</div></div>
 <div class="field"><label>المدينة</label><select id="storeCity"></select></div>
-<div class="field"><label>رقم الواتساب (من حسابك)</label><input id="storePhone" class="phoneInput" readonly placeholder="—"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يظهر تلقائيًا من حسابك</div></div>
+<div class="field" id="storeCallPhoneField" style="display:none"><label>📞 رقم الاتصال المباشر (لطلب الأوردر فقط)</label><input id="storeCallPhone" class="phoneInput" placeholder="مثال: 0912345678" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,15)"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 طلب الوجبات في المطاعم يكون عبر الاتصال الهاتفي المباشر فقط</div></div>
+<div class="field" id="storePhoneField"><label id="storePhoneLabel">🧾 رقم واتساب (لاستلام واصل التحويل المصرفي فقط)</label><input id="storePhone" class="phoneInput" placeholder="مثال: 0923456789" maxlength="15"><div id="storePhoneHelp" style="font-size:11px;color:var(--muted);margin-top:4px">💡 مخصص لإرسال واصل التحويل في حال رغب الزبون بالدفع عبر تحويل مصرفي</div></div>
 <div class="field" id="storeReceiptPhoneField" style="display:none"><label>🧾 رقم واتساب استلام الإيصالات</label><input id="storeReceiptPhone" class="phoneInput" placeholder="218912345678" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,15)"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 الرقم اللي هيتبعتله إيصالات التحويل (لو فاضي هيستخدم رقم المتجر)</div></div>
 <div class="field">
 <label>🕐 ساعات العمل</label>
@@ -450,6 +455,9 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="field"><label>📁 التصنيف</label>
 <select id="editStoreCategory" onchange="toggleEditReceiptPhoneField()"></select></div>
 <div class="field"><label>📍 المدينة</label><select id="editStoreCity"></select></div>
+<div class="field" id="editStoreOwnerEmailField"><label>📧 البريد الإلكتروني لصاحب المتجر (اختياري)</label><input id="editStoreOwnerEmail" type="email" placeholder="owner@gmail.com (اختياري)" style="direction:ltr;text-align:left"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يمكن تركه فارغاً إذا لم يكن لديه حساب</div></div>
+<div class="field" id="editStoreCallPhoneField" style="display:none"><label>📞 رقم الاتصال المباشر (لطلب الأوردر فقط)</label><input id="editStoreCallPhone" class="phoneInput" placeholder="مثال: 0912345678" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,15)"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 طلب الوجبات في المطاعم يكون عبر الاتصال الهاتفي المباشر فقط</div></div>
+<div class="field" id="editStorePhoneField"><label id="editStorePhoneLabel">🧾 رقم واتساب (لاستلام واصل التحويل المصرفي فقط)</label><input id="editStorePhone" class="phoneInput" placeholder="مثال: 0923456789" maxlength="15"><div id="editStorePhoneHelp" style="font-size:11px;color:var(--muted);margin-top:4px">💡 مخصص لإرسال واصل التحويل في حال رغب الزبون بالدفع عبر تحويل مصرفي</div></div>
 <div class="field"><label>📄 الوصف</label><textarea id="editStoreDescription" maxlength="500" rows="3" placeholder="نبذة عن المتجر..."></textarea></div>
 <div class="field" id="editStoreReceiptPhoneField" style="display:none"><label>🧾 رقم واتساب استلام الإيصالات</label><input id="editStoreReceiptPhone" class="phoneInput" placeholder="218912345678" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,15)"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 الرقم اللي هيتبعتله إيصالات التحويل (لو فاضي هيستخدم رقم المتجر)</div></div>
 <div class="field">
@@ -501,6 +509,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- ============================================ -->
 <div id="storesModerationOverlay" class="overlay hidden"><div class="sheet" style="max-height:92vh">
 <h3>🏪 إدارة المتاجر</h3>
+<button class="btnMain" onclick="closeOverlay();setTimeout(()=>startOpenStore(true),200)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800;margin-bottom:12px;padding:12px">➕ فتح صفحة مطعم أو متجر جديد لعميل</button>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
 <button id="smTabAll" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px" onclick="switchStoresTab('all')">الكل</button>
 <button id="smTabPending" class="btnGhost" style="margin:0;padding:8px;font-size:12.5px;background:#fef3c7;color:#92400e" onclick="switchStoresTab('pending')">مراجعة</button>
@@ -780,7 +789,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=16"></script>
+<script type="module" src="app.js?v=18"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
