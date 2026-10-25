@@ -2681,6 +2681,7 @@ const me=auth.currentUser;
 
 // إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
 if(isRestaurantCategory(currentCategory)){
+  const _hrb=document.getElementById("homeRestaurantsBox");if(_hrb){_hrb.innerHTML="";_hrb.classList.add("hidden");}
   let approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
   if(term){
     approvedRests=approvedRests.filter(s=>(s.name||"").toLowerCase().includes(term)||(s.city||"").toLowerCase().includes(term));
@@ -2693,7 +2694,7 @@ if(isRestaurantCategory(currentCategory)){
     return;
   }
   postsBox.innerHTML=`
-    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">🍽️ دليل المطاعم والمأكولات (${approvedRests.length})</div>
+    <div style="grid-column:1/-1;font-size:15px;font-weight:900;color:var(--text);margin-bottom:12px">🍽️ دليل المطاعم والمأكولات (${approvedRests.length})</div>
     ${approvedRests.map(s=>renderRestaurantStructureCard(s,'home')).join("")}
   `;
   return;
@@ -2749,43 +2750,63 @@ let list=allPosts.filter(p=>{
   if(currentAdTypeFilter==="offer" && isWanted(p))return false;
   return true;
 });
-list=sortPosts(list);
 
-// في قسم الكل: عرض كروت المطاعم عريضة وواسعة (غلاف + شعار + تفاصيل + اتصال) فقط لقسم المطاعم
-let restaurantsSectionHtml='';
-if(currentCategory==="الكل" && !term && !currentStoreFilter && currentCity==="الكل" && currentPriceMin==null && currentPriceMax==null && !showOnlyFavorites && !showOnlyMine){
-  const approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
-  if(approvedRests.length>0){
-    restaurantsSectionHtml=`
-      <div style="margin-bottom:18px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 12px;padding:0 4px">
-          <div style="font-weight:900;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px">🍽️ المطاعم والمأكولات</div>
-          <button onclick="openRestaurants()" style="border:none;background:none;color:var(--teal-dark);font-size:12.5px;font-weight:800;cursor:pointer">عرض كل المطاعم (${approvedRests.length}) ›</button>
-        </div>
-        <div class="homeRestaurantsList" style="display:flex;flex-direction:column;gap:12px">
-          ${approvedRests.map(s=>renderRestaurantStructureCard(s,'home')).join("")}
-        </div>
-      </div>
-    `;
-  }
+// في قسم الكل: دمج المطاعم كعناصر ضمن الخط الزمني للإعلانات (تنزل لأسفل مع نزول أي إعلان جديد)
+const homeRestsBox=document.getElementById("homeRestaurantsBox");
+if(homeRestsBox){
+  homeRestsBox.innerHTML="";
+  homeRestsBox.classList.add("hidden");
 }
+
+if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && !showOnlyMine && currentAdTypeFilter==="all" && currentPriceMin==null && currentPriceMax==null){
+  let approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
+  if(term){
+    approvedRests=approvedRests.filter(s=>(s.name||"").toLowerCase().includes(term)||(s.city||"").toLowerCase().includes(term)||(s.description||"").toLowerCase().includes(term));
+  }
+  if(currentCity!=="الكل"){
+    approvedRests=approvedRests.filter(s=>s.city===currentCity);
+  }
+  approvedRests.forEach(s=>{
+    let restTime=Number(s.createdAt)||Number(s.approvedAt)||0;
+    const storePosts=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved");
+    storePosts.forEach(p=>{
+      const pt=Number(p.createdAt)||0;
+      if(pt>restTime) restTime=pt;
+    });
+    list.push({
+      isRestaurantStructure:true,
+      storeData:s,
+      id:'store_'+s.id,
+      createdAt:restTime,
+      city:s.city||"",
+      title:s.name||"",
+      description:s.description||"",
+      price:0,
+      views:0
+    });
+  });
+}
+list=sortPosts(list);
 
 if(list.length===0){
   /* ✅ المنطق الآمن للصفحة الفارغة */
   if(showOnlyFavorites){
-    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
+    postsBox.innerHTML=buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
   }else if(showOnlyMine){
-    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📝','لسه ما نشرت إعلانات','ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة','➕ أنشر إعلانك الأول','startAddPost()');
+    postsBox.innerHTML=buildEmptyState('📝','لسه ما نشرت إعلانات','ابدأ بنشر أول إعلان لك الآن<br>مجاناً وفي دقيقة','➕ أنشر إعلانك الأول','startAddPost()');
   }else if(term){
-    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('🔍','لا توجد نتائج','لم نجد إعلانات تطابق "'+escapeHtml(term)+'"<br>جرّب كلمة بحث أخرى','🔄 مسح البحث','clearSearch()',true);
+    postsBox.innerHTML=buildEmptyState('🔍','لا توجد نتائج','لم نجد إعلانات تطابق "'+escapeHtml(term)+'"<br>جرّب كلمة بحث أخرى','🔄 مسح البحث','clearSearch()',true);
   }else if(currentCity!=="الكل"){
-    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📍','لا توجد إعلانات في '+escapeHtml(currentCity),'كن أول من ينشر إعلاناً<br>في هذه المدينة','➕ أنشر إعلان هنا','startAddPost()');
+    postsBox.innerHTML=buildEmptyState('📍','لا توجد إعلانات في '+escapeHtml(currentCity),'كن أول من ينشر إعلاناً<br>في هذه المدينة','➕ أنشر إعلان هنا','startAddPost()');
   }else{
-    postsBox.innerHTML=restaurantsSectionHtml+buildEmptyState('📭','لا توجد إعلانات هنا حالياً','كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!','➕ كن أول من ينشر إعلاناً','startAddPost()');
+    postsBox.innerHTML=buildEmptyState('📭','لا توجد إعلانات هنا حالياً','كن أول من ينشر إعلاناً في هذا القسم<br>مجاناً وفي ثوانٍ!','➕ كن أول من ينشر إعلاناً','startAddPost()');
   }
   return;
 }
-postsBox.innerHTML=restaurantsSectionHtml+list.map(p=>{
+postsBox.innerHTML=list.map(p=>{
+if(p.isRestaurantStructure){
+  return renderRestaurantStructureCard(p.storeData, 'home');
+}
 const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&p.uid===me.uid;const isMyStorePost=myStore&&p.storeId===myStore.id;const canDelete=isAdmin||isOwner||isMyStorePost;
 const expired=isExpired(p);const days=daysLeft(p);const isSold=!!p.sold;
 const wanted=isWanted(p);
@@ -3580,6 +3601,7 @@ function startStoresListener(){
     storesLoadedInitially=true;
     allStores=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderStoresList();
+    if(home && !home.classList.contains("hidden")) renderPosts();
     if(storesModerationOverlay && !storesModerationOverlay.classList.contains("hidden"))renderStoresModeration();
     const sc=document.getElementById("storeScreen");
     if(sc && !sc.classList.contains("hidden")){const openStoreId=window._currentStoreId;if(openStoreId)setTimeout(()=>refreshOpenStore(openStoreId),300);}
@@ -3587,6 +3609,7 @@ function startStoresListener(){
     console.error("Stores listener failed:", err);
     storesLoadedInitially=true;
     renderStoresList();
+    if(home && !home.classList.contains("hidden")) renderPosts();
   });
 }
 window._storesFilterMode = 'stores';
