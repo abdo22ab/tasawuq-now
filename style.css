@@ -1307,3 +1307,237 @@ html.dark-mode .kshPic {
   cursor: pointer;
   text-decoration: none;
 }
+
+/* ============================================
+   حركات السوق المفتوح (OpenSooq Smart Specs & Pills)
+   ============================================ */
+.specsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 5px 0 3px;
+}
+.specPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--teal-light);
+  color: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(2, 132, 199, 0.18);
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+html.dark-mode .specPill {
+  background: #0c2942;
+  color: #7cc0f0;
+  border-color: #1c3a5c;
+}
+
+.specsDetailsBox {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.specsDetailsTitle {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.specsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (min-width: 500px) {
+  .specsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.specGridItem {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.specGridItem .specLabel {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.specGridItem .specValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-word;
+}
+html.dark-mode .specsDetailsBox {
+  background: var(--card);
+  border-color: var(--border);
+}
+html.dark-mode .specGridItem {
+  background: #131a28;
+  border-color: var(--border);
+}
+html.dark-mode .specGridItem .specValue {
+  color: #e8edf5;
+}
+
+/* Dynamic Specs Form */
+.dynamicSpecsContainer {
+  margin-top: 10px;
+  margin-bottom: 12px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  animation: fadeIn 0.25s ease;
+}
+.dynamicSpecsContainer.hidden {
+  display: none !important;
+}
+.specsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.specsHeaderTitle {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--teal-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.specsSegmented {
+  display: flex;
+  gap: 6px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+.specSegBtn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 6px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.specSegBtn.active {
+  background: var(--card);
+  color: var(--teal-dark);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.specFormGroup {
+  margin-bottom: 12px;
+}
+.specFormGroup:last-child {
+  margin-bottom: 0;
+}
+.specFormGroup label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.specChipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.specFormChip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+  user-select: none;
+}
+.specFormChip:hover {
+  border-color: var(--teal);
+}
+.specFormChip.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.35);
+}
+.specInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.specInputWrap input, .specInputWrap select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+.specInputWrap input:focus, .specInputWrap select:focus {
+  border-color: var(--teal);
+}
+html.dark-mode .dynamicSpecsContainer {
+  background: var(--card);
+  border-color: var(--border);
+}
+html.dark-mode .specsSegmented {
+  background: #131a28;
+}
+html.dark-mode .specSegBtn.active {
+  background: #232d42;
+  color: #7cc0f0;
+}
+html.dark-mode .specFormChip {
+  background: #131a28;
+  border-color: var(--border);
+  color: #e8edf5;
+}
+html.dark-mode .specFormChip.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #0f1420;
+}
+html.dark-mode .specInputWrap input, html.dark-mode .specInputWrap select {
+  background: #131a28;
+  border-color: var(--border);
+  color: #e8edf5;
+}
