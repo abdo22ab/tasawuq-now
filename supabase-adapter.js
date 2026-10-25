@@ -185,6 +185,15 @@ export function objectFromDb(obj) {
   if (res.helpers && typeof res.helpers === "string") {
     try { res.helpers = JSON.parse(res.helpers); } catch(e){ res.helpers = []; }
   }
+  if (res.originalData && typeof res.originalData === "string") {
+    try { res.originalData = JSON.parse(res.originalData); } catch(e){}
+  }
+  if (res.specs && typeof res.specs === "string") {
+    try { res.specs = JSON.parse(res.specs); } catch(e){ res.specs = {}; }
+  }
+  if (!res.specs && res.originalData && res.originalData.specs) {
+    res.specs = res.originalData.specs;
+  }
   if (res.price != null) res.price = Number(res.price);
   if (res.originalPrice != null) res.originalPrice = Number(res.originalPrice);
   if (res.views != null) res.views = Number(res.views);
