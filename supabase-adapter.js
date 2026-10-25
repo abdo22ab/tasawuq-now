@@ -154,9 +154,30 @@ export function objectFromDb(obj) {
     res[appKey] = v;
   }
   if (res.images && typeof res.images === "string") {
-    try { res.images = JSON.parse(res.images); } catch(e){ res.images = []; }
+    if (res.images.startsWith("http")) {
+      res.images = [res.images];
+    } else {
+      try {
+        const parsed = JSON.parse(res.images);
+        res.images = Array.isArray(parsed) ? parsed : [parsed];
+      } catch(e) {
+        res.images = [];
+      }
+    }
   }
-  if (!res.images) res.images = [];
+  if (!Array.isArray(res.images)) {
+    if (typeof res.images === "string" && res.images.startsWith("http")) {
+      res.images = [res.images];
+    } else {
+      res.images = [];
+    }
+  }
+  if ((!res.imageUrl || res.imageUrl.length < 5) && res.images.length > 0) {
+    res.imageUrl = res.images[0];
+  }
+  if (res.images.length === 0 && res.imageUrl && res.imageUrl.startsWith("http")) {
+    res.images = [res.imageUrl];
+  }
   if (res.keywords && typeof res.keywords === "string") {
     try { res.keywords = JSON.parse(res.keywords); } catch(e){ res.keywords = []; }
   }
@@ -384,8 +405,17 @@ export async function setDoc(docRef, data, options = {}) {
     Object.assign(row, docRef.customFields);
   }
 
-  const { error } = await supabase.from(table).upsert(row);
-  if (error) throw new Error(error.message);
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { error } = await supabase.from(table).upsert(payload);
+    if (!error) return true;
+    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
+    if (match && match[1] && match[1] in payload) {
+      delete payload[match[1]];
+      continue;
+    }
+    throw new Error(error.message);
+  }
   return true;
 }
 
@@ -395,8 +425,17 @@ export async function addDoc(colRef, data) {
   const newId = row.id || ("doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7));
   row.id = newId;
 
-  const { error } = await supabase.from(table).insert(row);
-  if (error) throw new Error(error.message);
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { error } = await supabase.from(table).insert(payload);
+    if (!error) return new DocRef(colRef.collectionName, newId);
+    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
+    if (match && match[1] && match[1] in payload) {
+      delete payload[match[1]];
+      continue;
+    }
+    throw new Error(error.message);
+  }
   return new DocRef(colRef.collectionName, newId);
 }
 
@@ -413,14 +452,24 @@ export async function updateDoc(docRef, data) {
     }
   }
 
-  let req = supabase.from(table).update(row);
-  if (table === "phones") req = req.eq("phone", docRef.id);
-  else if (table === "usernames") req = req.eq("username", docRef.id);
-  else if (table === "user_limits") req = req.eq("uid", docRef.id);
-  else req = req.eq("id", docRef.id);
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let req = supabase.from(table).update(payload);
+    if (table === "phones") req = req.eq("phone", docRef.id);
+    else if (table === "usernames") req = req.eq("username", docRef.id);
+    else if (table === "user_limits") req = req.eq("uid", docRef.id);
+    else req = req.eq("id", docRef.id);
 
-  const { error } = await req;
-  if (error) throw new Error(error.message);
+    const { error } = await req;
+    if (!error) return true;
+
+    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
+    if (match && match[1] && match[1] in payload) {
+      delete payload[match[1]];
+      continue;
+    }
+    throw new Error(error.message);
+  }
   return true;
 }
 
@@ -492,6 +541,11 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-ai.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBuhnSrkn6jXcCxUnbL-o14gd5pS9wRmnY",
@@ -505,5 +559,14 @@ const firebaseConfig = {
 const fbApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(fbApp);
 export { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup };
+
+let aiInstance = null;
+try {
+  aiInstance = getAI(fbApp, { backend: new GoogleAIBackend() });
+} catch(e) {
+  console.warn("AI init warning:", e);
+}
+export const ai = aiInstance;
+export { getGenerativeModel };
 
 export const db = {};
