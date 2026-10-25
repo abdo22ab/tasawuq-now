@@ -23,7 +23,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   objectFromDb
-} from "./supabase-adapter.js";
+} from "./supabase-adapter.js?v=2";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
