@@ -1166,13 +1166,29 @@ window.onPriceTypeChange=()=>{
 
 window.toggleReceiptPhoneField=()=>{
   const cat=document.getElementById("storeCategory")?.value;
-  const field=document.getElementById("storeReceiptPhoneField");
-  if(field)field.style.display=isRestaurantCategory(cat)?"block":"none";
+  const isRest=isRestaurantCategory(cat);
+  const rField=document.getElementById("storeReceiptPhoneField");
+  if(rField)rField.style.display="none";
+  const cField=document.getElementById("storeCallPhoneField");
+  if(cField)cField.style.display=isRest?"block":"none";
+  const pLbl=document.getElementById("storePhoneLabel");
+  if(pLbl)pLbl.textContent=isRest?"🧾 رقم واتساب (لاستلام واصل التحويل المصرفي فقط)":"📱 رقم الهاتف والواتساب (الاتصال والواتساب واحد)";
+  const pHelp=document.getElementById("storePhoneHelp");
+  if(pHelp)pHelp.textContent=isRest?"💡 طلب الأوردر يكون بالاتصال الهاتفي فقط. هذا الرقم مخصص لإرسال واصل التحويل إذا رغب الزبون بالدفع عبر تحويل مصرفي.":"💡 في المتاجر والشركات، رقم الواتساب والاتصال موحّد";
+  const nLbl=document.getElementById("storeNameLabel");
+  if(nLbl)nLbl.textContent=isRest?"اسم المطعم":"اسم المتجر / الشركة";
 };
 window.toggleEditReceiptPhoneField=()=>{
   const cat=document.getElementById("editStoreCategory")?.value;
-  const field=document.getElementById("editStoreReceiptPhoneField");
-  if(field)field.style.display=isRestaurantCategory(cat)?"block":"none";
+  const isRest=isRestaurantCategory(cat);
+  const rField=document.getElementById("editStoreReceiptPhoneField");
+  if(rField)rField.style.display="none";
+  const cField=document.getElementById("editStoreCallPhoneField");
+  if(cField)cField.style.display=isRest?"block":"none";
+  const pLbl=document.getElementById("editStorePhoneLabel");
+  if(pLbl)pLbl.textContent=isRest?"🧾 رقم واتساب (لاستلام واصل التحويل المصرفي فقط)":"📱 رقم الهاتف والواتساب (الاتصال والواتساب واحد)";
+  const pHelp=document.getElementById("editStorePhoneHelp");
+  if(pHelp)pHelp.textContent=isRest?"💡 طلب الأوردر يكون بالاتصال الهاتفي فقط. هذا الرقم مخصص لإرسال واصل التحويل في حال الدفع المصرفي.":"💡 في المتاجر والشركات، رقم الواتساب والاتصال موحّد";
 };
   /* ============================================
    ✅ أدوات مساعدة (formatPrice + buildEmptyState)
@@ -2863,11 +2879,16 @@ if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.se
 const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
 
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
+const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
+const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
-      ? `<a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصل بالمطعم</a>`
-      : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
-         <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي مباشر</a>`)
+      ? `${postCallPhone ? `<a href="tel:${formatCallPhone(postCallPhone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي لطلب الأوردر (${formatCallPhone(postCallPhone)})</a>` : ''}
+         ${receiptWaPhone ? `<button class="btnGhost" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-weight:700" onclick="event.stopPropagation();sendReceiptToSeller('${escapeHtml(receiptWaPhone)}','${escapeHtml(p.storeName||'المطعم')}')">🧾 دفع مصرفي؟ إرسال واصل التحويل عبر واتساب</button>` : ''}`
+      : `<div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btnMain" style="flex:1;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
+          <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي</a>
+        </div>`)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
@@ -3032,9 +3053,14 @@ else{
     base.storeCategory=storeToUse.category;
     base.storePhone=storeToUse.phone||"";
     base.phone=storeToUse.phone||"";
+    base.callPhone=storeToUse.callPhone||storeToUse.phone||"";
     base.uid=storeToUse.ownerUid||auth.currentUser.uid;
     // base.email=storeToUse.ownerEmail||auth.currentUser.email||""; // تم إيقافها لحماية خصوصية المستخدم ومنع تسريب الإيميل
     base.addedBy=auth.currentUser.uid;
+    if(isAdmin){
+      base.status="approved";
+      base.approvedAt=now;
+    }
   }
   else{
     base.uid=auth.currentUser.uid;
@@ -3044,8 +3070,11 @@ else{
     base.sellerUsername=sellerUsername;
   }
   await addDoc(collection(db,"posts"),base);
-  showToast(isStore?"✅ تم إرسال إعلان المتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
+  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
+  if(isStore && window._currentStoreId){
+    setTimeout(()=>openStore(window._currentStoreId, true), 300);
+  }
 }
 editingPostId=null;
 _tempStoreData=null;
@@ -3713,11 +3742,16 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
     const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
+    const storeCallNumber=store.callPhone||store.phone;
+    const receiptWaNumber=store.receiptPhone||store.phone;
     const contactStoreBtn=store.phone
       ? (isRestaurant
-          ? `<a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصل بالمطعم</a>`
-          : `<button class="btnMain" style="background:var(--wa);margin-bottom:8px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
-             <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>`)
+          ? `${storeCallNumber ? `<a href="tel:${formatCallPhone(storeCallNumber)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي لطلب الأوردر (${escapeHtml(storeCallNumber)})</a>` : ''}
+             ${receiptWaNumber ? `<button class="btnGhost" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-weight:700" onclick="event.stopPropagation();sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')">🧾 دفع مصرفي؟ إرسال واصل التحويل عبر واتساب</button>` : ''}`
+          : `<div style="display:flex;gap:8px;margin-bottom:8px">
+              <button class="btnMain" style="flex:1;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
+              <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>
+            </div>`)
       : "";
 
     const bi=store.bankInfo || {};
@@ -3800,13 +3834,20 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             <div><small>ساعات العمل</small><b>${hoursFormatted}</b></div>
             <div><small>التوصيل</small><b>${deliveryFormatted}</b></div>
           </div>
-          ${store.phone ? `
-            <div style="margin-top:12px">
-              <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
-                📞 اتصال هاتفي مباشر بالمطعم (${escapeHtml(store.phone)})
+          <div style="margin-top:12px">
+            ${storeCallNumber ? `
+              <a href="tel:${formatCallPhone(storeCallNumber)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:14px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
+                📞 اتصال هاتفي مباشر لطلب الأوردر (${escapeHtml(storeCallNumber)})
               </a>
-            </div>
-          ` : ''}
+            ` : ''}
+            ${receiptWaNumber ? `
+              <div style="margin-top:8px">
+                <button class="btnGhost" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;cursor:pointer;font-weight:700" onclick="sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')">
+                  🧾 دفعت بالتحويل المصرفي؟ اضغط هنا لإرسال واصل التحويل عبر واتساب
+                </button>
+              </div>
+            ` : ''}
+          </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
             ${transferBtn}
             <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ تقييم</button>
@@ -3893,12 +3934,12 @@ window.goAddStorePost=(storeId)=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
   const isOwner=me.uid===store.ownerUid;
-  const isAdminUser=me.email===ADMIN_EMAIL;
+  const isAdminUser=me.email===ADMIN_EMAIL || isAdmin;
   const isHelper=me.email && isStoreHelper(storeId,me.email);
   if(!isOwner && !isAdminUser && !isHelper){showToast("❌ ليس لديك صلاحية لهذا المتجر","error");return;}
   if(store.status!=="approved"){showToast("❌ المتجر غير معتمد","error");return;}
   closeOverlay();
-  const data={id:store.id,name:store.name||"",category:store.category||"سيارات ومركبات",city:store.city||"",phone:store.phone||store.storePhone||"",status:store.status,ownerUid:store.ownerUid,ownerEmail:store.ownerEmail||""};
+  const data={id:store.id,name:store.name||"",category:store.category||"سيارات ومركبات",city:store.city||"",phone:store.phone||store.storePhone||"",callPhone:store.callPhone||store.phone||"",status:store.status,ownerUid:store.ownerUid,ownerEmail:store.ownerEmail||""};
   _tempStoreData=data;
   try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}
   setTimeout(()=>showForm(true),200);
@@ -4090,6 +4131,9 @@ window.openEditStore=(storeId)=>{
   document.getElementById("editStoreCity").value=store.city||"";
   document.getElementById("editStoreDescription").value=store.description||"";
   const _erp=document.getElementById("editStoreReceiptPhone");if(_erp)_erp.value=store.receiptPhone||"";
+  const _ecp=document.getElementById("editStoreCallPhone");if(_ecp)_ecp.value=store.callPhone||store.phone||"";
+  const _ep=document.getElementById("editStorePhone");if(_ep)_ep.value=store.phone||"";
+  const _eoe=document.getElementById("editStoreOwnerEmail");if(_eoe)_eoe.value=store.ownerEmail||"";
   toggleEditReceiptPhoneField();
   const wh=store.workingHours||{openTime:"09:00",closeTime:"23:00",alwaysOpen:false};
   document.getElementById("editStoreOpenTime").value=wh.openTime||"09:00";
@@ -4174,12 +4218,19 @@ window.saveStoreEdits=async()=>{
   const btn=document.getElementById("editStoreSubmitBtn");
   btn.disabled=true;btn.textContent="⏳ جاري الحفظ...";
   try{
+    const newPhone=(document.getElementById("editStorePhone")?.value||"").trim();
+    const newCallPhone=(document.getElementById("editStoreCallPhone")?.value||"").trim();
+    const newOwnerEmail=(document.getElementById("editStoreOwnerEmail")?.value||"").trim();
+    const finalCallPhone = isRestaurantCategory(newCategory) ? (newCallPhone || newPhone || store.callPhone || store.phone) : (newPhone || store.phone);
     const updates={name:newName,category:newCategory,city:newCity,receiptPhone:(isRestaurantCategory(newCategory)?newReceiptPhone:""),description:newDescription,workingHours:{openTime,closeTime,alwaysOpen},helpers:currentStoreHelpers,bankInfo:{
       accountOwner:(document.getElementById("editStoreBankOwner")?.value||"").trim().slice(0,60),
       bankName:(document.getElementById("editStoreBankName")?.value||"").trim().slice(0,50),
       iban:(document.getElementById("editStoreBankIban")?.value||"").trim().slice(0,34),
       accountNumber:(document.getElementById("editStoreBankAccount")?.value||"").trim().slice(0,30)
     }};
+    if(newPhone) updates.phone = newPhone;
+    updates.callPhone = finalCallPhone;
+    updates.ownerEmail = newOwnerEmail;
     if(editStoreLogoImage){
       btn.textContent="⏳ جاري رفع الشعار الجديد...";
       updates.logo=await uploadToImgBB(editStoreLogoImage.file);
@@ -4205,24 +4256,58 @@ window.saveStoreEdits=async()=>{
 /* ============================================
    فتح متجر جديد — بدون حذف الإعلانات الفردية
    ============================================ */
-window.startOpenStore=async()=>{
+window.startOpenStore=async(asAdminClient)=>{
   if(!auth.currentUser){authOverlay.classList.remove("hidden");return;}
-  if(myStore){showToast("⚠️ لديك متجر بالفعل","warn");return;}
+  const isAdminUser = isAdmin || (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL);
+  const isCreatingAsAdmin = isAdminUser && (asAdminClient || myStore);
+  if(myStore && !isCreatingAsAdmin){showToast("⚠️ لديك متجر بالفعل","warn");return;}
   const userPhone=(myProfile&&myProfile.phone)||"";
-  if(!userPhone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
+  if(!userPhone && !isCreatingAsAdmin){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
-  if(myCount>0){
+  if(myCount>0 && !isCreatingAsAdmin){
     showToast(`ℹ️ عندك ${myCount} إعلان فردي — تقدر تنقلهم لمتجرك بضغطة زر من صفحة المتجر بعد الموافقة`,"info",5000);
-}
+  }
   accountOverlay.classList.add("hidden");
   openStoreOverlay.classList.remove("hidden");
   storeLogoImage=null;storeCoverImage=null;
   document.getElementById("storeName").value="";
-  document.getElementById("storeCategory").value="سيارات ومركبات";
+  document.getElementById("storeCategory").value="المطاعم والمأكولات";
   const _srp=document.getElementById("storeReceiptPhone");if(_srp)_srp.value="";
+  const _scp=document.getElementById("storeCallPhone");if(_scp)_scp.value="";
+  const _soe=document.getElementById("storeOwnerEmail");if(_soe)_soe.value="";
   toggleReceiptPhoneField();
   document.getElementById("storeCity").value="";
-  document.getElementById("storePhone").value=userPhone;
+
+  const adminNotice=document.getElementById("adminStoreCreationNotice");
+  const regularNotice=document.getElementById("openStoreRegularNotice");
+  const emailField=document.getElementById("storeOwnerEmailField");
+  const modalTitle=document.getElementById("openStoreModalTitle");
+  const submitBtn=document.getElementById("storeSubmitBtn");
+  const phoneInput=document.getElementById("storePhone");
+
+  if(isCreatingAsAdmin){
+    if(adminNotice)adminNotice.classList.remove("hidden");
+    if(regularNotice)regularNotice.classList.add("hidden");
+    if(emailField)emailField.style.display="block";
+    if(modalTitle)modalTitle.textContent="👑 إنشاء صفحة متجر أو مطعم (كأدمن)";
+    if(submitBtn)submitBtn.textContent="🚀 إنشاء واعتماد المتجر الآن";
+    if(phoneInput){
+      phoneInput.removeAttribute("readonly");
+      phoneInput.placeholder="مثال: 0923456789";
+      phoneInput.value="";
+    }
+  } else {
+    if(adminNotice)adminNotice.classList.add("hidden");
+    if(regularNotice)regularNotice.classList.remove("hidden");
+    if(emailField)emailField.style.display="none";
+    if(modalTitle)modalTitle.textContent="🏪 فتح متجر جديد";
+    if(submitBtn)submitBtn.textContent="📤 إرسال طلب الفتح";
+    if(phoneInput){
+      phoneInput.setAttribute("readonly","readonly");
+      phoneInput.value=userPhone;
+    }
+  }
+
   document.getElementById("storeDescription").value="";
   document.getElementById("storeOpenTime").value="09:00";
   document.getElementById("storeCloseTime").value="23:00";
@@ -4242,25 +4327,35 @@ function renderStoreCover(){const box=document.getElementById("storeCoverThumbs"
 
 window.submitStore=async()=>{
   if(!auth.currentUser)return;
+  const isAdminUser=isAdmin || (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL);
+  const isCreatingAsAdmin=isAdminUser && !document.getElementById("adminStoreCreationNotice")?.classList.contains("hidden");
   const name=document.getElementById("storeName").value.trim();
   const category=document.getElementById("storeCategory").value;
+  const isRest=isRestaurantCategory(category);
   const city=document.getElementById("storeCity").value;
   const description=document.getElementById("storeDescription").value.trim().slice(0,500);
+  const ownerEmail=(document.getElementById("storeOwnerEmail")?.value||"").trim();
+  const callPhone=(document.getElementById("storeCallPhone")?.value||"").trim();
+  const inputPhone=(document.getElementById("storePhone")?.value||"").trim();
   const userPhone=(myProfile&&myProfile.phone)||"";
+  const phone=isCreatingAsAdmin ? inputPhone : userPhone;
   const receiptPhone=document.getElementById("storeReceiptPhone")?.value.trim()||"";
-  if(!userPhone){showToast("❌ يجب تسجيل رقم الواتساب أولاً","error");return;}
-  if(isRestaurantCategory(category) && receiptPhone && receiptPhone.length<9){showToast("⚠️ رقم استلام الإيصالات قصير جداً","warn");return;}
-  const phone=userPhone;
+
+  if(!phone){
+    showToast(isRest?"❌ يرجى إدخال رقم الواتساب للمطعم":"❌ يرجى إدخال رقم الهاتف والواتساب للمتجر","error");
+    return;
+  }
+  if(isRest && receiptPhone && receiptPhone.length<9){showToast("⚠️ رقم استلام الإيصالات قصير جداً","warn");return;}
   if(name.length<2||name.length>40){showToast("اسم المتجر بين 2 و40 حرف","warn");return;}
   if(!city){showToast("اختر المدينة","warn");return;}
-  if(!storeLogoImage){showToast("أضف شعار المتجر","warn");return;}
+  if(!storeLogoImage){showToast("أضف شعار المتجر / المطعم","warn");return;}
   const bad=checkContent(name,description);
   if(bad){showToast("❌ يحتوي على كلمة ممنوعة: "+bad.word,"error");return;}
   const openTime=document.getElementById("storeOpenTime")?.value||"09:00";
   const closeTime=document.getElementById("storeCloseTime")?.value||"23:00";
   const alwaysOpen=document.getElementById("storeAlwaysOpen")?.checked||false;
   const deliveryCompany=document.getElementById("storeDelivery")?.value||"";
-  const btn=document.getElementById("storeSubmitBtn");btn.disabled=true;btn.textContent="جاري الإرسال...";
+  const btn=document.getElementById("storeSubmitBtn");btn.disabled=true;btn.textContent="جاري الحفظ...";
   try{
     const logoUrl=await uploadToImgBB(storeLogoImage.file);
     let coverUrl="";
@@ -4271,13 +4366,44 @@ window.submitStore=async()=>{
       iban:(document.getElementById("storeBankIban")?.value||"").trim().slice(0,34),
       accountNumber:(document.getElementById("storeBankAccount")?.value||"").trim().slice(0,30)
     };
-    const storeData={ownerUid:auth.currentUser.uid,ownerUsername:(myProfile&&myProfile.username)||"",ownerMemberNo:(myProfile&&myProfile.memberNo)||null,name,category,city,phone,receiptPhone:(isRestaurantCategory(category)?receiptPhone:""),description,logo:logoUrl,cover:coverUrl,workingHours:{openTime,closeTime,alwaysOpen},deliveryCompany,bankInfo,helpers:[],status:"pending",rejectReason:"",createdAt:Date.now(),approvedAt:null,verified:false};
+    const finalCallPhone = isRest ? (callPhone || phone) : phone;
+    const storeData={
+      ownerUid: isCreatingAsAdmin ? ("admin_client_" + Date.now()) : auth.currentUser.uid,
+      ownerUsername: isCreatingAsAdmin ? "" : ((myProfile&&myProfile.username)||""),
+      ownerMemberNo: isCreatingAsAdmin ? null : ((myProfile&&myProfile.memberNo)||null),
+      ownerEmail: ownerEmail || "", // Email is completely optional!
+      createdByAdmin: isCreatingAsAdmin,
+      name,
+      category,
+      city,
+      phone,
+      callPhone: finalCallPhone,
+      receiptPhone: isRest ? receiptPhone : "",
+      description,
+      logo: logoUrl,
+      cover: coverUrl,
+      workingHours:{openTime,closeTime,alwaysOpen},
+      deliveryCompany,
+      bankInfo,
+      helpers:[],
+      status: isCreatingAsAdmin ? "approved" : "pending",
+      rejectReason:"",
+      createdAt:Date.now(),
+      approvedAt: isCreatingAsAdmin ? Date.now() : null,
+      verified: isCreatingAsAdmin ? true : false
+    };
     const ref=await addDoc(collection(db,"stores"),storeData);
-    try{await updateDoc(doc(db,"profiles",auth.currentUser.uid),{storeId:ref.id});}catch(e){}
-    showToast("✅ تم إرسال طلب فتح المتجر — سيظهر بعد موافقة الإدارة","success");
-    closeOverlay();
+    if(!isCreatingAsAdmin){
+      try{await updateDoc(doc(db,"profiles",auth.currentUser.uid),{storeId:ref.id});}catch(e){}
+      showToast("✅ تم إرسال طلب فتح المتجر — سيظهر بعد موافقة الإدارة","success");
+      closeOverlay();
+    } else {
+      showToast("✅ تم إنشاء واعتماد المتجر بنجاح! يمكنك إضافة الوجبات والمنتجات له الآن","success", 5000);
+      closeOverlay();
+      setTimeout(()=>openStore(ref.id, false, "stores"), 300);
+    }
   }catch(e){showToast("خطأ: "+e.message,"error");}
-  finally{btn.disabled=false;btn.textContent="📤 إرسال طلب الفتح";}
+  finally{btn.disabled=false;btn.textContent=isCreatingAsAdmin?"🚀 إنشاء واعتماد المتجر الآن":"📤 إرسال طلب الفتح";}
 };
 
 /* ============================================
@@ -4322,7 +4448,7 @@ function renderStoresModeration(){
     const verifiedBadge=s.verified?`<span class="verifiedBadge" title="موثق"></span>`:"";
     const isRest=isRestaurantStore(s);
     const badgeHTML=isRest?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
-    return `<div style="border:${border};border-radius:14px;padding:12px;margin-bottom:14px;background:${bg}"><div style="font-size:12px;font-weight:800;margin-bottom:8px">${label} · 📦 ${count} منتج · ${badgeHTML} ${s.verified?'· <span style="color:#1877F2">✓ موثق</span>':''}</div><div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)} ${verifiedBadge}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div><div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div><div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · ☎️ ${escapeHtml(s.phone||"")} · ⏰ ${timeAgo(s.createdAt)}${s.deliveryCompany?"<br>🛵 التوصيل: "+escapeHtml(s.deliveryCompany):""}${s.rejectReason?"<br>📝 <b>سبب الرفض:</b> "+escapeHtml(s.rejectReason):""}${s.receiptPhone?"<br>🧾 واتساب الإيصالات: "+escapeHtml(s.receiptPhone):""}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">${s.status!=="approved"?`<button onclick="approveStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة</button>`:""}${s.status!=="rejected"?`<button onclick="rejectStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#f59e0b;color:#3a2500;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🚫 رفض</button>`:""}<button onclick="openStore('${s.id}',false,'categories')" style="padding:12px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">👁️ عرض</button><button onclick="toggleStoreVerify('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:${s.verified?'#8a93a3':'#1877F2'};color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">${s.verified?'✕ إلغاء':'✓ توثيق'}</button><button onclick="deleteStore('${s.id}')" style="padding:12px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">🗑️ حذف</button></div></div>`;
+    return `<div style="border:${border};border-radius:14px;padding:12px;margin-bottom:14px;background:${bg}"><div style="font-size:12px;font-weight:800;margin-bottom:8px">${label} · 📦 ${count} منتج · ${badgeHTML} ${s.verified?'· <span style="color:#1877F2">✓ موثق</span>':''}</div><div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)} ${verifiedBadge}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div><div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div><div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · 💬 واتساب: ${escapeHtml(s.phone||"")}${s.callPhone?" · 📞 هاتف: "+escapeHtml(s.callPhone):""}${s.ownerEmail?" · 📧 "+escapeHtml(s.ownerEmail):" · 📧 الإيميل: <i>فارغ</i>"} · ⏰ ${timeAgo(s.createdAt)}${s.deliveryCompany?"<br>🛵 التوصيل: "+escapeHtml(s.deliveryCompany):""}${s.rejectReason?"<br>📝 <b>سبب الرفض:</b> "+escapeHtml(s.rejectReason):""}${s.receiptPhone?"<br>🧾 واتساب الإيصالات: "+escapeHtml(s.receiptPhone):""}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">${s.status!=="approved"?`<button onclick="approveStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>`:""}${s.status!=="rejected"?`<button onclick="rejectStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#f59e0b;color:#3a2500;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🚫 رفض</button>`:""}<button onclick="openStore('${s.id}',false,'categories')" style="padding:10px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض المتجر</button><button onclick="openStore('${s.id}',false,'categories');setTimeout(()=>goAddStorePost('${s.id}'),300)" style="padding:10px;border:none;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">➕ إضافة منتج/وجبة</button><button onclick="toggleStoreVerify('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:${s.verified?'#8a93a3':'#1877F2'};color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">${s.verified?'✕ إلغاء توثيق':'✓ توثيق'}</button><button onclick="deleteStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ حذف</button></div></div>`;
   }).join("");
 }
 window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});showToast("✅ تم قبول المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
@@ -4434,7 +4560,8 @@ document.getElementById("originalPrice").value="";
 document.getElementById("discountPreview").textContent="";
 document.getElementById("discountField").style.display="block";
 const userPhone=(myProfile&&myProfile.phone)||"";
-document.getElementById("phone").value=userPhone?formatCallPhone(userPhone):"⚠️ لم تسجل رقمك بعد";
+const displayPhone = (isStore && activeStore && (activeStore.phone || activeStore.callPhone)) ? (activeStore.phone || activeStore.callPhone) : userPhone;
+document.getElementById("phone").value=displayPhone?formatCallPhone(displayPhone):"⚠️ لم تسجل رقمك بعد";
 document.getElementById("phone").setAttribute("readonly","readonly");
 document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
@@ -4650,10 +4777,12 @@ window.openAccount=(skipHistory)=>{
     if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
     const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
     const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
+const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
     const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
     const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
     const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
     const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
+    const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
     accountOverlay.classList.remove("hidden");
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
@@ -5192,6 +5321,7 @@ if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsL
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
 const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
+const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
 const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
 const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
