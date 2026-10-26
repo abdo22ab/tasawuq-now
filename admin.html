@@ -283,6 +283,26 @@ html.dark-mode .adminRow{background:#131a28}
 <div class="sectionBody"><div id="feedbackList"><div class="listEmpty">اضغط لتحميل</div></div></div>
 </div>
 
+<div class="section" id="secWallet">
+<div class="sectionHeader" onclick="toggleSection('secWallet')">
+<div class="secIconWrap" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff">💰</div>
+<div><div class="secTitle">الإدارة المالية وكروت الشحن</div><div class="secSub">توليد كروت الشحن، السجل المالي، الإيداع اليدوي ومستحقات المطاعم</div></div>
+<div class="arrow">▼</div>
+</div>
+<div class="sectionBody">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+    <button type="button" class="btn btn-primary" id="btnAdmTabLedger" onclick="adminSwitchWalTab('ledger')" style="font-size:12px;padding:9px;font-weight:800">📜 السجل المالي العام</button>
+    <button type="button" class="btn btn-success" id="btnAdmTabCards" onclick="adminSwitchWalTab('cards')" style="font-size:12px;padding:9px;font-weight:800">⚡ كروت الشحن</button>
+    <button type="button" class="btn btn-warning" id="btnAdmTabDep" onclick="adminSwitchWalTab('deposit')" style="font-size:12px;padding:9px;font-weight:800">💵 إيداع يدوي</button>
+  </div>
+
+  <!-- حاوية محتوى التبويبات -->
+  <div id="admWalContent">
+    <div class="listEmpty">اضغط على أحد الأزرار أعلاه لعرض السجل أو توليد الكروت</div>
+  </div>
+</div>
+</div>
+
 <div class="section" id="secAdmins">
 <div class="sectionHeader" onclick="toggleSection('secAdmins')">
 <div class="secIconWrap" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff">👥</div>
@@ -400,7 +420,7 @@ function startLiveListeners(){
   if(!unsubReports){unsubReports=onSnapshot(collection(db,"reports"),snap=>{allReportsCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderReportsList();updateStats();});}
   if(!unsubStores){unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();updateStats();});}
   if(!unsubFeedback){unsubFeedback=onSnapshot(collection(db,"feedback"),snap=>{
-    allFeedbackCache=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    allFeedbackCache=snap.docs.map(d=>({id:d.id,...d.data()})).filter(f=>!f.type || f.type==='bug'||f.type==='suggestion'||f.type==='complaint'||f.type==='other').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     renderFeedbackList();
     const newCount=allFeedbackCache.filter(f=>f.status==="new").length;
     const fb=document.getElementById("feedbackBadge");
@@ -1159,6 +1179,394 @@ function showAdminStatus(type,msg){
   el.className="status show "+type;el.textContent=msg;
   if(type==="ok")setTimeout(()=>el.classList.remove("show"),4000);
 }
+
+/* ===== Wallet & Financial Management (Admin) ===== */
+let _adminWalLedgerData = [];
+let _adminWalCardsData = [];
+let _adminWalDepTarget = null;
+
+window.adminSwitchWalTab = async(tab)=>{
+  const box = document.getElementById("admWalContent");
+  if(!box) return;
+  if(tab === 'ledger'){
+    box.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <input type="text" id="admWebLedgerSearch" placeholder="🔍 بحث برقم الهاتف أو الاسم..." oninput="filterAdminWebLedger()" style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff">
+          <select id="admWebLedgerType" onchange="filterAdminWebLedger()" style="padding:8px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-weight:700">
+            <option value="all">كل العمليات</option>
+            <option value="card_recharge">شحن كارت</option>
+            <option value="order_payment">دفع مطعم</option>
+            <option value="order_refund">استرجاع طلبية</option>
+            <option value="admin_credit">إيداع يدوي</option>
+            <option value="admin_debit">خصم يدوي</option>
+          </select>
+        </div>
+        <div id="admWebLedgerRows"><div class="listEmpty">⏳ جاري تحميل السجل المالي...</div></div>
+      </div>
+    `;
+    loadAdminWebLedger();
+  }else if(tab === 'cards'){
+    box.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:8px">⚡ توليد دفعة كروت شحن جديدة:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <label style="font-size:11px;font-weight:700">فئة الكارت:</label>
+            <select id="admWebGenDenom" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12.5px;font-weight:700">
+              <option value="10">10 دينار ليبي</option>
+              <option value="20" selected>20 دينار ليبي</option>
+              <option value="50">50 دينار ليبي</option>
+              <option value="100">100 دينار ليبي</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700">العدد المطلوب:</label>
+            <select id="admWebGenCount" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12.5px;font-weight:700">
+              <option value="5">5 كروت</option>
+              <option value="10" selected>10 كروت</option>
+              <option value="20">20 كارت</option>
+              <option value="50">50 كارت</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-success" id="btnAdmWebGenCards" onclick="adminWebGenerateCards()" style="width:100%;font-weight:800;padding:10px;font-size:13px;margin-bottom:10px">⚡ توليد وحفظ الكروت في قاعدة البيانات</button>
+        <div id="admWebGenOutput" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:800;color:#15803d;font-size:12px">🎉 تم توليد الكروت:</span>
+            <button class="btn btn-primary" onclick="copyWebGenCards()" style="padding:4px 8px;font-size:11px">📋 نسخ الكل</button>
+          </div>
+          <textarea id="admWebGenText" rows="5" readonly style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;direction:ltr;text-align:left;border:1px solid #bbf7d0;border-radius:6px;padding:6px;background:#fff"></textarea>
+        </div>
+        <div style="font-weight:800;font-size:13px;margin-bottom:8px">قائمة الكروت في المنظومة:</div>
+        <div id="admWebCardsRows"><div class="listEmpty">⏳ جاري تحميل الكروت...</div></div>
+      </div>
+    `;
+    loadAdminWebCards();
+  }else if(tab === 'deposit'){
+    box.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:10px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
+        <div class="field" style="margin-bottom:8px">
+          <label style="font-size:11.5px;font-weight:700">رقم هاتف الزبون:</label>
+          <div style="display:flex;gap:6px">
+            <input type="tel" id="admWebDepPhone" placeholder="09xxxxxxxx" dir="ltr" style="flex:1;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff">
+            <button type="button" class="btn btn-primary" onclick="admWebLookupPhone()" style="padding:8px 12px;font-size:12px;font-weight:700">🔍 فحص</button>
+          </div>
+        </div>
+        <div id="admWebDepUserBox" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="field" style="margin:0">
+            <label style="font-size:11.5px;font-weight:700">المبلغ (د.ل):</label>
+            <input type="number" id="admWebDepAmt" placeholder="50" min="1" max="5000" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-weight:800;text-align:center">
+          </div>
+          <div class="field" style="margin:0">
+            <label style="font-size:11.5px;font-weight:700">نوع العملية:</label>
+            <select id="admWebDepType" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-weight:700">
+              <option value="credit">➕ إيداع رصيد (شحن)</option>
+              <option value="debit">➖ خصم رصيد</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label style="font-size:11.5px;font-weight:700">سبب / ملاحظة العملية:</label>
+          <input type="text" id="admWebDepNote" placeholder="مثال: استلام حوالة ليبيانا / تسوية / تعديل..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12px">
+        </div>
+        <button type="button" id="btnAdmWebSubmitDep" class="btn btn-success" onclick="admWebExecuteDeposit()" style="width:100%;font-weight:800;padding:12px;font-size:13.5px">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
+      </div>
+    `;
+  }
+};
+
+async function loadAdminWebLedger(){
+  const box = document.getElementById("admWebLedgerRows");
+  if(!box) return;
+  try{
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_transaction")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if(!error && data){
+        _adminWalLedgerData = data.map(r=>{
+          let parsed = {};
+          try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+          return { ...parsed, _rowId: r.id, _created: r.created_at, _uName: r.user_name || parsed.userName, _uPhone: r.user_phone || parsed.userPhone };
+        });
+      }
+    }
+    filterAdminWebLedger();
+  }catch(e){
+    box.innerHTML = `<div class="listEmpty">خطأ: ${e.message}</div>`;
+  }
+}
+
+window.filterAdminWebLedger = ()=>{
+  const box = document.getElementById("admWebLedgerRows");
+  if(!box) return;
+  const q = (document.getElementById("admWebLedgerSearch")?.value || "").trim().toLowerCase();
+  const type = document.getElementById("admWebLedgerType")?.value || "all";
+
+  let filtered = _adminWalLedgerData;
+  if(type !== 'all') filtered = filtered.filter(tx => tx.txType === type);
+  if(q){
+    filtered = filtered.filter(tx => {
+      const u = (tx._uName || "").toLowerCase();
+      const p = (tx._uPhone || "").toLowerCase();
+      const r = (tx.reason || "").toLowerCase();
+      const id = (tx.txId || "").toLowerCase();
+      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q);
+    });
+  }
+
+  if(filtered.length === 0){
+    box.innerHTML = `<div class="listEmpty">لا توجد حركات مالية مطابقة</div>`;
+    return;
+  }
+
+  box.innerHTML = filtered.map(tx=>{
+    const amt = Number(tx.amount || 0);
+    const isIncome = amt >= 0;
+    const sign = isIncome ? '+' : '';
+    const color = isIncome ? '#16a34a' : '#dc2626';
+    const txDate = tx._created ? new Date(tx._created).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b style="font-size:12.5px">${esc(tx.reason || "معاملة")}</b>
+          <b style="color:${color};font-size:13.5px;direction:ltr">${sign}${amt} د.ل</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px">
+          <span>👤 ${esc(tx._uName||"")} (${esc(tx._uPhone||"")})</span>
+          <span>🕒 ${txDate}</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--muted);border-top:1px dashed var(--border);margin-top:4px;padding-top:2px;display:flex;justify-content:space-between">
+          <span>كود: <b>${esc(tx.txId||"")}</b></span>
+          <span>الرصيد بعد: <b>${tx.balanceAfter != null ? tx.balanceAfter + ' د.ل' : ''}</b></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+};
+
+async function loadAdminWebCards(){
+  const box = document.getElementById("admWebCardsRows");
+  if(!box) return;
+  try{
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_card")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if(!error && data){
+        _adminWalCardsData = data.map(r=>{
+          let parsed = {};
+          try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+          return { ...parsed, _rowId: r.id, _created: r.created_at };
+        });
+      }
+    }
+    if(_adminWalCardsData.length === 0){
+      box.innerHTML = `<div class="listEmpty">لا توجد كروت مولدة بعد</div>`;
+      return;
+    }
+    box.innerHTML = _adminWalCardsData.map(c=>{
+      const isUsed = c.isUsed;
+      const badge = isUsed
+        ? `<span style="color:#dc2626;font-weight:800;font-size:10.5px">🔴 مستخدم بواسطة: ${esc(c.usedByName||"زبون")} (${esc(c.usedByPhone||"")})</span>`
+        : `<span style="color:#16a34a;font-weight:800;font-size:10.5px">🟢 صالحة للاستخدام</span>`;
+      return `
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-family:monospace;font-weight:800;font-size:13px">${esc(c.code)} — <b>${c.amount} د.ل</b></div>
+            <div>${badge}</div>
+          </div>
+          <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${esc(c.code)}');alert('تم النسخ!');" style="padding:4px 8px;font-size:11px">📋 نسخ</button>
+        </div>
+      `;
+    }).join("");
+  }catch(e){
+    box.innerHTML = `<div class="listEmpty">خطأ: ${e.message}</div>`;
+  }
+}
+
+window.adminWebGenerateCards = async()=>{
+  const denom = parseInt(document.getElementById("admWebGenDenom")?.value || "20", 10);
+  const count = parseInt(document.getElementById("admWebGenCount")?.value || "10", 10);
+  const btn = document.getElementById("btnAdmWebGenCards");
+  const outBox = document.getElementById("admWebGenOutput");
+  const outText = document.getElementById("admWebGenText");
+
+  if(!confirm(`هل تريد توليد ${count} كارت من فئة ${denom} د.ل؟`)) return;
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التوليد..."; }
+
+  try{
+    const generated = [];
+    const batchId = "batch_" + Date.now();
+    for(let i=0; i<count; i++){
+      const part1 = Math.floor(1000 + Math.random() * 9000);
+      const part2 = Math.floor(1000 + Math.random() * 9000);
+      const part3 = Math.floor(1000 + Math.random() * 9000);
+      const code = `TK-${part1}-${part2}-${part3}`;
+      const cardDocId = "card_" + code;
+      const cardPayload = {
+        code,
+        amount: denom,
+        batchId,
+        isUsed: false,
+        usedByUid: null,
+        usedByName: null,
+        usedByPhone: null,
+        usedAt: null,
+        createdAt: Date.now()
+      };
+      await setDoc(doc(db, "feedback", cardDocId), {
+        id: cardDocId,
+        type: "wallet_card",
+        uid: "system",
+        message: JSON.stringify(cardPayload),
+        createdAt: Date.now()
+      });
+      generated.push(code);
+    }
+    if(outBox) outBox.style.display = "block";
+    if(outText){
+      outText.value = `كروت شحن تسوق الآن (فئة ${denom} د.ل):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
+    }
+    alert(`✅ تم بنجاح توليد وحفظ ${count} كارت!`);
+    loadAdminWebCards();
+  }catch(e){
+    alert("خطأ: " + e.message);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "⚡ توليد وحفظ الكروت في قاعدة البيانات"; }
+  }
+};
+
+window.copyWebGenCards = ()=>{
+  const t = document.getElementById("admWebGenText");
+  if(!t || !t.value) return;
+  navigator.clipboard.writeText(t.value);
+  alert("📋 تم نسخ قائمة الكروت بنجاح!");
+};
+
+window.admWebLookupPhone = async()=>{
+  const phone = (document.getElementById("admWebDepPhone")?.value || "").trim().replace(/[^0-9]/g, "");
+  const box = document.getElementById("admWebDepUserBox");
+  if(!box) return;
+  if(phone.length < 8){
+    alert("يرجى كتابة رقم هاتف صحيح");
+    _adminWalDepTarget = null;
+    return;
+  }
+  box.style.display = "block";
+  box.innerHTML = "⏳ جاري البحث...";
+  try{
+    let target = null;
+    if(window.supabase){
+      const { data } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .ilike("phone", `%${phone.slice(-8)}%`)
+        .limit(1)
+        .maybeSingle();
+      if(data) target = data;
+    }
+    if(!target){
+      box.innerHTML = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم في جدول profiles.";
+      _adminWalDepTarget = null;
+      return;
+    }
+    _adminWalDepTarget = target;
+    let bal = 0;
+    try{
+      const snap = await getDoc(doc(db, "feedback", "wallet_" + target.id));
+      if(snap && snap.exists()){
+        const d = JSON.parse(snap.data().message || "{}");
+        bal = d.balance || 0;
+      }
+    }catch(err){}
+    box.innerHTML = `✅ <b>العضو:</b> ${esc(target.name||"عضو")} (@${esc(target.username||"—")})<br>💳 <b>الرصيد الحالي:</b> ${bal.toFixed(2)} د.ل`;
+  }catch(e){
+    box.innerHTML = "خطأ: " + e.message;
+    _adminWalDepTarget = null;
+  }
+};
+
+window.admWebExecuteDeposit = async()=>{
+  const amt = parseFloat(document.getElementById("admWebDepAmt")?.value || "0");
+  const type = document.getElementById("admWebDepType")?.value || "credit";
+  const note = (document.getElementById("admWebDepNote")?.value || "").trim();
+  const btn = document.getElementById("btnAdmWebSubmitDep");
+
+  if(isNaN(amt) || amt <= 0){ alert("أدخل مبلغاً صحيحاً أكبر من 0"); return; }
+  if(!_adminWalDepTarget){ alert("اضغط 'فحص' للتأكد من حساب الزبون أولاً"); return; }
+
+  const opLabel = type === 'credit' ? `إيداع +${amt} د.ل` : `خصم -${amt} د.ل`;
+  if(!confirm(`هل أنت متأكد من ${opLabel} لحساب (${_adminWalDepTarget.name || _adminWalDepTarget.phone})؟`)) return;
+
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التنفيذ..."; }
+  try{
+    const targetUid = _adminWalDepTarget.id;
+    let currentBal = 0;
+    const snap = await getDoc(doc(db, "feedback", "wallet_" + targetUid));
+    if(snap && snap.exists()){
+      const d = JSON.parse(snap.data().message || "{}");
+      currentBal = Number(d.balance || 0);
+    }
+    if(type === 'debit' && currentBal < amt){
+      alert(`الرصيد الحالي (${currentBal} د.ل) لا يكفي لخصم ${amt} د.ل`);
+      return;
+    }
+    const newBal = type === 'credit' ? (currentBal + amt) : (currentBal - amt);
+    const finalNote = note || (type === 'credit' ? "إيداع يدوي من لوحة الأدمن" : "خصم يدوي من لوحة الأدمن");
+
+    await setDoc(doc(db, "feedback", "wallet_" + targetUid), {
+      id: "wallet_" + targetUid,
+      type: "user_wallet",
+      uid: targetUid,
+      userName: _adminWalDepTarget.name || "مستخدم",
+      userPhone: _adminWalDepTarget.phone || "",
+      message: JSON.stringify({ balance: newBal, updatedAt: Date.now() }),
+      updatedAt: Date.now()
+    }, { merge: true });
+
+    // تسجيل في السجل
+    const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+    await addDoc(collection(db, "feedback"), {
+      id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+      type: "wallet_transaction",
+      uid: targetUid,
+      userName: _adminWalDepTarget.name || "مستخدم",
+      userPhone: _adminWalDepTarget.phone || "",
+      message: JSON.stringify({
+        txId,
+        uid: targetUid,
+        userName: _adminWalDepTarget.name || "مستخدم",
+        userPhone: _adminWalDepTarget.phone || "",
+        txType: type === 'credit' ? "admin_credit" : "admin_debit",
+        amount: type === 'credit' ? amt : -amt,
+        balanceBefore: currentBal,
+        balanceAfter: newBal,
+        reason: finalNote,
+        timestamp: Date.now()
+      }),
+      createdAt: Date.now()
+    });
+
+    alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${newBal.toFixed(2)} د.ل`);
+    document.getElementById("admWebDepAmt").value = "";
+    document.getElementById("admWebDepNote").value = "";
+    admWebLookupPhone();
+  }catch(e){
+    alert("خطأ: " + e.message);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
+  }
+};
 
 window.addEventListener('beforeunload',(e)=>{if(hasBannerChanges){e.preventDefault();e.returnValue="";}});
 </script>
