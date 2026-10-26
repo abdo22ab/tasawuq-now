@@ -7666,11 +7666,38 @@ window.switchAdmWalTab = (tab)=>{
   else if(tab === 'stores') loadAdminStoresPayouts();
 };
 
-// توليد كروت الشحن للأدمن
+// إظهار أو إخفاء الفئة المخصصة لكروت الشحن للأدمن
+window.toggleAdmCustomDenom = ()=>{
+  const sel = document.getElementById("admCardDenom");
+  const cust = document.getElementById("admCardCustomDenom");
+  if(sel && cust){
+    cust.style.display = (sel.value === 'custom') ? 'block' : 'none';
+    if(sel.value === 'custom') cust.focus();
+  }
+};
+
+// توليد كروت الشحن للأدمن (عدد مفتوح وفئات مرنة)
 window.adminGenerateCardsBatch = async()=>{
   if(!isAdmin) return;
-  const denom = parseInt(document.getElementById("admCardDenom")?.value || "20", 10);
-  const count = parseInt(document.getElementById("admCardCount")?.value || "10", 10);
+  const selDenom = document.getElementById("admCardDenom")?.value || "20";
+  let denom = 20;
+  if(selDenom === 'custom'){
+    denom = parseInt(document.getElementById("admCardCustomDenom")?.value || "0", 10);
+    if(isNaN(denom) || denom < 1 || denom > 5000){
+      showToast("⚠️ يرجى إدخال قيمة فئة مخصصة صحيحة (من 1 إلى 5000 د.ل)", "warn");
+      return;
+    }
+  }else{
+    denom = parseInt(selDenom, 10);
+  }
+
+  const countInput = document.getElementById("admCardCount");
+  const count = parseInt(countInput?.value || "10", 10);
+  if(isNaN(count) || count < 1 || count > 500){
+    showToast("⚠️ يرجى إدخال عدد كروت صحيح بين 1 و 500 كارت في الدفعة الواحدة", "warn");
+    return;
+  }
+
   const btn = document.getElementById("btnAdmGenCards");
   const outBox = document.getElementById("admGeneratedCardsOutput");
   const outText = document.getElementById("admGeneratedCardsText");
@@ -7711,7 +7738,7 @@ window.adminGenerateCardsBatch = async()=>{
 
     if(outBox) outBox.style.display = "block";
     if(outText){
-      outText.value = `🌟 كروت شحن تسوق الآن (فئة ${denom} د.ل):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
+      outText.value = `🌟 كروت شحن تسوق الآن (فئة ${denom} د.ل - إجمالي ${count} كارت):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
     }
     showToast(`✅ تم بنجاح توليد وحفظ ${count} كارت في قاعدة البيانات!`, "success", 4000);
     loadAdminCardsList();
@@ -7816,16 +7843,25 @@ async function loadAdminLedger(){
         .select("*")
         .eq("type", "wallet_transaction")
         .order("created_at", { ascending: false })
-        .limit(150);
+        .limit(250);
       if(!error && data){
         _admAllLedger = data.map(r=>{
           let parsed = {};
           try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
-          return { ...parsed, _rowId: r.id, _created: r.created_at, _uName: r.user_name || parsed.userName, _uPhone: r.user_phone || parsed.userPhone };
+          return {
+            ...parsed,
+            _rowId: r.id,
+            _created: r.created_at,
+            _uName: r.user_name || parsed.userName,
+            _uPhone: r.user_phone || parsed.userPhone,
+            _storeId: parsed.meta?.storeId || parsed.storeId || null,
+            _storeName: parsed.meta?.storeName || parsed.storeName || null
+          };
         });
       }
     }
     updateAdminLedgerStats();
+    populateLedgerStoreFilter();
     renderAdminLedgerTable();
   }catch(e){
     box.innerHTML = `<div class="reportsEmpty">خطأ في جلب السجل: ${e.message}</div>`;
@@ -7852,15 +7888,52 @@ function updateAdminLedgerStats(){
   if(elF) elF.textContent = totalRefunds.toFixed(2) + " د.ل";
 }
 
+function populateLedgerStoreFilter(storesList = null){
+  const sel = document.getElementById("admLedgerStoreFilter");
+  if(!sel) return;
+  const currentVal = sel.value || "all";
+  const stores = {};
+
+  if(storesList && storesList.length){
+    storesList.forEach(s => {
+      if(s.storeId) stores[s.storeId] = s.storeName || "مطعم";
+    });
+  }
+
+  if(Array.isArray(_admAllLedger)){
+    _admAllLedger.forEach(tx => {
+      const sId = tx._storeId || tx.meta?.storeId;
+      const sName = tx._storeName || tx.meta?.storeName;
+      if(sId && sName && !stores[sId]){
+        stores[sId] = sName;
+      }
+    });
+  }
+
+  let html = `<option value="all">🍽️ كل المطاعم</option>`;
+  Object.keys(stores).forEach(sId => {
+    html += `<option value="${escapeHtml(sId)}">🍽️ ${escapeHtml(stores[sId])}</option>`;
+  });
+  sel.innerHTML = html;
+  if(stores[currentVal] || currentVal === 'all') sel.value = currentVal;
+}
+
 function renderAdminLedgerTable(){
   const box = document.getElementById("admLedgerListTable");
   if(!box) return;
   const q = (document.getElementById("admLedgerSearchInput")?.value || "").trim().toLowerCase();
   const typeFilter = document.getElementById("admLedgerTypeFilter")?.value || "all";
+  const storeFilter = document.getElementById("admLedgerStoreFilter")?.value || "all";
 
   let filtered = _admAllLedger;
   if(typeFilter !== 'all'){
     filtered = filtered.filter(tx => tx.txType === typeFilter);
+  }
+  if(storeFilter !== 'all'){
+    filtered = filtered.filter(tx => {
+      const txStore = tx._storeId || tx.meta?.storeId;
+      return txStore === storeFilter;
+    });
   }
   if(q){
     filtered = filtered.filter(tx => {
@@ -7868,12 +7941,13 @@ function renderAdminLedgerTable(){
       const p = (tx._uPhone || "").toLowerCase();
       const r = (tx.reason || "").toLowerCase();
       const id = (tx.txId || "").toLowerCase();
-      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q);
+      const sn = (tx._storeName || tx.meta?.storeName || "").toLowerCase();
+      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q) || sn.includes(q);
     });
   }
 
   if(filtered.length === 0){
-    box.innerHTML = `<div class="reportsEmpty">لا توجد حركات مالية مطابقة للبحث</div>`;
+    box.innerHTML = `<div class="reportsEmpty">لا توجد حركات مالية مطابقة للبحث والفلترة</div>`;
     return;
   }
 
@@ -7883,10 +7957,17 @@ function renderAdminLedgerTable(){
     const sign = isIncome ? '+' : '';
     const color = isIncome ? '#16a34a' : '#dc2626';
     const txDate = tx._created ? new Date(tx._created).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const storeBadge = (tx._storeName || tx.meta?.storeName)
+      ? `<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:800;margin-left:4px">🍽️ ${escapeHtml(tx._storeName || tx.meta?.storeName)}</span>`
+      : '';
+
     return `
       <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(tx.reason || "معاملة مالية")}</div>
+          <div style="font-weight:800;font-size:13px;color:var(--text)">
+            ${storeBadge}
+            ${escapeHtml(tx.reason || "معاملة مالية")}
+          </div>
           <div style="font-weight:900;font-size:14px;color:${color};direction:ltr">${sign}${amt} د.ل</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)">
@@ -7904,47 +7985,119 @@ function renderAdminLedgerTable(){
 
 // فحص وإيداع يدوي لأي مستخدم
 let _admDepTargetUser = null;
+
+window.onAdmDepPhoneInputChanged = ()=>{
+  _admDepTargetUser = null;
+  const box = document.getElementById("admDepUserInfoBox");
+  if(box){
+    box.style.display = "none";
+    box.innerHTML = "";
+  }
+};
+
 window.admLookupUserByPhone = async()=>{
-  const phone = (document.getElementById("admDepPhone")?.value || "").trim().replace(/[^0-9]/g, "");
+  _admDepTargetUser = null;
+  const rawQuery = (document.getElementById("admDepPhone")?.value || "").trim();
   const box = document.getElementById("admDepUserInfoBox");
   if(!box) return;
-  if(phone.length < 8){
+
+  if(!rawQuery || rawQuery.length < 3){
     box.style.display = "block";
     box.style.background = "#fef2f2";
     box.style.color = "#991b1b";
-    box.textContent = "⚠️ يرجى كتابة رقم هاتف صحيح";
-    _admDepTargetUser = null;
+    box.style.border = "1px solid #fecaca";
+    box.style.borderRadius = "8px";
+    box.style.padding = "8px 10px";
+    box.textContent = "⚠️ يرجى كتابة رقم هاتف أو اسم مستخدم صحيح";
     return;
   }
+
   box.style.display = "block";
   box.style.background = "#f8fafc";
   box.style.color = "var(--text)";
-  box.textContent = "⏳ جاري البحث عن صاحب الرقم...";
+  box.style.border = "1px solid var(--border)";
+  box.style.borderRadius = "8px";
+  box.style.padding = "8px 10px";
+  box.textContent = "⏳ جاري البحث عن صاحب الحساب...";
 
   try{
     let target = null;
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, "");
+    const cleanUsername = rawQuery.replace(/^@/, "").toLowerCase();
+
     if(window.supabase){
-      const { data } = await window.supabase
-        .from("profiles")
-        .select("*")
-        .ilike("phone", `%${phone.slice(-8)}%`)
-        .limit(1)
-        .maybeSingle();
-      if(data) target = data;
+      if(cleanDigits.length >= 8){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .ilike("phone", `%${cleanDigits.slice(-8)}%`)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
+
+      if(!target && cleanUsername.length >= 2){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .ilike("username", cleanUsername)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
+
+      if(!target){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .or(`id.eq.${rawQuery},name.ilike.%${rawQuery}%`)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
     }
+
     if(!target){
       box.style.background = "#fffbeb";
       box.style.color = "#92400e";
-      box.textContent = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم في جدول الأعضاء. يمكنك إدخال UID مباشرة أو التأكد من الرقم.";
+      box.style.border = "1px solid #fde68a";
+      box.textContent = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم أو اسم المستخدم. تأكد من صحة المدخلات أو جرب البحث بـ @username.";
       _admDepTargetUser = null;
       return;
     }
+
     _admDepTargetUser = target;
     const wal = await getUserWallet(target.id);
+
     box.style.background = "#f0fdf4";
     box.style.color = "#166534";
-    box.innerHTML = `✅ <b>تم العثور على العضو:</b> ${escapeHtml(target.name || "عضو")} (@${escapeHtml(target.username || "—")})<br>💳 <b>الرصيد الحالي:</b> ${wal.balance.toFixed(2)} د.ل`;
+    box.style.border = "1.5px solid #86efac";
+    box.style.padding = "10px";
+    box.innerHTML = `
+      <div style="font-weight:900;font-size:12.5px;color:#15803d;margin-bottom:8px">✅ تم العثور على حساب العضو بنجاح:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
+          <div style="font-size:10.5px;color:var(--muted);font-weight:700">👤 الاسم الكامل:</div>
+          <div style="font-size:12.5px;font-weight:900;color:var(--text);margin-top:2px">${escapeHtml(target.name || "مستخدم")}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
+          <div style="font-size:10.5px;color:var(--muted);font-weight:700">🏷️ اسم المستخدم:</div>
+          <div style="font-size:12.5px;font-weight:900;color:var(--text);margin-top:2px">@${escapeHtml(target.username || "—")}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
+          <div style="font-size:10.5px;color:var(--muted);font-weight:700">📞 رقم الهاتف:</div>
+          <div style="font-size:12.5px;font-weight:900;color:#0284c7;margin-top:2px;direction:ltr;text-align:right">${escapeHtml(target.phone || "—")}</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #22c55e;border-radius:8px;padding:6px 10px">
+          <div style="font-size:10.5px;color:#15803d;font-weight:800">💳 الرصيد الحالي:</div>
+          <div style="font-size:14px;font-weight:900;color:#166534;margin-top:2px">${wal.balance.toFixed(2)} د.ل</div>
+        </div>
+      </div>
+    `;
   }catch(e){
+    box.style.background = "#fef2f2";
+    box.style.color = "#991b1b";
+    box.style.border = "1px solid #fecaca";
     box.textContent = "خطأ في البحث: " + e.message;
     _admDepTargetUser = null;
   }
@@ -8008,11 +8161,27 @@ window.adminExecuteDeposit = async()=>{
   }
 };
 
-// مستحقات المطاعم (Restaurant Payouts)
+// مستحقات المطاعم (Restaurant Payouts & Ledger Breakdown)
+window.filterLedgerByStore = (storeId, storeName)=>{
+  switchAdmWalTab('ledger');
+  const sel = document.getElementById("admLedgerStoreFilter");
+  if(sel){
+    let opt = Array.from(sel.options).find(o => o.value === storeId);
+    if(!opt){
+      opt = document.createElement("option");
+      opt.value = storeId;
+      opt.textContent = `🍽️ ${storeName}`;
+      sel.appendChild(opt);
+    }
+    sel.value = storeId;
+  }
+  renderAdminLedgerTable();
+};
+
 async function loadAdminStoresPayouts(){
   const box = document.getElementById("admStoresPayoutsList");
   if(!box) return;
-  box.innerHTML = `<div class="reportsEmpty">⏳ جاري حساب مستحقات المطاعم...</div>`;
+  box.innerHTML = `<div class="reportsEmpty">⏳ جاري حساب مبيعات ومستحقات المطاعم (أسبوعياً وشهرياً)...</div>`;
 
   try{
     let orders = [];
@@ -8022,11 +8191,15 @@ async function loadAdminStoresPayouts(){
         .select("*")
         .eq("type", "restaurant_order")
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(500);
       if(!error && data) orders = data;
     }
 
+    const now = Date.now();
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
     const storesMap = {};
+
     orders.forEach(r=>{
       let ord = {};
       try{ ord = JSON.parse(r.message || "{}"); }catch(e){}
@@ -8037,32 +8210,72 @@ async function loadAdminStoresPayouts(){
             storeId: sId,
             storeName: ord.storeName || "مطعم",
             storePhone: ord.storePhone || "",
-            count: 0,
-            totalRevenue: 0
+            countAll: 0,
+            revenueAll: 0,
+            countWeek: 0,
+            revenueWeek: 0,
+            countMonth: 0,
+            revenueMonth: 0
           };
         }
-        storesMap[sId].count += 1;
-        storesMap[sId].totalRevenue += Number(ord.totalPrice || 0);
+        const amt = Number(ord.totalPrice || 0);
+        const orderTime = Number(ord.createdAt || (r.created_at ? new Date(r.created_at).getTime() : now));
+
+        storesMap[sId].countAll += 1;
+        storesMap[sId].revenueAll += amt;
+
+        if(orderTime >= oneWeekAgo){
+          storesMap[sId].countWeek += 1;
+          storesMap[sId].revenueWeek += amt;
+        }
+        if(orderTime >= oneMonthAgo){
+          storesMap[sId].countMonth += 1;
+          storesMap[sId].revenueMonth += amt;
+        }
       }
     });
 
     const list = Object.values(storesMap);
+    populateLedgerStoreFilter(list);
+
     if(list.length === 0){
       box.innerHTML = `<div class="reportsEmpty">لا توجد طلبيات مطاعم مدفوعة بالمحفظة حتى الآن</div>`;
       return;
     }
 
     box.innerHTML = list.map(st=>`
-      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-weight:900;font-size:14.5px;color:var(--text)">🍽️ ${escapeHtml(st.storeName)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">
-            📞 ${escapeHtml(st.storePhone)} — <b>${st.count}</b> طلبية مدفوعة بالمحفظة
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-weight:900;font-size:15px;color:var(--text)">🍽️ ${escapeHtml(st.storeName)}</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">
+              ${st.storePhone ? `📞 <a href="tel:${formatCallPhone(st.storePhone)}" style="color:#0284c7;text-decoration:none;font-weight:700">${escapeHtml(st.storePhone)}</a> — ` : ''}
+              إجمالي الطلبات المدفوعة بالمحفظة: <b>${st.countAll}</b> طلب
+            </div>
           </div>
+          <button type="button" class="btnGhost" onclick="filterLedgerByStore('${escapeHtml(st.storeId)}', '${escapeHtml(st.storeName)}')" style="padding:6px 12px;font-size:11.5px;font-weight:800;border:1.5px solid var(--teal);color:var(--teal-dark);background:var(--teal-light);border-radius:8px;cursor:pointer">
+            📜 كشف الحساب
+          </button>
         </div>
-        <div style="text-align:left">
-          <div style="font-weight:900;font-size:16px;color:#16a34a">${st.totalRevenue.toFixed(2)} د.ل</div>
-          <div style="font-size:10.5px;color:var(--muted)">مبيعات محفظة</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:10.5px;color:#166534;font-weight:700">مبيعات هذا الأسبوع</div>
+            <div style="font-size:14px;font-weight:900;color:#15803d;margin-top:2px">${st.revenueWeek.toFixed(2)} د.ل</div>
+            <div style="font-size:10px;color:#15803d">(${st.countWeek} طلب)</div>
+          </div>
+
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:10.5px;color:#1e40af;font-weight:700">مبيعات هذا الشهر</div>
+            <div style="font-size:14px;font-weight:900;color:#1d4ed8;margin-top:2px">${st.revenueMonth.toFixed(2)} د.ل</div>
+            <div style="font-size:10px;color:#1d4ed8">(${st.countMonth} طلب)</div>
+          </div>
+
+          <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:10.5px;color:#6b21a8;font-weight:700">الإجمالي الكلي</div>
+            <div style="font-size:14px;font-weight:900;color:#7e22ce;margin-top:2px">${st.revenueAll.toFixed(2)} د.ل</div>
+            <div style="font-size:10px;color:#7e22ce">(${st.countAll} طلب)</div>
+          </div>
         </div>
       </div>
     `).join("");
