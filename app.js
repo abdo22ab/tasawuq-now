@@ -3447,6 +3447,8 @@ function renderCartUI(){
   const itemsCountEl=document.getElementById("cartItemsCount");
   const sendBtn=document.getElementById("cartSendBtn");
   const callBtn=document.getElementById("cartCallBtn");
+  const sendRestBtn=document.getElementById("cartSendRestBtn");
+  const restOptionsBox=document.getElementById("cartRestaurantOptions");
   const clearBtn=document.getElementById("cartClearBtn");
   if(!box)return;
   if(cart.items.length===0){
@@ -3455,6 +3457,8 @@ function renderCartUI(){
     if(totalBox)totalBox.style.display="none";
     if(sendBtn)sendBtn.classList.add("hidden");
     if(callBtn)callBtn.classList.add("hidden");
+    if(sendRestBtn)sendRestBtn.classList.add("hidden");
+    if(restOptionsBox)restOptionsBox.style.display="none";
     if(clearBtn)clearBtn.classList.add("hidden");
     return;
   }
@@ -3470,8 +3474,21 @@ function renderCartUI(){
   if(totalBox)totalBox.style.display="flex";
   if(totalEl)totalEl.textContent=formatPrice(total)+" د.ل";
   if(itemsCountEl)itemsCountEl.textContent=`(${cnt} ${isRestaurant?'وجبة':'قطعة'})`;
-  if(isRestaurant){if(callBtn)callBtn.classList.remove("hidden");if(sendBtn)sendBtn.classList.add("hidden");}
-  else{if(sendBtn)sendBtn.classList.remove("hidden");if(callBtn)callBtn.classList.add("hidden");}
+  if(isRestaurant){
+    if(restOptionsBox)restOptionsBox.style.display="block";
+    const nameInput=document.getElementById("restCustName");
+    if(nameInput && !nameInput.value){nameInput.value=(myProfile&&myProfile.name)||auth.currentUser?.displayName||"";}
+    const phoneInput=document.getElementById("restCustPhone");
+    if(phoneInput && !phoneInput.value){phoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";}
+    if(sendRestBtn)sendRestBtn.classList.remove("hidden");
+    if(callBtn)callBtn.classList.remove("hidden");
+    if(sendBtn)sendBtn.classList.add("hidden");
+  }else{
+    if(restOptionsBox)restOptionsBox.style.display="none";
+    if(sendRestBtn)sendRestBtn.classList.add("hidden");
+    if(sendBtn)sendBtn.classList.remove("hidden");
+    if(callBtn)callBtn.classList.add("hidden");
+  }
   if(clearBtn)clearBtn.classList.remove("hidden");
 }
 window.addToCart=async(postId,event)=>{
@@ -3549,6 +3566,567 @@ window.sendCartToCall=()=>{
   alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
   window.location.href=`tel:${formatCallPhone(phone)}`;
 };
+
+/* =====================================================
+   منظومة طلبات المطاعم الحية (لوحة الكاشير + تتبع الزبون بالعداد الآلي)
+   ===================================================== */
+
+// نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي
+function playRestaurantBell(type='new_order'){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const now=ctx.currentTime;
+    if(type==='new_order'){
+      const osc1=ctx.createOscillator();const gain1=ctx.createGain();
+      osc1.type='sine';osc1.frequency.setValueAtTime(587.33,now);
+      osc1.frequency.exponentialRampToValueAtTime(880,now+0.15);
+      gain1.gain.setValueAtTime(0.4,now);gain1.gain.exponentialRampToValueAtTime(0.01,now+0.8);
+      osc1.connect(gain1);gain1.connect(ctx.destination);
+      osc1.start(now);osc1.stop(now+0.8);
+      const osc2=ctx.createOscillator();const gain2=ctx.createGain();
+      osc2.type='triangle';osc2.frequency.setValueAtTime(1046.50,now+0.2);
+      gain2.gain.setValueAtTime(0.35,now+0.2);gain2.gain.exponentialRampToValueAtTime(0.01,now+1.1);
+      osc2.connect(gain2);gain2.connect(ctx.destination);
+      osc2.start(now+0.2);osc2.stop(now+1.1);
+    }else if(type==='ready'){
+      [523.25,659.25,783.99,1046.50].forEach((freq,i)=>{
+        const osc=ctx.createOscillator();const gain=ctx.createGain();
+        osc.type='sine';osc.frequency.setValueAtTime(freq,now+i*0.1);
+        gain.gain.setValueAtTime(0.3,now+i*0.1);gain.gain.exponentialRampToValueAtTime(0.01,now+i*0.1+0.5);
+        osc.connect(gain);gain.connect(ctx.destination);
+        osc.start(now+i*0.1);osc.stop(now+i*0.1+0.5);
+      });
+    }
+  }catch(e){console.warn("Audio bell error:",e);}
+}
+window.playRestaurantBell=playRestaurantBell;
+
+window.toggleRestDeliveryFields=()=>{
+  const val=document.querySelector('input[name="restDeliveryType"]:checked')?.value||"pickup";
+  const box=document.getElementById("restDeliveryAddressBox");
+  const pLbl=document.getElementById("lblPickup");
+  const dLbl=document.getElementById("lblDelivery");
+  if(val==="delivery"){
+    if(box)box.style.display="block";
+    if(dLbl){dLbl.style.borderColor="var(--teal)";dLbl.style.borderWidth="2px";}
+    if(pLbl){pLbl.style.borderColor="var(--border)";pLbl.style.borderWidth="1px";}
+  }else{
+    if(box)box.style.display="none";
+    if(pLbl){pLbl.style.borderColor="var(--teal)";pLbl.style.borderWidth="2px";}
+    if(dLbl){dLbl.style.borderColor="var(--border)";dLbl.style.borderWidth="1px";}
+  }
+};
+
+// إرسال الطلبية للكاشير مباشرة
+window.submitRestaurantDirectOrder=async()=>{
+  if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
+  const custName=(document.getElementById("restCustName")?.value||"").trim();
+  const custPhone=(document.getElementById("restCustPhone")?.value||"").trim();
+  const deliveryType=document.querySelector('input[name="restDeliveryType"]:checked')?.value||"pickup";
+  const address=(document.getElementById("restCustAddress")?.value||"").trim();
+  const notes=(document.getElementById("restCustNotes")?.value||"").trim();
+
+  if(!custName){showToast("⚠️ يرجى كتابة اسمك الكريم","warn");return;}
+  if(!custPhone || custPhone.replace(/[^0-9]/g,"").length < 9){showToast("⚠️ يرجى كتابة رقم هاتف صحيح للتواصل","warn");return;}
+  if(deliveryType==="delivery" && !address){showToast("⚠️ يرجى كتابة عنوان التوصيل والحي","warn");return;}
+
+  const btn=document.getElementById("cartSendRestBtn");
+  if(btn){btn.disabled=true;btn.textContent="⏳ جاري إرسال الطلبية للكاشير...";}
+
+  try{
+    const orderNum=Math.floor(100+Math.random()*900);
+    const orderId='order_'+Date.now()+'_'+orderNum;
+    const store=allStores.find(s=>s.id===cart.storeId);
+    const orderData={
+      orderId:orderId,
+      orderNo:orderNum,
+      storeId:cart.storeId,
+      storeName:cart.storeName||(store?.name||"المطعم"),
+      storePhone:cart.storePhone||store?.callPhone||store?.phone||"",
+      customerUid:auth.currentUser?auth.currentUser.uid:("guest_"+Date.now()),
+      customerName:custName,
+      customerPhone:custPhone,
+      deliveryType:deliveryType,
+      deliveryAddress:address,
+      notes:notes,
+      items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1})),
+      totalPrice:cartTotalPrice(),
+      totalCount:cartTotalCount(),
+      status:'pending',
+      prepMinutes:0,
+      createdAt:Date.now(),
+      acceptedAt:null,
+      readyAt:null
+    };
+
+    await addDoc(collection(db,"feedback"),{
+      id:orderId,
+      type:"restaurant_order",
+      uid:cart.storeId,
+      message:JSON.stringify(orderData),
+      createdAt:Date.now()
+    });
+
+    try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
+
+    cart={storeId:null,storeName:"",storePhone:"",items:[]};
+    saveCart();updateCartUI();renderCartUI();
+    closeOverlayDirect();
+
+    showToast("🎉 تم إرسال طلبيتك إلى كاشير المطعم بنجاح!","success",4000);
+    openOrderTracker(orderId);
+  }catch(e){
+    showToast("خطأ أثناء إرسال الطلب: "+e.message,"error");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
+  }
+};
+
+// شاشة تتبع الطلب للزبون (عداد تنازلي آلي)
+let _orderTrackerUnsub=null;
+let _orderCountdownTimer=null;
+let _currentTrackingOrderId=null;
+let _hasPlayedReadyBell=false;
+
+window.openActiveOrderTracker=()=>{
+  let id=_currentTrackingOrderId;
+  if(!id){try{id=localStorage.getItem('tasawuq_active_order_id');}catch(e){}}
+  if(id)openOrderTracker(id);
+};
+
+window.openOrderTracker=(orderId)=>{
+  _currentTrackingOrderId=orderId;
+  _hasPlayedReadyBell=false;
+  const overlay=document.getElementById("orderTrackerOverlay");
+  if(!overlay)return;
+  closeOverlayDirect();
+  overlay.classList.remove("hidden");
+
+  if(_orderTrackerUnsub){_orderTrackerUnsub();_orderTrackerUnsub=null;}
+  if(_orderCountdownTimer){clearInterval(_orderCountdownTimer);_orderCountdownTimer=null;}
+
+  _orderTrackerUnsub=onSnapshot(doc(db,"feedback",orderId),(snap)=>{
+    if(!snap.exists()){
+      renderOrderTrackerUI(null,"❌ لم يتم العثور على الطلبية أو تم مسحها");
+      return;
+    }
+    const data=snap.data();
+    let order=null;
+    try{order=JSON.parse(data.message||"{}");}catch(e){}
+    renderOrderTrackerUI(order);
+  },err=>{
+    console.warn("Tracker listener error:",err);
+  });
+};
+
+function renderOrderTrackerUI(order,errorMsg){
+  const box=document.getElementById("orderTrackerContent");
+  if(!box)return;
+  if(errorMsg){
+    box.innerHTML=`<div class="reportsEmpty">${escapeHtml(errorMsg)}</div>`;
+    return;
+  }
+  if(!order){
+    box.innerHTML=`<div class="reportsEmpty">⏳ جاري تحميل بيانات الطلبية...</div>`;
+    return;
+  }
+
+  const itemsHtml=order.items?.map(it=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px dashed var(--border)">
+      <span>${escapeHtml(it.title)} × ${it.qty||1}</span>
+      <b>${formatPrice((it.price||0)*(it.qty||1))} د.ل</b>
+    </div>
+  `).join("")||"";
+
+  const isDelivery=order.deliveryType==="delivery";
+  const deliveryBadge=isDelivery
+    ? `<span style="background:#f0fdf4;color:#166534;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #bbf7d0">🛵 توصيل: ${escapeHtml(order.deliveryAddress||"")}</span>`
+    : `<span style="background:#e0f2fe;color:#0369a1;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #bae6fd">🚗 سفري (استلام من الفرع)</span>`;
+
+  let statusCardHtml='';
+
+  if(order.status==='pending'){
+    statusCardHtml=`
+      <div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
+        <div style="font-size:36px;margin-bottom:6px">⏳</div>
+        <div style="font-size:16px;font-weight:900;color:#92400e;margin-bottom:4px">بانتظار موافقة كاشير المطعم...</div>
+        <div style="font-size:12.5px;color:#78350f;line-height:1.5">تم إرسال طلبيتك للكاشير بنجاح، ويقوم الآن بمراجعة المطبخ وتحديد وقت التجهيز.</div>
+      </div>
+    `;
+    updateActiveOrderFloatingPill(order,'⏳ بانتظار الكاشير');
+  }else if(order.status==='accepted'){
+    statusCardHtml=`
+      <div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
+        <div style="font-size:32px;margin-bottom:4px">🍳</div>
+        <div style="font-size:16px;font-weight:900;color:#166534;margin-bottom:2px">تم قبول طلبيتك! قيد التحضير في المطبخ</div>
+        <div style="font-size:12px;color:#15803d;margin-bottom:8px">الوقت المتبقي حتى تكون وجبتك جاهزة وساخنة:</div>
+        <div class="rloCountdownBig" id="trackerCountdownDisplay">--:--</div>
+        <div style="font-size:11.5px;color:var(--muted)">تتحول الشاشة تلقائياً بمجرد انتهاء الوقت</div>
+      </div>
+    `;
+    startOrderCountdown(order.readyAt,order);
+  }else if(order.status==='ready' || order.status==='completed'){
+    statusCardHtml=`
+      <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;box-shadow:0 4px 14px rgba(22,163,74,0.15)">
+        <div style="font-size:42px;margin-bottom:4px">🎉</div>
+        <div style="font-size:18px;font-weight:900;color:#15803d;margin-bottom:6px">وجبتك جاهزة وساخنة الآن!</div>
+        <div style="font-size:13.5px;color:#166534;line-height:1.6;font-weight:700">
+          ${isDelivery ? '🛵 الوجبة تم تجهيزها وخرجت الآن مع سائق التوصيل إلى عنوانك!' : '🚗 تفضل بالتوجه لكاشير المطعم بالرقم <b>#'+order.orderNo+'</b> لاستلام وجبتك مباشرة.'}
+        </div>
+      </div>
+    `;
+    if(!_hasPlayedReadyBell){
+      playRestaurantBell('ready');
+      _hasPlayedReadyBell=true;
+    }
+    updateActiveOrderFloatingPill(order,'🎉 وجبتك جاهزة الآن!');
+  }else if(order.status==='rejected'){
+    statusCardHtml=`
+      <div style="background:#fef2f2;border:1.5px solid #ef4444;border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
+        <div style="font-size:36px;margin-bottom:6px">❌</div>
+        <div style="font-size:16px;font-weight:900;color:#991b1b;margin-bottom:4px">نعتذر منك، المطعم اعتذر عن الطلبية</div>
+        <div style="font-size:12.5px;color:#b91c1c;line-height:1.5">نعتذر منك، المطعم حالياً مزدحم جداً أو الوجبة غير متوفرة.</div>
+      </div>
+    `;
+    hideActiveOrderFloatingPill();
+  }
+
+  const callBtn=order.storePhone?`<a href="tel:${formatCallPhone(order.storePhone)}" class="btnMain" style="background:#16a34a;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;font-weight:800;padding:11px;margin-top:10px">📞 اتصال بالمطعم للاستفسار (${escapeHtml(order.storePhone)})</a>`:'';
+
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-size:16.5px;font-weight:900;color:var(--text)">${escapeHtml(order.storeName||"المطعم")}</div>
+        <div style="font-size:12px;color:var(--muted)">رقم الطلب: <b style="color:var(--teal-dark)">#${order.orderNo}</b></div>
+      </div>
+      <div>${deliveryBadge}</div>
+    </div>
+    ${statusCardHtml}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px">
+      <div style="font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:6px">تفاصيل الوجبات:</div>
+      ${itemsHtml}
+      <div style="display:flex;justify-content:space-between;padding-top:8px;font-size:15px;font-weight:900;color:var(--text);margin-top:4px">
+        <span>المجموع:</span>
+        <span style="color:var(--teal-dark)">${formatPrice(order.totalPrice||0)} د.ل</span>
+      </div>
+      ${order.notes ? `<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:8px;margin-top:8px">📝 ملاحظاتك: ${escapeHtml(order.notes)}</div>` : ''}
+    </div>
+    ${callBtn}
+    <button class="btnGhost" onclick="closeOrderTracker()" style="width:100%;background:transparent;color:var(--muted);margin-top:6px">تصغير الشاشة ومتابعة التصفح</button>
+  `;
+}
+
+function startOrderCountdown(readyAt,order){
+  if(_orderCountdownTimer) clearInterval(_orderCountdownTimer);
+  const targetTime = Number(readyAt) || (Date.now() + 20 * 60 * 1000);
+
+  function tick(){
+    const now = Date.now();
+    const diff = Math.max(0, Math.floor((targetTime - now) / 1000));
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    const str = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+    const el = document.getElementById("trackerCountdownDisplay");
+    if(el) el.textContent = str;
+
+    updateActiveOrderFloatingPill(order, `🍳 متبقي: ${str}`);
+
+    if(diff <= 0){
+      clearInterval(_orderCountdownTimer);
+      _orderCountdownTimer = null;
+      order.status = 'ready';
+      renderOrderTrackerUI(order);
+    }
+  }
+
+  tick();
+  _orderCountdownTimer = setInterval(tick, 1000);
+}
+
+window.closeOrderTracker=()=>{
+  const overlay=document.getElementById("orderTrackerOverlay");
+  if(overlay) overlay.classList.add("hidden");
+};
+
+function updateActiveOrderFloatingPill(order, statusText){
+  const pill=document.getElementById("activeOrderFloatingPill");
+  if(!pill)return;
+  pill.innerHTML=`<span>🍽️</span><span>طلب #${order.orderNo}: ${statusText}</span><span style="font-size:15px">›</span>`;
+  pill.classList.remove("hidden");
+}
+
+function hideActiveOrderFloatingPill(){
+  const pill=document.getElementById("activeOrderFloatingPill");
+  if(pill) pill.classList.add("hidden");
+}
+
+// ============================================
+// لوحة كاشير المطعم المباشرة (Restaurant Live Orders)
+// ============================================
+let _rloStoreId=null;
+let _rloUnsub=null;
+let _rloOrders=[];
+let _rloActiveTab='pending';
+let _cashierSoundEnabled=true;
+let _lastPendingCount=0;
+
+window.toggleCashierSound=()=>{
+  _cashierSoundEnabled=!_cashierSoundEnabled;
+  const btn=document.getElementById("rloSoundToggle");
+  if(btn) btn.textContent = _cashierSoundEnabled ? "🔔 رنين: مفعّل" : "🔕 رنين: صامت";
+  if(_cashierSoundEnabled) playRestaurantBell('new_order');
+};
+
+window.openRestaurantLiveOrders=(storeId)=>{
+  if(!storeId){showToast("⚠️ رقم المطعم غير محدد","error");return;}
+  const store=allStores.find(s=>s.id===storeId);
+  const me=auth.currentUser;
+  const isOwnerStore=me && store && me.uid===store.ownerUid;
+  const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
+  const isHelper=me && isStoreHelper(storeId, me.email);
+
+  if(!isOwnerStore && !isAdminUser && !isHelper){
+    showToast("❌ لوحة الكاشير خاصة بصاحب المطعم أو عماله فقط","error");
+    return;
+  }
+
+  _rloStoreId=storeId;
+  _lastPendingCount=0;
+  closeOverlayDirect();
+  const overlay=document.getElementById("restaurantLiveOrdersOverlay");
+  if(overlay) overlay.classList.remove("hidden");
+
+  const titleEl=document.getElementById("rloStoreTitle");
+  if(titleEl) titleEl.textContent = "🍽️ طلبات: " + (store?.name || "المطعم");
+
+  startRestaurantOrdersListener(storeId);
+  switchRloTab('pending');
+};
+
+window.closeRestaurantLiveOrders=()=>{
+  const overlay=document.getElementById("restaurantLiveOrdersOverlay");
+  if(overlay) overlay.classList.add("hidden");
+  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+};
+
+window.switchRloTab=(tab)=>{
+  _rloActiveTab=tab;
+  ['pending','active','done'].forEach(t=>{
+    const b=document.getElementById('rloTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(b) b.classList.toggle('active', t===tab);
+  });
+  renderCashierOrdersList();
+};
+
+function startRestaurantOrdersListener(storeId){
+  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+
+  _rloUnsub = onSnapshot(collection(db, "feedback"), snap => {
+    _rloOrders = [];
+    snap.docs.forEach(d => {
+      const row = d.data();
+      if(row.type === "restaurant_order" && (row.uid === storeId || row.message?.includes(`"storeId":"${storeId}"`))){
+        let ord = null;
+        try { ord = JSON.parse(row.message || "{}"); } catch(e){}
+        if(ord){
+          ord._docId = d.id;
+          _rloOrders.push(ord);
+        }
+      }
+    });
+
+    _rloOrders.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+    const pendingList = _rloOrders.filter(o => o.status === 'pending');
+    if(pendingList.length > _lastPendingCount){
+      if(_cashierSoundEnabled) playRestaurantBell('new_order');
+      showToast("🔔 طلبية جديدة وصلت للكاشير!", "info", 3000);
+    }
+    _lastPendingCount = pendingList.length;
+
+    updateCashierBadges();
+    renderCashierOrdersList();
+  }, err => {
+    console.warn("Cashier orders listener error:", err);
+  });
+}
+
+function updateCashierBadges(){
+  const pending = _rloOrders.filter(o=>o.status==='pending');
+  const active = _rloOrders.filter(o=>o.status==='accepted');
+
+  const pBadge = document.getElementById("rloPendingBadge");
+  if(pBadge){
+    pBadge.textContent = pending.length;
+    pBadge.style.display = pending.length > 0 ? "inline-block" : "none";
+  }
+
+  const aBadge = document.getElementById("rloActiveBadge");
+  if(aBadge){
+    aBadge.textContent = active.length;
+    aBadge.style.display = active.length > 0 ? "inline-block" : "none";
+  }
+}
+
+function renderCashierOrdersList(){
+  const listEl=document.getElementById("rloOrdersList");
+  if(!listEl)return;
+
+  let filtered=[];
+  if(_rloActiveTab==='pending') filtered=_rloOrders.filter(o=>o.status==='pending');
+  else if(_rloActiveTab==='active') filtered=_rloOrders.filter(o=>o.status==='accepted');
+  else filtered=_rloOrders.filter(o=>o.status==='ready'||o.status==='completed'||o.status==='rejected');
+
+  if(filtered.length===0){
+    const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة بعد ✅");
+    listEl.innerHTML=`<div class="reportsEmpty">${msg}</div>`;
+    return;
+  }
+
+  listEl.innerHTML=filtered.map(order=>{
+    const itemsHtml=order.items?.map(it=>`
+      <div class="rloItemRow">
+        <span style="font-weight:700">${escapeHtml(it.title)} × ${it.qty||1}</span>
+        <b>${formatPrice((it.price||0)*(it.qty||1))} د.ل</b>
+      </div>
+    `).join("")||"";
+
+    const isDelivery=order.deliveryType==="delivery";
+    const deliveryTag=isDelivery
+      ? `<span style="background:#f0fdf4;color:#166534;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:800;border:1px solid #bbf7d0">🛵 توصيل: ${escapeHtml(order.deliveryAddress||"")}</span>`
+      : `<span style="background:#e0f2fe;color:#0369a1;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:800;border:1px solid #bae6fd">🚗 سفري (استلام من المحل)</span>`;
+
+    let actionsHtml='';
+    if(order.status==='pending'){
+      actionsHtml=`
+        <div style="margin-top:12px">
+          <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px">⏱️ حدد وقت التحضير لقبول الطلب:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr 1fr;gap:6px">
+            <button class="rloBtnTime" onclick="cashierAcceptOrder('${order._docId}', 15)">✅ 15 د</button>
+            <button class="rloBtnTime" onclick="cashierAcceptOrder('${order._docId}', 25)">✅ 25 د</button>
+            <button class="rloBtnTime" onclick="cashierAcceptOrder('${order._docId}', 40)">✅ 40 د</button>
+            <button class="rloBtnTime" style="background:#0284c7" onclick="cashierCustomTimeOrder('${order._docId}')">⏱️ مخصص</button>
+            <button class="rloBtnReject" onclick="cashierRejectOrder('${order._docId}')">❌ اعتذار</button>
+          </div>
+        </div>
+      `;
+    }else if(order.status==='accepted'){
+      const minsLeft = Math.max(0, Math.ceil(((order.readyAt||0) - Date.now()) / 60000));
+      actionsHtml=`
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
+          <div>
+            <div style="font-size:12px;color:#15803d;font-weight:700">قيد التحضير (متبقي ~${minsLeft} دقيقة)</div>
+            <div style="font-size:11px;color:var(--muted)">تتحول تلقائياً إلى جاهزة عند انتهاء الوقت</div>
+          </div>
+          <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
+        </div>
+      `;
+    }else if(order.status==='ready'){
+      actionsHtml=`
+        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#16a34a;font-weight:800;font-size:13px">🎉 الوجبة جاهزة وتم إشعار الزبون</span>
+          <button class="btnGhost" style="padding:6px 10px;font-size:12px;color:var(--text);border:1px solid var(--border)" onclick="cashierCompleteOrder('${order._docId}')">تسليم وإغلاق الطلب ✔️</button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="restaurantOrderCard ${order.status==='pending'?'pending':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <span style="font-size:16px;font-weight:900;color:var(--text)">طلب #${order.orderNo}</span>
+            <span style="font-size:11.5px;color:var(--muted);margin-right:6px">🕒 ${timeAgo(order.createdAt)}</span>
+          </div>
+          <div>${deliveryTag}</div>
+        </div>
+        <div style="font-size:13.5px;font-weight:700;margin-bottom:8px;color:var(--text)">
+          👤 الزبون: ${escapeHtml(order.customerName)} — <a href="tel:${formatCallPhone(order.customerPhone)}" style="color:#16a34a;text-decoration:none;font-weight:800">📞 ${escapeHtml(order.customerPhone)}</a>
+        </div>
+        <div style="background:var(--bg);padding:8px 12px;border-radius:10px;margin-bottom:8px">
+          ${itemsHtml}
+          <div style="display:flex;justify-content:space-between;padding-top:6px;font-size:14.5px;font-weight:900;margin-top:4px">
+            <span>المجموع:</span>
+            <span style="color:#16a34a">${formatPrice(order.totalPrice||0)} د.ل</span>
+          </div>
+        </div>
+        ${order.notes ? `<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:8px;margin-bottom:8px">📝 ملاحظة: ${escapeHtml(order.notes)}</div>` : ''}
+        ${actionsHtml}
+      </div>
+    `;
+  }).join("");
+}
+
+window.cashierAcceptOrder=async(docId, minutes)=>{
+  try{
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
+    const now=Date.now();
+    order.status='accepted';
+    order.prepMinutes=minutes;
+    order.acceptedAt=now;
+    order.readyAt=now + (minutes * 60 * 1000);
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
+    showToast(`✅ تم قبول الطلب #${order.orderNo} بوقت تحضير ${minutes} دقيقة`,"success");
+    playRestaurantBell('ready');
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
+window.cashierCustomTimeOrder=async(docId)=>{
+  const m=prompt("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):","20");
+  if(!m)return;
+  const mins=parseInt(m,10);
+  if(isNaN(mins)||mins<=0){showToast("⚠️ وقت غير صحيح","warn");return;}
+  cashierAcceptOrder(docId,mins);
+};
+
+window.cashierRejectOrder=async(docId)=>{
+  if(!confirm("هل أنت متأكد من الاعتذار عن هذا الطلب؟"))return;
+  try{
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
+    order.status='rejected';
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
+    showToast(`تم الاعتذار عن الطلب #${order.orderNo}`,"info");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
+window.cashierMarkReady=async(docId)=>{
+  try{
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
+    order.status='ready';
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
+    showToast(`🎉 تم إشعار الزبون بأن وجبة #${order.orderNo} جاهزة للاستلام!`,"success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
+window.cashierCompleteOrder=async(docId)=>{
+  try{
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
+    order.status='completed';
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
+    showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo}`,"success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
 
 window.toggleSold=async(id,event)=>{
   if(event)event.stopPropagation();
@@ -3875,6 +4453,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#0284c7">📱 QR</button>
             ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المطعم</button>`:""}
             ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة وجبة</button>`:""}
+            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="openRestaurantLiveOrders('${store.id}')" style="background:#dc2626;color:#fff;font-weight:800">🔔 طلبات المطعم الحية</button>`:""}
           </div>
           <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
           <div class="storeRatingSection" id="storeRatingSection"></div>
@@ -4792,8 +5371,21 @@ window.openAccount=(skipHistory)=>{
     const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
     const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";
     const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
-    if(myStore){if(openBtn)openBtn.style.display="none";if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}}
-    else{if(openBtn)openBtn.style.display="block";if(myBtn)myBtn.style.display="none";}
+    if(myStore){
+      if(openBtn)openBtn.style.display="none";
+      if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}
+      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn){
+        const isRest=isRestaurantStore(myStore);
+        myRestBtn.style.display=(isRest && myStore.status==="approved")?"block":"none";
+        myRestBtn.onclick=()=>openRestaurantLiveOrders(myStore.id);
+      }
+    }else{
+      if(openBtn)openBtn.style.display="block";
+      if(myBtn)myBtn.style.display="none";
+      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn)myRestBtn.style.display="none";
+    }
     reportsBtn.classList.toggle("hidden",!isAdmin);
     if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
     const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
@@ -4828,6 +5420,8 @@ function closeOverlayDirect(){
   const sno=document.getElementById("sendNotifOverlay");if(sno)sno.classList.add("hidden");
   const eso=document.getElementById("editStoreOverlay");
   if(eso)eso.classList.add("hidden");
+  const oto=document.getElementById("orderTrackerOverlay");if(oto)oto.classList.add("hidden");
+  const rlo=document.getElementById("restaurantLiveOrdersOverlay");if(rlo)rlo.classList.add("hidden");
   updateSEOMeta(null);
   pendingAction=null;
   document.body.style.overflow="";
@@ -5516,6 +6110,21 @@ window.addEventListener('load',()=>{
       if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}
       else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}
     },500);
+  }
+  try {
+    const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
+    if(activeOrdId){
+      setTimeout(()=>{
+        if(typeof openActiveOrderTracker === 'function') openActiveOrderTracker();
+      }, 1500);
+    }
+  }catch(e){}
+  if(hash && hash.startsWith('#restaurant-orders')){
+    const parts = hash.split('-');
+    const sid = parts.length >= 3 ? parts[2] : (myStore ? myStore.id : '');
+    if(sid){
+      setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
+    }
   }
 });
 
