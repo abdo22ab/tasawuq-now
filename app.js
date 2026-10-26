@@ -2890,6 +2890,10 @@ const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
 const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
+const chatSellerBtn=(!isSold && p.uid && !isOwner)
+  ? `<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}','${escapeHtml(p.id)}')">💬 دردشة فورية مع البائع</button>`
+  : "";
+
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
       ? `${postCallPhone ? `<a href="tel:${formatCallPhone(postCallPhone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي لطلب الأوردر (${formatCallPhone(postCallPhone)})</a>` : ''}
@@ -2953,7 +2957,7 @@ if(p.priceType==="contact"){
   priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
 }
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
@@ -4781,6 +4785,12 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             </div>`)
       : "";
 
+    const chatStoreBtn=(!isOwnerStore && store.ownerUid) ? `
+      <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
+        💬 دردشة فورية مع المتجر
+      </button>
+    ` : '';
+
     const bi=store.bankInfo || {};
     const hasIban=bi.iban && bi.iban.trim();
     const hasAccount=bi.accountNumber && bi.accountNumber.trim();
@@ -4862,6 +4872,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             <div><small>التوصيل</small><b>${deliveryFormatted}</b></div>
           </div>
           <div style="margin-top:12px">
+            ${(!isOwnerStore && store.ownerUid) ? `
+              <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
+                💬 دردشة فورية مع إدارة المطعم
+              </button>
+            ` : ''}
             ${storeCallNumber ? `
               <a href="tel:${formatCallPhone(storeCallNumber)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:14px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
                 📞 اتصال هاتفي مباشر لطلب الأوردر (${escapeHtml(storeCallNumber)})
@@ -4913,7 +4928,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     const stdCoverBadge = canEditBrandingStd ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
     const stdLogoBadge = canEditBrandingStd ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
 
-    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}${stdCoverBadge}</div><div class="logoWrap" ${stdLogoAttr}>${logoHtml}${stdLogoBadge}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
+    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}${stdCoverBadge}</div><div class="logoWrap" ${stdLogoAttr}>${logoHtml}${stdLogoBadge}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${chatStoreBtn}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
     renderStoreProducts();
     updateCartUI();
     loadStoreRatings(storeId).then(()=>{
@@ -5991,9 +6006,6 @@ window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;co
    ============================================ */
 function startFollowingListener(user){
   stopFollowingListener();
-stopPendingPostsListener();
-if(typeof _walletUnsub === 'function'){ try{ _walletUnsub(); }catch(e){} _walletUnsub = null; }
-if(typeof updateWalletUI === 'function') updateWalletUI(0);
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
     myFollowing=snap.docs.map(d=>({uid:d.id,...d.data()}));
   },err=>{});
@@ -6064,11 +6076,13 @@ if(uname)badges+=`<span class="usernameBadge" style="margin:4px 4px 0 0;font-siz
 if(memberNo)badges+=`<span class="memberNoBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">#${memberNo}</span>`;
 if(ph)badges+=`<span class="phoneBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">📱 ${escapeHtml(normalizePhone(ph))}</span>`;
 let followHtml="";
+let chatSellerProfileBtn="";
 if(!isMe){
   if(following){followHtml=`<button class="followBtn following" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`;}
   else{followHtml=`<button class="followBtn" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;}
+  chatSellerProfileBtn=`<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-top:8px;margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:800;padding:10px 14px;border-radius:10px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="openChatWithSeller('${escapeHtml(uid)}',null,null,'${escapeHtml(name)}')">💬 إرسال رسالة مباشرة للبائع</button>`;
 }
-box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}${tierBadge}</div><div>${badges}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div><div style="margin-top:10px">${followHtml}</div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>إعلانات</span></div><div class="sStat"><b>${followersCount}</b><span>متابع</span></div><div class="sStat"><b>${count}</b><span>تقييمات</span></div></div>${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
+box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}${tierBadge}</div><div>${badges}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div><div style="margin-top:10px">${followHtml}${chatSellerProfileBtn}</div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>إعلانات</span></div><div class="sStat"><b>${followersCount}</b><span>متابع</span></div><div class="sStat"><b>${count}</b><span>تقييمات</span></div></div>${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
 }
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
 window.submitRating=async()=>{
@@ -6438,6 +6452,7 @@ startFollowingListener(user);
 giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
+if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
@@ -6479,6 +6494,8 @@ stopFollowingListener();
 stopPendingPostsListener();
 if(typeof _walletUnsub === 'function'){ try{ _walletUnsub(); }catch(e){} _walletUnsub = null; }
 if(typeof updateWalletUI === 'function') updateWalletUI(0);
+const chatHb = document.getElementById("chatHeaderBadge"); if(chatHb) chatHb.style.display="none";
+const chatAb = document.getElementById("accountChatBadge"); if(chatAb) chatAb.style.display="none";
 if(showOnlyMine)showHome();
 renderPosts();
 }
@@ -8173,7 +8190,11 @@ window.admLookupUserByPhone = async()=>{
 };
 
 window.adminExecuteDeposit = async()=>{
-  if(!isAdmin) return;
+  const canAdmin = isAdmin || (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL);
+  if(!canAdmin){
+    showToast("❌ ليس لديك صلاحية أدمن", "error");
+    return;
+  }
   const amt = parseFloat(document.getElementById("admDepAmount")?.value || "0");
   const type = document.getElementById("admDepType")?.value || "credit";
   const note = (document.getElementById("admDepNote")?.value || "").trim();
@@ -8188,13 +8209,18 @@ window.adminExecuteDeposit = async()=>{
     return;
   }
 
+  const targetUid = _admDepTargetUser.id || _admDepTargetUser.uid;
+  if(!targetUid){
+    showToast("⚠️ تعذر تحديد معرف المستخدم، أعد فحصه بالرقم أو اليوزر", "warn");
+    return;
+  }
+
   const opLabel = type === 'credit' ? `إيداع مبلغ +${amt} د.ل` : `خصم مبلغ -${amt} د.ل`;
   if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
 
   try{
-    const targetUid = _admDepTargetUser.id;
     const finalNote = note || (type === 'credit' ? "إيداع يدوي من الإدارة" : "خصم يدوي من الإدارة");
     let res = null;
 
@@ -8415,3 +8441,458 @@ export async function updateCartWalletBalance(){
   }
 }
 window.updateCartWalletBalance = updateCartWalletBalance;
+
+/* ============================================
+   💬 15. نظام الدردشة المباشرة وصندوق المحادثات بين الشاري والبائع
+   ============================================ */
+window._activeChat = null;
+
+export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
+    if(typeof openAuthModal === "function") openAuthModal();
+    return;
+  }
+  const myUid = auth.currentUser.uid;
+  if(myUid === sellerUid){
+    showToast("هذا إعلانك أو متجرك، لا يمكنك مراسلة نفسك!", "info");
+    return;
+  }
+
+  // تحديد اسم البائع
+  let targetName = targetCustomName || "";
+  if(!targetName && postId){
+    const p = allPosts.find(x => x.id === postId);
+    if(p) targetName = p.storeName || p.sellerName || "";
+  }
+  if(!targetName && storeId){
+    const s = allStores.find(x => x.id === storeId);
+    if(s) targetName = s.name || "";
+  }
+  if(!targetName){
+    const sOwner = allStores.find(x => x.ownerUid === sellerUid);
+    if(sOwner) targetName = sOwner.name || "";
+    else {
+      const pOwner = allPosts.find(x => x.uid === sellerUid);
+      if(pOwner) targetName = pOwner.storeName || pOwner.sellerName || "";
+    }
+  }
+  if(!targetName) targetName = "البائع";
+
+  const convId = [myUid, sellerUid].sort().join("_");
+
+  window._activeChat = {
+    convId,
+    targetUid: sellerUid,
+    targetName,
+    postId: postId || null,
+    storeId: storeId || null,
+    pollTimer: null,
+    lastMsgCount: 0
+  };
+
+  const elName = document.getElementById("chatTargetName");
+  const elAvatar = document.getElementById("chatTargetAvatar");
+  if(elName) elName.textContent = targetName;
+  if(elAvatar) elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
+
+  // إعداد كرت السياق (Context Banner)
+  const ctxBar = document.getElementById("chatPostContextBar");
+  const ctxImg = document.getElementById("chatContextImg");
+  const ctxTitle = document.getElementById("chatContextTitle");
+  const ctxPrice = document.getElementById("chatContextPrice");
+  const ctxBtn = document.getElementById("chatContextViewBtn");
+
+  if(ctxBar){
+    if(postId){
+      const p = allPosts.find(x => x.id === postId);
+      if(p){
+        ctxBar.style.display = "flex";
+        const imgs = getImages(p);
+        if(ctxImg) ctxImg.src = imgs[0] || "icon-192.png";
+        if(ctxTitle) ctxTitle.textContent = p.title || "إعلان";
+        if(ctxPrice) ctxPrice.textContent = p.priceType === "contact" ? "تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+        if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openPost(p.id); };
+      }else{
+        ctxBar.style.display = "none";
+      }
+    }else if(storeId){
+      const s = allStores.find(x => x.id === storeId);
+      if(s){
+        ctxBar.style.display = "flex";
+        if(ctxImg) ctxImg.src = s.logo || "icon-192.png";
+        if(ctxTitle) ctxTitle.textContent = s.name || "متجر";
+        if(ctxPrice) ctxPrice.textContent = s.category || "";
+        if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openStore(s.id); };
+      }else{
+        ctxBar.style.display = "none";
+      }
+    }else{
+      ctxBar.style.display = "none";
+    }
+  }
+
+  // عرض نافذة الدردشة وإغلاق الصندوق لو كان مفتوحاً
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) chatOverlay.classList.remove("hidden");
+  closeInbox();
+
+  // تركيز حقل الكتابة
+  setTimeout(() => {
+    const input = document.getElementById("chatMessageInput");
+    if(input) input.focus();
+  }, 100);
+
+  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
+  await loadChatMessages(convId, false);
+
+  if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
+  window._activeChat.pollTimer = setInterval(() => {
+    if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
+      if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
+      return;
+    }
+    loadChatMessages(window._activeChat.convId, true);
+  }, 3000);
+}
+window.openChatWithSeller = openChatWithSeller;
+
+export function closeUserChat(){
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) chatOverlay.classList.add("hidden");
+  if(window._activeChat && window._activeChat.pollTimer){
+    clearInterval(window._activeChat.pollTimer);
+  }
+  window._activeChat = null;
+}
+window.closeUserChat = closeUserChat;
+
+export async function sendUserChatMessage(){
+  if(!window._activeChat) return;
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لإرسال الرسالة", "warn");
+    return;
+  }
+  const input = document.getElementById("chatMessageInput");
+  if(!input) return;
+  const text = (input.value || "").trim();
+  if(!text) return;
+
+  const me = auth.currentUser;
+  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const activeChat = window._activeChat;
+
+  // تنظيف الحقل فوراً لاستجابة سريعة
+  input.value = "";
+  input.focus();
+
+  // إظهار الرسالة مباشرة في الشاشة (Optimistic UI)
+  const box = document.getElementById("chatMessagesBox");
+  if(box){
+    const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
+    if(emptyNotice) box.innerHTML = "";
+    
+    const tempDiv = document.createElement("div");
+    tempDiv.className = "chatBubble outgoing";
+    tempDiv.innerHTML = `${escapeHtml(text)}<div class="chatTime">الآن ⏳</div>`;
+    box.appendChild(tempDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  const msgPayload = {
+    convId: activeChat.convId,
+    senderUid: me.uid,
+    senderName: senderName,
+    receiverUid: activeChat.targetUid,
+    text: text,
+    postId: activeChat.postId,
+    storeId: activeChat.storeId,
+    createdAt: Date.now()
+  };
+
+  try {
+    // 1. تسجيل الرسالة في feedback
+    await addDoc(collection(db, "feedback"), {
+      type: "chat_message",
+      message: JSON.stringify(msgPayload),
+      uid: me.uid,
+      user_name: senderName,
+      user_phone: me.phoneNumber || "",
+      created_at: Date.now()
+    });
+
+    // 2. تحديث وثيقة ملخص المحادثة لصندوق الرسائل
+    const convDocId = "conv_" + activeChat.convId;
+    const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
+    const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
+    const postImage = document.getElementById("chatContextImg")?.src || "";
+
+    const convSummary = {
+      convId: activeChat.convId,
+      participants: [me.uid, activeChat.targetUid],
+      lastMessage: text,
+      lastSenderUid: me.uid,
+      lastSenderName: senderName,
+      updatedAt: Date.now(),
+      postContext: activeChat.postId ? {
+        id: activeChat.postId,
+        title: postTitle,
+        price: postPrice,
+        image: postImage
+      } : null,
+      storeContext: activeChat.storeId ? {
+        id: activeChat.storeId,
+        name: postTitle
+      } : null
+    };
+
+    await setDoc(doc(db, "feedback", convDocId), {
+      type: "chat_conversation",
+      message: JSON.stringify(convSummary),
+      uid: me.uid,
+      user_name: senderName,
+      created_at: Date.now()
+    }, { merge: true });
+
+    loadChatMessages(activeChat.convId, true);
+  } catch(err) {
+    console.error("Error sending chat message:", err);
+    showToast("تعذر إرسال الرسالة: " + (err.message || err), "error");
+  }
+}
+window.sendUserChatMessage = sendUserChatMessage;
+
+export async function loadChatMessages(convId, isPoll){
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  if(!isPoll && box.children.length === 0){
+    box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>`;
+  }
+
+  try {
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_message"),
+      limit(100)
+    ));
+
+    const myUid = auth.currentUser ? auth.currentUser.uid : null;
+    const messages = [];
+
+    qSnap.docs.forEach(d => {
+      const data = d.data();
+      try {
+        const parsed = JSON.parse(data.message || "{}");
+        if(parsed.convId === convId){
+          messages.push({
+            id: d.id,
+            ...parsed,
+            createdAt: parsed.createdAt || data.created_at || Date.now()
+          });
+        }
+      } catch(e){}
+    });
+
+    messages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+    if(isPoll && window._activeChat && window._activeChat.lastMsgCount === messages.length){
+      return;
+    }
+
+    if(window._activeChat){
+      window._activeChat.lastMsgCount = messages.length;
+    }
+
+    if(messages.length === 0){
+      box.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:8px">💬</div>
+          <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+        </div>
+      `;
+      return;
+    }
+
+    box.innerHTML = messages.map(m => {
+      const isMe = m.senderUid === myUid;
+      const d = new Date(m.createdAt);
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
+          ${escapeHtml(m.text || '')}
+          <div class="chatTime">${timeStr}</div>
+        </div>
+      `;
+    }).join("");
+
+    box.scrollTop = box.scrollHeight;
+  } catch(err) {
+    console.error("Error loading chat messages:", err);
+    if(!isPoll && box) {
+      box.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل الرسائل</div>`;
+    }
+  }
+}
+window.loadChatMessages = loadChatMessages;
+
+export async function openInbox(){
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
+    if(typeof openAuthModal === "function") openAuthModal();
+    return;
+  }
+  const overlay = document.getElementById("userInboxOverlay");
+  const list = document.getElementById("userInboxList");
+  if(!overlay || !list) return;
+
+  overlay.classList.remove("hidden");
+  list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
+
+  try {
+    localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
+    updateGlobalUnreadChatCount();
+
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_conversation"),
+      limit(80)
+    ));
+
+    const myUid = auth.currentUser.uid;
+    const convs = [];
+
+    qSnap.docs.forEach(d => {
+      const data = d.data();
+      try {
+        const c = JSON.parse(data.message || "{}");
+        if(c.convId && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
+          convs.push({
+            id: d.id,
+            ...c,
+            updatedAt: c.updatedAt || data.created_at || Date.now()
+          });
+        }
+      } catch(e){}
+    });
+
+    convs.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    if(convs.length === 0){
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:42px;margin-bottom:8px">📭</div>
+          <div style="font-weight:800;font-size:15px;color:var(--text);margin-bottom:6px">صندوق الرسائل فارغ</div>
+          <div style="font-size:12px;margin-bottom:14px">لم تبدأ أي محادثة مع أي بائع أو مشترٍ بعد.</div>
+          <button class="btnMain" style="margin:auto;max-width:200px;font-size:13px;padding:10px" onclick="closeInbox()">تصفح الإعلانات الآن</button>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = convs.map(c => {
+      const otherUid = Array.isArray(c.participants) 
+        ? c.participants.find(u => u !== myUid) 
+        : c.convId.split('_').find(u => u !== myUid);
+
+      let otherName = "البائع";
+      if(c.lastSenderUid !== myUid && c.lastSenderName){
+        otherName = c.lastSenderName;
+      }else if(c.postContext?.title){
+        otherName = c.postContext.title;
+      }else if(c.storeContext?.name){
+        otherName = c.storeContext.name;
+      }
+
+      if(otherName === "البائع" && otherUid){
+        const s = allStores.find(x => x.ownerUid === otherUid);
+        if(s) otherName = s.name;
+        else {
+          const p = allPosts.find(x => x.uid === otherUid);
+          if(p) otherName = p.storeName || p.sellerName || "البائع";
+        }
+      }
+
+      const initial = otherName ? otherName.trim()[0].toUpperCase() : '👤';
+      const postTag = c.postContext?.title ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.postContext.title)}</span>` : '';
+      const storeTag = c.storeContext?.name ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.storeContext.name)}</span>` : '';
+      const tagHtml = postTag || storeTag;
+
+      return `
+        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
+          <div class="inboxAvatar">${initial}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-weight:800;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(otherName)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updatedAt)}</div>
+            </div>
+            ${tagHtml ? `<div style="margin-bottom:3px">${tagHtml}</div>` : ''}
+            <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${c.lastSenderUid === myUid ? 'أنت: ' : ''}${escapeHtml(c.lastMessage || '')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch(err) {
+    console.error("Error loading inbox:", err);
+    list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
+  }
+}
+window.openInbox = openInbox;
+
+export function closeInbox(){
+  const overlay = document.getElementById("userInboxOverlay");
+  if(overlay) overlay.classList.add("hidden");
+}
+window.closeInbox = closeInbox;
+
+export async function updateGlobalUnreadChatCount(){
+  if(!auth.currentUser) return;
+  const hBadge = document.getElementById("chatHeaderBadge");
+  const aBadge = document.getElementById("accountChatBadge");
+
+  try {
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_conversation"),
+      limit(40)
+    ));
+    const myUid = auth.currentUser.uid;
+    let unreadCount = 0;
+    const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
+
+    qSnap.docs.forEach(d => {
+      try {
+        const c = JSON.parse(d.data().message || "{}");
+        if(c.convId && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
+          unreadCount++;
+        }
+      } catch(e){}
+    });
+
+    if(hBadge){
+      if(unreadCount > 0){
+        hBadge.style.display = "flex";
+        hBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+      } else {
+        hBadge.style.display = "none";
+      }
+    }
+    if(aBadge){
+      if(unreadCount > 0){
+        aBadge.style.display = "inline-flex";
+        aBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+      } else {
+        aBadge.style.display = "none";
+      }
+    }
+  } catch(e){}
+}
+window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
+
+// فحص دوري للرسائل غير المقروءة كل دقيقة
+setInterval(() => {
+  if(auth.currentUser) updateGlobalUnreadChatCount();
+}, 60000);
