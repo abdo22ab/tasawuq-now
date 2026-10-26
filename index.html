@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=24">
+<link rel="stylesheet" href="style.css?v=26">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -72,6 +72,10 @@ OneSignalDeferred.push(async function(OneSignal){
 </button>
 <button class="bellBtn" onclick="enableNotifications()" title="الإشعارات">
   <i data-lucide="bell"></i>
+</button>
+<button class="bellBtn walletHeaderBtn" id="walletHeaderBtn" onclick="openWalletModal()" title="المحفظة الإلكترونية">
+  <i data-lucide="wallet"></i>
+  <span id="walletHeaderBadge" class="walletBadge">0 د.ل</span>
 </button>
 <button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none" title="السلة">
   <i data-lucide="shopping-bag"></i>
@@ -303,6 +307,33 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
 <div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 <div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
+
+<!-- 💳 بطاقة المحفظة الإلكترونية للمستخدم -->
+<div class="userWalletCard" id="accountWalletCard">
+  <div class="uwcTop">
+    <div class="uwcBrand">
+      <span class="uwcIcon">💳</span>
+      <div>
+        <div class="uwcTitle">المحفظة الإلكترونية</div>
+        <div class="uwcSubtitle">رصيدك الآمن للطلبات والمشتريات</div>
+      </div>
+    </div>
+    <div class="uwcBadge">🟢 حساب مفعل</div>
+  </div>
+  <div class="uwcBalanceArea">
+    <div class="uwcBalanceLabel">الرصيد المتاح حالياً</div>
+    <div class="uwcBalanceNum"><span id="userWalletBalanceText">0.00</span> <small>د.ل</small></div>
+  </div>
+  <div class="uwcButtonsGrid">
+    <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
+      <span>⚡</span> شحن المحفظة
+    </button>
+    <button type="button" class="uwcBtnHistory" onclick="openMyWalletHistory()">
+      <span>📜</span> كشف الحساب
+    </button>
+  </div>
+</div>
+
 <div class="referralCardBox" id="accountRefCard">
   <h4>🎁 شارك واربح كروت شحن!</h4>
   <p>ادعُ أصحابك للتسجيل بجوجل واكسب 40 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
@@ -333,6 +364,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <button id="dashboardBtn" class="btnGhost hidden" onclick="openDashboard()" style="background:#ede9fe;color:#6d28d9">📈 لوحة الإحصائيات</button>
   <button id="sendNotifBtn" class="btnGhost hidden" onclick="openSendNotification()" style="background:#fef3c7;color:#92400e">📢 إرسال إشعار للمستخدمين</button>
 <button id="adminCreateStoreBtn" class="btnGhost hidden" onclick="startOpenStore(true)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800">➕ فتح صفحة مطعم/متجر لعميل (أدمن)</button>
+<button id="adminWalletBtn" class="btnGhost hidden" onclick="openAdminWallet()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800">💰 الإدارة المالية والمحفظة (أدمن)</button>
 <button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
 <button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
@@ -588,6 +620,23 @@ OneSignalDeferred.push(async function(OneSignal){
     <label style="font-size:11.5px;font-weight:700">ملاحظاتك للمطبخ (اختياري):</label>
     <input type="text" id="restCustNotes" placeholder="مثال: بدون حار، صوص زيادة..." style="padding:8px 10px;font-size:13px;border-radius:8px;border:1px solid var(--border);width:100%;box-sizing:border-box;background:var(--card);color:var(--text)">
   </div>
+
+  <!-- خيارات الدفع: كاش أو محفظة -->
+  <div id="restPaymentMethodBox" style="margin-top:12px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:10px">
+    <div style="font-weight:800;font-size:12.5px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <span>💳 طريقة الدفع:</span>
+      <span id="cartWalletCurrentBalanceBadge" style="font-size:11px;background:#e0f2fe;color:#0284c7;padding:2px 8px;border-radius:999px;font-weight:800">رصيدك: 0.00 د.ل</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <label id="lblPayCash" style="display:flex;align-items:center;gap:6px;padding:9px 8px;border:2px solid var(--teal);border-radius:10px;background:var(--bg);cursor:pointer;font-size:11.5px;font-weight:700">
+        <input type="radio" name="restPaymentMethod" value="cash" checked onchange="toggleRestPaymentMethod()"> 💵 كاش عند الاستلام
+      </label>
+      <label id="lblPayWallet" style="display:flex;align-items:center;gap:6px;padding:9px 8px;border:1px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;font-size:11.5px;font-weight:700">
+        <input type="radio" name="restPaymentMethod" value="wallet" onchange="toggleRestPaymentMethod()"> 💳 الدفع بالمحفظة
+      </label>
+    </div>
+    <div id="cartWalletNotice" style="display:none;margin-top:8px;font-size:11.5px;padding:8px 10px;border-radius:8px"></div>
+  </div>
 </div>
 
 <div style="display:grid;gap:8px;margin-top:12px;padding-bottom:12px">
@@ -651,6 +700,260 @@ OneSignalDeferred.push(async function(OneSignal){
 
 <!-- زر عائم لمتابعة الطلبية إذا صغر الزبون النافذة -->
 <div id="activeOrderFloatingPill" class="activeOrderFloatingPill hidden" onclick="openActiveOrderTracker()"></div>
+
+<!-- ============================================ -->
+<!-- نافذة شحن المحفظة الإلكترونية (Recharge Modal) -->
+<!-- ============================================ -->
+<div id="rechargeWalletOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">⚡ شحن رصيد المحفظة</h3>
+      <button class="iconBtn" onclick="closeRechargeModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- تبويبات طرق الشحن -->
+    <div class="walletTabNav" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+      <button type="button" id="tabBtnRechargeCard" class="filterBtn active" onclick="switchRechargeTab('card')" style="font-size:12px;padding:8px">💳 كارت شحن</button>
+      <button type="button" id="tabBtnRechargeTransfer" class="filterBtn" onclick="switchRechargeTab('transfer')" style="font-size:12px;padding:8px">📲 تحويل مدار / ليبيانا</button>
+    </div>
+
+    <!-- تبويب كارت الشحن -->
+    <div id="rechargeTabCardBox">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:800;color:#166534;font-size:13px;margin-bottom:4px">🏷️ شحن فوري وآمن بواسطة كروت تسوق الآن</div>
+        <div style="font-size:12px;color:#15803d;line-height:1.5">أدخل رمز الكارت المكون من 12 رقم وسيتم إضافة الرصيد إلى محفظتك في نفس اللحظة.</div>
+      </div>
+
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-weight:800;font-size:12.5px">رمز كارت الشحن:</label>
+        <input type="text" id="walletCardCodeInput" class="walletCodeInput" placeholder="TK-XXXX-XXXX-XXXX" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="font-family:monospace;font-size:16px;font-weight:800;text-align:center;letter-spacing:2px;padding:12px;text-transform:uppercase">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 يمكنك كتابة الكود مع الفواصل أو بدونها (مثال: <b>TK-1234-5678-9012</b> أو <b>123456789012</b>)</div>
+      </div>
+
+      <div id="rechargeStatusBox" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700"></div>
+
+      <button type="button" id="btnSubmitCardRecharge" class="btnMain" onclick="submitCardRecharge()" style="background:#16a34a;color:#fff;font-weight:800;padding:13px;font-size:14px;margin-bottom:8px">⚡ شحن الرصيد الآن</button>
+
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;margin-top:6px">
+        🔒 محمي من المحاولات العشوائية: سيتم حظر المحاولات مؤقتاً تلقائياً عند إدخال 3 رموز خاطئة.
+      </div>
+    </div>
+
+    <!-- تبويب التحويل المباشر -->
+    <div id="rechargeTabTransferBox" style="display:none">
+      <div style="background:#e0f2fe;border:1px solid #bae6fd;border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:800;color:#0369a1;font-size:13px;margin-bottom:4px">📲 تحويل رصيد شبكات الهاتف (ليبيانا / مدار)</div>
+        <div style="font-size:12px;color:#0284c7;line-height:1.5">حول الرصيد لأحد أرقام الإدارة المعتمدة، ثم اضغط على زر الواتساب لإرسال رقم هاتفك أو واصل التحويل ليتم إيداع الرصيد فوراً.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:12px;color:var(--muted);font-weight:700">شبكة المدار Almadar:</div>
+            <div style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right" id="madarNumberText">0911411605</div>
+          </div>
+          <button type="button" class="btnGhost" onclick="copyTransferNumber('0911411605')" style="padding:5px 10px;font-size:11.5px;border:1px solid var(--border)">📋 نسخ الرقم</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--border);padding-top:8px">
+          <div>
+            <div style="font-size:12px;color:var(--muted);font-weight:700">شبكة ليبيانا Libyana:</div>
+            <div style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right" id="libyanaNumberText">0944325093</div>
+          </div>
+          <button type="button" class="btnGhost" onclick="copyTransferNumber('0944325093')" style="padding:5px 10px;font-size:11.5px;border:1px solid var(--border)">📋 نسخ الرقم</button>
+        </div>
+      </div>
+
+      <a href="https://wa.me/218911411605?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%AD%D9%88%D9%84%D8%AA%20%D8%B1%D8%B5%D9%8A%D8%AF%20%D9%84%D8%B4%D8%AD%D9%86%20%D9%85%D8%AD%D9%81%D8%B8%D8%AA%D9%8A%20%D9%81%D9%8A%20%D8%AA%D8%B3%D9%88%D9%82%20%D8%A7%D9%84%D8%A2%D9%86" target="_blank" rel="noopener" class="btnMain" style="background:#25d366;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;font-size:13.5px">
+        💬 تأكيد التحويل مع الإدارة عبر واتساب
+      </a>
+    </div>
+
+    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:10px" onclick="closeRechargeModal()">إغلاق</button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة كشف حساب وسجل حركات المحفظة للمستخدم -->
+<!-- ============================================ -->
+<div id="myWalletHistoryOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">📜 كشف حساب محفظتي</h3>
+      <button class="iconBtn" onclick="closeMyWalletHistory()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;opacity:0.9">الرصيد المتاح حالياً</div>
+        <div style="font-size:24px;font-weight:900"><span id="myHistoryCurrentBalance">0.00</span> <small style="font-size:14px">د.ل</small></div>
+      </div>
+      <button type="button" onclick="closeMyWalletHistory();openRechargeModal();" style="background:#fff;color:#0284c7;border:none;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer">⚡ شحن</button>
+    </div>
+
+    <div style="font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:8px">سجل العمليات الأخير:</div>
+    <div id="myWalletTxList" style="display:flex;flex-direction:column;gap:8px">
+      <div class="reportsEmpty">⏳ جاري جلب سجل المعاملات...</div>
+    </div>
+
+    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:12px" onclick="closeMyWalletHistory()">إغلاق</button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- لوحة الإدارة المالية والسجل العام للأدمن -->
+<!-- ============================================ -->
+<div id="adminWalletOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:92vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+      <div>
+        <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">💰 الإدارة المالية والمحفظة</h3>
+        <div style="font-size:11px;color:var(--muted)">كروت الشحن، السجل المالي العام، ومستحقات المطاعم</div>
+      </div>
+      <button class="iconBtn" onclick="closeAdminWallet()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- تبويبات لوحة الأدمن المالية -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:14px">
+      <button type="button" id="btnAdmWalTabCards" class="filterBtn active" onclick="switchAdmWalTab('cards')" style="font-size:11px;padding:8px 2px">💳 كروت الشحن</button>
+      <button type="button" id="btnAdmWalTabLedger" class="filterBtn" onclick="switchAdmWalTab('ledger')" style="font-size:11px;padding:8px 2px">📜 السجل العام</button>
+      <button type="button" id="btnAdmWalTabDeposit" class="filterBtn" onclick="switchAdmWalTab('deposit')" style="font-size:11px;padding:8px 2px">💵 إيداع يدوي</button>
+      <button type="button" id="btnAdmWalTabStores" class="filterBtn" onclick="switchAdmWalTab('stores')" style="font-size:11px;padding:8px 2px">🍽️ المطاعم</button>
+    </div>
+
+    <!-- تبويب 1: كروت الشحن -->
+    <div id="admWalSecCards">
+      <!-- صندوق توليد كروت جديدة -->
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:8px">⚡ توليد دفعة كروت شحن جديدة:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <label style="font-size:11px;font-weight:700">فئة الكارت:</label>
+            <select id="admCardDenom" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12.5px;font-weight:700">
+              <option value="10">10 دينار ليبي</option>
+              <option value="20" selected>20 دينار ليبي</option>
+              <option value="50">50 دينار ليبي</option>
+              <option value="100">100 دينار ليبي</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700">العدد المطلوب:</label>
+            <select id="admCardCount" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12.5px;font-weight:700">
+              <option value="5">5 كروت</option>
+              <option value="10" selected>10 كروت</option>
+              <option value="20">20 كارت</option>
+              <option value="50">50 كارت</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="btnAdmGenCards" class="btnMain" onclick="adminGenerateCardsBatch()" style="background:#0284c7;color:#fff;font-weight:800;padding:10px;font-size:13px;margin-bottom:0">⚡ توليد وحفظ الكروت في قاعدة البيانات</button>
+      </div>
+
+      <!-- عرض الكروت التي تم توليدها حديثاً -->
+      <div id="admGeneratedCardsOutput" style="display:none;background:#f0fdf4;border:1.5px solid #22c55e;border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-weight:800;color:#15803d;font-size:13px">🎉 تم توليد الكروت بنجاح!</div>
+          <button type="button" class="btnGhost" onclick="copyAllGeneratedCards()" style="padding:4px 10px;font-size:11px;border:1px solid #16a34a;color:#16a34a;font-weight:800">📋 نسخ القائمة كلها</button>
+        </div>
+        <textarea id="admGeneratedCardsText" rows="6" readonly style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;border:1px solid #bbf7d0;border-radius:8px;padding:8px;background:#fff;direction:ltr;text-align:left"></textarea>
+      </div>
+
+      <!-- جدول الكروت الحالية في النظام -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:800;font-size:13px">قائمة كروت الشحن في المنظومة:</div>
+        <div style="display:flex;gap:4px">
+          <button type="button" class="filterBtn active" id="btnFilterCardAll" onclick="filterAdminCardsList('all')" style="padding:4px 8px;font-size:10.5px">الكل</button>
+          <button type="button" class="filterBtn" id="btnFilterCardUnused" onclick="filterAdminCardsList('unused')" style="padding:4px 8px;font-size:10.5px">🟢 صالحة</button>
+          <button type="button" class="filterBtn" id="btnFilterCardUsed" onclick="filterAdminCardsList('used')" style="padding:4px 8px;font-size:10.5px">🔴 مستخدمة</button>
+        </div>
+      </div>
+      <div id="admCardsListTable" style="display:flex;flex-direction:column;gap:6px">
+        <div class="reportsEmpty">جاري تحميل الكروت...</div>
+      </div>
+    </div>
+
+    <!-- تبويب 2: السجل المالي الشامل (Audit Ledger) -->
+    <div id="admWalSecLedger" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:#166534;font-weight:700">إجمالي شحن الكروت</div>
+          <div style="font-size:15px;font-weight:900;color:#15803d" id="admStatRecharges">0 د.ل</div>
+        </div>
+        <div style="background:#e0f2fe;border:1px solid #bae6fd;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:#0369a1;font-weight:700">مدفوعات المطاعم</div>
+          <div style="font-size:15px;font-weight:900;color:#0284c7" id="admStatOrders">0 د.ل</div>
+        </div>
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:#991b1b;font-weight:700">إجمالي الاسترجاعات</div>
+          <div style="font-size:15px;font-weight:900;color:#dc2626" id="admStatRefunds">0 د.ل</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="admLedgerSearchInput" placeholder="🔍 ابحث برقم الهاتف أو الاسم..." oninput="onAdmLedgerSearchChange()" style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
+        <select id="admLedgerTypeFilter" onchange="onAdmLedgerSearchChange()" style="padding:8px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700">
+          <option value="all">كل العمليات</option>
+          <option value="card_recharge">شحن كارت</option>
+          <option value="order_payment">دفع مطعم</option>
+          <option value="order_refund">استرجاع طلبية</option>
+          <option value="admin_credit">إيداع يدوي</option>
+          <option value="admin_debit">خصم يدوي</option>
+        </select>
+      </div>
+
+      <div id="admLedgerListTable" style="display:flex;flex-direction:column;gap:6px">
+        <div class="reportsEmpty">جاري تحميل السجل المالي...</div>
+      </div>
+    </div>
+
+    <!-- تبويب 3: إيداع / خصم يدوي -->
+    <div id="admWalSecDeposit" style="display:none">
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:10px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
+
+        <div class="field" style="margin-bottom:8px">
+          <label style="font-size:11.5px;font-weight:700">رقم هاتف الزبون:</label>
+          <div style="display:flex;gap:6px">
+            <input type="tel" id="admDepPhone" placeholder="09xxxxxxxx" dir="ltr" style="flex:1;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+            <button type="button" class="btnGhost" onclick="admLookupUserByPhone()" style="padding:8px 12px;font-size:12px;border:1px solid var(--border);font-weight:700">🔍 فحص</button>
+          </div>
+        </div>
+
+        <div id="admDepUserInfoBox" style="display:none;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="field" style="margin:0">
+            <label style="font-size:11.5px;font-weight:700">المبلغ (د.ل):</label>
+            <input type="number" id="admDepAmount" placeholder="50" min="1" max="5000" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:800;text-align:center">
+          </div>
+          <div class="field" style="margin:0">
+            <label style="font-size:11.5px;font-weight:700">نوع العملية:</label>
+            <select id="admDepType" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700">
+              <option value="credit">➕ إيداع رصيد (شحن)</option>
+              <option value="debit">➖ خصم رصيد</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:12px">
+          <label style="font-size:11.5px;font-weight:700">سبب / ملاحظة العملية:</label>
+          <input type="text" id="admDepNote" placeholder="مثال: استلام حوالة ليبيانا / تسوية / تعديل..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
+        </div>
+
+        <button type="button" id="btnAdmExecuteDeposit" class="btnMain" onclick="adminExecuteDeposit()" style="background:#16a34a;color:#fff;font-weight:800;padding:12px;font-size:13.5px;margin-bottom:0">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
+      </div>
+    </div>
+
+    <!-- تبويب 4: مستحقات المطاعم -->
+    <div id="admWalSecStores" style="display:none">
+      <div style="font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:8px">🍽️ مبيعات المطاعم المحصلة عبر المحفظة الإلكترونية:</div>
+      <div id="admStoresPayoutsList" style="display:flex;flex-direction:column;gap:8px">
+        <div class="reportsEmpty">جاري فحص مبيعات المطاعم...</div>
+      </div>
+    </div>
+
+    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:14px" onclick="closeAdminWallet()">إغلاق</button>
+  </div>
+</div>
 
 <div id="upgradeOverlay" class="overlay hidden"><div class="sheet">
 <h3 style="text-align:center">⭐ ترقية الإعلان</h3>
@@ -874,7 +1177,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=24"></script>
+<script type="module" src="app.js?v=26"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
