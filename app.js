@@ -7987,11 +7987,14 @@ function renderAdminLedgerTable(){
 let _admDepTargetUser = null;
 
 window.onAdmDepPhoneInputChanged = ()=>{
-  _admDepTargetUser = null;
-  const box = document.getElementById("admDepUserInfoBox");
-  if(box){
-    box.style.display = "none";
-    box.innerHTML = "";
+  const rawQuery = (document.getElementById("admDepPhone")?.value || "").trim();
+  if(!rawQuery){
+    _admDepTargetUser = null;
+    const box = document.getElementById("admDepUserInfoBox");
+    if(box){
+      box.style.display = "none";
+      box.innerHTML = "";
+    }
   }
 };
 
@@ -7999,69 +8002,128 @@ window.admLookupUserByPhone = async()=>{
   _admDepTargetUser = null;
   const rawQuery = (document.getElementById("admDepPhone")?.value || "").trim();
   const box = document.getElementById("admDepUserInfoBox");
+  const btn = document.getElementById("btnAdmLookupPhone");
   if(!box) return;
 
-  if(!rawQuery || rawQuery.length < 3){
+  if(!rawQuery || rawQuery.length < 2){
     box.style.display = "block";
     box.style.background = "#fef2f2";
     box.style.color = "#991b1b";
-    box.style.border = "1px solid #fecaca";
-    box.style.borderRadius = "8px";
-    box.style.padding = "8px 10px";
-    box.textContent = "⚠️ يرجى كتابة رقم هاتف أو اسم مستخدم صحيح";
+    box.style.border = "1.5px solid #fecaca";
+    box.style.borderRadius = "10px";
+    box.style.padding = "10px 14px";
+    box.style.fontSize = "13px";
+    box.style.fontWeight = "700";
+    box.textContent = "⚠️ يرجى كتابة رقم هاتف أو اسم مستخدم صحيح للبحث";
     return;
+  }
+
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = "⏳...";
   }
 
   box.style.display = "block";
   box.style.background = "#f8fafc";
   box.style.color = "var(--text)";
-  box.style.border = "1px solid var(--border)";
-  box.style.borderRadius = "8px";
-  box.style.padding = "8px 10px";
-  box.textContent = "⏳ جاري البحث عن صاحب الحساب...";
+  box.style.border = "1.5px solid var(--border)";
+  box.style.borderRadius = "10px";
+  box.style.padding = "12px 14px";
+  box.style.fontSize = "13px";
+  box.textContent = "⏳ جاري البحث عن صاحب الحساب في قاعدة البيانات...";
 
   try{
     let target = null;
     const cleanDigits = rawQuery.replace(/[^0-9]/g, "");
     const cleanUsername = rawQuery.replace(/^@/, "").toLowerCase();
 
-    if(window.supabase){
-      if(cleanDigits.length >= 8){
-        const { data } = await window.supabase
-          .from("profiles")
+    // 1. البحث برقم الهاتف
+    if(cleanDigits.length >= 8 && window.supabase){
+      const last8 = cleanDigits.slice(-8);
+      const { data: pData } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .ilike("phone", `%${last8}%`)
+        .limit(1)
+        .maybeSingle();
+      if(pData) target = pData;
+
+      if(!target){
+        const { data: phData } = await window.supabase
+          .from("phones")
           .select("*")
-          .ilike("phone", `%${cleanDigits.slice(-8)}%`)
+          .ilike("phone", `%${last8}%`)
           .limit(1)
           .maybeSingle();
-        if(data) target = data;
+        if(phData && phData.uid){
+          const { data: profData } = await window.supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", phData.uid)
+            .limit(1)
+            .maybeSingle();
+          if(profData) target = profData;
+        }
       }
+    }
 
-      if(!target && cleanUsername.length >= 2){
-        const { data } = await window.supabase
-          .from("profiles")
+    // 2. البحث برقم العضوية (1 إلى 6 أرقام)
+    if(!target && cleanDigits.length >= 1 && cleanDigits.length <= 6 && !isNaN(parseInt(rawQuery, 10)) && window.supabase){
+      const memNo = parseInt(rawQuery, 10);
+      const { data: mData } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .eq("member_no", memNo)
+        .limit(1)
+        .maybeSingle();
+      if(mData) target = mData;
+    }
+
+    // 3. البحث باسم المستخدم
+    if(!target && cleanUsername.length >= 2 && window.supabase){
+      const { data: uData } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .ilike("username", cleanUsername)
+        .limit(1)
+        .maybeSingle();
+      if(uData) target = uData;
+
+      if(!target){
+        const { data: unData } = await window.supabase
+          .from("usernames")
           .select("*")
           .ilike("username", cleanUsername)
           .limit(1)
           .maybeSingle();
-        if(data) target = data;
+        if(unData && unData.uid){
+          const { data: profData } = await window.supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", unData.uid)
+            .limit(1)
+            .maybeSingle();
+          if(profData) target = profData;
+        }
       }
+    }
 
-      if(!target){
-        const { data } = await window.supabase
-          .from("profiles")
-          .select("*")
-          .or(`id.eq.${rawQuery},name.ilike.%${rawQuery}%`)
-          .limit(1)
-          .maybeSingle();
-        if(data) target = data;
-      }
+    // 4. البحث بـ UID أو الاسم
+    if(!target && rawQuery.length >= 4 && window.supabase){
+      const { data: anyData } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .or(`id.eq.${rawQuery},name.ilike.%${rawQuery}%`)
+        .limit(1)
+        .maybeSingle();
+      if(anyData) target = anyData;
     }
 
     if(!target){
       box.style.background = "#fffbeb";
       box.style.color = "#92400e";
-      box.style.border = "1px solid #fde68a";
-      box.textContent = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم أو اسم المستخدم. تأكد من صحة المدخلات أو جرب البحث بـ @username.";
+      box.style.border = "1.5px solid #fde68a";
+      box.innerHTML = `⚠️ لم يتم العثور على أي حساب مسجل بـ "<b>${escapeHtml(rawQuery)}</b>". تأكد من رقم الهاتف أو اسم المستخدم.`;
       _admDepTargetUser = null;
       return;
     }
@@ -8072,34 +8134,41 @@ window.admLookupUserByPhone = async()=>{
     box.style.background = "#f0fdf4";
     box.style.color = "#166534";
     box.style.border = "1.5px solid #86efac";
-    box.style.padding = "10px";
+    box.style.padding = "12px";
     box.innerHTML = `
-      <div style="font-weight:900;font-size:12.5px;color:#15803d;margin-bottom:8px">✅ تم العثور على حساب العضو بنجاح:</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
-          <div style="font-size:10.5px;color:var(--muted);font-weight:700">👤 الاسم الكامل:</div>
-          <div style="font-size:12.5px;font-weight:900;color:var(--text);margin-top:2px">${escapeHtml(target.name || "مستخدم")}</div>
+      <div style="font-weight:900;font-size:13px;color:#15803d;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        ✅ تم العثور على حساب العضو بنجاح:
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700">👤 الاسم الكامل:</div>
+          <div style="font-size:13.5px;font-weight:900;color:var(--text);margin-top:2px">${escapeHtml(target.name || "مستخدم")}</div>
         </div>
-        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
-          <div style="font-size:10.5px;color:var(--muted);font-weight:700">🏷️ اسم المستخدم:</div>
-          <div style="font-size:12.5px;font-weight:900;color:var(--text);margin-top:2px">@${escapeHtml(target.username || "—")}</div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700">🏷️ اسم المستخدم:</div>
+          <div style="font-size:13.5px;font-weight:900;color:var(--text);margin-top:2px">@${escapeHtml(target.username || "—")}</div>
         </div>
-        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:6px 10px">
-          <div style="font-size:10.5px;color:var(--muted);font-weight:700">📞 رقم الهاتف:</div>
-          <div style="font-size:12.5px;font-weight:900;color:#0284c7;margin-top:2px;direction:ltr;text-align:right">${escapeHtml(target.phone || "—")}</div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700">📞 رقم الهاتف:</div>
+          <div style="font-size:13.5px;font-weight:900;color:#0284c7;margin-top:2px;direction:ltr;text-align:right">${escapeHtml(target.phone || "—")}</div>
         </div>
-        <div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #22c55e;border-radius:8px;padding:6px 10px">
-          <div style="font-size:10.5px;color:#15803d;font-weight:800">💳 الرصيد الحالي:</div>
-          <div style="font-size:14px;font-weight:900;color:#166534;margin-top:2px">${wal.balance.toFixed(2)} د.ل</div>
+        <div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1.5px solid #22c55e;border-radius:10px;padding:8px 12px">
+          <div style="font-size:11px;color:#15803d;font-weight:800">💳 الرصيد الحالي:</div>
+          <div style="font-size:15px;font-weight:900;color:#166534;margin-top:2px">${wal.balance.toFixed(2)} د.ل</div>
         </div>
       </div>
     `;
   }catch(e){
     box.style.background = "#fef2f2";
     box.style.color = "#991b1b";
-    box.style.border = "1px solid #fecaca";
+    box.style.border = "1.5px solid #fecaca";
     box.textContent = "خطأ في البحث: " + e.message;
     _admDepTargetUser = null;
+  }finally{
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = "🔍 فحص";
+    }
   }
 };
 
