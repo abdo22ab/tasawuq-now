@@ -3669,6 +3669,21 @@ window.submitRestaurantDirectOrder=async()=>{
 
     try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
 
+    const sentStoreId = cart.storeId;
+    if(restBroadcast){
+      try {
+        restBroadcast.postMessage({
+          type: 'NEW_ORDER',
+          storeId: sentStoreId,
+          orderId: orderId,
+          order: orderData
+        });
+      } catch(e){}
+    }
+    if(_rloStoreId && _rloStoreId === sentStoreId){
+      refreshCashierOrders(false);
+    }
+
     cart={storeId:null,storeName:"",storePhone:"",items:[]};
     saveCart();updateCartUI();renderCartUI();
     closeOverlayDirect();
@@ -3682,11 +3697,59 @@ window.submitRestaurantDirectOrder=async()=>{
   }
 };
 
-// شاشة تتبع الطلب للزبون (عداد تنازلي آلي)
+// ============================================
+// مزامنة فورية فائقة بين التبويبات والشاشات (Realtime Sync)
+// ============================================
+const restBroadcast = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('tasawuq_restaurant_live') : null;
+if(restBroadcast){
+  restBroadcast.onmessage = (ev) => {
+    const data = ev.data;
+    if(!data) return;
+    if(data.type === 'NEW_ORDER'){
+      if(_rloStoreId && _rloStoreId === data.storeId){
+        refreshCashierOrders(false);
+      }
+    } else if(data.type === 'ORDER_UPDATED'){
+      if(_currentTrackingOrderId && _currentTrackingOrderId === data.orderId){
+        refreshTrackingOrder(data.orderId);
+      }
+      if(_rloStoreId){
+        refreshCashierOrders(false);
+      }
+    }
+  };
+}
+
+if(typeof document !== 'undefined'){
+  document.addEventListener("visibilitychange", () => {
+    if(!document.hidden){
+      if(_rloStoreId){
+        const overlay = document.getElementById("restaurantLiveOrdersOverlay");
+        if(overlay && !overlay.classList.contains("hidden")) refreshCashierOrders(false);
+      }
+      if(_currentTrackingOrderId){
+        refreshTrackingOrder(_currentTrackingOrderId);
+      }
+    }
+  });
+  window.addEventListener("focus", () => {
+    if(_rloStoreId){
+      const overlay = document.getElementById("restaurantLiveOrdersOverlay");
+      if(overlay && !overlay.classList.contains("hidden")) refreshCashierOrders(false);
+    }
+    if(_currentTrackingOrderId){
+      refreshTrackingOrder(_currentTrackingOrderId);
+    }
+  });
+}
+
+// شاشة تتبع الطلب للزبون (عداد تنازلي آلي وتحديث حي)
 let _orderTrackerUnsub=null;
 let _orderCountdownTimer=null;
+let _orderTrackerPollTimer=null;
 let _currentTrackingOrderId=null;
 let _hasPlayedReadyBell=false;
+let _lastTrackingStatus=null;
 
 window.openActiveOrderTracker=()=>{
   let id=_currentTrackingOrderId;
@@ -3697,6 +3760,7 @@ window.openActiveOrderTracker=()=>{
 window.openOrderTracker=(orderId)=>{
   _currentTrackingOrderId=orderId;
   _hasPlayedReadyBell=false;
+  _lastTrackingStatus=null;
   const overlay=document.getElementById("orderTrackerOverlay");
   if(!overlay)return;
   closeOverlayDirect();
@@ -3704,19 +3768,89 @@ window.openOrderTracker=(orderId)=>{
 
   if(_orderTrackerUnsub){_orderTrackerUnsub();_orderTrackerUnsub=null;}
   if(_orderCountdownTimer){clearInterval(_orderCountdownTimer);_orderCountdownTimer=null;}
+  if(_orderTrackerPollTimer){clearInterval(_orderTrackerPollTimer);_orderTrackerPollTimer=null;}
 
-  _orderTrackerUnsub=onSnapshot(doc(db,"feedback",orderId),(snap)=>{
-    if(!snap.exists()){
-      renderOrderTrackerUI(null,"❌ لم يتم العثور على الطلبية أو تم مسحها");
+  // جلب فوري لبيانات الطلبية
+  refreshTrackingOrder(orderId);
+
+  // تحديث دوري تلقائي كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
+  _orderTrackerPollTimer = setInterval(() => {
+    if(!_currentTrackingOrderId){
+      clearInterval(_orderTrackerPollTimer);
+      _orderTrackerPollTimer = null;
       return;
     }
-    const data=snap.data();
-    let order=null;
-    try{order=JSON.parse(data.message||"{}");}catch(e){}
+    refreshTrackingOrder(_currentTrackingOrderId);
+  }, 2500);
+
+  // مستمع احتياطي
+  try{
+    _orderTrackerUnsub=onSnapshot(doc(db,"feedback",orderId),(snap)=>{
+      refreshTrackingOrder(orderId);
+    },err=>{
+      console.warn("Tracker listener error:",err);
+    });
+  }catch(e){}
+};
+
+window.refreshTrackingOrder=async(orderId)=>{
+  if(!orderId) return;
+  const refreshBtn = document.getElementById("trackerRefreshBtn");
+  if(refreshBtn){
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "⏳...";
+  }
+
+  try {
+    let row = null;
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("id", orderId)
+        .maybeSingle();
+      if(!error && data) row = data;
+    }
+    if(!row){
+      try {
+        const snap = await getDoc(doc(db, "feedback", orderId));
+        if(snap.exists()) row = { id: snap.id, ...snap.data() };
+      } catch(e){}
+    }
+
+    if(!row){
+      renderOrderTrackerUI(null, "❌ لم يتم العثور على الطلبية أو تم مسحها");
+      return;
+    }
+
+    let order = null;
+    try { order = JSON.parse(row.message || "{}"); } catch(e){}
+    if(!order){
+      renderOrderTrackerUI(null, "⚠️ خطأ في قراءة بيانات الطلبية");
+      return;
+    }
+
+    if(_lastTrackingStatus === 'pending' && order.status === 'accepted'){
+      showToast("🎉 قبل الكاشير طلبيتك! وجاري التحضير الآن", "success", 4000);
+    }
+    _lastTrackingStatus = order.status;
+
     renderOrderTrackerUI(order);
-  },err=>{
-    console.warn("Tracker listener error:",err);
-  });
+
+    if(order.status === 'completed' || order.status === 'rejected'){
+      if(_orderTrackerPollTimer){
+        clearInterval(_orderTrackerPollTimer);
+        _orderTrackerPollTimer = null;
+      }
+    }
+  } catch(e){
+    console.warn("Tracker refresh error:", e);
+  } finally {
+    if(refreshBtn){
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = "🔄 تحديث";
+    }
+  }
 };
 
 function renderOrderTrackerUI(order,errorMsg){
@@ -3847,6 +3981,18 @@ function startOrderCountdown(readyAt,order){
 window.closeOrderTracker=()=>{
   const overlay=document.getElementById("orderTrackerOverlay");
   if(overlay) overlay.classList.add("hidden");
+  // تحديث هادئ بالخلفية لضمان بقاء الزر العائم محدّثاً
+  if(_orderTrackerPollTimer){
+    clearInterval(_orderTrackerPollTimer);
+    _orderTrackerPollTimer = setInterval(() => {
+      if(!_currentTrackingOrderId || _lastTrackingStatus === 'completed' || _lastTrackingStatus === 'rejected'){
+        clearInterval(_orderTrackerPollTimer);
+        _orderTrackerPollTimer = null;
+        return;
+      }
+      refreshTrackingOrder(_currentTrackingOrderId);
+    }, 3500);
+  }
 };
 
 function updateActiveOrderFloatingPill(order, statusText){
@@ -3866,10 +4012,12 @@ function hideActiveOrderFloatingPill(){
 // ============================================
 let _rloStoreId=null;
 let _rloUnsub=null;
+let _rloPollTimer=null;
 let _rloOrders=[];
 let _rloActiveTab='pending';
 let _cashierSoundEnabled=true;
 let _lastPendingCount=0;
+let _seenOrderIds=new Set();
 
 window.toggleCashierSound=()=>{
   _cashierSoundEnabled=!_cashierSoundEnabled;
@@ -3893,6 +4041,7 @@ window.openRestaurantLiveOrders=(storeId)=>{
 
   _rloStoreId=storeId;
   _lastPendingCount=0;
+  _seenOrderIds.clear();
   closeOverlayDirect();
   const overlay=document.getElementById("restaurantLiveOrdersOverlay");
   if(overlay) overlay.classList.remove("hidden");
@@ -3908,6 +4057,7 @@ window.closeRestaurantLiveOrders=()=>{
   const overlay=document.getElementById("restaurantLiveOrdersOverlay");
   if(overlay) overlay.classList.add("hidden");
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+  if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
 };
 
 window.switchRloTab=(tab)=>{
@@ -3919,37 +4069,111 @@ window.switchRloTab=(tab)=>{
   renderCashierOrdersList();
 };
 
-function startRestaurantOrdersListener(storeId){
-  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+window.refreshCashierOrders=async(manual=false)=>{
+  if(!_rloStoreId) return;
+  const refreshBtn=document.getElementById("rloRefreshBtn");
+  if(manual && refreshBtn){
+    refreshBtn.disabled=true;
+    refreshBtn.textContent="⏳...";
+  }
+  const statusEl=document.getElementById("rloLiveStatus");
 
-  _rloUnsub = onSnapshot(collection(db, "feedback"), snap => {
-    _rloOrders = [];
-    snap.docs.forEach(d => {
-      const row = d.data();
-      if(row.type === "restaurant_order" && (row.uid === storeId || row.message?.includes(`"storeId":"${storeId}"`))){
-        let ord = null;
-        try { ord = JSON.parse(row.message || "{}"); } catch(e){}
+  try{
+    let rawList=[];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "restaurant_order")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if(!error && data) rawList = data;
+    }
+    if(!rawList.length){
+      try{
+        const snap = await getDocs(query(collection(db, "feedback"), where("type", "==", "restaurant_order")));
+        rawList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }catch(e){}
+    }
+
+    const matched=[];
+    rawList.forEach(row=>{
+      if(row.type === "restaurant_order" && (row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`)))){
+        let ord=null;
+        try{ord=JSON.parse(row.message||"{}");}catch(e){}
         if(ord){
-          ord._docId = d.id;
-          _rloOrders.push(ord);
+          ord._docId=row.id;
+          matched.push(ord);
         }
       }
     });
 
-    _rloOrders.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    matched.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    _rloOrders = matched;
 
-    const pendingList = _rloOrders.filter(o => o.status === 'pending');
-    if(pendingList.length > _lastPendingCount){
+    const pendingList = _rloOrders.filter(o=>o.status==='pending');
+    let hasBrandNewOrder=false;
+    pendingList.forEach(o=>{
+      const oid = o.orderId || o._docId;
+      if(!_seenOrderIds.has(oid)){
+        if(_seenOrderIds.size > 0){
+          hasBrandNewOrder = true;
+        }
+        _seenOrderIds.add(oid);
+      }
+    });
+
+    if(hasBrandNewOrder || (_lastPendingCount > 0 && pendingList.length > _lastPendingCount)){
       if(_cashierSoundEnabled) playRestaurantBell('new_order');
-      showToast("🔔 طلبية جديدة وصلت للكاشير!", "info", 3000);
+      showToast("🔔 طلبية جديدة وصلت للكاشير الآن!", "info", 4000);
     }
     _lastPendingCount = pendingList.length;
 
     updateCashierBadges();
     renderCashierOrdersList();
-  }, err => {
-    console.warn("Cashier orders listener error:", err);
-  });
+
+    if(statusEl){
+      const nowStr = new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      statusEl.innerHTML = `<span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً (${nowStr})`;
+    }
+    if(manual) showToast("تم تحديث قائمة الطلبات ✅","success",1500);
+  }catch(e){
+    console.warn("Cashier fetch error:", e);
+    if(manual) showToast("تعذر التحديث: "+e.message,"error");
+  }finally{
+    if(manual && refreshBtn){
+      refreshBtn.disabled=false;
+      refreshBtn.textContent="🔄 تحديث";
+    }
+  }
+};
+
+function startRestaurantOrdersListener(storeId){
+  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+  if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
+
+  // جلب فوري
+  refreshCashierOrders(false);
+
+  // تحديث دوري مستمر فائق السرعة كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
+  _rloPollTimer = setInterval(() => {
+    const overlay = document.getElementById("restaurantLiveOrdersOverlay");
+    if(overlay && !overlay.classList.contains("hidden")){
+      refreshCashierOrders(false);
+    } else {
+      clearInterval(_rloPollTimer);
+      _rloPollTimer = null;
+    }
+  }, 2500);
+
+  // مستمع احتياطي
+  try{
+    _rloUnsub = onSnapshot(collection(db, "feedback"), () => {
+      refreshCashierOrders(false);
+    }, err => {
+      console.warn("Cashier orders listener error:", err);
+    });
+  }catch(e){}
 }
 
 function updateCashierBadges(){
@@ -4071,6 +4295,17 @@ window.cashierAcceptOrder=async(docId, minutes)=>{
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
+
+    // تحديث محلي فوري
+    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    if(ordIdx!==-1){
+      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
+      updateCashierBadges();
+      renderCashierOrdersList();
+    }
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+    }
     showToast(`✅ تم قبول الطلب #${order.orderNo} بوقت تحضير ${minutes} دقيقة`,"success");
     playRestaurantBell('ready');
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -4095,6 +4330,15 @@ window.cashierRejectOrder=async(docId)=>{
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
+    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    if(ordIdx!==-1){
+      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
+      updateCashierBadges();
+      renderCashierOrdersList();
+    }
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+    }
     showToast(`تم الاعتذار عن الطلب #${order.orderNo}`,"info");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -4109,6 +4353,15 @@ window.cashierMarkReady=async(docId)=>{
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
+    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    if(ordIdx!==-1){
+      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
+      updateCashierBadges();
+      renderCashierOrdersList();
+    }
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+    }
     showToast(`🎉 تم إشعار الزبون بأن وجبة #${order.orderNo} جاهزة للاستلام!`,"success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -4123,6 +4376,15 @@ window.cashierCompleteOrder=async(docId)=>{
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
+    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    if(ordIdx!==-1){
+      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
+      updateCashierBadges();
+      renderCashierOrdersList();
+    }
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+    }
     showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo}`,"success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
