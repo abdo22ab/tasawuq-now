@@ -3483,6 +3483,7 @@ function renderCartUI(){
     if(sendRestBtn)sendRestBtn.classList.remove("hidden");
     if(callBtn)callBtn.classList.remove("hidden");
     if(sendBtn)sendBtn.classList.add("hidden");
+    if(typeof updateCartWalletBalance === "function") updateCartWalletBalance();
   }else{
     if(restOptionsBox)restOptionsBox.style.display="none";
     if(sendRestBtn)sendRestBtn.classList.add("hidden");
@@ -3625,6 +3626,7 @@ window.submitRestaurantDirectOrder=async()=>{
   const deliveryType=document.querySelector('input[name="restDeliveryType"]:checked')?.value||"pickup";
   const address=(document.getElementById("restCustAddress")?.value||"").trim();
   const notes=(document.getElementById("restCustNotes")?.value||"").trim();
+  const paymentMethod=document.querySelector('input[name="restPaymentMethod"]:checked')?.value||"cash";
 
   if(!custName){showToast("⚠️ يرجى كتابة اسمك الكريم","warn");return;}
   if(!custPhone || custPhone.replace(/[^0-9]/g,"").length < 9){showToast("⚠️ يرجى كتابة رقم هاتف صحيح للتواصل","warn");return;}
@@ -3634,6 +3636,35 @@ window.submitRestaurantDirectOrder=async()=>{
   if(btn){btn.disabled=true;btn.textContent="⏳ جاري إرسال الطلبية للكاشير...";}
 
   try{
+    const totalToPay = cartTotalPrice();
+    let walletDebitRes = null;
+
+    if(paymentMethod === "wallet"){
+      if(!auth.currentUser){
+        showToast("⚠️ يرجى تسجيل الدخول أولاً للدفع من المحفظة الإلكترونية", "warn");
+        if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
+        authOverlay.classList.remove("hidden");
+        return;
+      }
+      const myWal = await getUserWallet(auth.currentUser.uid);
+      if(myWal.balance < totalToPay){
+        showToast(`⚠️ رصيدك (${myWal.balance.toFixed(2)} د.ل) لا يكفي لإتمام الطلب (${totalToPay} د.ل). يرجى شحن الرصيد أولاً أو اختيار الدفع كاش`, "warn", 5000);
+        if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
+        return;
+      }
+      walletDebitRes = await debitUserWallet(
+        auth.currentUser.uid,
+        totalToPay,
+        `دفع قيمة طلبية مطعم (${cart.storeName || "المطعم"})`,
+        { storeId: cart.storeId, storeName: cart.storeName || "المطعم", txType: "order_payment" }
+      );
+      if(!walletDebitRes || !walletDebitRes.ok){
+        showToast("❌ تعذر الخصم من المحفظة: " + (walletDebitRes?.error || "خطأ غير متوقع"), "error");
+        if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
+        return;
+      }
+    }
+
     const orderNum=Math.floor(100+Math.random()*900);
     const orderId='order_'+Date.now()+'_'+orderNum;
     const store=allStores.find(s=>s.id===cart.storeId);
@@ -3650,8 +3681,13 @@ window.submitRestaurantDirectOrder=async()=>{
       deliveryAddress:address,
       notes:notes,
       items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1})),
-      totalPrice:cartTotalPrice(),
+      totalPrice:totalToPay,
       totalCount:cartTotalCount(),
+      paymentMethod:paymentMethod,
+      isPaid:paymentMethod === "wallet",
+      paidAmount:paymentMethod === "wallet" ? totalToPay : 0,
+      walletTxId:walletDebitRes?.txId || null,
+      isRefunded:false,
       status:'pending',
       prepMinutes:0,
       createdAt:Date.now(),
@@ -3710,6 +3746,12 @@ if(restBroadcast){
         refreshCashierOrders(false);
       }
     } else if(data.type === 'ORDER_UPDATED'){
+      if(data.status === 'completed'){
+        hideActiveOrderFloatingPill();
+        try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
+        if(_orderCountdownTimer){ clearInterval(_orderCountdownTimer); _orderCountdownTimer = null; }
+        if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer = null; }
+      }
       if(_currentTrackingOrderId && _currentTrackingOrderId === data.orderId){
         refreshTrackingOrder(data.orderId);
       }
@@ -3835,14 +3877,18 @@ window.refreshTrackingOrder=async(orderId)=>{
     }
     _lastTrackingStatus = order.status;
 
-    renderOrderTrackerUI(order);
-
-    if(order.status === 'completed' || order.status === 'rejected'){
-      if(_orderTrackerPollTimer){
-        clearInterval(_orderTrackerPollTimer);
-        _orderTrackerPollTimer = null;
-      }
+    if(order.status === 'completed'){
+      hideActiveOrderFloatingPill();
+      try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
+      if(_orderCountdownTimer){ clearInterval(_orderCountdownTimer); _orderCountdownTimer = null; }
+      if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer = null; }
+    } else if(order.status === 'rejected'){
+      hideActiveOrderFloatingPill();
+      try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
+      if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer = null; }
     }
+
+    renderOrderTrackerUI(order);
   } catch(e){
     console.warn("Tracker refresh error:", e);
   } finally {
@@ -3899,14 +3945,15 @@ function renderOrderTrackerUI(order,errorMsg){
       </div>
     `;
     startOrderCountdown(order.readyAt,order);
-  }else if(order.status==='ready' || order.status==='completed'){
+  }else if(order.status==='ready'){
     statusCardHtml=`
       <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;box-shadow:0 4px 14px rgba(22,163,74,0.15)">
         <div style="font-size:42px;margin-bottom:4px">🎉</div>
         <div style="font-size:18px;font-weight:900;color:#15803d;margin-bottom:6px">وجبتك جاهزة وساخنة الآن!</div>
-        <div style="font-size:13.5px;color:#166534;line-height:1.6;font-weight:700">
+        <div style="font-size:13.5px;color:#166534;line-height:1.6;font-weight:700;margin-bottom:12px">
           ${isDelivery ? '🛵 الوجبة تم تجهيزها وخرجت الآن مع سائق التوصيل إلى عنوانك!' : '🚗 تفضل بالتوجه لكاشير المطعم بالرقم <b>#'+order.orderNo+'</b> لاستلام وجبتك مباشرة.'}
         </div>
+        <button class="btnMain" onclick="finishAndDismissActiveOrder(true)" style="padding:9px 16px;font-size:13px;font-weight:800;background:#15803d;margin-bottom:0">✔️ استلمت الوجبة (إنهاء التتبع وإغلاق العداد)</button>
       </div>
     `;
     if(!_hasPlayedReadyBell){
@@ -3914,18 +3961,40 @@ function renderOrderTrackerUI(order,errorMsg){
       _hasPlayedReadyBell=true;
     }
     updateActiveOrderFloatingPill(order,'🎉 وجبتك جاهزة الآن!');
+  }else if(order.status==='completed'){
+    statusCardHtml=`
+      <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:16px;padding:22px;text-align:center;margin-bottom:14px;box-shadow:0 4px 14px rgba(34,197,94,0.15)">
+        <div style="font-size:46px;margin-bottom:6px">✅</div>
+        <div style="font-size:18px;font-weight:900;color:#15803d;margin-bottom:4px">تم استلام واكتمال الطلبية بنجاح</div>
+        <div style="font-size:13px;color:#166534;margin-bottom:14px;font-weight:700">صحتين وهنا وعافية! نتمنى أن تكون الوجبة نالت إعجابك 😋</div>
+        <button class="btnMain" onclick="finishAndDismissActiveOrder(false)" style="padding:10px 18px;font-weight:800;background:#16a34a;margin-bottom:0">إغلاق التتبع والعودة للموقع ✨</button>
+      </div>
+    `;
+    hideActiveOrderFloatingPill();
+    try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
+    if(_orderCountdownTimer){ clearInterval(_orderCountdownTimer); _orderCountdownTimer=null; }
+    if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer=null; }
   }else if(order.status==='rejected'){
+    const refundNote = (order.paymentMethod==='wallet' && order.isRefunded)
+      ? `<div style="margin-top:8px;font-size:12px;background:#f0fdf4;color:#166534;padding:6px 10px;border-radius:8px;font-weight:800;border:1px solid #bbf7d0">✅ تم استرجاع المبلغ (${formatPrice(order.totalPrice||0)} د.ل) تلقائياً إلى محفظتك الإلكترونية!</div>`
+      : '';
     statusCardHtml=`
       <div style="background:#fef2f2;border:1.5px solid #ef4444;border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
         <div style="font-size:36px;margin-bottom:6px">❌</div>
         <div style="font-size:16px;font-weight:900;color:#991b1b;margin-bottom:4px">نعتذر منك، المطعم اعتذر عن الطلبية</div>
         <div style="font-size:12.5px;color:#b91c1c;line-height:1.5">نعتذر منك، المطعم حالياً مزدحم جداً أو الوجبة غير متوفرة.</div>
+        ${refundNote}
       </div>
     `;
     hideActiveOrderFloatingPill();
+    try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
   }
 
   const callBtn=order.storePhone?`<a href="tel:${formatCallPhone(order.storePhone)}" class="btnMain" style="background:#16a34a;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;font-weight:800;padding:11px;margin-top:10px">📞 اتصال بالمطعم للاستفسار (${escapeHtml(order.storePhone)})</a>`:'';
+
+  const paymentMethodBadge = (order.paymentMethod === 'wallet')
+    ? `<span style="color:#16a34a;font-weight:800">🟢 مدفوع مسبقاً بالمحفظة (خالص)</span>`
+    : `<span style="color:#f59e0b;font-weight:800">💵 كاش عند الاستلام</span>`;
 
   box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -3943,10 +4012,18 @@ function renderOrderTrackerUI(order,errorMsg){
         <span>المجموع:</span>
         <span style="color:var(--teal-dark)">${formatPrice(order.totalPrice||0)} د.ل</span>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;font-size:12px;font-weight:700;color:var(--muted);border-top:1px dashed var(--border);margin-top:6px">
+        <span>طريقة الدفع:</span>
+        ${paymentMethodBadge}
+      </div>
       ${order.notes ? `<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:8px;margin-top:8px">📝 ملاحظاتك: ${escapeHtml(order.notes)}</div>` : ''}
     </div>
     ${callBtn}
-    <button class="btnGhost" onclick="closeOrderTracker()" style="width:100%;background:transparent;color:var(--muted);margin-top:6px">تصغير الشاشة ومتابعة التصفح</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btnGhost" onclick="${(order.status==='completed'||order.status==='rejected') ? 'finishAndDismissActiveOrder(false)' : 'closeOrderTracker()'}" style="flex:1;background:transparent;color:var(--muted)">
+        ${(order.status==='completed'||order.status==='rejected') ? 'إغلاق الشاشة' : 'تصغير الشاشة ومتابعة التصفح'}
+      </button>
+    </div>
   `;
 }
 
@@ -3978,16 +4055,84 @@ function startOrderCountdown(readyAt,order){
   _orderCountdownTimer = setInterval(tick, 1000);
 }
 
+window.finishAndDismissActiveOrder=async(markInDb=false)=>{
+  const orderId = _currentTrackingOrderId || (function(){try{return localStorage.getItem('tasawuq_active_order_id');}catch(e){return null;}})();
+  const overlay=document.getElementById("orderTrackerOverlay");
+  if(overlay) overlay.classList.add("hidden");
+  hideActiveOrderFloatingPill();
+
+  try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
+  _currentTrackingOrderId=null;
+  if(_orderCountdownTimer){ clearInterval(_orderCountdownTimer); _orderCountdownTimer=null; }
+  if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer=null; }
+  if(_orderTrackerUnsub){ _orderTrackerUnsub(); _orderTrackerUnsub=null; }
+
+  if(markInDb && orderId){
+    try{
+      const snap=await getDoc(doc(db,"feedback",orderId));
+      if(snap.exists()){
+        const data=snap.data();
+        let ord=JSON.parse(data.message||"{}");
+        ord.status='completed';
+        ord.completedAt=Date.now();
+        await updateDoc(doc(db,"feedback",orderId),{message:JSON.stringify(ord)});
+        if(restBroadcast){
+          try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: orderId, status: 'completed' }); }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+  showToast("تم إنهاء التتبع بنجاح ✅","info",2000);
+};
+
+window.checkActiveOrderSilently=async(orderId)=>{
+  if(!orderId) return;
+  try{
+    let row=null;
+    if(window.supabase){
+      const { data } = await window.supabase.from("feedback").select("*").eq("id", orderId).maybeSingle();
+      if(data) row=data;
+    }
+    if(!row){
+      const snap=await getDoc(doc(db,"feedback",orderId));
+      if(snap.exists()) row={ id: snap.id, ...snap.data() };
+    }
+    if(!row){
+      try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
+      hideActiveOrderFloatingPill();
+      return;
+    }
+    let order=null;
+    try{ order=JSON.parse(row.message||"{}"); }catch(e){}
+    if(!order || order.status==='completed' || order.status==='rejected'){
+      try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
+      hideActiveOrderFloatingPill();
+      return;
+    }
+    _currentTrackingOrderId = orderId;
+    if(order.status==='pending'){
+      updateActiveOrderFloatingPill(order,'⏳ بانتظار الكاشير');
+    }else if(order.status==='accepted'){
+      const minsLeft = Math.max(0, Math.ceil(((order.readyAt||0) - Date.now()) / 60000));
+      updateActiveOrderFloatingPill(order, `🍳 متبقي ~${minsLeft} د`);
+    }else if(order.status==='ready'){
+      updateActiveOrderFloatingPill(order,'🎉 وجبتك جاهزة الآن!');
+    }
+  }catch(e){}
+};
+
 window.closeOrderTracker=()=>{
   const overlay=document.getElementById("orderTrackerOverlay");
   if(overlay) overlay.classList.add("hidden");
-  // تحديث هادئ بالخلفية لضمان بقاء الزر العائم محدّثاً
+  // تحديث هادئ بالخلفية لضمان بقاء الزر العائم محدّثاً طالما أن الطلب قيد التحضير
   if(_orderTrackerPollTimer){
     clearInterval(_orderTrackerPollTimer);
     _orderTrackerPollTimer = setInterval(() => {
       if(!_currentTrackingOrderId || _lastTrackingStatus === 'completed' || _lastTrackingStatus === 'rejected'){
         clearInterval(_orderTrackerPollTimer);
         _orderTrackerPollTimer = null;
+        hideActiveOrderFloatingPill();
+        try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
         return;
       }
       refreshTrackingOrder(_currentTrackingOrderId);
@@ -4255,11 +4400,16 @@ function renderCashierOrdersList(){
       `;
     }
 
+    const paymentBadge = (order.paymentMethod === 'wallet' && order.isPaid)
+      ? `<span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;margin-right:6px">🟢 مدفوع بالمحفظة (خالص)</span>`
+      : `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;margin-right:6px">💵 كاش عند الاستلام</span>`;
+
     return `
       <div class="restaurantOrderCard ${order.status==='pending'?'pending':''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div>
             <span style="font-size:16px;font-weight:900;color:var(--text)">طلب #${order.orderNo}</span>
+            ${paymentBadge}
             <span style="font-size:11.5px;color:var(--muted);margin-right:6px">🕒 ${timeAgo(order.createdAt)}</span>
           </div>
           <div>${deliveryTag}</div>
@@ -4327,6 +4477,21 @@ window.cashierRejectOrder=async(docId)=>{
     const data=snap.data();
     let order=JSON.parse(data.message||"{}");
     order.status='rejected';
+
+    let didRefund = false;
+    if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
+      try{
+        if(typeof refundOrderToWallet === 'function'){
+          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
+          order.isRefunded = true;
+          order.refundedAt = Date.now();
+          didRefund = true;
+        }
+      }catch(err){
+        console.error("Auto refund error:", err);
+      }
+    }
+
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
@@ -4339,7 +4504,7 @@ window.cashierRejectOrder=async(docId)=>{
     if(restBroadcast){
       try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
     }
-    showToast(`تم الاعتذار عن الطلب #${order.orderNo}`,"info");
+    showToast(`تم الاعتذار عن الطلب #${order.orderNo}${didRefund ? ' واسترجاع المبلغ تلقائياً لمحفظة الزبون' : ''}`,"info");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
 
@@ -4373,6 +4538,7 @@ window.cashierCompleteOrder=async(docId)=>{
     const data=snap.data();
     let order=JSON.parse(data.message||"{}");
     order.status='completed';
+    order.completedAt=Date.now();
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
@@ -4383,7 +4549,7 @@ window.cashierCompleteOrder=async(docId)=>{
       renderCashierOrdersList();
     }
     if(restBroadcast){
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'completed' }); }catch(e){}
     }
     showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo}`,"success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -5617,6 +5783,24 @@ window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPo
    ============================================ */
 window.openAccount=(skipHistory)=>{
   if(auth.currentUser){
+    // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان ظهور اليوزر نيم ورقم الهاتف فوراً
+    getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
+      if(snap.exists()){
+        myProfile=snap.data();
+        const unEl=document.getElementById("accountUsername");
+        if(unEl){
+          if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}
+          else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}
+        }
+        const myUserInput=document.getElementById("myUsername");
+        if(myUserInput && myProfile.username && document.activeElement!==myUserInput) myUserInput.value=myProfile.username;
+        const myPhoneInput=document.getElementById("myPhone");
+        if(myPhoneInput && myProfile.phone && document.activeElement!==myPhoneInput) myPhoneInput.value=formatCallPhone(myProfile.phone);
+        const mnEl=document.getElementById("accountMemberNo");
+        if(mnEl && myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}
+      }
+    }).catch(()=>{});
+
     document.getElementById("accountEmail").textContent="";
     const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";
     document.getElementById("accountName").textContent="👤 "+dn;
@@ -5657,6 +5841,12 @@ window.openAccount=(skipHistory)=>{
     const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
     const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
     const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
+    const awb=document.getElementById("adminWalletBtn");if(awb)awb.classList.toggle("hidden",!isAdmin);
+    if(typeof getUserWallet === 'function'){
+      getUserWallet(auth.currentUser.uid).then(wal=>{
+        if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
+      }).catch(()=>{});
+    }
     accountOverlay.classList.remove("hidden");
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
@@ -5684,6 +5874,9 @@ function closeOverlayDirect(){
   if(eso)eso.classList.add("hidden");
   const oto=document.getElementById("orderTrackerOverlay");if(oto)oto.classList.add("hidden");
   const rlo=document.getElementById("restaurantLiveOrdersOverlay");if(rlo)rlo.classList.add("hidden");
+  const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
+  const mwho=document.getElementById("myWalletHistoryOverlay");if(mwho)mwho.classList.add("hidden");
+  const awo=document.getElementById("adminWalletOverlay");if(awo)awo.classList.add("hidden");
   updateSEOMeta(null);
   pendingAction=null;
   document.body.style.overflow="";
@@ -5707,20 +5900,48 @@ window.closeOverlay=()=>{
 /* ============================================
    حسابي - الحفظ
    ============================================ */
-window.saveMyName=async()=>{const me=auth.currentUser;if(!me)return;const name=document.getElementById("myName").value.trim();if(name.length<2||name.length>30){showToast("الاسم بين 2 و30 حرفاً","warn");return;}try{if(myProfile && myProfile.memberNo!=null)await updateDoc(doc(db,"profiles",me.uid),{name});else await assignMemberNumber(me,name);const mine=allPosts.filter(p=>p.uid===me.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name})));if(myStore){await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""});}showToast("✅ تم حفظ الاسم","success");}catch(e){showToast("تعذر حفظ الاسم: "+e.message,"error");}};
+window.saveMyName=async()=>{
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const name=(document.getElementById("myName")?.value||"").trim();
+  if(name.length<2||name.length>30){showToast("الاسم بين 2 و30 حرفاً","warn");return;}
+  try{
+    await setDoc(doc(db,"profiles",me.uid),{name},{merge:true});
+    if(!myProfile) myProfile={};
+    myProfile.name=name;
+    const anEl=document.getElementById("accountName");
+    if(anEl) anEl.textContent="👤 "+name;
+    const mine=allPosts.filter(p=>p.uid===me.uid);
+    await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
+    if(myStore){
+      try{ await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""}); }catch(e){}
+    }
+    showToast("✅ تم حفظ الاسم بنجاح","success");
+  }catch(e){showToast("تعذر حفظ الاسم: "+e.message,"error");}
+};
 
 window.saveMyUsername=async()=>{
-const me=auth.currentUser;
-if(!me){authOverlay.classList.remove("hidden");return;}
-const input=document.getElementById("myUsername");
-const raw=(input.value||"").trim().toLowerCase();
-const oldUsername=(myProfile&&myProfile.username)||"";
-if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
-if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
-if(!confirm(`هل تريد حفظ اسم المستخدم: @${raw}؟`))return;
-const res=await reserveUsername(me,raw,oldUsername);
-if(res.ok){showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");if(input)input.value=res.value;if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}}
-else{showToast("❌ "+res.msg,"error");}
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const input=document.getElementById("myUsername");
+  const raw=(input.value||"").trim().toLowerCase();
+  const oldUsername=(myProfile&&myProfile.username)||"";
+  if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
+  if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
+  if(!confirm(`هل تريد حفظ اسم المستخدم: @${raw}؟`))return;
+  showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
+  const res=await reserveUsername(me,raw,oldUsername);
+  if(res.ok){
+    if(!myProfile) myProfile={};
+    myProfile.username=res.value;
+    if(input) input.value=res.value;
+    const unEl=document.getElementById("accountUsername");
+    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="block";}
+    showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
+    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
+  }else{
+    showToast("❌ "+res.msg,"error");
+  }
 };
 
 window.saveMyPhone=async()=>{
@@ -5750,7 +5971,9 @@ window.saveMyPhone=async()=>{
   showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
   const res=await reservePhone(me,cleanNew,cleanOld);
   if(res.ok){
-    if(input)input.value=formatCallPhone(res.value);
+    if(!myProfile) myProfile={};
+    myProfile.phone=res.value;
+    if(input) input.value=formatCallPhone(res.value);
     showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
   }else{
     showToast("❌ "+res.msg,"error",5000);
@@ -5769,6 +5992,8 @@ window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;co
 function startFollowingListener(user){
   stopFollowingListener();
 stopPendingPostsListener();
+if(typeof _walletUnsub === 'function'){ try{ _walletUnsub(); }catch(e){} _walletUnsub = null; }
+if(typeof updateWalletUI === 'function') updateWalletUI(0);
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
     myFollowing=snap.docs.map(d=>({uid:d.id,...d.data()}));
   },err=>{});
@@ -5869,45 +6094,82 @@ function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.le
 function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 
 async function assignMemberNumber(user,customName){
-if(!user)return null;
-const counterRef=doc(db,"counters","users");
-const profileRef=doc(db,"profiles",user.uid);
-try{
-const memberNo=await runTransaction(db,async (transaction)=>{
-const profileSnap=await transaction.get(profileRef);
-const counterSnap=await transaction.get(counterRef);
-if(profileSnap.exists() && profileSnap.data().memberNo!=null){return profileSnap.data().memberNo;}
-let currentNumber=1000;
-if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){currentNumber=counterSnap.data().lastNumber;}
-const newNumber=currentNumber+1;
-if(counterSnap.exists()){transaction.update(counterRef,{lastNumber:newNumber});}else{transaction.set(counterRef,{lastNumber:newNumber});}
-if(profileSnap.exists()){const updates={memberNo:newNumber};if(customName)updates.name=customName;transaction.update(profileRef,updates);}else{const name=customName||defaultName(user);transaction.set(profileRef,{name,createdAt:profileCreatedAt(user),memberNo:newNumber,username:"",storeId:null,phone:"",phoneEditsCount:0});}
-return newNumber;
-});
-return memberNo;
-}catch(e){return null;}
+  if(!user)return null;
+  const counterRef=doc(db,"counters","users");
+  const profileRef=doc(db,"profiles",user.uid);
+  try{
+    const profileSnap=await getDoc(profileRef);
+    if(profileSnap.exists() && profileSnap.data().memberNo!=null){
+      return profileSnap.data().memberNo;
+    }
+    const counterSnap=await getDoc(counterRef);
+    let currentNumber=1000;
+    if(counterSnap.exists() && typeof counterSnap.data().lastNumber==="number"){
+      currentNumber=counterSnap.data().lastNumber;
+    }
+    const newNumber=currentNumber+1;
+    await setDoc(counterRef,{lastNumber:newNumber},{merge:true});
+
+    const updates={
+      memberNo:newNumber,
+      name:customName || defaultName(user),
+      createdAt:profileCreatedAt(user),
+      username:(myProfile&&myProfile.username)||"",
+      storeId:(myProfile&&myProfile.storeId)||null,
+      phone:(myProfile&&myProfile.phone)||"",
+      phoneEditsCount:0
+    };
+    await setDoc(profileRef,updates,{merge:true});
+    if(!myProfile) myProfile={};
+    Object.assign(myProfile, updates);
+    return newNumber;
+  }catch(e){
+    console.warn("assignMemberNumber error:", e);
+    return null;
+  }
 }
 
 async function reserveUsername(user,newUsername,oldUsername){
-if(!user)return{ok:false,msg:"لست مسجلاً"};
-const v=validateUsername(newUsername);
-if(!v.ok)return{ok:false,msg:v.msg};
-const u=v.value;
-const usernameRef=doc(db,"usernames",u);
-const profileRef=doc(db,"profiles",user.uid);
-try{
-await runTransaction(db,async (transaction)=>{
-const uSnap=await transaction.get(usernameRef);
-const pSnap=await transaction.get(profileRef);
-if(uSnap.exists() && uSnap.data().uid!==user.uid){throw new Error("TAKEN");}
-const now=Date.now();
-if(!uSnap.exists()){transaction.set(usernameRef,{uid:user.uid,createdAt:now});}
-if(pSnap.exists()){transaction.update(profileRef,{username:u});}else{transaction.set(profileRef,{name:defaultName(user),createdAt:profileCreatedAt(user),memberNo:1001,username:u,storeId:null,phone:"",phoneEditsCount:0});}
-});
-if(oldUsername && oldUsername!==u){try{const oldRef=doc(db,"usernames",oldUsername);const oldSnap=await getDoc(oldRef);if(oldSnap.exists() && oldSnap.data().uid===user.uid){await deleteDoc(oldRef);}}catch(e){}}
-try{const mine=allPosts.filter(p=>p.uid===user.uid);await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:u})));}catch(e){}
-return{ok:true,value:u};
-}catch(e){if(e.message==="TAKEN")return{ok:false,msg:"هذا الاسم محجوز، جرّب اسم ثاني"};return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};}
+  if(!user)return{ok:false,msg:"لست مسجلاً"};
+  const v=validateUsername(newUsername);
+  if(!v.ok)return{ok:false,msg:v.msg};
+  const u=v.value;
+  const usernameRef=doc(db,"usernames",u);
+  const profileRef=doc(db,"profiles",user.uid);
+  try{
+    const uSnap=await getDoc(usernameRef);
+    if(uSnap.exists()){
+      const uData=uSnap.data()||{};
+      if(uData.uid && uData.uid!==user.uid){
+        return{ok:false,msg:"هذا الاسم محجوز، جرّب اسم ثاني"};
+      }
+    }
+    const now=Date.now();
+    await setDoc(usernameRef,{uid:user.uid,createdAt:now},{merge:true});
+    await setDoc(profileRef,{username:u},{merge:true});
+
+    if(oldUsername && oldUsername!==u){
+      try{
+        const oldRef=doc(db,"usernames",oldUsername);
+        const oldSnap=await getDoc(oldRef);
+        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
+          await deleteDoc(oldRef);
+        }
+      }catch(e){}
+    }
+
+    try{
+      const mine=allPosts.filter(p=>p.uid===user.uid);
+      await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:u}).catch(()=>{})));
+    }catch(e){}
+
+    if(!myProfile) myProfile={};
+    myProfile.username=u;
+
+    return{ok:true,value:u};
+  }catch(e){
+    return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};
+  }
 }
 
 async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
@@ -5922,41 +6184,29 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   const profileRef=doc(db,"profiles",user.uid);
 
   try{
-    await runTransaction(db,async (transaction)=>{
-      const phoneSnap=await transaction.get(phoneRef);
-      const profileSnap=await transaction.get(profileRef);
-
-      // منع أي مستخدم من استخدام رقم مسجل لشخص آخر
-      if(phoneSnap.exists()){
-        const pData=phoneSnap.data()||{};
-        if(pData.uid && pData.uid!==user.uid){
-          throw new Error("TAKEN");
-        }
+    // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر
+    const phoneSnap=await getDoc(phoneRef);
+    if(phoneSnap.exists()){
+      const pData=phoneSnap.data()||{};
+      if(pData.uid && pData.uid!==user.uid){
+        return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
       }
+    }
 
-      const now=Date.now();
-      transaction.set(phoneRef,{
-        uid:user.uid,
-        email:user.email||"",
-        phone:cleanNew,
-        localPhone:formatCallPhone(cleanNew),
-        linkedAt:now
-      },{merge:true});
+    const now=Date.now();
+    // حفظ في جدول phones
+    await setDoc(phoneRef,{
+      uid:user.uid,
+      email:user.email||"",
+      phone:cleanNew,
+      localPhone:formatCallPhone(cleanNew),
+      linkedAt:now
+    },{merge:true});
 
-      if(profileSnap.exists()){
-        transaction.update(profileRef,{phone:cleanNew});
-      }else{
-        transaction.set(profileRef,{
-          name:defaultName(user),
-          createdAt:profileCreatedAt(user),
-          memberNo:1001,
-          username:"",
-          storeId:null,
-          phone:cleanNew,
-          phoneEditsCount:0
-        });
-      }
-    });
+    // حفظ في جدول profiles عبر upsert
+    await setDoc(profileRef,{
+      phone:cleanNew
+    },{merge:true});
 
     // تحرير الرقم القديم ليصبح متاحاً عند تغييره
     if(cleanOld && cleanOld!==cleanNew){
@@ -5991,25 +6241,19 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       }catch(e){}
     }
 
-    if(myProfile){
-      myProfile.phone=cleanNew;
-    }
+    if(!myProfile) myProfile={};
+    myProfile.phone=cleanNew;
     return{ok:true,value:cleanNew};
   }catch(e){
-    if(e.message==="TAKEN"){
-      return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
+    // في حال تعذر جدول phones، يتم الحفظ بالبروفايل مباشرة
+    try{
+      await setDoc(profileRef,{phone:cleanNew},{merge:true});
+      if(!myProfile) myProfile={};
+      myProfile.phone=cleanNew;
+      return{ok:true,value:cleanNew};
+    }catch(e2){
+      return{ok:false,msg:"تعذر حفظ رقم الهاتف: "+(e.message||"خطأ غير متوقع")};
     }
-    // في حال وجود مشكلة في صلاحيات جدول phones: يتم حفظ الرقم بالبروفايل فوراً لعدم تعطيل المستخدم
-    if(e.code==="permission-denied" || (e.message && e.message.includes("permission"))){
-      try{
-        await updateDoc(profileRef,{phone:cleanNew});
-        if(myProfile)myProfile.phone=cleanNew;
-        return{ok:true,value:cleanNew};
-      }catch(e2){
-        return{ok:false,msg:"تعذر حفظ رقم الهاتف، تحقق من اتصالك"};
-      }
-    }
-    return{ok:false,msg:"تعذر حفظ رقم الهاتف: "+(e.message||"خطأ غير متوقع")};
   }
 }
 
@@ -6193,6 +6437,7 @@ startProfileListener(user);
 startFollowingListener(user);
 giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
+if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
@@ -6232,6 +6477,8 @@ stopProfileListener();
 stopStoreListener();
 stopFollowingListener();
 stopPendingPostsListener();
+if(typeof _walletUnsub === 'function'){ try{ _walletUnsub(); }catch(e){} _walletUnsub = null; }
+if(typeof updateWalletUI === 'function') updateWalletUI(0);
 if(showOnlyMine)showHome();
 renderPosts();
 }
@@ -6377,7 +6624,7 @@ window.addEventListener('load',()=>{
     const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
     if(activeOrdId){
       setTimeout(()=>{
-        if(typeof openActiveOrderTracker === 'function') openActiveOrderTracker();
+        if(typeof checkActiveOrderSilently === 'function') checkActiveOrderSilently(activeOrdId);
       }, 1500);
     }
   }catch(e){}
@@ -6897,3 +7144,992 @@ try {
   Object.defineProperty(window, 'storeCoverImage', { get: () => storeCoverImage, set: (v) => { storeCoverImage = v; }, configurable: true });
   Object.defineProperty(window, 'editStoreLogoImage', { get: () => editStoreLogoImage, set: (v) => { editStoreLogoImage = v; }, configurable: true });
 } catch(e) {}
+
+// ============================================
+// 💳 نظام المحفظة الإلكترونية وكروت الشحن والسجل المالي للأدمن
+// ============================================
+let _userWalletBalance = 0;
+let _walletUnsub = null;
+const WALLET_THROTTLE_KEY = "tasawuq_wallet_throttle";
+
+// 1. استرجاع بيانات محفظة المستخدم
+export async function getUserWallet(uid){
+  if(!uid) return { balance: 0.00, updatedAt: Date.now() };
+  try{
+    const snap = await getDoc(doc(db, "feedback", "wallet_" + uid));
+    if(snap && snap.exists()){
+      const raw = snap.data();
+      const parsed = raw.message ? JSON.parse(raw.message) : {};
+      const bal = Math.max(0, Number(parsed.balance || 0));
+      return { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
+    }
+  }catch(e){
+    console.warn("getUserWallet error:", e);
+  }
+  return { balance: 0.00, updatedAt: Date.now() };
+}
+window.getUserWallet = getUserWallet;
+
+// 2. تسجيل حركة في السجل المالي العام (Audit Ledger)
+export async function recordWalletTx(uid, txType, amount, balanceBefore, balanceAfter, reason, meta = {}){
+  try{
+    const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
+    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+    const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const txData = {
+      txId,
+      uid,
+      userName: uName,
+      userPhone: uPhone,
+      txType, // 'card_recharge' | 'order_payment' | 'order_refund' | 'admin_credit' | 'admin_debit'
+      amount: Math.round(Number(amount) * 100) / 100,
+      balanceBefore: Math.round(Number(balanceBefore) * 100) / 100,
+      balanceAfter: Math.round(Number(balanceAfter) * 100) / 100,
+      reason: String(reason || ""),
+      meta: meta || {},
+      timestamp: Date.now()
+    };
+    await addDoc(collection(db, "feedback"), {
+      id: txDocId,
+      type: "wallet_transaction",
+      uid: uid,
+      userName: uName,
+      userPhone: uPhone,
+      message: JSON.stringify(txData),
+      createdAt: Date.now()
+    });
+    return txId;
+  }catch(e){
+    console.error("recordWalletTx error:", e);
+    return null;
+  }
+}
+window.recordWalletTx = recordWalletTx;
+
+// 3. إضافة رصيد للمحفظة (Credit)
+export async function creditUserWallet(uid, amount, reason, meta = {}){
+  amount = Math.max(0, Number(amount) || 0);
+  if(amount <= 0) return { ok: false, error: "المبلغ غير صحيح" };
+  try{
+    const current = await getUserWallet(uid);
+    const oldBalance = current.balance;
+    const newBalance = Math.round((oldBalance + amount) * 100) / 100;
+    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
+    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+
+    await setDoc(doc(db, "feedback", "wallet_" + uid), {
+      id: "wallet_" + uid,
+      type: "user_wallet",
+      uid: uid,
+      userName: uName,
+      userPhone: uPhone,
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
+      updatedAt: Date.now()
+    }, { merge: true });
+
+    const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
+    if(auth.currentUser && auth.currentUser.uid === uid){
+      updateWalletUI(newBalance);
+    }
+    return { ok: true, balance: newBalance, oldBalance, txId };
+  }catch(e){
+    console.error("creditUserWallet error:", e);
+    return { ok: false, error: e.message };
+  }
+}
+window.creditUserWallet = creditUserWallet;
+
+// 4. خصم رصيد من المحفظة (Debit)
+export async function debitUserWallet(uid, amount, reason, meta = {}){
+  amount = Math.max(0, Number(amount) || 0);
+  if(amount <= 0) return { ok: false, error: "المبلغ غير صحيح" };
+  try{
+    const current = await getUserWallet(uid);
+    const oldBalance = current.balance;
+    if(oldBalance < amount){
+      return { ok: false, error: "الرصيد غير كافٍ لإتمام العملية", balance: oldBalance };
+    }
+    const newBalance = Math.round((oldBalance - amount) * 100) / 100;
+    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
+    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+
+    await setDoc(doc(db, "feedback", "wallet_" + uid), {
+      id: "wallet_" + uid,
+      type: "user_wallet",
+      uid: uid,
+      userName: uName,
+      userPhone: uPhone,
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
+      updatedAt: Date.now()
+    }, { merge: true });
+
+    const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
+    if(auth.currentUser && auth.currentUser.uid === uid){
+      updateWalletUI(newBalance);
+    }
+    return { ok: true, balance: newBalance, oldBalance, txId };
+  }catch(e){
+    console.error("debitUserWallet error:", e);
+    return { ok: false, error: e.message };
+  }
+}
+window.debitUserWallet = debitUserWallet;
+
+// 5. استرجاع قيمة طلبية ملغاة (Refund)
+export async function refundOrderToWallet(uid, amount, orderNo, storeName){
+  return creditUserWallet(
+    uid,
+    amount,
+    `استرجاع قيمة طلبية ملغاة رقم #${orderNo} (${storeName})`,
+    { txType: "order_refund", orderNo, storeName }
+  );
+}
+window.refundOrderToWallet = refundOrderToWallet;
+
+// 6. حماية الشحن من المحاولات العشوائية والتخمين (Brute-Force Throttle)
+function checkWalletThrottle(){
+  try{
+    const raw = localStorage.getItem(WALLET_THROTTLE_KEY);
+    if(!raw) return { allowed: true, attempts: 0, waitMinutes: 0 };
+    const data = JSON.parse(raw);
+    const now = Date.now();
+    if(data.lockedUntil && now < data.lockedUntil){
+      const waitMinutes = Math.ceil((data.lockedUntil - now) / 60000);
+      return { allowed: false, attempts: data.attempts || 0, waitMinutes };
+    }
+    if(data.lockedUntil && now >= data.lockedUntil){
+      localStorage.removeItem(WALLET_THROTTLE_KEY);
+      return { allowed: true, attempts: 0, waitMinutes: 0 };
+    }
+    return { allowed: true, attempts: data.attempts || 0, waitMinutes: 0 };
+  }catch(e){
+    return { allowed: true, attempts: 0, waitMinutes: 0 };
+  }
+}
+
+function registerWalletFail(){
+  try{
+    const current = checkWalletThrottle();
+    const attempts = (current.attempts || 0) + 1;
+    let lockedUntil = null;
+    if(attempts >= 3){
+      lockedUntil = Date.now() + 30 * 60 * 1000; // قفل 30 دقيقة
+    }
+    localStorage.setItem(WALLET_THROTTLE_KEY, JSON.stringify({ attempts, lockedUntil, lastAttempt: Date.now() }));
+    return { attempts, lockedUntil };
+  }catch(e){
+    return { attempts: 1, lockedUntil: null };
+  }
+}
+
+function resetWalletThrottle(){
+  try{ localStorage.removeItem(WALLET_THROTTLE_KEY); }catch(e){}
+}
+
+// 7. تحديث واجهات المحفظة محلياً
+function updateWalletUI(balance){
+  _userWalletBalance = Math.max(0, Number(balance) || 0);
+  const balText = _userWalletBalance.toFixed(2);
+  const headerBadge = document.getElementById("walletHeaderBadge");
+  if(headerBadge) headerBadge.textContent = balText + " د.ل";
+  const cardBal = document.getElementById("userWalletBalanceText");
+  if(cardBal) cardBal.textContent = balText;
+  const histBal = document.getElementById("myHistoryCurrentBalance");
+  if(histBal) histBal.textContent = balText;
+  const cartBal = document.getElementById("cartWalletCurrentBalanceBadge");
+  if(cartBal) cartBal.textContent = "رصيدك: " + balText + " د.ل";
+}
+window.updateWalletUI = updateWalletUI;
+
+// 8. الاستماع المباشر الفوري للرصيد عبر Supabase
+export function setupUserWalletListener(uid){
+  if(_walletUnsub){
+    try{ _walletUnsub(); }catch(e){}
+    _walletUnsub = null;
+  }
+  if(!uid) return;
+  try{
+    _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + uid), snap=>{
+      if(snap && snap.exists()){
+        const data = snap.data();
+        let bal = 0;
+        try{ bal = JSON.parse(data.message || "{}").balance || 0; }catch(e){}
+        updateWalletUI(bal);
+      }else{
+        updateWalletUI(0);
+      }
+    });
+  }catch(e){
+    console.warn("setupUserWalletListener error:", e);
+    getUserWallet(uid).then(w => updateWalletUI(w.balance)).catch(()=>{});
+  }
+}
+window.setupUserWalletListener = setupUserWalletListener;
+
+// 9. فتح نافذة المحفظة
+window.openWalletModal = ()=>{
+  if(!auth.currentUser){
+    showToast("⚠️ يرجى تسجيل الدخول للوصول إلى المحفظة", "warn");
+    openAccount();
+    return;
+  }
+  openAccount();
+  const c = document.getElementById("accountWalletCard");
+  if(c) c.scrollIntoView({ behavior: 'smooth' });
+};
+
+// 10. فتح وإغلاق نافذة شحن الرصيد
+window.openRechargeModal = ()=>{
+  if(!auth.currentUser){
+    showToast("⚠️ يرجى تسجيل الدخول أولاً لشحن المحفظة", "warn");
+    openAccount();
+    return;
+  }
+  const ov = document.getElementById("rechargeWalletOverlay");
+  if(ov){
+    ov.classList.remove("hidden");
+    switchRechargeTab("card");
+    const st = document.getElementById("rechargeStatusBox");
+    if(st) st.style.display = "none";
+    const inp = document.getElementById("walletCardCodeInput");
+    if(inp){ inp.value = ""; setTimeout(()=>inp.focus(), 200); }
+  }
+};
+window.closeRechargeModal = ()=>{
+  const ov = document.getElementById("rechargeWalletOverlay");
+  if(ov) ov.classList.add("hidden");
+};
+
+window.switchRechargeTab = (tab)=>{
+  const btnCard = document.getElementById("tabBtnRechargeCard");
+  const btnTr = document.getElementById("tabBtnRechargeTransfer");
+  const secCard = document.getElementById("rechargeTabCardBox");
+  const secTr = document.getElementById("rechargeTabTransferBox");
+  if(tab === 'transfer'){
+    if(btnTr) btnTr.classList.add("active");
+    if(btnCard) btnCard.classList.remove("active");
+    if(secTr) secTr.style.display = "block";
+    if(secCard) secCard.style.display = "none";
+  }else{
+    if(btnCard) btnCard.classList.add("active");
+    if(btnTr) btnTr.classList.remove("active");
+    if(secCard) secCard.style.display = "block";
+    if(secTr) secTr.style.display = "none";
+  }
+};
+
+window.copyTransferNumber = (num)=>{
+  try{
+    navigator.clipboard.writeText(num);
+    showToast(`📋 تم نسخ الرقم (${num}) بنجاح`, "success");
+  }catch(e){
+    prompt("انسخ رقم التحويل:", num);
+  }
+};
+
+// 11. شحن الرصيد بكارت رقمي (Redeem Card)
+window.submitCardRecharge = async()=>{
+  if(!auth.currentUser){
+    showToast("⚠️ يجب تسجيل الدخول لشحن الرصيد", "warn");
+    return;
+  }
+  const throttle = checkWalletThrottle();
+  if(!throttle.allowed){
+    showToast(`⚠️ تم قفل محاولات الشحن مؤقتاً لحماية الحساب. يرجى الانتظار ${throttle.waitMinutes} دقيقة قبل المحاولة مجدداً`, "error", 6000);
+    return;
+  }
+
+  const inputEl = document.getElementById("walletCardCodeInput");
+  const statusBox = document.getElementById("rechargeStatusBox");
+  const btn = document.getElementById("btnSubmitCardRecharge");
+  const rawCode = (inputEl ? inputEl.value : "").trim();
+
+  let cleanCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if(cleanCode.startsWith("TK")) cleanCode = cleanCode.substring(2);
+  if(cleanCode.length === 12){
+    cleanCode = `TK-${cleanCode.substring(0,4)}-${cleanCode.substring(4,8)}-${cleanCode.substring(8,12)}`;
+  }else{
+    cleanCode = rawCode.toUpperCase();
+  }
+
+  if(!cleanCode || cleanCode.length < 8){
+    if(statusBox){
+      statusBox.style.display = "block";
+      statusBox.style.background = "#fef2f2";
+      statusBox.style.color = "#991b1b";
+      statusBox.style.border = "1px solid #fecaca";
+      statusBox.textContent = "⚠️ يرجى إدخال رمز كارت صحيح مكون من 12 رقم";
+    }
+    return;
+  }
+
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التحقق وشحن الكارت..."; }
+  if(statusBox) statusBox.style.display = "none";
+
+  try{
+    const cardDocId = "card_" + cleanCode;
+    const snap = await getDoc(doc(db, "feedback", cardDocId));
+
+    if(!snap || !snap.exists()){
+      const failInfo = registerWalletFail();
+      if(statusBox){
+        statusBox.style.display = "block";
+        statusBox.style.background = "#fef2f2";
+        statusBox.style.color = "#991b1b";
+        statusBox.style.border = "1px solid #fecaca";
+        if(failInfo.attempts >= 3){
+          statusBox.textContent = "❌ رمز الكارت غير صحيح! تم قفل المحاولات لمدة 30 دقيقة لحماية الحساب.";
+        }else{
+          statusBox.textContent = `❌ رمز الكارت غير موجود أو خاطئ! (المحاولة ${failInfo.attempts} من 3).`;
+        }
+      }
+      return;
+    }
+
+    const cardRow = snap.data();
+    let cardData = {};
+    try{ cardData = JSON.parse(cardRow.message || "{}"); }catch(e){}
+
+    if(cardData.isUsed){
+      const usedDate = cardData.usedAt ? new Date(cardData.usedAt).toLocaleDateString('ar-LY') : "";
+      if(statusBox){
+        statusBox.style.display = "block";
+        statusBox.style.background = "#fffbeb";
+        statusBox.style.color = "#92400e";
+        statusBox.style.border = "1px solid #fde68a";
+        statusBox.textContent = `⚠️ هذا الكارت تم شحنه مسبقاً ${usedDate ? 'بتاريخ ' + usedDate : ''} ولا يمكن استخدامه مرة أخرى.`;
+      }
+      return;
+    }
+
+    // الكارت صالح وغير مستخدم -> حرقه فوراً وإضافة الرصيد للمحفظة
+    const cardAmount = Number(cardData.amount || 0);
+    if(cardAmount <= 0){
+      showToast("خطأ: قيمة الكارت غير صالحة", "error");
+      return;
+    }
+
+    resetWalletThrottle();
+
+    // حرق الكارت
+    cardData.isUsed = true;
+    cardData.usedByUid = auth.currentUser.uid;
+    cardData.usedByName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+    cardData.usedByPhone = (myProfile && myProfile.phone) || "";
+    cardData.usedAt = Date.now();
+
+    await updateDoc(doc(db, "feedback", cardDocId), {
+      message: JSON.stringify(cardData),
+      userName: cardData.usedByName,
+      userPhone: cardData.usedByPhone,
+      updatedAt: Date.now()
+    });
+
+    // إضافة الرصيد لحساب الزبون
+    const creditRes = await creditUserWallet(
+      auth.currentUser.uid,
+      cardAmount,
+      `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
+      { txType: "card_recharge", cardCode: cleanCode }
+    );
+
+    if(inputEl) inputEl.value = "";
+    if(statusBox){
+      statusBox.style.display = "block";
+      statusBox.style.background = "#f0fdf4";
+      statusBox.style.color = "#166534";
+      statusBox.style.border = "1.5px solid #22c55e";
+      statusBox.innerHTML = `🎉 <b>ألف مبروك!</b> تم شحن محفظتك بنجاح بمبلغ <b>${cardAmount} د.ل</b>.<br>رصيدك الجديد: <b>${creditRes.balance.toFixed(2)} د.ل</b>`;
+    }
+    showToast(`🎉 تم شحن ${cardAmount} د.ل في محفظتك بنجاح!`, "success", 4000);
+    playRestaurantBell('ready');
+  }catch(e){
+    console.error("submitCardRecharge error:", e);
+    if(statusBox){
+      statusBox.style.display = "block";
+      statusBox.style.background = "#fef2f2";
+      statusBox.style.color = "#991b1b";
+      statusBox.textContent = "حدث خطأ: " + e.message;
+    }
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "⚡ شحن الرصيد الآن"; }
+  }
+};
+
+// 12. كشف حساب المستخدم وسجل عملياته الشخصية
+window.openMyWalletHistory = async()=>{
+  if(!auth.currentUser){
+    showToast("⚠️ يرجى تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const ov = document.getElementById("myWalletHistoryOverlay");
+  const listEl = document.getElementById("myWalletTxList");
+  if(ov) ov.classList.remove("hidden");
+  if(listEl) listEl.innerHTML = `<div class="reportsEmpty">⏳ جاري جلب سجل المعاملات...</div>`;
+
+  const cur = await getUserWallet(auth.currentUser.uid);
+  updateWalletUI(cur.balance);
+
+  try{
+    let txs = [];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_transaction")
+        .eq("uid", auth.currentUser.uid)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if(!error && data) txs = data;
+    }
+
+    if(txs.length === 0){
+      if(listEl) listEl.innerHTML = `
+        <div class="cartEmptyBox" style="padding:20px 0">
+          <div class="icon">💳</div>
+          <div style="font-weight:700;font-size:14px">لا توجد حركات مالية بعد</div>
+          <div style="font-size:12px;margin-top:4px">اشحن محفظتك أو اطلب من المطاعم وستظهر جميع عملياتك هنا</div>
+        </div>
+      `;
+      return;
+    }
+
+    if(listEl){
+      listEl.innerHTML = txs.map(row=>{
+        let parsed = {};
+        try{ parsed = JSON.parse(row.message || "{}"); }catch(e){}
+        const isIncome = (parsed.amount || 0) >= 0;
+        const icon = isIncome ? '➕' : '🛒';
+        const sign = isIncome ? '+' : '';
+        const cls = isIncome ? 'in' : 'out';
+        const txDate = row.created_at ? new Date(row.created_at).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div class="walletTxCard">
+            <div class="txLeft">
+              <div class="txIcon ${cls}">${icon}</div>
+              <div class="txDetails">
+                <div class="txTitle">${escapeHtml(parsed.reason || "حركة مالية")}</div>
+                <div class="txTime">🕒 ${txDate} — رقم: #${escapeHtml(parsed.txId || row.id)}</div>
+              </div>
+            </div>
+            <div class="txRight">
+              <div class="txAmount ${cls}">${sign}${parsed.amount} د.ل</div>
+              <div class="txBalanceAfter">الرصيد: ${parsed.balanceAfter != null ? parsed.balanceAfter + ' د.ل' : ''}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }catch(e){
+    console.error("openMyWalletHistory error:", e);
+    if(listEl) listEl.innerHTML = `<div class="reportsEmpty">خطأ في جلب البيانات: ${e.message}</div>`;
+  }
+};
+window.closeMyWalletHistory = ()=>{
+  const ov = document.getElementById("myWalletHistoryOverlay");
+  if(ov) ov.classList.add("hidden");
+};
+
+// 13. لوحة الإدارة المالية للأدمن
+let _admWalActiveTab = "cards";
+let _admAllCards = [];
+let _admAllLedger = [];
+
+window.openAdminWallet = ()=>{
+  if(!isAdmin){
+    showToast("❌ غير مصرح لك", "error");
+    return;
+  }
+  const ov = document.getElementById("adminWalletOverlay");
+  if(ov){
+    ov.classList.remove("hidden");
+    switchAdmWalTab("cards");
+  }
+};
+window.closeAdminWallet = ()=>{
+  const ov = document.getElementById("adminWalletOverlay");
+  if(ov) ov.classList.add("hidden");
+};
+
+window.switchAdmWalTab = (tab)=>{
+  _admWalActiveTab = tab;
+  ['Cards', 'Ledger', 'Deposit', 'Stores'].forEach(t=>{
+    const btn = document.getElementById("btnAdmWalTab" + t);
+    const sec = document.getElementById("admWalSec" + t);
+    const active = (t.toLowerCase() === tab.toLowerCase());
+    if(btn) btn.classList.toggle("active", active);
+    if(sec) sec.style.display = active ? "block" : "none";
+  });
+  if(tab === 'cards') loadAdminCardsList();
+  else if(tab === 'ledger') loadAdminLedger();
+  else if(tab === 'stores') loadAdminStoresPayouts();
+};
+
+// توليد كروت الشحن للأدمن
+window.adminGenerateCardsBatch = async()=>{
+  if(!isAdmin) return;
+  const denom = parseInt(document.getElementById("admCardDenom")?.value || "20", 10);
+  const count = parseInt(document.getElementById("admCardCount")?.value || "10", 10);
+  const btn = document.getElementById("btnAdmGenCards");
+  const outBox = document.getElementById("admGeneratedCardsOutput");
+  const outText = document.getElementById("admGeneratedCardsText");
+
+  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`)) return;
+
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري توليد وحفظ الكروت..."; }
+
+  try{
+    const generated = [];
+    const batchId = "batch_" + Date.now();
+    for(let i=0; i<count; i++){
+      const part1 = Math.floor(1000 + Math.random() * 9000);
+      const part2 = Math.floor(1000 + Math.random() * 9000);
+      const part3 = Math.floor(1000 + Math.random() * 9000);
+      const code = `TK-${part1}-${part2}-${part3}`;
+      const cardDocId = "card_" + code;
+      const cardPayload = {
+        code,
+        amount: denom,
+        batchId,
+        isUsed: false,
+        usedByUid: null,
+        usedByName: null,
+        usedByPhone: null,
+        usedAt: null,
+        createdAt: Date.now()
+      };
+      await setDoc(doc(db, "feedback", cardDocId), {
+        id: cardDocId,
+        type: "wallet_card",
+        uid: "system",
+        message: JSON.stringify(cardPayload),
+        createdAt: Date.now()
+      });
+      generated.push(code);
+    }
+
+    if(outBox) outBox.style.display = "block";
+    if(outText){
+      outText.value = `🌟 كروت شحن تسوق الآن (فئة ${denom} د.ل):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
+    }
+    showToast(`✅ تم بنجاح توليد وحفظ ${count} كارت في قاعدة البيانات!`, "success", 4000);
+    loadAdminCardsList();
+  }catch(e){
+    showToast("خطأ: " + e.message, "error");
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "⚡ توليد وحفظ الكروت في قاعدة البيانات"; }
+  }
+};
+
+window.copyAllGeneratedCards = ()=>{
+  const t = document.getElementById("admGeneratedCardsText");
+  if(!t || !t.value) return;
+  try{
+    navigator.clipboard.writeText(t.value);
+    showToast("📋 تم نسخ قائمة الكروت بنجاح!", "success");
+  }catch(e){
+    t.select();
+    document.execCommand('copy');
+    showToast("📋 تم النسخ!", "success");
+  }
+};
+
+let _admCardsFilter = "all";
+window.filterAdminCardsList = (filter)=>{
+  _admCardsFilter = filter;
+  ['all', 'unused', 'used'].forEach(f=>{
+    const b = document.getElementById("btnFilterCard" + f.charAt(0).toUpperCase() + f.slice(1));
+    if(b) b.classList.toggle("active", f === filter);
+  });
+  renderAdminCardsTable();
+};
+
+async function loadAdminCardsList(){
+  const box = document.getElementById("admCardsListTable");
+  if(!box) return;
+  box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الكروت...</div>`;
+  try{
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_card")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if(!error && data){
+        _admAllCards = data.map(r=>{
+          let parsed = {};
+          try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+          return { ...parsed, _rowId: r.id, _created: r.created_at };
+        });
+      }
+    }
+    renderAdminCardsTable();
+  }catch(e){
+    box.innerHTML = `<div class="reportsEmpty">خطأ: ${e.message}</div>`;
+  }
+}
+
+function renderAdminCardsTable(){
+  const box = document.getElementById("admCardsListTable");
+  if(!box) return;
+  let filtered = _admAllCards;
+  if(_admCardsFilter === 'unused') filtered = _admAllCards.filter(c => !c.isUsed);
+  else if(_admCardsFilter === 'used') filtered = _admAllCards.filter(c => c.isUsed);
+
+  if(filtered.length === 0){
+    box.innerHTML = `<div class="reportsEmpty">لا توجد كروت مطابقة لهذا الفلتر</div>`;
+    return;
+  }
+
+  box.innerHTML = filtered.map(c=>{
+    const isUsed = c.isUsed;
+    const badge = isUsed
+      ? `<span style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:2px 8px;border-radius:6px;font-weight:800;font-size:11px">🔴 استُخدم بواسطة: ${escapeHtml(c.usedByName||"زبون")} (${escapeHtml(c.usedByPhone||"")})</span>`
+      : `<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 8px;border-radius:6px;font-weight:800;font-size:11px">🟢 صالحة للاستخدام</span>`;
+    return `
+      <div class="admCardRow">
+        <div>
+          <div class="admCardCode">${escapeHtml(c.code)} — <b>${c.amount} د.ل</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${badge}</div>
+        </div>
+        <button type="button" class="btnGhost" onclick="copyTransferNumber('${escapeHtml(c.code)}')" style="padding:4px 8px;font-size:11px;border:1px solid var(--border)">📋 نسخ</button>
+      </div>
+    `;
+  }).join("");
+}
+
+// السجل المالي العام (Audit Ledger) للأدمن
+window.onAdmLedgerSearchChange = ()=>{
+  renderAdminLedgerTable();
+};
+
+async function loadAdminLedger(){
+  const box = document.getElementById("admLedgerListTable");
+  if(!box) return;
+  box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل السجل المالي...</div>`;
+  try{
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_transaction")
+        .order("created_at", { ascending: false })
+        .limit(150);
+      if(!error && data){
+        _admAllLedger = data.map(r=>{
+          let parsed = {};
+          try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+          return { ...parsed, _rowId: r.id, _created: r.created_at, _uName: r.user_name || parsed.userName, _uPhone: r.user_phone || parsed.userPhone };
+        });
+      }
+    }
+    updateAdminLedgerStats();
+    renderAdminLedgerTable();
+  }catch(e){
+    box.innerHTML = `<div class="reportsEmpty">خطأ في جلب السجل: ${e.message}</div>`;
+  }
+}
+
+function updateAdminLedgerStats(){
+  let totalRecharges = 0;
+  let totalOrders = 0;
+  let totalRefunds = 0;
+
+  _admAllLedger.forEach(tx=>{
+    const amt = Number(tx.amount || 0);
+    if(tx.txType === 'card_recharge' || tx.txType === 'admin_credit') totalRecharges += Math.abs(amt);
+    else if(tx.txType === 'order_payment') totalOrders += Math.abs(amt);
+    else if(tx.txType === 'order_refund') totalRefunds += Math.abs(amt);
+  });
+
+  const elR = document.getElementById("admStatRecharges");
+  if(elR) elR.textContent = totalRecharges.toFixed(2) + " د.ل";
+  const elO = document.getElementById("admStatOrders");
+  if(elO) elO.textContent = totalOrders.toFixed(2) + " د.ل";
+  const elF = document.getElementById("admStatRefunds");
+  if(elF) elF.textContent = totalRefunds.toFixed(2) + " د.ل";
+}
+
+function renderAdminLedgerTable(){
+  const box = document.getElementById("admLedgerListTable");
+  if(!box) return;
+  const q = (document.getElementById("admLedgerSearchInput")?.value || "").trim().toLowerCase();
+  const typeFilter = document.getElementById("admLedgerTypeFilter")?.value || "all";
+
+  let filtered = _admAllLedger;
+  if(typeFilter !== 'all'){
+    filtered = filtered.filter(tx => tx.txType === typeFilter);
+  }
+  if(q){
+    filtered = filtered.filter(tx => {
+      const u = (tx._uName || "").toLowerCase();
+      const p = (tx._uPhone || "").toLowerCase();
+      const r = (tx.reason || "").toLowerCase();
+      const id = (tx.txId || "").toLowerCase();
+      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q);
+    });
+  }
+
+  if(filtered.length === 0){
+    box.innerHTML = `<div class="reportsEmpty">لا توجد حركات مالية مطابقة للبحث</div>`;
+    return;
+  }
+
+  box.innerHTML = filtered.map(tx=>{
+    const amt = Number(tx.amount || 0);
+    const isIncome = amt >= 0;
+    const sign = isIncome ? '+' : '';
+    const color = isIncome ? '#16a34a' : '#dc2626';
+    const txDate = tx._created ? new Date(tx._created).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="font-weight:800;font-size:13px;color:var(--text)">${escapeHtml(tx.reason || "معاملة مالية")}</div>
+          <div style="font-weight:900;font-size:14px;color:${color};direction:ltr">${sign}${amt} د.ل</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)">
+          <div>👤 ${escapeHtml(tx._uName || "مستخدم")} ${tx._uPhone ? `— <a href="tel:${formatCallPhone(tx._uPhone)}" style="color:#0284c7;text-decoration:none;font-weight:700">📞 ${escapeHtml(tx._uPhone)}</a>` : ''}</div>
+          <div>🕒 ${txDate}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);font-size:11px;color:var(--muted)">
+          <span>كود الحركة: <b style="direction:ltr;display:inline-block">${escapeHtml(tx.txId || "")}</b></span>
+          <span>الرصيد: ${tx.balanceBefore != null ? tx.balanceBefore + ' ➔ ' : ''}<b>${tx.balanceAfter != null ? tx.balanceAfter + ' د.ل' : ''}</b></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// فحص وإيداع يدوي لأي مستخدم
+let _admDepTargetUser = null;
+window.admLookupUserByPhone = async()=>{
+  const phone = (document.getElementById("admDepPhone")?.value || "").trim().replace(/[^0-9]/g, "");
+  const box = document.getElementById("admDepUserInfoBox");
+  if(!box) return;
+  if(phone.length < 8){
+    box.style.display = "block";
+    box.style.background = "#fef2f2";
+    box.style.color = "#991b1b";
+    box.textContent = "⚠️ يرجى كتابة رقم هاتف صحيح";
+    _admDepTargetUser = null;
+    return;
+  }
+  box.style.display = "block";
+  box.style.background = "#f8fafc";
+  box.style.color = "var(--text)";
+  box.textContent = "⏳ جاري البحث عن صاحب الرقم...";
+
+  try{
+    let target = null;
+    if(window.supabase){
+      const { data } = await window.supabase
+        .from("profiles")
+        .select("*")
+        .ilike("phone", `%${phone.slice(-8)}%`)
+        .limit(1)
+        .maybeSingle();
+      if(data) target = data;
+    }
+    if(!target){
+      box.style.background = "#fffbeb";
+      box.style.color = "#92400e";
+      box.textContent = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم في جدول الأعضاء. يمكنك إدخال UID مباشرة أو التأكد من الرقم.";
+      _admDepTargetUser = null;
+      return;
+    }
+    _admDepTargetUser = target;
+    const wal = await getUserWallet(target.id);
+    box.style.background = "#f0fdf4";
+    box.style.color = "#166534";
+    box.innerHTML = `✅ <b>تم العثور على العضو:</b> ${escapeHtml(target.name || "عضو")} (@${escapeHtml(target.username || "—")})<br>💳 <b>الرصيد الحالي:</b> ${wal.balance.toFixed(2)} د.ل`;
+  }catch(e){
+    box.textContent = "خطأ في البحث: " + e.message;
+    _admDepTargetUser = null;
+  }
+};
+
+window.adminExecuteDeposit = async()=>{
+  if(!isAdmin) return;
+  const amt = parseFloat(document.getElementById("admDepAmount")?.value || "0");
+  const type = document.getElementById("admDepType")?.value || "credit";
+  const note = (document.getElementById("admDepNote")?.value || "").trim();
+  const btn = document.getElementById("btnAdmExecuteDeposit");
+
+  if(isNaN(amt) || amt <= 0){
+    showToast("⚠️ يرجى إدخال مبلغ صحيح أكبر من 0", "warn");
+    return;
+  }
+  if(!_admDepTargetUser){
+    showToast("⚠️ يرجى الضغط على 'فحص' للتأكد من حساب الزبون أولاً", "warn");
+    return;
+  }
+
+  const opLabel = type === 'credit' ? `إيداع مبلغ +${amt} د.ل` : `خصم مبلغ -${amt} د.ل`;
+  if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
+
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
+
+  try{
+    const targetUid = _admDepTargetUser.id;
+    const finalNote = note || (type === 'credit' ? "إيداع يدوي من الإدارة" : "خصم يدوي من الإدارة");
+    let res = null;
+
+    if(type === 'credit'){
+      res = await creditUserWallet(targetUid, amt, finalNote, {
+        txType: "admin_credit",
+        userName: _admDepTargetUser.name,
+        userPhone: _admDepTargetUser.phone,
+        adminNote: finalNote
+      });
+    }else{
+      res = await debitUserWallet(targetUid, amt, finalNote, {
+        txType: "admin_debit",
+        userName: _admDepTargetUser.name,
+        userPhone: _admDepTargetUser.phone,
+        adminNote: finalNote
+      });
+    }
+
+    if(!res.ok){
+      showToast("❌ فشلت العملية: " + (res.error || "خطأ غير متوقع"), "error");
+      return;
+    }
+
+    showToast(`✅ تمت العملية بنجاح! الرصيد الجديد: ${res.balance.toFixed(2)} د.ل`, "success", 4000);
+    document.getElementById("admDepAmount").value = "";
+    document.getElementById("admDepNote").value = "";
+    admLookupUserByPhone();
+  }catch(e){
+    showToast("خطأ: " + e.message, "error");
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
+  }
+};
+
+// مستحقات المطاعم (Restaurant Payouts)
+async function loadAdminStoresPayouts(){
+  const box = document.getElementById("admStoresPayoutsList");
+  if(!box) return;
+  box.innerHTML = `<div class="reportsEmpty">⏳ جاري حساب مستحقات المطاعم...</div>`;
+
+  try{
+    let orders = [];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "restaurant_order")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if(!error && data) orders = data;
+    }
+
+    const storesMap = {};
+    orders.forEach(r=>{
+      let ord = {};
+      try{ ord = JSON.parse(r.message || "{}"); }catch(e){}
+      if(ord.paymentMethod === 'wallet' && ord.isPaid && ord.status !== 'rejected'){
+        const sId = ord.storeId || "unknown";
+        if(!storesMap[sId]){
+          storesMap[sId] = {
+            storeId: sId,
+            storeName: ord.storeName || "مطعم",
+            storePhone: ord.storePhone || "",
+            count: 0,
+            totalRevenue: 0
+          };
+        }
+        storesMap[sId].count += 1;
+        storesMap[sId].totalRevenue += Number(ord.totalPrice || 0);
+      }
+    });
+
+    const list = Object.values(storesMap);
+    if(list.length === 0){
+      box.innerHTML = `<div class="reportsEmpty">لا توجد طلبيات مطاعم مدفوعة بالمحفظة حتى الآن</div>`;
+      return;
+    }
+
+    box.innerHTML = list.map(st=>`
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:900;font-size:14.5px;color:var(--text)">🍽️ ${escapeHtml(st.storeName)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            📞 ${escapeHtml(st.storePhone)} — <b>${st.count}</b> طلبية مدفوعة بالمحفظة
+          </div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-weight:900;font-size:16px;color:#16a34a">${st.totalRevenue.toFixed(2)} د.ل</div>
+          <div style="font-size:10.5px;color:var(--muted)">مبيعات محفظة</div>
+        </div>
+      </div>
+    `).join("");
+  }catch(e){
+    box.innerHTML = `<div class="reportsEmpty">خطأ: ${e.message}</div>`;
+  }
+}
+
+// 14. دوال التحكم بالدفع من السلة
+window.toggleRestPaymentMethod = ()=>{
+  const pMethod = document.querySelector('input[name="restPaymentMethod"]:checked')?.value || "cash";
+  const lblCash = document.getElementById("lblPayCash");
+  const lblWallet = document.getElementById("lblPayWallet");
+  if(lblCash){
+    lblCash.style.borderColor = (pMethod === 'cash') ? 'var(--teal)' : 'var(--border)';
+    lblCash.style.borderWidth = (pMethod === 'cash') ? '2px' : '1px';
+  }
+  if(lblWallet){
+    lblWallet.style.borderColor = (pMethod === 'wallet') ? 'var(--teal)' : 'var(--border)';
+    lblWallet.style.borderWidth = (pMethod === 'wallet') ? '2px' : '1px';
+  }
+  updateCartWalletBalance();
+};
+
+export async function updateCartWalletBalance(){
+  const noticeBox = document.getElementById("cartWalletNotice");
+  const pMethod = document.querySelector('input[name="restPaymentMethod"]:checked')?.value || "cash";
+  const total = cartTotalPrice();
+
+  if(!auth.currentUser){
+    const cartBal = document.getElementById("cartWalletCurrentBalanceBadge");
+    if(cartBal) cartBal.textContent = "سجّل دخولك للدفع بالمحفظة";
+    if(pMethod === 'wallet' && noticeBox){
+      noticeBox.style.display = "block";
+      noticeBox.style.background = "#fffbeb";
+      noticeBox.style.color = "#92400e";
+      noticeBox.style.border = "1px solid #fde68a";
+      noticeBox.innerHTML = `⚠️ يرجى تسجيل الدخول أولاً لتتمكن من الدفع الفوري من محفظتك الإلكترونية.`;
+    }else if(noticeBox){
+      noticeBox.style.display = "none";
+    }
+    return;
+  }
+
+  const wal = await getUserWallet(auth.currentUser.uid);
+  updateWalletUI(wal.balance);
+
+  if(!noticeBox) return;
+
+  if(pMethod === 'wallet'){
+    noticeBox.style.display = "block";
+    if(wal.balance < total){
+      noticeBox.style.background = "#fef2f2";
+      noticeBox.style.color = "#991b1b";
+      noticeBox.style.border = "1px solid #fecaca";
+      noticeBox.innerHTML = `
+        <div style="font-weight:800;margin-bottom:4px">⚠️ رصيدك (${wal.balance.toFixed(2)} د.ل) لا يكفي لدفع قيمة الطلب (${total} د.ل).</div>
+        <button type="button" class="btnMain" onclick="openRechargeModal()" style="padding:6px 12px;font-size:12px;background:#0284c7;color:#fff;margin-top:4px;margin-bottom:0">⚡ اشحن محفظتك الآن بكارت أو تحويل</button>
+      `;
+    }else{
+      noticeBox.style.background = "#f0fdf4";
+      noticeBox.style.color = "#166534";
+      noticeBox.style.border = "1px solid #bbf7d0";
+      noticeBox.innerHTML = `🟢 <b>رصيدك كافٍ!</b> سيتم خصم <b>${total} د.ل</b> من محفظتك فوراً، وستصل طلبيتك للكاشير كطلبية مدفوعة مسبقاً وخالصة.`;
+    }
+  }else{
+    noticeBox.style.display = "none";
+  }
+}
+window.updateCartWalletBalance = updateCartWalletBalance;
