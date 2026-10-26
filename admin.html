@@ -335,6 +335,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  addDoc,
   updateDoc,
   deleteDoc,
   collection,
@@ -346,7 +347,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js";
+} from "./supabase-adapter.js?v=6";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
@@ -1869,12 +1870,14 @@ window.admWebExecuteDeposit = async()=>{
   if(isNaN(amt) || amt <= 0){ alert("أدخل مبلغاً صحيحاً أكبر من 0"); return; }
   if(!_adminWalDepTarget){ alert("اضغط 'فحص' للتأكد من حساب الزبون أولاً"); return; }
 
+  const targetUid = _adminWalDepTarget.id || _adminWalDepTarget.uid;
+  if(!targetUid){ alert("تعذر تحديد معرف المستخدم، تأكد من إعادة فحصه"); return; }
+
   const opLabel = type === 'credit' ? `إيداع +${amt} د.ل` : `خصم -${amt} د.ل`;
   if(!confirm(`هل أنت متأكد من ${opLabel} لحساب (${_adminWalDepTarget.name || _adminWalDepTarget.phone})؟`)) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التنفيذ..."; }
   try{
-    const targetUid = _adminWalDepTarget.id;
     let currentBal = 0;
     const snap = await getDoc(doc(db, "feedback", "wallet_" + targetUid));
     if(snap && snap.exists()){
@@ -1894,14 +1897,15 @@ window.admWebExecuteDeposit = async()=>{
       uid: targetUid,
       userName: _adminWalDepTarget.name || "مستخدم",
       userPhone: _adminWalDepTarget.phone || "",
-      message: JSON.stringify({ balance: newBal, updatedAt: Date.now() }),
+      message: JSON.stringify({ balance: Math.round(newBal * 100) / 100, updatedAt: Date.now() }),
       updatedAt: Date.now()
     }, { merge: true });
 
-    // تسجيل في السجل
+    // تسجيل في السجل المالي
     const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
-    await addDoc(collection(db, "feedback"), {
-      id: "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+    const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    await setDoc(doc(db, "feedback", txDocId), {
+      id: txDocId,
       type: "wallet_transaction",
       uid: targetUid,
       userName: _adminWalDepTarget.name || "مستخدم",
@@ -1914,14 +1918,14 @@ window.admWebExecuteDeposit = async()=>{
         txType: type === 'credit' ? "admin_credit" : "admin_debit",
         amount: type === 'credit' ? amt : -amt,
         balanceBefore: currentBal,
-        balanceAfter: newBal,
+        balanceAfter: Math.round(newBal * 100) / 100,
         reason: finalNote,
         timestamp: Date.now()
       }),
       createdAt: Date.now()
     });
 
-    alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${newBal.toFixed(2)} د.ل`);
+    alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${(Math.round(newBal * 100) / 100).toFixed(2)} د.ل`);
     document.getElementById("admWebDepAmt").value = "";
     document.getElementById("admWebDepNote").value = "";
     admWebLookupPhone();
