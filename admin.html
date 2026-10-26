@@ -290,10 +290,11 @@ html.dark-mode .adminRow{background:#131a28}
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody">
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
-    <button type="button" class="btn btn-primary" id="btnAdmTabLedger" onclick="adminSwitchWalTab('ledger')" style="font-size:12px;padding:9px;font-weight:800">📜 السجل المالي العام</button>
-    <button type="button" class="btn btn-success" id="btnAdmTabCards" onclick="adminSwitchWalTab('cards')" style="font-size:12px;padding:9px;font-weight:800">⚡ كروت الشحن</button>
-    <button type="button" class="btn btn-warning" id="btnAdmTabDep" onclick="adminSwitchWalTab('deposit')" style="font-size:12px;padding:9px;font-weight:800">💵 إيداع يدوي</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+    <button type="button" class="btn btn-primary" id="btnAdmTabLedger" onclick="adminSwitchWalTab('ledger')" style="font-size:11.5px;padding:9px 4px;font-weight:800">📜 السجل العام</button>
+    <button type="button" class="btn btn-success" id="btnAdmTabCards" onclick="adminSwitchWalTab('cards')" style="font-size:11.5px;padding:9px 4px;font-weight:800">⚡ كروت الشحن</button>
+    <button type="button" class="btn btn-warning" id="btnAdmTabDep" onclick="adminSwitchWalTab('deposit')" style="font-size:11.5px;padding:9px 4px;font-weight:800">💵 إيداع يدوي</button>
+    <button type="button" class="btn btn-info" id="btnAdmTabStores" onclick="adminSwitchWalTab('stores')" style="font-size:11.5px;padding:9px 4px;font-weight:800">🍽️ المطاعم</button>
   </div>
 
   <!-- حاوية محتوى التبويبات -->
@@ -1184,6 +1185,7 @@ function showAdminStatus(type,msg){
 let _adminWalLedgerData = [];
 let _adminWalCardsData = [];
 let _adminWalDepTarget = null;
+let _adminWalStoresData = [];
 
 window.adminSwitchWalTab = async(tab)=>{
   const box = document.getElementById("admWalContent");
@@ -1191,16 +1193,21 @@ window.adminSwitchWalTab = async(tab)=>{
   if(tab === 'ledger'){
     box.innerHTML = `
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
-        <div style="display:flex;gap:6px;margin-bottom:10px">
-          <input type="text" id="admWebLedgerSearch" placeholder="🔍 بحث برقم الهاتف أو الاسم..." oninput="filterAdminWebLedger()" style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <select id="admWebLedgerStore" onchange="filterAdminWebLedger()" style="padding:8px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-weight:700">
+            <option value="all">🍽️ كل المطاعم</option>
+          </select>
           <select id="admWebLedgerType" onchange="filterAdminWebLedger()" style="padding:8px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff;font-weight:700">
             <option value="all">كل العمليات</option>
-            <option value="card_recharge">شحن كارت</option>
-            <option value="order_payment">دفع مطعم</option>
-            <option value="order_refund">استرجاع طلبية</option>
-            <option value="admin_credit">إيداع يدوي</option>
-            <option value="admin_debit">خصم يدوي</option>
+            <option value="card_recharge">💳 شحن كارت</option>
+            <option value="order_payment">🍽️ دفع مطعم</option>
+            <option value="order_refund">🔄 استرجاع طلبية</option>
+            <option value="admin_credit">➕ إيداع يدوي</option>
+            <option value="admin_debit">➖ خصم يدوي</option>
           </select>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <input type="text" id="admWebLedgerSearch" placeholder="🔍 بحث بالهاتف، الاسم أو كود الحركة..." oninput="filterAdminWebLedger()" style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:#fff">
         </div>
         <div id="admWebLedgerRows"><div class="listEmpty">⏳ جاري تحميل السجل المالي...</div></div>
       </div>
@@ -1213,21 +1220,20 @@ window.adminSwitchWalTab = async(tab)=>{
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div>
             <label style="font-size:11px;font-weight:700">فئة الكارت:</label>
-            <select id="admWebGenDenom" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12.5px;font-weight:700">
+            <select id="admWebGenDenom" onchange="toggleAdmWebCustomDenom()" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12.5px;font-weight:700">
               <option value="10">10 دينار ليبي</option>
               <option value="20" selected>20 دينار ليبي</option>
+              <option value="30">30 دينار ليبي</option>
+              <option value="40">40 دينار ليبي</option>
               <option value="50">50 دينار ليبي</option>
               <option value="100">100 دينار ليبي</option>
+              <option value="custom">✍️ فئة أخرى مخصصة...</option>
             </select>
+            <input type="number" id="admWebGenCustomDenom" placeholder="اكتب قيمة الفئة..." style="display:none;width:100%;box-sizing:border-box;margin-top:6px;padding:8px;border-radius:8px;border:1px solid var(--border);font-weight:800">
           </div>
           <div>
-            <label style="font-size:11px;font-weight:700">العدد المطلوب:</label>
-            <select id="admWebGenCount" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12.5px;font-weight:700">
-              <option value="5">5 كروت</option>
-              <option value="10" selected>10 كروت</option>
-              <option value="20">20 كارت</option>
-              <option value="50">50 كارت</option>
-            </select>
+            <label style="font-size:11px;font-weight:700">العدد المطلوب (مفتوح):</label>
+            <input type="number" id="admWebGenCount" min="1" max="1000" placeholder="مثال: 15" value="10" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:800;text-align:center">
           </div>
         </div>
         <button type="button" class="btn btn-success" id="btnAdmWebGenCards" onclick="adminWebGenerateCards()" style="width:100%;font-weight:800;padding:10px;font-size:13px;margin-bottom:10px">⚡ توليد وحفظ الكروت في قاعدة البيانات</button>
@@ -1247,14 +1253,14 @@ window.adminSwitchWalTab = async(tab)=>{
     box.innerHTML = `
       <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px">
         <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:10px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
-        <div class="field" style="margin-bottom:8px">
-          <label style="font-size:11.5px;font-weight:700">رقم هاتف الزبون:</label>
-          <div style="display:flex;gap:6px">
-            <input type="tel" id="admWebDepPhone" placeholder="09xxxxxxxx" dir="ltr" style="flex:1;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff">
-            <button type="button" class="btn btn-primary" onclick="admWebLookupPhone()" style="padding:8px 12px;font-size:12px;font-weight:700">🔍 فحص</button>
+        <div class="field" style="margin-bottom:10px">
+          <label style="font-size:11.5px;font-weight:700">رقم هاتف الزبون أو اسم المستخدم (@username):</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="admWebDepPhone" placeholder="09xxxxxxxx أو @username" dir="ltr" oninput="onAdmWebDepPhoneInputChanged()" style="flex:1;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:700">
+            <button type="button" class="btn btn-primary" onclick="admWebLookupPhone()" style="padding:8px 14px;font-size:12px;font-weight:800">🔍 فحص</button>
           </div>
         </div>
-        <div id="admWebDepUserBox" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"></div>
+        <div id="admWebDepUserBox" style="display:none;margin-bottom:10px"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0">
             <label style="font-size:11.5px;font-weight:700">المبلغ (د.ل):</label>
@@ -1270,11 +1276,31 @@ window.adminSwitchWalTab = async(tab)=>{
         </div>
         <div class="field" style="margin-bottom:12px">
           <label style="font-size:11.5px;font-weight:700">سبب / ملاحظة العملية:</label>
-          <input type="text" id="admWebDepNote" placeholder="مثال: استلام حوالة ليبيانا / تسوية / تعديل..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12px">
+          <input type="text" id="admWebDepNote" placeholder="مثال: استلام تحويل مصرفي / تسوية / تعديل..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:12px">
         </div>
         <button type="button" id="btnAdmWebSubmitDep" class="btn btn-success" onclick="admWebExecuteDeposit()" style="width:100%;font-weight:800;padding:12px;font-size:13.5px">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
       </div>
     `;
+  }else if(tab === 'stores'){
+    box.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:800;font-size:13px;color:var(--text)">🍽️ مبيعات المطوعين ومستحقاتهم:</div>
+          <button type="button" class="btn btn-primary" onclick="loadAdminWebStoresPayouts()" style="padding:4px 8px;font-size:11px">🔄 تحديث</button>
+        </div>
+        <div id="admWebStoresList"><div class="listEmpty">⏳ جاري حساب مبيعات المطاعم...</div></div>
+      </div>
+    `;
+    loadAdminWebStoresPayouts();
+  }
+};
+
+window.toggleAdmWebCustomDenom = ()=>{
+  const sel = document.getElementById("admWebGenDenom");
+  const cust = document.getElementById("admWebGenCustomDenom");
+  if(sel && cust){
+    cust.style.display = (sel.value === 'custom') ? 'block' : 'none';
+    if(sel.value === 'custom') cust.focus();
   }
 };
 
@@ -1288,19 +1314,56 @@ async function loadAdminWebLedger(){
         .select("*")
         .eq("type", "wallet_transaction")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(250);
       if(!error && data){
         _adminWalLedgerData = data.map(r=>{
           let parsed = {};
           try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
-          return { ...parsed, _rowId: r.id, _created: r.created_at, _uName: r.user_name || parsed.userName, _uPhone: r.user_phone || parsed.userPhone };
+          return {
+            ...parsed,
+            _rowId: r.id,
+            _created: r.created_at,
+            _uName: r.user_name || parsed.userName,
+            _uPhone: r.user_phone || parsed.userPhone,
+            _storeId: parsed.meta?.storeId || parsed.storeId || null,
+            _storeName: parsed.meta?.storeName || parsed.storeName || null
+          };
         });
       }
     }
+    populateAdminWebStoreFilter();
     filterAdminWebLedger();
   }catch(e){
     box.innerHTML = `<div class="listEmpty">خطأ: ${e.message}</div>`;
   }
+}
+
+function populateAdminWebStoreFilter(storesList = null){
+  const sel = document.getElementById("admWebLedgerStore");
+  if(!sel) return;
+  const currentVal = sel.value || "all";
+  const stores = {};
+
+  if(storesList && storesList.length){
+    storesList.forEach(s => {
+      if(s.storeId) stores[s.storeId] = s.storeName || "مطعم";
+    });
+  }
+
+  if(Array.isArray(_adminWalLedgerData)){
+    _adminWalLedgerData.forEach(tx => {
+      const sId = tx._storeId || tx.meta?.storeId;
+      const sName = tx._storeName || tx.meta?.storeName;
+      if(sId && sName && !stores[sId]) stores[sId] = sName;
+    });
+  }
+
+  let html = `<option value="all">🍽️ كل المطاعم</option>`;
+  Object.keys(stores).forEach(sId => {
+    html += `<option value="${esc(sId)}">🍽️ ${esc(stores[sId])}</option>`;
+  });
+  sel.innerHTML = html;
+  if(stores[currentVal] || currentVal === 'all') sel.value = currentVal;
 }
 
 window.filterAdminWebLedger = ()=>{
@@ -1308,16 +1371,21 @@ window.filterAdminWebLedger = ()=>{
   if(!box) return;
   const q = (document.getElementById("admWebLedgerSearch")?.value || "").trim().toLowerCase();
   const type = document.getElementById("admWebLedgerType")?.value || "all";
+  const store = document.getElementById("admWebLedgerStore")?.value || "all";
 
   let filtered = _adminWalLedgerData;
   if(type !== 'all') filtered = filtered.filter(tx => tx.txType === type);
+  if(store !== 'all'){
+    filtered = filtered.filter(tx => (tx._storeId === store) || (tx.meta?.storeId === store));
+  }
   if(q){
     filtered = filtered.filter(tx => {
       const u = (tx._uName || "").toLowerCase();
       const p = (tx._uPhone || "").toLowerCase();
       const r = (tx.reason || "").toLowerCase();
       const id = (tx.txId || "").toLowerCase();
-      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q);
+      const sn = (tx._storeName || tx.meta?.storeName || "").toLowerCase();
+      return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q) || sn.includes(q);
     });
   }
 
@@ -1332,10 +1400,14 @@ window.filterAdminWebLedger = ()=>{
     const sign = isIncome ? '+' : '';
     const color = isIncome ? '#16a34a' : '#dc2626';
     const txDate = tx._created ? new Date(tx._created).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const storeBadge = (tx._storeName || tx.meta?.storeName)
+      ? `<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800;margin-left:4px">🍽️ ${esc(tx._storeName || tx.meta?.storeName)}</span>`
+      : '';
+
     return `
       <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <b style="font-size:12.5px">${esc(tx.reason || "معاملة")}</b>
+          <b style="font-size:12.5px">${storeBadge}${esc(tx.reason || "معاملة")}</b>
           <b style="color:${color};font-size:13.5px;direction:ltr">${sign}${amt} د.ل</b>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px">
@@ -1351,6 +1423,124 @@ window.filterAdminWebLedger = ()=>{
   }).join("");
 };
 
+window.filterWebLedgerByStore = (storeId, storeName)=>{
+  adminSwitchWalTab('ledger');
+  setTimeout(()=>{
+    const sel = document.getElementById("admWebLedgerStore");
+    if(sel){
+      let opt = Array.from(sel.options).find(o => o.value === storeId);
+      if(!opt){
+        opt = document.createElement("option");
+        opt.value = storeId;
+        opt.textContent = `🍽️ ${storeName}`;
+        sel.appendChild(opt);
+      }
+      sel.value = storeId;
+    }
+    filterAdminWebLedger();
+  }, 200);
+};
+
+window.loadAdminWebStoresPayouts = async()=>{
+  const box = document.getElementById("admWebStoresList");
+  if(!box) return;
+  box.innerHTML = `<div class="listEmpty">⏳ جاري حساب مبيعات المطاعم أسبوعياً وشهرياً...</div>`;
+
+  try{
+    let orders = [];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "restaurant_order")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if(!error && data) orders = data;
+    }
+
+    const now = Date.now();
+    const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
+    const storesMap = {};
+
+    orders.forEach(r=>{
+      let ord = {};
+      try{ ord = JSON.parse(r.message || "{}"); }catch(e){}
+      if(ord.paymentMethod === 'wallet' && ord.isPaid && ord.status !== 'rejected'){
+        const sId = ord.storeId || "unknown";
+        if(!storesMap[sId]){
+          storesMap[sId] = {
+            storeId: sId,
+            storeName: ord.storeName || "مطعم",
+            storePhone: ord.storePhone || "",
+            countAll: 0,
+            revenueAll: 0,
+            countWeek: 0,
+            revenueWeek: 0,
+            countMonth: 0,
+            revenueMonth: 0
+          };
+        }
+        const amt = Number(ord.totalPrice || 0);
+        const orderTime = Number(ord.createdAt || (r.created_at ? new Date(r.created_at).getTime() : now));
+
+        storesMap[sId].countAll += 1;
+        storesMap[sId].revenueAll += amt;
+
+        if(orderTime >= oneWeekAgo){
+          storesMap[sId].countWeek += 1;
+          storesMap[sId].revenueWeek += amt;
+        }
+        if(orderTime >= oneMonthAgo){
+          storesMap[sId].countMonth += 1;
+          storesMap[sId].revenueMonth += amt;
+        }
+      }
+    });
+
+    _adminWalStoresData = Object.values(storesMap);
+    populateAdminWebStoreFilter(_adminWalStoresData);
+
+    if(_adminWalStoresData.length === 0){
+      box.innerHTML = `<div class="listEmpty">لا توجد طلبيات مطاعم مدفوعة بالمحفظة حتى الآن</div>`;
+      return;
+    }
+
+    box.innerHTML = _adminWalStoresData.map(st=>`
+      <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:900;font-size:14px">🍽️ ${esc(st.storeName)}</div>
+            <div style="font-size:11px;color:var(--muted)">
+              ${st.storePhone ? `📞 ${esc(st.storePhone)} — ` : ''}إجمالي الطلبيات بالمحفظة: <b>${st.countAll}</b>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="filterWebLedgerByStore('${esc(st.storeId)}', '${esc(st.storeName)}')" style="padding:4px 10px;font-size:11px">📜 كشف الحساب</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:10px;color:#166534;font-weight:700">هذا الأسبوع</div>
+            <div style="font-size:13px;font-weight:900;color:#15803d">${st.revenueWeek.toFixed(2)} د.ل</div>
+            <div style="font-size:9.5px;color:#15803d">(${st.countWeek} طلب)</div>
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:10px;color:#1e40af;font-weight:700">هذا الشهر</div>
+            <div style="font-size:13px;font-weight:900;color:#1d4ed8">${st.revenueMonth.toFixed(2)} د.ل</div>
+            <div style="font-size:9.5px;color:#1d4ed8">(${st.countMonth} طلب)</div>
+          </div>
+          <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:10px;color:#6b21a8;font-weight:700">الإجمالي الكلي</div>
+            <div style="font-size:13px;font-weight:900;color:#7e22ce">${st.revenueAll.toFixed(2)} د.ل</div>
+            <div style="font-size:9.5px;color:#7e22ce">(${st.countAll} طلب)</div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }catch(e){
+    box.innerHTML = `<div class="listEmpty">خطأ: ${e.message}</div>`;
+  }
+};
+
 async function loadAdminWebCards(){
   const box = document.getElementById("admWebCardsRows");
   if(!box) return;
@@ -1361,7 +1551,7 @@ async function loadAdminWebCards(){
         .select("*")
         .eq("type", "wallet_card")
         .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(100);
       if(!error && data){
         _adminWalCardsData = data.map(r=>{
           let parsed = {};
@@ -1395,13 +1585,29 @@ async function loadAdminWebCards(){
 }
 
 window.adminWebGenerateCards = async()=>{
-  const denom = parseInt(document.getElementById("admWebGenDenom")?.value || "20", 10);
+  const selDenom = document.getElementById("admWebGenDenom")?.value || "20";
+  let denom = 20;
+  if(selDenom === 'custom'){
+    denom = parseInt(document.getElementById("admWebGenCustomDenom")?.value || "0", 10);
+    if(isNaN(denom) || denom < 1 || denom > 5000){
+      alert("يرجى إدخال قيمة فئة مخصصة صحيحة (من 1 إلى 5000 د.ل)");
+      return;
+    }
+  }else{
+    denom = parseInt(selDenom, 10);
+  }
+
   const count = parseInt(document.getElementById("admWebGenCount")?.value || "10", 10);
+  if(isNaN(count) || count < 1 || count > 500){
+    alert("يرجى إدخال عدد كروت صحيح بين 1 و 500 كارت");
+    return;
+  }
+
   const btn = document.getElementById("btnAdmWebGenCards");
   const outBox = document.getElementById("admWebGenOutput");
   const outText = document.getElementById("admWebGenText");
 
-  if(!confirm(`هل تريد توليد ${count} كارت من فئة ${denom} د.ل؟`)) return;
+  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل؟`)) return;
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التوليد..."; }
 
   try{
@@ -1435,7 +1641,7 @@ window.adminWebGenerateCards = async()=>{
     }
     if(outBox) outBox.style.display = "block";
     if(outText){
-      outText.value = `كروت شحن تسوق الآن (فئة ${denom} د.ل):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
+      outText.value = `كروت شحن تسوق الآن (فئة ${denom} د.ل - إجمالي ${count} كارت):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
     }
     alert(`✅ تم بنجاح توليد وحفظ ${count} كارت!`);
     loadAdminWebCards();
@@ -1453,44 +1659,115 @@ window.copyWebGenCards = ()=>{
   alert("📋 تم نسخ قائمة الكروت بنجاح!");
 };
 
+window.onAdmWebDepPhoneInputChanged = ()=>{
+  _adminWalDepTarget = null;
+  const box = document.getElementById("admWebDepUserBox");
+  if(box){
+    box.style.display = "none";
+    box.innerHTML = "";
+  }
+};
+
 window.admWebLookupPhone = async()=>{
-  const phone = (document.getElementById("admWebDepPhone")?.value || "").trim().replace(/[^0-9]/g, "");
+  _adminWalDepTarget = null;
+  const rawQuery = (document.getElementById("admWebDepPhone")?.value || "").trim();
   const box = document.getElementById("admWebDepUserBox");
   if(!box) return;
-  if(phone.length < 8){
-    alert("يرجى كتابة رقم هاتف صحيح");
-    _adminWalDepTarget = null;
+
+  if(!rawQuery || rawQuery.length < 3){
+    alert("يرجى كتابة رقم هاتف أو اسم مستخدم صحيح");
     return;
   }
+
   box.style.display = "block";
-  box.innerHTML = "⏳ جاري البحث...";
+  box.style.background = "#f8fafc";
+  box.style.border = "1px solid var(--border)";
+  box.style.borderRadius = "8px";
+  box.style.padding = "8px 10px";
+  box.innerHTML = "⏳ جاري البحث عن صاحب الحساب...";
+
   try{
     let target = null;
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, "");
+    const cleanUsername = rawQuery.replace(/^@/, "").toLowerCase();
+
     if(window.supabase){
-      const { data } = await window.supabase
-        .from("profiles")
-        .select("*")
-        .ilike("phone", `%${phone.slice(-8)}%`)
-        .limit(1)
-        .maybeSingle();
-      if(data) target = data;
+      if(cleanDigits.length >= 8){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .ilike("phone", `%${cleanDigits.slice(-8)}%`)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
+
+      if(!target && cleanUsername.length >= 2){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .ilike("username", cleanUsername)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
+
+      if(!target){
+        const { data } = await window.supabase
+          .from("profiles")
+          .select("*")
+          .or(`id.eq.${rawQuery},name.ilike.%${rawQuery}%`)
+          .limit(1)
+          .maybeSingle();
+        if(data) target = data;
+      }
     }
+
     if(!target){
-      box.innerHTML = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم في جدول profiles.";
+      box.style.background = "#fffbeb";
+      box.style.border = "1px solid #fde68a";
+      box.innerHTML = "⚠️ لم يتم العثور على حساب مسجل بهذا الرقم أو اسم المستخدم. تأكد من صحة المدخلات.";
       _adminWalDepTarget = null;
       return;
     }
+
     _adminWalDepTarget = target;
     let bal = 0;
     try{
       const snap = await getDoc(doc(db, "feedback", "wallet_" + target.id));
       if(snap && snap.exists()){
         const d = JSON.parse(snap.data().message || "{}");
-        bal = d.balance || 0;
+        bal = Number(d.balance || 0);
       }
     }catch(err){}
-    box.innerHTML = `✅ <b>العضو:</b> ${esc(target.name||"عضو")} (@${esc(target.username||"—")})<br>💳 <b>الرصيد الحالي:</b> ${bal.toFixed(2)} د.ل`;
+
+    box.style.background = "#f0fdf4";
+    box.style.border = "1.5px solid #86efac";
+    box.style.padding = "10px";
+    box.innerHTML = `
+      <div style="font-weight:900;font-size:12px;color:#15803d;margin-bottom:6px">✅ تم العثور على العضو:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:6px;padding:6px 8px">
+          <div style="font-size:10px;color:var(--muted)">👤 الاسم:</div>
+          <div style="font-weight:900;font-size:12px">${esc(target.name||"عضو")}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:6px;padding:6px 8px">
+          <div style="font-size:10px;color:var(--muted)">🏷️ المعرف:</div>
+          <div style="font-weight:900;font-size:12px">@${esc(target.username||"—")}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #bbf7d0;border-radius:6px;padding:6px 8px">
+          <div style="font-size:10px;color:var(--muted)">📞 الهاتف:</div>
+          <div style="font-weight:900;font-size:12px;color:#0284c7;direction:ltr;text-align:right">${esc(target.phone||"—")}</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #22c55e;border-radius:6px;padding:6px 8px">
+          <div style="font-size:10px;color:#15803d;font-weight:700">💳 الرصيد:</div>
+          <div style="font-weight:900;font-size:13px;color:#166534">${bal.toFixed(2)} د.ل</div>
+        </div>
+      </div>
+    `;
   }catch(e){
+    box.style.background = "#fef2f2";
+    box.style.border = "1px solid #fecaca";
     box.innerHTML = "خطأ: " + e.message;
     _adminWalDepTarget = null;
   }
