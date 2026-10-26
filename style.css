@@ -1703,3 +1703,19 @@ html.dark-mode .restaurantOrderCard.pending {
   margin: 12px 0 6px;
   text-align: center;
 }
+
+@keyframes liveDotPulse {
+  0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+  70% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 7px rgba(22, 163, 74, 0); }
+  100% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+.liveDotIndicator {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #16a34a;
+  margin-left: 6px;
+  vertical-align: middle;
+  animation: liveDotPulse 1.8s infinite ease-in-out;
+}
