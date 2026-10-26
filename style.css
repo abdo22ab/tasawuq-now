@@ -1719,3 +1719,255 @@ html.dark-mode .restaurantOrderCard.pending {
   vertical-align: middle;
   animation: liveDotPulse 1.8s infinite ease-in-out;
 }
+
+/* ============================================ */
+/* نظام المحفظة الإلكترونية وكروت الشحن (Wallet System) */
+/* ============================================ */
+.walletHeaderBtn {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px !important;
+  width: auto !important;
+  border-radius: 999px !important;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.walletBadge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--teal-dark);
+  background: var(--teal-light);
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+/* بطاقة المحفظة في صفحة حسابي */
+.userWalletCard {
+  background: linear-gradient(135deg, #0c2942 0%, #0369a1 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 12px 0 16px;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+.userWalletCard::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+}
+.uwcTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.uwcBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.uwcIcon {
+  font-size: 24px;
+}
+.uwcTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.uwcSubtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.uwcBadge {
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(34, 197, 94, 0.25);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.uwcBalanceArea {
+  margin: 10px 0 16px;
+}
+.uwcBalanceLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 2px;
+}
+.uwcBalanceNum {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.uwcBalanceNum small {
+  font-size: 15px;
+  font-weight: 700;
+  color: #bae6fd;
+}
+.uwcButtonsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.uwcBtnRecharge {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.uwcBtnRecharge:active {
+  transform: scale(0.97);
+  background: #15803d;
+}
+.uwcBtnHistory {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.uwcBtnHistory:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* بطاقات حركات السجل المالي */
+.walletTxCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.walletTxCard .txLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.walletTxCard .txIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.walletTxCard .txIcon.in {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.walletTxCard .txIcon.out {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.walletTxCard .txDetails {
+  min-width: 0;
+}
+.walletTxCard .txTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.walletTxCard .txTime {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.walletTxCard .txRight {
+  text-align: left;
+  flex-shrink: 0;
+}
+.walletTxCard .txAmount {
+  font-size: 14.5px;
+  font-weight: 900;
+  direction: ltr;
+}
+.walletTxCard .txAmount.in {
+  color: #16a34a;
+}
+.walletTxCard .txAmount.out {
+  color: #dc2626;
+}
+.walletTxCard .txBalanceAfter {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* كروت الأدمن لقائمة الكروت والسجل */
+.admCardRow {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.admCardCode {
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+html.dark-mode .userWalletCard {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html.dark-mode .walletHeaderBtn {
+  background: var(--card);
+  border-color: var(--border);
+}
+
