@@ -1604,3 +1604,102 @@ html.dark-mode .specInputWrap input, html.dark-mode .specInputWrap select {
   border-color: var(--border);
   color: #e8edf5;
 }
+
+/* =====================================================
+   Restaurant Live Orders & Customer Tracker System
+   ===================================================== */
+.activeOrderFloatingPill {
+  position: fixed;
+  bottom: 82px;
+  left: 16px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 30px;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.45);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  z-index: 900;
+  animation: pillBounce 2.4s infinite ease-in-out;
+}
+@keyframes pillBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.restaurantOrderCard {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all .2s ease;
+}
+.restaurantOrderCard.pending {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  animation: pulsePending 2s infinite ease-in-out;
+}
+html.dark-mode .restaurantOrderCard.pending {
+  background: #2a2010;
+  border-color: #f59e0b;
+}
+@keyframes pulsePending {
+  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+}
+
+.rloItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.rloItemRow:last-child {
+  border-bottom: none;
+}
+.rloBtnTime {
+  padding: 9px 6px;
+  border: none;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .1s, background .15s;
+}
+.rloBtnTime:active {
+  transform: scale(0.97);
+}
+.rloBtnTime:hover {
+  background: #15803d;
+}
+.rloBtnReject {
+  padding: 9px 6px;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rloCountdownBig {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #16a34a;
+  font-family: monospace, sans-serif;
+  margin: 12px 0 6px;
+  text-align: center;
+}
