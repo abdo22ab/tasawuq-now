@@ -908,40 +908,57 @@ OneSignalDeferred.push(async function(OneSignal){
     <!-- تبويب 3: إيداع / خصم يدوي -->
     <div id="admWalSecDeposit" style="display:none">
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px">
-        <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:10px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
+        <div style="font-weight:900;font-size:14px;color:var(--text);margin-bottom:12px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
 
-        <div class="field" style="margin-bottom:10px">
-          <label style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:4px;display:block">📱 رقم هاتف الزبون أو اسم المستخدم (@username):</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" id="admDepPhone" placeholder="09xxxxxxxx أو username" dir="ltr" oninput="onAdmDepPhoneInputChanged()" style="flex:1;height:42px;box-sizing:border-box;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:700;text-align:left">
-            <button type="button" class="btnGhost" onclick="admLookupUserByPhone()" style="height:42px;padding:0 14px;font-size:12px;font-weight:800;border:1.5px solid var(--teal);color:var(--teal-dark);background:var(--teal-light);border-radius:10px;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer">
+        <!-- حقل البحث: مستطيل إدخال عريض وواضح + زر فحص صغير متناسق -->
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px;display:block">
+            📱 رقم هاتف الزبون أو اسم المستخدم (@username):
+          </label>
+          <div style="display:flex;gap:8px;align-items:stretch;width:100%">
+            <input 
+              type="text" 
+              id="admDepPhone" 
+              placeholder="اكتب رقم الهاتف (09xxxxxxxx) أو اسم المستخدم..." 
+              dir="auto" 
+              oninput="onAdmDepPhoneInputChanged()" 
+              onkeydown="if(event.key==='Enter'){event.preventDefault();admLookupUserByPhone();}" 
+              style="flex:1 1 auto;width:0;min-width:0;height:46px;box-sizing:border-box;padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-weight:700;outline:none"
+            >
+            <button 
+              type="button" 
+              id="btnAdmLookupPhone" 
+              onclick="admLookupUserByPhone()" 
+              style="flex:0 0 auto;width:auto;min-width:76px;height:46px;margin:0;padding:0 14px;font-size:13px;font-weight:800;border:none;background:#0284c7;color:#fff;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(2,132,199,0.25)"
+            >
               🔍 فحص
             </button>
           </div>
         </div>
 
+        <!-- صندوق نتائج فحص العضو -->
         <div id="admDepUserInfoBox" style="display:none;margin-bottom:12px"></div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-          <div class="field" style="margin:0">
-            <label style="font-size:11.5px;font-weight:700">المبلغ (د.ل):</label>
-            <input type="number" id="admDepAmount" placeholder="50" min="1" max="5000" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:800;text-align:center">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11.5px;font-weight:800;color:var(--muted);display:block;margin-bottom:4px">المبلغ (د.ل):</label>
+            <input type="number" id="admDepAmount" placeholder="50" min="1" max="5000" style="width:100%;box-sizing:border-box;height:44px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-weight:800;text-align:center">
           </div>
-          <div class="field" style="margin:0">
-            <label style="font-size:11.5px;font-weight:700">نوع العملية:</label>
-            <select id="admDepType" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:700">
+          <div>
+            <label style="font-size:11.5px;font-weight:800;color:var(--muted);display:block;margin-bottom:4px">نوع العملية:</label>
+            <select id="admDepType" style="width:100%;box-sizing:border-box;height:44px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-weight:800;font-size:13px">
               <option value="credit">➕ إيداع رصيد (شحن)</option>
               <option value="debit">➖ خصم رصيد</option>
             </select>
           </div>
         </div>
 
-        <div class="field" style="margin-bottom:12px">
-          <label style="font-size:11.5px;font-weight:700">سبب / ملاحظة العملية:</label>
-          <input type="text" id="admDepNote" placeholder="مثال: استلام تحويل مصرفي / تسوية / شحن يدوي..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
+        <div style="margin-bottom:14px">
+          <label style="font-size:11.5px;font-weight:800;color:var(--muted);display:block;margin-bottom:4px">سبب / ملاحظة العملية:</label>
+          <input type="text" id="admDepNote" placeholder="مثال: استلام تحويل مصرفي / تسوية / شحن يدوي..." style="width:100%;box-sizing:border-box;height:44px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
         </div>
 
-        <button type="button" id="btnAdmExecuteDeposit" class="btnMain" onclick="adminExecuteDeposit()" style="background:#16a34a;color:#fff;font-weight:800;padding:12px;font-size:13.5px;margin-bottom:0">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
+        <button type="button" id="btnAdmExecuteDeposit" class="btnMain" onclick="adminExecuteDeposit()" style="background:#16a34a;color:#fff;font-weight:900;padding:13px;font-size:14px;margin-bottom:0">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
       </div>
     </div>
 
@@ -1182,7 +1199,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=27"></script>
+<script type="module" src="app.js?v=28"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
