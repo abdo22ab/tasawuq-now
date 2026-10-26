@@ -714,7 +714,7 @@ OneSignalDeferred.push(async function(OneSignal){
     <!-- تبويبات طرق الشحن -->
     <div class="walletTabNav" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
       <button type="button" id="tabBtnRechargeCard" class="filterBtn active" onclick="switchRechargeTab('card')" style="font-size:12px;padding:8px">💳 كارت شحن</button>
-      <button type="button" id="tabBtnRechargeTransfer" class="filterBtn" onclick="switchRechargeTab('transfer')" style="font-size:12px;padding:8px">📲 تحويل مدار / ليبيانا</button>
+      <button type="button" id="tabBtnRechargeTransfer" class="filterBtn" onclick="switchRechargeTab('transfer')" style="font-size:12px;padding:8px">📲 تحويل مصرفي / شراء كروت</button>
     </div>
 
     <!-- تبويب كارت الشحن -->
@@ -739,32 +739,27 @@ OneSignalDeferred.push(async function(OneSignal){
       </div>
     </div>
 
-    <!-- تبويب التحويل المباشر -->
+    <!-- تبويب التحويل المصرفي وشراء كروت الشحن عبر الواتساب -->
     <div id="rechargeTabTransferBox" style="display:none">
-      <div style="background:#e0f2fe;border:1px solid #bae6fd;border-radius:12px;padding:12px;margin-bottom:14px">
-        <div style="font-weight:800;color:#0369a1;font-size:13px;margin-bottom:4px">📲 تحويل رصيد شبكات الهاتف (ليبيانا / مدار)</div>
-        <div style="font-size:12px;color:#0284c7;line-height:1.5">حول الرصيد لأحد أرقام الإدارة المعتمدة، ثم اضغط على زر الواتساب لإرسال رقم هاتفك أو واصل التحويل ليتم إيداع الرصيد فوراً.</div>
-      </div>
-
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div>
-            <div style="font-size:12px;color:var(--muted);font-weight:700">شبكة المدار Almadar:</div>
-            <div style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right" id="madarNumberText">0911411605</div>
-          </div>
-          <button type="button" class="btnGhost" onclick="copyTransferNumber('0911411605')" style="padding:5px 10px;font-size:11.5px;border:1px solid var(--border)">📋 نسخ الرقم</button>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--border);padding-top:8px">
-          <div>
-            <div style="font-size:12px;color:var(--muted);font-weight:700">شبكة ليبيانا Libyana:</div>
-            <div style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right" id="libyanaNumberText">0944325093</div>
-          </div>
-          <button type="button" class="btnGhost" onclick="copyTransferNumber('0944325093')" style="padding:5px 10px;font-size:11.5px;border:1px solid var(--border)">📋 نسخ الرقم</button>
+      <div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:900;color:#15803d;font-size:13.5px;margin-bottom:4px">📲 تحويل مصرفي وشراء كروت شحن المنصة</div>
+        <div style="font-size:12px;color:#166534;line-height:1.6">
+          يمكنك شحن رصيدك عبر <b>التحويل المصرفي المباشر</b> أو <b>شراء كروت شحن المنصة</b> بالتواصل مباشرة مع الإدارة عبر الواتساب.
         </div>
       </div>
 
-      <a href="https://wa.me/218911411605?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%AD%D9%88%D9%84%D8%AA%20%D8%B1%D8%B5%D9%8A%D8%AF%20%D9%84%D8%B4%D8%AD%D9%86%20%D9%85%D8%AD%D9%81%D8%B8%D8%AA%D9%8A%20%D9%81%D9%8A%20%D8%AA%D8%B3%D9%88%D9%82%20%D8%A7%D9%84%D8%A2%D9%86" target="_blank" rel="noopener" class="btnMain" style="background:#25d366;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;font-size:13.5px">
-        💬 تأكيد التحويل مع الإدارة عبر واتساب
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11.5px;color:var(--muted);font-weight:700">📱 رقم واتساب الإدارة المعتمد للشحن:</div>
+            <div style="font-size:17px;font-weight:900;color:var(--text);direction:ltr;text-align:right;margin-top:2px" id="adminWhatsappNumberText">0928476784</div>
+          </div>
+          <button type="button" class="btnGhost" onclick="copyTransferNumber('0928476784')" style="padding:6px 12px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;font-weight:800">📋 نسخ الرقم</button>
+        </div>
+      </div>
+
+      <a href="https://wa.me/218928476784?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%B4%D8%AD%D9%86%20%D9%85%D8%AD%D9%81%D8%B8%D8%AA%D9%8A%20%D9%81%D9%8A%20%D8%AA%D8%B3%D9%88%D9%82%20%D8%A7%D9%84%D8%A2%D9%86%20(%D8%AA%D8%AD%D9%88%D9%8A%D9%84%20%D9%85%D8%B5%D8%B1%D9%81%D9%8A%20%D8%A3%D9%88%20%D8%B4%D8%B1%D8%A7%D8%A1%20%D9%83%D8%B1%D9%88%D8%AA%20%D8%B4%D8%AD%D9%86)" target="_blank" rel="noopener" class="btnMain" style="background:#25d366;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;font-size:13.5px;border-radius:10px">
+        💬 تواصل مع الأدمن عبر واتساب لشحن المحفظة
       </a>
     </div>
 
@@ -827,22 +822,21 @@ OneSignalDeferred.push(async function(OneSignal){
         <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:8px">⚡ توليد دفعة كروت شحن جديدة:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div>
-            <label style="font-size:11px;font-weight:700">فئة الكارت:</label>
-            <select id="admCardDenom" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12.5px;font-weight:700">
+            <label style="font-size:11.5px;font-weight:700">فئة الكارت:</label>
+            <select id="admCardDenom" onchange="toggleAdmCustomDenom()" style="width:100%;padding:9px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-weight:700">
               <option value="10">10 دينار ليبي</option>
               <option value="20" selected>20 دينار ليبي</option>
+              <option value="30">30 دينار ليبي</option>
+              <option value="40">40 دينار ليبي</option>
               <option value="50">50 دينار ليبي</option>
               <option value="100">100 دينار ليبي</option>
+              <option value="custom">✍️ فئة أخرى مخصصة...</option>
             </select>
+            <input type="number" id="admCardCustomDenom" placeholder="اكتب قيمة الفئة..." style="display:none;width:100%;box-sizing:border-box;margin-top:6px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-weight:800">
           </div>
           <div>
-            <label style="font-size:11px;font-weight:700">العدد المطلوب:</label>
-            <select id="admCardCount" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12.5px;font-weight:700">
-              <option value="5">5 كروت</option>
-              <option value="10" selected>10 كروت</option>
-              <option value="20">20 كارت</option>
-              <option value="50">50 كارت</option>
-            </select>
+            <label style="font-size:11.5px;font-weight:700">العدد المطلوب (مفتوح):</label>
+            <input type="number" id="admCardCount" min="1" max="1000" placeholder="مثال: 15" value="10" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:800;text-align:center">
           </div>
         </div>
         <button type="button" id="btnAdmGenCards" class="btnMain" onclick="adminGenerateCardsBatch()" style="background:#0284c7;color:#fff;font-weight:800;padding:10px;font-size:13px;margin-bottom:0">⚡ توليد وحفظ الكروت في قاعدة البيانات</button>
@@ -888,16 +882,22 @@ OneSignalDeferred.push(async function(OneSignal){
         </div>
       </div>
 
-      <div style="display:flex;gap:6px;margin-bottom:10px">
-        <input type="text" id="admLedgerSearchInput" placeholder="🔍 ابحث برقم الهاتف أو الاسم..." oninput="onAdmLedgerSearchChange()" style="flex:1;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
-        <select id="admLedgerTypeFilter" onchange="onAdmLedgerSearchChange()" style="padding:8px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700">
-          <option value="all">كل العمليات</option>
-          <option value="card_recharge">شحن كارت</option>
-          <option value="order_payment">دفع مطعم</option>
-          <option value="order_refund">استرجاع طلبية</option>
-          <option value="admin_credit">إيداع يدوي</option>
-          <option value="admin_debit">خصم يدوي</option>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <select id="admLedgerStoreFilter" onchange="onAdmLedgerSearchChange()" style="padding:8px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700">
+          <option value="all">🍽️ كل المطاعم</option>
         </select>
+        <select id="admLedgerTypeFilter" onchange="onAdmLedgerSearchChange()" style="padding:8px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-weight:700">
+          <option value="all">كل العمليات</option>
+          <option value="card_recharge">💳 شحن كروت</option>
+          <option value="order_payment">🍽️ دفع مطاعم</option>
+          <option value="order_refund">🔄 استرجاع طلبية</option>
+          <option value="admin_credit">➕ إيداع يدوي</option>
+          <option value="admin_debit">➖ خصم يدوي</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="admLedgerSearchInput" placeholder="🔍 ابحث بالهاتف أو الاسم أو رقم الحركة..." oninput="onAdmLedgerSearchChange()" style="flex:1;padding:8px 10px;font-size:12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
       </div>
 
       <div id="admLedgerListTable" style="display:flex;flex-direction:column;gap:6px">
@@ -910,15 +910,17 @@ OneSignalDeferred.push(async function(OneSignal){
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px">
         <div style="font-weight:800;font-size:13.5px;color:var(--text);margin-bottom:10px">💵 إيداع أو تعديل رصيد زبون يدوياً:</div>
 
-        <div class="field" style="margin-bottom:8px">
-          <label style="font-size:11.5px;font-weight:700">رقم هاتف الزبون:</label>
-          <div style="display:flex;gap:6px">
-            <input type="tel" id="admDepPhone" placeholder="09xxxxxxxx" dir="ltr" style="flex:1;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
-            <button type="button" class="btnGhost" onclick="admLookupUserByPhone()" style="padding:8px 12px;font-size:12px;border:1px solid var(--border);font-weight:700">🔍 فحص</button>
+        <div class="field" style="margin-bottom:10px">
+          <label style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:4px;display:block">📱 رقم هاتف الزبون أو اسم المستخدم (@username):</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="admDepPhone" placeholder="09xxxxxxxx أو username" dir="ltr" oninput="onAdmDepPhoneInputChanged()" style="flex:1;height:42px;box-sizing:border-box;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:700;text-align:left">
+            <button type="button" class="btnGhost" onclick="admLookupUserByPhone()" style="height:42px;padding:0 14px;font-size:12px;font-weight:800;border:1.5px solid var(--teal);color:var(--teal-dark);background:var(--teal-light);border-radius:10px;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer">
+              🔍 فحص
+            </button>
           </div>
         </div>
 
-        <div id="admDepUserInfoBox" style="display:none;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"></div>
+        <div id="admDepUserInfoBox" style="display:none;margin-bottom:12px"></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0">
@@ -936,7 +938,7 @@ OneSignalDeferred.push(async function(OneSignal){
 
         <div class="field" style="margin-bottom:12px">
           <label style="font-size:11.5px;font-weight:700">سبب / ملاحظة العملية:</label>
-          <input type="text" id="admDepNote" placeholder="مثال: استلام حوالة ليبيانا / تسوية / تعديل..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
+          <input type="text" id="admDepNote" placeholder="مثال: استلام تحويل مصرفي / تسوية / شحن يدوي..." style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
         </div>
 
         <button type="button" id="btnAdmExecuteDeposit" class="btnMain" onclick="adminExecuteDeposit()" style="background:#16a34a;color:#fff;font-weight:800;padding:12px;font-size:13.5px;margin-bottom:0">💾 تنفيذ العملية وتحديث الرصيد فوراً</button>
@@ -945,8 +947,11 @@ OneSignalDeferred.push(async function(OneSignal){
 
     <!-- تبويب 4: مستحقات المطاعم -->
     <div id="admWalSecStores" style="display:none">
-      <div style="font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:8px">🍽️ مبيعات المطاعم المحصلة عبر المحفظة الإلكترونية:</div>
-      <div id="admStoresPayoutsList" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:800;color:var(--text)">🍽️ تقرير مبيعات ومستحقات المطاعم (أسبوعياً وشهرياً):</div>
+        <button type="button" class="btnGhost" onclick="loadAdminStoresPayouts()" style="padding:4px 8px;font-size:11px;border:1px solid var(--border)">🔄 تحديث</button>
+      </div>
+      <div id="admStoresPayoutsList" style="display:flex;flex-direction:column;gap:10px">
         <div class="reportsEmpty">جاري فحص مبيعات المطاعم...</div>
       </div>
     </div>
@@ -1177,7 +1182,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=26"></script>
+<script type="module" src="app.js?v=27"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
