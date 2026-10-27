@@ -21,7 +21,14 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
 
-  const url = new URL(req.url);
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch(e) {
+    return;
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
   // فحص ما إذا كان الطلب صورة من أي نوع أو من خدمات الاستضافة
   const isImage =
@@ -35,16 +42,16 @@ self.addEventListener("fetch", (event) => {
   if (isImage) {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(async (cache) => {
-        const cached = await cache.match(req);
-        if (cached) return cached;
         try {
+          const cached = await cache.match(req);
+          if (cached) return cached;
           const networkRes = await fetch(req);
           if (networkRes && (networkRes.status === 200 || networkRes.type === "opaque")) {
-            cache.put(req, networkRes.clone());
+            cache.put(req, networkRes.clone()).catch(() => {});
           }
           return networkRes;
         } catch (err) {
-          return cached || new Response("", { status: 408 });
+          return fetch(req);
         }
       })
     );
