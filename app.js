@@ -1386,7 +1386,7 @@ function showCategoriesScreenDirect(){
   const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
   const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("sticky");
-  renderRecentlyViewed();updateCartUI();updateCompareUI();window.scrollTo(0,0);
+  renderRecentlyViewed();if(typeof renderHomeStoriesBar==="function")renderHomeStoriesBar();updateCartUI();updateCompareUI();window.scrollTo(0,0);
   showFloatingButtons();
 }
 window.showCategoriesScreenDirect=showCategoriesScreenDirect;
@@ -1410,6 +1410,8 @@ function openCategoryDirect(cat){
   closeOverlayDirect();setActiveNav("home");setTopbarMode("scroll");
   const cr=document.getElementById("catsRow");
   if(cr) cr.classList.toggle("hidden", cat!=="الكل");
+  const carBar = document.getElementById("carBrandsQuickBar");
+  if(carBar) carBar.style.display = (cat === "سيارات ومركبات") ? "flex" : "none";
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
   renderSubCats();renderPosts();updateCartUI();window.scrollTo(0,0);
   hideFloatingButtons();
@@ -1418,6 +1420,37 @@ window.openCategoryDirect=openCategoryDirect;
 window.openCategory=(cat,skipHistory)=>{
   openCategoryDirect(cat);
   if(!skipHistory) pushNavState({ screen: 'category', cat: cat }, '#cat-' + encodeURIComponent(cat || 'all'));
+};
+
+window.pickCarBrandFilter = function(brand){
+  document.querySelectorAll(".carBrandPill").forEach(p => {
+    p.classList.toggle("active", p.textContent.includes(brand));
+  });
+  if(brand === "الكل"){
+    currentSubCategory = "الكل";
+  } else {
+    currentSubCategory = brand;
+  }
+  renderPosts();
+};
+
+window.submitCatSearch = function(){
+  const catInput = document.getElementById("searchInputCat");
+  const homeInput = document.getElementById("searchInput");
+  const query = (catInput ? catInput.value : "").trim();
+  if(homeInput) homeInput.value = query;
+  
+  const carBrandsLower = CAR_BRANDS.map(b => b.toLowerCase());
+  const isCarSearch = query && (query.includes("سيار") || carBrandsLower.some(b => query.toLowerCase().includes(b)));
+  
+  if(isCarSearch){
+    openCategory("سيارات ومركبات");
+  } else {
+    openCategory("الكل");
+  }
+  
+  if(query && typeof searchServerPosts === "function") searchServerPosts(query);
+  renderPosts();
 };
 
 function backFromFormDirect(){
@@ -2283,6 +2316,7 @@ async function loadPostsBatch(isInitial = false) {
     updateLoadMoreButton();
     updateModBadge();
     renderRecentlyViewed();
+    if(typeof renderHomeStoriesBar==="function")renderHomeStoriesBar();
     updateCartUI();
     updateCompareUI();
   } catch (err) {
@@ -8758,6 +8792,11 @@ window.sendSystemChatNotification = sendSystemChatNotification;
 export function closeUserChatDirect(){
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.add("hidden");
+  if(typeof cancelChatVoiceRecord === "function") cancelChatVoiceRecord();
+  if(window._currentPlayingAudio && !window._currentPlayingAudio.paused){
+    window._currentPlayingAudio.pause();
+    window._currentPlayingAudio = null;
+  }
   if(window._activeChat && window._activeChat.pollTimer){
     clearInterval(window._activeChat.pollTimer);
   }
@@ -8978,7 +9017,20 @@ export async function loadChatMessages(convId, isPoll){
       return `
         ${dateDivider}
         <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
-          <div class="chatBubbleContent">${escapeHtml(m.text || '')}</div>
+          ${(m.type === 'voice' || m.audioData) ? `
+            <div class="chatBubbleContent">
+              <div class="voicePlayerBubble" data-audio-src="${escapeHtml(m.audioData || '')}">
+                <button type="button" class="voicePlayBtn" onclick="toggleVoicePlayback(this, '${escapeHtml(m.audioData || '')}')">▶</button>
+                <div class="voiceWaveWrap">
+                  <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
+                  <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
+                </div>
+                <span class="voiceDuration">${m.duration ? m.duration + 's' : 'تسجيل صوتي'} 🎙️</span>
+              </div>
+            </div>
+          ` : `
+            <div class="chatBubbleContent">${escapeHtml(m.text || '')}</div>
+          `}
           <div class="chatBubbleMeta">
             <span class="chatTime">${timeStr}</span>
             ${isMe ? '<span class="chatTicks">✓✓</span>' : ''}
@@ -9375,3 +9427,474 @@ window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 setInterval(() => {
   if(auth.currentUser) updateGlobalUnreadChatCount();
 }, 60000);
+
+/* ============================================
+   🎙️ نظام الرسائل الصوتية والشات بالفويس (Voice Notes)
+   ============================================ */
+window.sendQuickChatChip = function(text){
+  const input = document.getElementById("chatMessageInput");
+  if(!input) return;
+  input.value = text;
+  sendUserChatMessage();
+};
+
+let _voiceMediaRecorder = null;
+let _voiceAudioChunks = [];
+let _voiceTimerInterval = null;
+let _voiceSeconds = 0;
+
+export async function startChatVoiceRecord(){
+  try {
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showToast("عذراً، متصفحك لا يدعم تسجيل الصوت المباشر", "warn");
+      return;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _voiceAudioChunks = [];
+    _voiceSeconds = 0;
+
+    let mimeType = "";
+    if(typeof MediaRecorder !== "undefined"){
+      if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus")){
+        mimeType = "audio/webm;codecs=opus";
+      } else if(MediaRecorder.isTypeSupported("audio/mp4")){
+        mimeType = "audio/mp4";
+      } else if(MediaRecorder.isTypeSupported("audio/ogg")){
+        mimeType = "audio/ogg";
+      }
+    }
+
+    _voiceMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    
+    _voiceMediaRecorder.ondataavailable = (e) => {
+      if(e.data && e.data.size > 0) _voiceAudioChunks.push(e.data);
+    };
+
+    _voiceMediaRecorder.onstop = () => {
+      try { stream.getTracks().forEach(t => t.stop()); } catch(e){}
+    };
+
+    _voiceMediaRecorder.start(200);
+
+    const textInput = document.getElementById("chatMessageInput");
+    const voiceBar = document.getElementById("chatVoiceActiveBar");
+    const micBtn = document.getElementById("btnVoiceRecordChat");
+    const timerEl = document.getElementById("voiceRecTimer");
+
+    if(textInput) textInput.style.display = "none";
+    if(voiceBar) voiceBar.style.display = "flex";
+    if(micBtn) micBtn.style.color = "#ef4444";
+
+    _voiceTimerInterval = setInterval(() => {
+      _voiceSeconds++;
+      const m = String(Math.floor(_voiceSeconds / 60)).padStart(2, "0");
+      const s = String(_voiceSeconds % 60).padStart(2, "0");
+      if(timerEl) timerEl.textContent = `${m}:${s}`;
+      if(_voiceSeconds >= 60){
+        stopAndSendChatVoiceRecord();
+      }
+    }, 1000);
+
+  } catch(err) {
+    console.error("Mic access error:", err);
+    showToast("يرجى السماح بالوصول إلى المايكروفون لتسجيل الفويس", "warn");
+  }
+}
+window.startChatVoiceRecord = startChatVoiceRecord;
+
+export function cancelChatVoiceRecord(){
+  if(_voiceTimerInterval) clearInterval(_voiceTimerInterval);
+  if(_voiceMediaRecorder && _voiceMediaRecorder.state !== "inactive"){
+    try { _voiceMediaRecorder.stop(); } catch(e){}
+  }
+  _voiceAudioChunks = [];
+  _voiceSeconds = 0;
+  
+  const textInput = document.getElementById("chatMessageInput");
+  const voiceBar = document.getElementById("chatVoiceActiveBar");
+  const micBtn = document.getElementById("btnVoiceRecordChat");
+  const timerEl = document.getElementById("voiceRecTimer");
+
+  if(textInput) textInput.style.display = "block";
+  if(voiceBar) voiceBar.style.display = "none";
+  if(micBtn) micBtn.style.color = "var(--text)";
+  if(timerEl) timerEl.textContent = "00:00";
+}
+window.cancelChatVoiceRecord = cancelChatVoiceRecord;
+
+export function toggleChatVoiceRecord(){
+  if(_voiceMediaRecorder && _voiceMediaRecorder.state === "recording"){
+    stopAndSendChatVoiceRecord();
+  } else {
+    startChatVoiceRecord();
+  }
+}
+window.toggleChatVoiceRecord = toggleChatVoiceRecord;
+
+export async function stopAndSendChatVoiceRecord(){
+  if(!_voiceMediaRecorder || _voiceMediaRecorder.state === "inactive") return;
+  if(_voiceTimerInterval) clearInterval(_voiceTimerInterval);
+
+  const duration = _voiceSeconds;
+  const mime = _voiceMediaRecorder.mimeType || "audio/webm";
+
+  _voiceMediaRecorder.onstop = async () => {
+    try {
+      const blob = new Blob(_voiceAudioChunks, { type: mime });
+      if(blob.size < 500){
+        cancelChatVoiceRecord();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Audio = reader.result;
+        await sendVoiceChatMessage(base64Audio, duration);
+      };
+      reader.readAsDataURL(blob);
+    } catch(err){
+      console.error("Error processing voice note:", err);
+    } finally {
+      cancelChatVoiceRecord();
+    }
+  };
+
+  try { _voiceMediaRecorder.stop(); } catch(e){}
+}
+window.stopAndSendChatVoiceRecord = stopAndSendChatVoiceRecord;
+
+export async function sendVoiceChatMessage(audioBase64, duration){
+  if(!window._activeChat || !auth.currentUser) return;
+  const me = auth.currentUser;
+  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const activeChat = window._activeChat;
+
+  const box = document.getElementById("chatMessagesBox");
+  if(box){
+    const d = new Date();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const tempDiv = document.createElement("div");
+    tempDiv.className = "chatBubble outgoing";
+    tempDiv.innerHTML = `
+      <div class="chatBubbleContent">
+        <div class="voicePlayerBubble" data-audio-src="${escapeHtml(audioBase64)}">
+          <button type="button" class="voicePlayBtn" onclick="toggleVoicePlayback(this, '${escapeHtml(audioBase64)}')">▶</button>
+          <div class="voiceWaveWrap">
+            <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
+            <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
+          </div>
+          <span class="voiceDuration">${duration}s 🎙️</span>
+        </div>
+      </div>
+      <div class="chatBubbleMeta">
+        <span class="chatTime">${timeStr}</span>
+        <span class="chatTicks" style="color:rgba(255,255,255,0.7)">✓</span>
+      </div>
+    `;
+    box.appendChild(tempDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  const msgPayload = {
+    convId: activeChat.convId,
+    senderUid: me.uid,
+    senderName: senderName,
+    receiverUid: activeChat.targetUid,
+    type: "voice",
+    audioData: audioBase64,
+    duration: duration,
+    text: "🎙️ رسالة صوتية (" + duration + " ثانية)",
+    postId: activeChat.postId,
+    storeId: activeChat.storeId,
+    createdAt: Date.now()
+  };
+
+  try {
+    await addDoc(collection(db, "feedback"), {
+      type: "chat_message",
+      message: JSON.stringify(msgPayload),
+      uid: me.uid,
+      user_name: senderName,
+      user_phone: me.phoneNumber || "",
+      created_at: Date.now()
+    });
+
+    const convDocId = "conv_" + activeChat.convId;
+    await setDoc(doc(db, "feedback", convDocId), {
+      type: "chat_conversation",
+      message: JSON.stringify({
+        convId: activeChat.convId,
+        participants: [me.uid, activeChat.targetUid],
+        lastMessage: "🎙️ رسالة صوتية (" + duration + " ث)",
+        lastSenderUid: me.uid,
+        lastSenderName: senderName,
+        updatedAt: Date.now()
+      }),
+      uid: me.uid,
+      user_name: senderName,
+      created_at: Date.now()
+    }, { merge: true });
+
+  } catch(err) {
+    console.error("Error sending voice note:", err);
+    showToast("تعذر إرسال التسجيل الصوتي", "error");
+  }
+}
+window.sendVoiceChatMessage = sendVoiceChatMessage;
+
+window._currentPlayingAudio = null;
+window._currentPlayingBtn = null;
+
+export function toggleVoicePlayback(btn, audioSrc){
+  if(window._currentPlayingAudio && !window._currentPlayingAudio.paused){
+    window._currentPlayingAudio.pause();
+    if(window._currentPlayingBtn){
+      window._currentPlayingBtn.innerHTML = "▶";
+      window._currentPlayingBtn.closest(".voicePlayerBubble")?.classList.remove("playing");
+    }
+    if(window._currentPlayingBtn === btn){
+      window._currentPlayingAudio = null;
+      window._currentPlayingBtn = null;
+      return;
+    }
+  }
+
+  const audio = new Audio(audioSrc);
+  window._currentPlayingAudio = audio;
+  window._currentPlayingBtn = btn;
+  btn.innerHTML = "⏸";
+  btn.closest(".voicePlayerBubble")?.classList.add("playing");
+
+  audio.onended = () => {
+    btn.innerHTML = "▶";
+    btn.closest(".voicePlayerBubble")?.classList.remove("playing");
+    window._currentPlayingAudio = null;
+    window._currentPlayingBtn = null;
+  };
+  audio.onerror = () => {
+    btn.innerHTML = "▶";
+    btn.closest(".voicePlayerBubble")?.classList.remove("playing");
+    showToast("تعذر تشغيل التسجيل الصوتي", "warn");
+  };
+
+  audio.play().catch(e => {
+    console.error("Audio playback error:", e);
+    btn.innerHTML = "▶";
+  });
+}
+window.toggleVoicePlayback = toggleVoicePlayback;
+
+/* ============================================
+   🎬 نظام الستوريات والريلز الفخم (Stories System)
+   ============================================ */
+let _storiesList = [];
+let _currentStoryIndex = 0;
+let _storyProgressTimer = null;
+let _storyLikedMap = {};
+
+export function renderHomeStoriesBar(){
+  const bar = document.getElementById("homeStoriesBar");
+  if(!bar) return;
+
+  const approved = (window.allPosts || []).filter(p => getStatus(p) === "approved" && !isExpired(p) && ((p.images && p.images.length > 0) || p.imageUrl));
+  
+  if(approved.length === 0){
+    bar.style.display = "none";
+    return;
+  }
+  bar.style.display = "flex";
+
+  _storiesList = approved.slice(0, 12).map((p, idx) => ({
+    id: p.id,
+    title: p.title || "إعلان مميز",
+    price: p.price ? formatPrice(p.price) + " د.ل" : "تواصل",
+    image: (p.images && p.images[0]) || p.imageUrl || "car.png",
+    userName: p.storeName || p.user_name || "معلن موثوق",
+    userAvatar: p.storeLogo || "icon-192.png",
+    likes: (p.likesCount || 0) + (p.views ? Math.min(24, Math.floor(p.views / 5)) : 5),
+    timeAgo: p.created_at ? formatTimeAgo(p.created_at) : "اليوم",
+    post: p
+  }));
+
+  bar.innerHTML = _storiesList.map((s, idx) => `
+    <div class="storyCircleItem" onclick="openStoryViewer(${idx})">
+      <div class="storyRing ${window._seenStories && window._seenStories.includes(s.id) ? 'seen' : ''}">
+        <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
+      </div>
+      <div class="storyTitle">${escapeHtml(s.title)}</div>
+    </div>
+  `).join("");
+}
+window.renderHomeStoriesBar = renderHomeStoriesBar;
+
+export function openStoryViewer(idx){
+  if(!_storiesList || _storiesList.length === 0) return;
+  _currentStoryIndex = Math.max(0, Math.min(idx, _storiesList.length - 1));
+  const s = _storiesList[_currentStoryIndex];
+  
+  const modal = document.getElementById("storyViewerOverlay");
+  if(!modal) return;
+  modal.classList.remove("hidden");
+
+  if(!window._seenStories) window._seenStories = [];
+  if(!window._seenStories.includes(s.id)) window._seenStories.push(s.id);
+
+  showStoryItem(_currentStoryIndex);
+}
+window.openStoryViewer = openStoryViewer;
+
+function showStoryItem(idx){
+  const s = _storiesList[idx];
+  if(!s) return;
+
+  const avatar = document.getElementById("storyUserAvatar");
+  const name = document.getElementById("storyUserName");
+  const time = document.getElementById("storyTimeAgo");
+  const img = document.getElementById("storyMediaImg");
+  const vid = document.getElementById("storyMediaVideo");
+  const title = document.getElementById("storyBottomTitle");
+  const price = document.getElementById("storyBottomPrice");
+  const likeCount = document.getElementById("storyLikeCount");
+  const progressBar = document.getElementById("storyProgressBarInner");
+
+  if(avatar) avatar.src = s.userAvatar;
+  if(name) name.textContent = s.userName;
+  if(time) time.textContent = s.timeAgo;
+  if(title) title.textContent = s.title;
+  if(price) price.textContent = s.price;
+  
+  const isLiked = !!_storyLikedMap[s.id];
+  if(likeCount) likeCount.textContent = s.likes + (isLiked ? 1 : 0);
+  const icon = document.getElementById("storyLikeIcon");
+  if(icon) icon.textContent = isLiked ? "💖" : "❤️";
+
+  if(img){
+    img.src = s.image;
+    img.style.display = "block";
+  }
+  if(vid) vid.style.display = "none";
+
+  if(_storyProgressTimer) clearInterval(_storyProgressTimer);
+  if(progressBar) progressBar.style.width = "0%";
+  
+  let pVal = 0;
+  _storyProgressTimer = setInterval(() => {
+    pVal += 2;
+    if(progressBar) progressBar.style.width = pVal + "%";
+    if(pVal >= 100){
+      clearInterval(_storyProgressTimer);
+      if(_currentStoryIndex < _storiesList.length - 1){
+        _currentStoryIndex++;
+        showStoryItem(_currentStoryIndex);
+      } else {
+        closeStoryViewer();
+      }
+    }
+  }, 140);
+}
+
+export function handleStoryTap(event){
+  const rect = event.currentTarget.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  if(clickX < rect.width * 0.35){
+    if(_currentStoryIndex > 0){
+      _currentStoryIndex--;
+      showStoryItem(_currentStoryIndex);
+    }
+  } else {
+    if(_currentStoryIndex < _storiesList.length - 1){
+      _currentStoryIndex++;
+      showStoryItem(_currentStoryIndex);
+    } else {
+      closeStoryViewer();
+    }
+  }
+}
+window.handleStoryTap = handleStoryTap;
+
+export function closeStoryViewer(){
+  if(_storyProgressTimer) clearInterval(_storyProgressTimer);
+  const modal = document.getElementById("storyViewerOverlay");
+  if(modal) modal.classList.add("hidden");
+  const vid = document.getElementById("storyMediaVideo");
+  if(vid){ vid.pause(); vid.src = ""; }
+}
+window.closeStoryViewer = closeStoryViewer;
+
+export function toggleStoryLike(){
+  const s = _storiesList[_currentStoryIndex];
+  if(!s) return;
+  _storyLikedMap[s.id] = !_storyLikedMap[s.id];
+  const isLiked = _storyLikedMap[s.id];
+  const countEl = document.getElementById("storyLikeCount");
+  const icon = document.getElementById("storyLikeIcon");
+  if(countEl) countEl.textContent = s.likes + (isLiked ? 1 : 0);
+  if(icon) icon.textContent = isLiked ? "💖" : "❤️";
+  showToast(isLiked ? "تم الإعجاب بالستوري ❤️" : "تم إلغاء الإعجاب");
+}
+window.toggleStoryLike = toggleStoryLike;
+
+export function openStoryChat(){
+  const s = _storiesList[_currentStoryIndex];
+  if(!s) return;
+  closeStoryViewer();
+  if(s.post && typeof openPost === "function"){
+    openPost(s.id);
+  }
+}
+window.openStoryChat = openStoryChat;
+
+export async function shareCurrentStory(){
+  const s = _storiesList[_currentStoryIndex];
+  if(!s) return;
+  const url = `https://tasawuqnow.com/#post-${s.id}`;
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: s.title,
+        text: `شاهد ستوري "${s.title}" على تسوق الآن:`,
+        url: url
+      });
+      return;
+    } catch(e){}
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast("تم نسخ رابط الستوري بنجاح 🔗", "success");
+  } catch(e){
+    showToast(url);
+  }
+}
+window.shareCurrentStory = shareCurrentStory;
+
+export async function reportCurrentStory(){
+  const s = _storiesList[_currentStoryIndex];
+  if(!s) return;
+  const reason = prompt("ما هو سبب الإبلاغ عن هذا الستوري؟ (مثال: محتوى غير لائق، إعلان احتيالي، سلعة مخالفة):");
+  if(!reason || !reason.trim()) return;
+
+  try {
+    await addDoc(collection(db, "feedback"), {
+      type: "story_report",
+      message: JSON.stringify({
+        storyId: s.id,
+        storyTitle: s.title,
+        reason: reason.trim(),
+        reporterUid: auth.currentUser ? auth.currentUser.uid : "زائر",
+        timestamp: Date.now()
+      }),
+      created_at: Date.now()
+    });
+    showToast("شكراً لك، تم استلام بلاغك وستتم مراجعته فوراً من الإدارة 🛡️", "success");
+  } catch(err){
+    showToast("تم استلام بلاغك للإدارة");
+  }
+}
+window.reportCurrentStory = reportCurrentStory;
+
+export function viewAdFromStory(){
+  const s = _storiesList[_currentStoryIndex];
+  if(!s) return;
+  closeStoryViewer();
+  if(typeof openPost === "function") openPost(s.id);
+}
+window.viewAdFromStory = viewAdFromStory;
