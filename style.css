@@ -1972,43 +1972,112 @@ html.dark-mode .walletHeaderBtn {
 }
 
 /* ============================================
-   💬 Buyer-Seller Live Chat Styles (دردشة الشاري والبائع)
+   💬 Buyer-Seller Live Chat Styles (دردشة الشاري والبائع المعاصرة)
    ============================================ */
+#chatMessagesBox {
+  background-color: var(--bg);
+  background-image: radial-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+html.dark-mode #chatMessagesBox {
+  background-color: #0b141a;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+}
+
+.chatDateDivider {
+  align-self: center;
+  background: rgba(100, 116, 139, 0.12);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin: 8px auto;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+html.dark-mode .chatDateDivider {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
 .chatBubble {
   max-width: 82%;
-  padding: 10px 14px;
-  border-radius: 14px;
-  font-size: 13.5px;
+  padding: 9px 13px;
+  font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
   position: relative;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
 }
+
+/* رسائلك أنت (على اليسار مثل واتساب وتيليجرام العربي) */
 .chatBubble.outgoing {
-  align-self: flex-start;
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #fff;
-  border-bottom-right-radius: 3px;
-}
-.chatBubble.incoming {
   align-self: flex-end;
+  margin-left: 0;
+  margin-right: auto;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 1.5px 4px rgba(2,132,199,0.22);
+}
+
+/* رسائل الطرف الآخر (على اليمين مثل واتساب وتيليجرام العربي) */
+.chatBubble.incoming {
+  align-self: flex-start;
+  margin-right: 0;
+  margin-left: auto;
   background: var(--card);
   color: var(--text);
   border: 1px solid var(--border);
-  border-bottom-left-radius: 3px;
+  border-radius: 16px 16px 16px 4px;
+  box-shadow: 0 1.5px 4px rgba(0,0,0,0.04);
 }
+
+.chatBubbleContent {
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chatBubbleMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 10.5px;
+  opacity: 0.85;
+}
+
+.chatBubble.outgoing .chatBubbleMeta {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chatBubble.incoming .chatBubbleMeta {
+  color: var(--muted);
+}
+
+.chatTicks {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-right: 2px;
+}
+.chatBubble.outgoing .chatTicks {
+  color: #bae6fd;
+}
+
 .chatBubble .chatTime {
   font-size: 10px;
-  opacity: 0.75;
-  margin-top: 4px;
-  display: block;
-  text-align: left;
+  display: inline-block;
 }
+
 .inboxRow {
   background: var(--card);
   border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -2016,14 +2085,14 @@ html.dark-mode .walletHeaderBtn {
   transition: transform 0.1s, background 0.15s, border-color 0.15s;
 }
 .inboxRow:hover {
-  border-color: var(--teal);
+  border-color: #0284c7;
 }
 .inboxRow:active {
   transform: scale(0.99);
 }
 .inboxAvatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
   color: #fff;
@@ -2031,7 +2100,7 @@ html.dark-mode .walletHeaderBtn {
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 17px;
+  font-size: 18px;
   flex: 0 0 auto;
 }
 .inboxBadge {
