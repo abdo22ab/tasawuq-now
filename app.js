@@ -8721,8 +8721,27 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   // تركيز حقل الكتابة
   setTimeout(() => {
     const input = document.getElementById("chatMessageInput");
-    if(input) input.focus();
+    if(input){
+      input.focus();
+      handleChatInputChange(input);
+    }
   }, 100);
+
+  // ضبط شاشة الدردشة لتتبع لوحة مفاتيح الآيفون فوراً وتثبيت شريط الكتابة
+  if(window.visualViewport){
+    const handleViewportResize = () => {
+      const chat = document.getElementById("userChatOverlay");
+      if(chat && !chat.classList.contains("hidden")){
+        chat.style.height = window.visualViewport.height + "px";
+        const box = document.getElementById("chatMessagesBox");
+        if(box) box.scrollTop = box.scrollHeight;
+      }
+    };
+    try {
+      window.visualViewport.removeEventListener('resize', handleViewportResize);
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    } catch(e){}
+  }
 
   // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
   await loadChatMessages(convId, false);
@@ -8820,8 +8839,27 @@ export function closeUserChat(){
 }
 window.closeUserChat = closeUserChat;
 
+export function handleChatInputChange(input){
+  const text = (input ? input.value : "").trim();
+  const sendBtn = document.getElementById("btnSendUserChat");
+  const micBtn = document.getElementById("btnVoiceRecordChat");
+  if(sendBtn && micBtn){
+    if(text.length > 0){
+      sendBtn.style.display = "flex";
+      micBtn.style.display = "none";
+    } else {
+      sendBtn.style.display = "none";
+      micBtn.style.display = "flex";
+    }
+  }
+}
+window.handleChatInputChange = handleChatInputChange;
+
 export async function sendUserChatMessage(){
-  if(!window._activeChat) return;
+  if(!window._activeChat){
+    showToast("يرجى فتح المحادثة أولاً 💬", "warn");
+    return;
+  }
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لإرسال الرسالة", "warn");
     return;
@@ -8832,11 +8870,12 @@ export async function sendUserChatMessage(){
   if(!text) return;
 
   const me = auth.currentUser;
-  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || (window.myProfile && window.myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
 
-  // تنظيف الحقل فوراً لاستجابة سريعة
+  // تنظيف الحقل فوراً واستعادة زر المايك
   input.value = "";
+  handleChatInputChange(input);
   input.focus();
 
   // إظهار الرسالة مباشرة في الشاشة (Optimistic UI - فقاعة على اليسار مع صح واحد مؤقت)
@@ -9698,21 +9737,28 @@ export function renderHomeStoriesBar(){
   const bar = document.getElementById("homeStoriesBar");
   if(!bar) return;
 
-  const approved = (window.allPosts || []).filter(p => getStatus(p) === "approved" && !isExpired(p) && ((p.images && p.images.length > 0) || p.imageUrl));
-  
-  if(approved.length === 0){
-    bar.style.display = "none";
-    return;
-  }
-  bar.style.display = "flex";
+  // استدعاء الإعلانات بشكل سليم وموثوق
+  const rawPosts = (typeof allPosts !== "undefined" && Array.isArray(allPosts)) ? allPosts : ((window.allPosts && Array.isArray(window.allPosts)) ? window.allPosts : []);
+  const approved = rawPosts.filter(p => getStatus(p) === "approved" && !isExpired(p));
 
-  const defaultStories = approved.slice(0, 12).map((p, idx) => ({
+  const myStoryCircle = `
+    <div class="storyCircleItem" onclick="handleMyStoryClick()" title="نشر فيديو في قصتك">
+      <div class="storyRing seen" style="border:2px dashed #0284c7;background:transparent;display:flex;align-items:center;justify-content:center;position:relative">
+        <span style="font-size:22px;color:#0284c7">➕</span>
+      </div>
+      <div class="storyTitle" style="color:#0284c7;font-weight:900">قصتك +</div>
+    </div>
+  `;
+
+  // تحويل القصص إلى فيديوهات بالكامل (فيديو ريلز عمودي)
+  const defaultStories = approved.slice(0, 15).map((p, idx) => ({
     id: p.id,
-    title: p.title || "إعلان مميز",
+    title: p.title || "فيديو مميز",
     price: p.price ? formatPrice(p.price) + " د.ل" : "تواصل",
     image: (p.images && p.images[0]) || p.imageUrl || "car.png",
-    mediaType: "image",
-    userName: p.storeName || p.user_name || "معلن موثوق",
+    videoUrl: p.videoUrl || "1000068463.mp4",
+    mediaType: "video",
+    userName: p.storeName || p.sellerName || p.user_name || "معلن موثوق",
     userAvatar: p.storeLogo || "icon-192.png",
     likes: (p.likesCount || 0) + (p.views ? Math.min(24, Math.floor(p.views / 5)) : 5),
     timeAgo: p.created_at ? formatTimeAgo(p.created_at) : "اليوم",
@@ -9722,23 +9768,18 @@ export function renderHomeStoriesBar(){
   const userStories = (window._customUserStories || []).filter(s => (s.expiresAt || 0) > Date.now());
   _storiesList = [...userStories, ...defaultStories];
 
-  const myStoryCircle = `
-    <div class="storyCircleItem" onclick="handleMyStoryClick()" title="نشر ستوري في قصتك">
-      <div class="storyRing seen" style="border:2px dashed #0284c7;background:transparent;display:flex;align-items:center;justify-content:center">
-        <span style="font-size:22px;color:#0284c7">➕</span>
-      </div>
-      <div class="storyTitle" style="color:#0284c7;font-weight:900">قصتك +</div>
-    </div>
-  `;
+  if(_storiesList.length === 0){
+    bar.innerHTML = myStoryCircle;
+    bar.style.display = "flex";
+    return;
+  }
 
+  bar.style.display = "flex";
   bar.innerHTML = myStoryCircle + _storiesList.map((s, idx) => `
     <div class="storyCircleItem" onclick="openStoryViewer(${idx})">
-      <div class="storyRing ${window._seenStories && window._seenStories.includes(s.id) ? 'seen' : ''}">
-        ${s.mediaType === 'video' ? `
-          <div style="width:100%;height:100%;border-radius:50%;background:#0f172a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;border:2px solid var(--card)">🎬</div>
-        ` : `
-          <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
-        `}
+      <div class="storyRing ${window._seenStories && window._seenStories.includes(s.id) ? 'seen' : ''}" style="position:relative">
+        <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
+        <span class="storyVideoBadge">▶</span>
       </div>
       <div class="storyTitle">${escapeHtml(s.title)}</div>
     </div>
@@ -9775,6 +9816,7 @@ function showStoryItem(idx){
   const price = document.getElementById("storyBottomPrice");
   const likeCount = document.getElementById("storyLikeCount");
   const progressBar = document.getElementById("storyProgressBarInner");
+  const muteBtn = document.getElementById("storyMuteBtn");
 
   if(avatar) avatar.src = s.userAvatar;
   if(name) name.textContent = s.userName;
@@ -9787,58 +9829,75 @@ function showStoryItem(idx){
   const icon = document.getElementById("storyLikeIcon");
   if(icon) icon.textContent = isLiked ? "💖" : "❤️";
 
-  if(s.mediaType === "video" || (s.image && s.image.startsWith("data:video"))){
-    if(img) img.style.display = "none";
-    if(vid){
-      vid.style.display = "block";
-      vid.src = s.image;
-      vid.currentTime = 0;
-      vid.play().catch(()=>{});
-    }
-  } else {
-    if(vid){
-      vid.style.display = "none";
-      try { vid.pause(); vid.src = ""; } catch(e){}
-    }
-    if(img){
-      img.src = s.image;
-      img.style.display = "block";
-    }
-  }
-
   if(_storyProgressTimer) clearInterval(_storyProgressTimer);
   if(progressBar) progressBar.style.width = "0%";
-  
-  let pVal = 0;
-  _storyProgressTimer = setInterval(() => {
-    pVal += 2;
-    if(progressBar) progressBar.style.width = pVal + "%";
-    if(pVal >= 100){
-      clearInterval(_storyProgressTimer);
+
+  const videoSrc = s.videoUrl || (s.mediaType === 'video' ? s.image : '') || "1000068463.mp4";
+
+  if(img) img.style.display = "none";
+  if(vid){
+    vid.style.display = "block";
+    vid.src = videoSrc;
+    vid.currentTime = 0;
+    vid.muted = (window._storyMuted !== false);
+    if(muteBtn) muteBtn.textContent = vid.muted ? "🔇" : "🔊";
+
+    vid.onloadedmetadata = () => {
+      vid.play().catch(()=>{});
+    };
+    vid.ontimeupdate = () => {
+      if(vid.duration && vid.duration > 0){
+        const pct = Math.min(100, (vid.currentTime / vid.duration) * 100);
+        if(progressBar) progressBar.style.width = pct + "%";
+      }
+    };
+    vid.onended = () => {
       if(_currentStoryIndex < _storiesList.length - 1){
         _currentStoryIndex++;
         showStoryItem(_currentStoryIndex);
       } else {
         closeStoryViewer();
       }
-    }
-  }, 140);
+    };
+    vid.play().catch(()=>{});
+  }
 }
 
+export function toggleStoryMute(event){
+  if(event) event.stopPropagation();
+  const vid = document.getElementById("storyMediaVideo");
+  const btn = document.getElementById("storyMuteBtn");
+  if(!vid) return;
+  vid.muted = !vid.muted;
+  window._storyMuted = vid.muted;
+  if(btn) btn.textContent = vid.muted ? "🔇" : "🔊";
+  showToast(vid.muted ? "تم كتم الصوت 🔇" : "تم تشغيل الصوت 🔊", "info", 1500);
+}
+window.toggleStoryMute = toggleStoryMute;
+
 export function handleStoryTap(event){
+  const vid = document.getElementById("storyMediaVideo");
   const rect = event.currentTarget.getBoundingClientRect();
   const clickX = event.clientX - rect.left;
-  if(clickX < rect.width * 0.35){
+  if(clickX < rect.width * 0.28){
     if(_currentStoryIndex > 0){
       _currentStoryIndex--;
       showStoryItem(_currentStoryIndex);
     }
-  } else {
+  } else if(clickX > rect.width * 0.72){
     if(_currentStoryIndex < _storiesList.length - 1){
       _currentStoryIndex++;
       showStoryItem(_currentStoryIndex);
     } else {
       closeStoryViewer();
+    }
+  } else {
+    if(vid){
+      if(vid.paused){
+        vid.play().catch(()=>{});
+      } else {
+        vid.pause();
+      }
     }
   }
 }
@@ -9849,7 +9908,12 @@ export function closeStoryViewer(){
   const modal = document.getElementById("storyViewerOverlay");
   if(modal) modal.classList.add("hidden");
   const vid = document.getElementById("storyMediaVideo");
-  if(vid){ vid.pause(); vid.src = ""; }
+  if(vid){
+    vid.pause();
+    vid.ontimeupdate = null;
+    vid.onended = null;
+    vid.src = "";
+  }
 }
 window.closeStoryViewer = closeStoryViewer;
 
