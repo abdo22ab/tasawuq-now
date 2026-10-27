@@ -333,20 +333,21 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- 👤 شاشة حسابي الكاملة (Account Full Screen) -->
 <!-- ============================================ -->
 <div id="accountScreen" class="screen hidden">
-  <div class="screenHeader" style="background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20">
-    <button class="back" onclick="backFromAccount()" style="font-size:22px;padding:4px 8px;cursor:pointer">➔</button>
-    <h3 style="flex:1;text-align:center;padding-left:36px;font-weight:900;font-size:16px">👤 حسابي الشخصي</h3>
+  <div class="screenHeader" style="background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:25;display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+    <button type="button" class="back" onclick="backFromAccount()" style="font-size:22px;padding:4px 8px;cursor:pointer;background:none;border:none;color:var(--text);display:flex;align-items:center">➔</button>
+    <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)">حسابي</h3>
+    <div style="width:32px"></div>
   </div>
 
-  <div style="padding:16px 16px 90px;max-width:600px;margin:auto;display:flex;flex-direction:column;gap:14px">
+  <div style="padding:16px 16px 90px;max-width:560px;margin:auto;display:flex;flex-direction:column;gap:14px">
     
     <!-- 📇 كرت الملف الشخصي الأنيق (Profile Hero Card) -->
-    <div style="background:linear-gradient(135deg, #0f766e, #0d9488);border-radius:18px;padding:18px;color:#fff;box-shadow:0 6px 20px rgba(15,118,110,0.22);position:relative">
+    <div style="background:linear-gradient(135deg, #0f766e, #0d9488);border-radius:18px;padding:18px;color:#fff;box-shadow:0 4px 14px rgba(15,118,110,0.18);position:relative">
       <div style="display:flex;align-items:center;gap:14px">
-        <div id="accHeroAvatar" style="width:58px;height:58px;border-radius:50%;background:#fff;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.15)">👤</div>
+        <div id="accHeroAvatar" style="width:54px;height:54px;border-radius:50%;background:#fff;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.12)">👤</div>
         <div style="flex:1;min-width:0">
-          <div id="accountName" style="font-size:18px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">مستخدم</div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px">
+          <div id="accountName" style="font-size:17px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">مستخدم</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px">
             <span id="accountMemberNo" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-block">#...</span>
             <span id="accountUsername" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;direction:ltr;display:inline-block">@...</span>
           </div>
@@ -415,50 +416,34 @@ OneSignalDeferred.push(async function(OneSignal){
 
     <!-- ✏️ بطاقة تعديل بيانات الحساب -->
     <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px">
-      <div style="font-weight:900;font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <span>✏️</span> تعديل وتحديث بيانات الحساب
+      <div style="font-weight:900;font-size:14px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <span>✏️</span> تعديل بيانات الحساب
       </div>
       
-      <div class="field" style="margin-bottom:12px">
+      <div class="field" style="margin-bottom:6px">
         <label>اسمك الظاهر</label>
-        <div style="display:flex;gap:6px">
-          <input id="myName" maxlength="30" placeholder="اسمك الكامل" style="flex:1">
-          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyName()">💾 حفظ</button>
-        </div>
+        <input id="myName" maxlength="30" placeholder="اسمك الكامل">
       </div>
+      <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:12px" onclick="saveMyName()">💾 حفظ الاسم</button>
 
-      <div class="field" style="margin-bottom:12px">
+      <div class="field" style="margin-bottom:6px">
         <label>اسم المستخدم (@username)</label>
-        <div style="display:flex;gap:6px">
-          <input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" style="flex:1" oninput="normalizeUsernameInput()">
-          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyUsername()">🏷️ حفظ</button>
-        </div>
+        <input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()">
       </div>
+      <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:12px" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 
-      <div class="field" style="margin-bottom:4px">
-        <label>📱 رقم الواتساب (يظهر في كل إعلاناتك للتواصل)</label>
-        <div style="display:flex;gap:6px">
-          <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" style="flex:1" oninput="normalizePhoneInput()">
-          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyPhone()">📱 حفظ</button>
-        </div>
+      <div class="field" style="margin-bottom:6px">
+        <label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label>
+        <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()">
         <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div>
       </div>
+      <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:4px" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
     </div>
 
     <!-- 🛠️ خيارات إضافية -->
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="openMySeller()">
         <span style="font-weight:800;font-size:14px">👤 صفحتي العامة كبائع وتقييماتي</span>
-        <span>‹</span>
-      </button>
-
-      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="showMyPosts()">
-        <span style="font-weight:800;font-size:14px">📋 إعلاناتي المعروضة</span>
-        <span>‹</span>
-      </button>
-
-      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="showFavorites()">
-        <span style="font-weight:800;font-size:14px">❤️ قائمة إعلاناتي المفضلة</span>
         <span>‹</span>
       </button>
 
@@ -497,6 +482,7 @@ OneSignalDeferred.push(async function(OneSignal){
 
   </div>
 </div>
+<div id="accountOverlay" class="hidden" style="display:none"></div>
 
 
 
@@ -1475,7 +1461,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=31"></script>
+<script type="module" src="app.js?v=32"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
