@@ -47,7 +47,7 @@ function checkSystemIntegrity() {
 
     // 3. واجهات المستخدم والقوالب
     ['نافذة الدردشة المباشرة (userChatOverlay)', loaded.index.includes('id="userChatOverlay"')],
-    ['نافذة صندوق الرسائل (userInboxOverlay)', loaded.index.includes('id="userInboxOverlay"')],
+    ['شاشة صندوق الرسائل الكاملة (inboxScreen / userInboxOverlay)', loaded.index.includes('id="inboxScreen"') || loaded.index.includes('id="userInboxOverlay"')],
     ['زر التنبيهات والرسائل في الترويسة (chatHeaderBtn)', loaded.index.includes('id="chatHeaderBtn"')],
     ['أنماط وتنسيقات فقاعات الدردشة (chatBubble)', loaded.css.includes('.chatBubble')],
     ['أنماط وتنسيقات صفوف صندوق الوارد (inboxRow)', loaded.css.includes('.inboxRow')]
