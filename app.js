@@ -2886,6 +2886,7 @@ const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id
 const del=canDelete?`<button class="iconBtn2 delBtn" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const renewBtn=canDelete && !isSold?`<button class="iconBtn2 renewBtn" onclick="renewPost('${p.id}',event)" title="تجديد 30 يوم">🔄</button>`:"";
 const soldToggle=canDelete?`<button class="iconBtn2 soldBtn" onclick="toggleSold('${p.id}',event)" title="${isSold?'إلغاء البيع':'تم البيع'}">${isSold?'↩️':'✅'}</button>`:"";
+const storyBtn=(isOwner||isAdmin)&&status==="approved"&&!isSold?`<button class="iconBtn2 storyBtn" onclick="publishPostToStory('${p.id}',event)" title="نشر كستوري في قصتك 📸" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-weight:900;border:none">📸 قصتك</button>`:"";
 const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const inCompare=compareList.includes(p.id);
@@ -2922,7 +2923,7 @@ if(p.priceType==="contact"){
 }else{
   priceHTML=`<div class="price">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadge}</div>`;
 }
-return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
+return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${storyBtn}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
 
@@ -2986,6 +2987,7 @@ const renewBtnBig=(isOwner||isAdmin||isMyStorePost) && !isSold?`<button class="r
 const soldBtnBig=(isOwner||isAdmin||isMyStorePost)?(isSold?`<button class="unsoldBtnBig" onclick="toggleSold('${p.id}')">↩️ إلغاء (تم البيع)</button>`:`<button class="soldBtnBig" onclick="toggleSold('${p.id}')">✅ تم البيع</button>`):"";
 let upgradeBtn="";
 if(isOwner && status==="approved" && !expired && !isSold){if(isPostFeatured(p))upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;else upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;}
+const storyBtnBig=(isOwner||isAdmin||isMyStorePost)&&status==="approved"&&!isSold?`<button type="button" class="upgradeBtn" onclick="publishPostToStory('${p.id}')" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;margin-top:8px">📸 نشر في قصتك (ستوري مميز)</button>`:"";
 let adminPanel="";
 if(isAdmin){
 if(status==="pending")adminPanel=`<div class="reviewBox"><div class="rbTitle">⏳ بانتظار المراجعة</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button><button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button></div></div>`;
@@ -3019,7 +3021,7 @@ if(p.priceType==="contact"){
   priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
 }
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${storyBtnBig}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
@@ -3115,7 +3117,8 @@ if(wasEditing){
 const oldPost=allPosts.find(p=>p.id===editingPostId);
 const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
 const newExpires=Date.now()+POST_DURATION_MS;
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+const newStatus = (isAdmin || (oldPost && oldPost.status === "approved")) ? "approved" : "pending";
+const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:newStatus,approvedAt:newStatus==="approved"?(oldPost?.approvedAt||Date.now()):null,rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
 if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
 await updateDoc(doc(db,"posts",editingPostId),upd);
 }
@@ -9703,11 +9706,12 @@ export function renderHomeStoriesBar(){
   }
   bar.style.display = "flex";
 
-  _storiesList = approved.slice(0, 12).map((p, idx) => ({
+  const defaultStories = approved.slice(0, 12).map((p, idx) => ({
     id: p.id,
     title: p.title || "إعلان مميز",
     price: p.price ? formatPrice(p.price) + " د.ل" : "تواصل",
     image: (p.images && p.images[0]) || p.imageUrl || "car.png",
+    mediaType: "image",
     userName: p.storeName || p.user_name || "معلن موثوق",
     userAvatar: p.storeLogo || "icon-192.png",
     likes: (p.likesCount || 0) + (p.views ? Math.min(24, Math.floor(p.views / 5)) : 5),
@@ -9715,10 +9719,26 @@ export function renderHomeStoriesBar(){
     post: p
   }));
 
-  bar.innerHTML = _storiesList.map((s, idx) => `
+  const userStories = (window._customUserStories || []).filter(s => (s.expiresAt || 0) > Date.now());
+  _storiesList = [...userStories, ...defaultStories];
+
+  const myStoryCircle = `
+    <div class="storyCircleItem" onclick="handleMyStoryClick()" title="نشر ستوري في قصتك">
+      <div class="storyRing seen" style="border:2px dashed #0284c7;background:transparent;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:22px;color:#0284c7">➕</span>
+      </div>
+      <div class="storyTitle" style="color:#0284c7;font-weight:900">قصتك +</div>
+    </div>
+  `;
+
+  bar.innerHTML = myStoryCircle + _storiesList.map((s, idx) => `
     <div class="storyCircleItem" onclick="openStoryViewer(${idx})">
       <div class="storyRing ${window._seenStories && window._seenStories.includes(s.id) ? 'seen' : ''}">
-        <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
+        ${s.mediaType === 'video' ? `
+          <div style="width:100%;height:100%;border-radius:50%;background:#0f172a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;border:2px solid var(--card)">🎬</div>
+        ` : `
+          <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
+        `}
       </div>
       <div class="storyTitle">${escapeHtml(s.title)}</div>
     </div>
@@ -9767,11 +9787,24 @@ function showStoryItem(idx){
   const icon = document.getElementById("storyLikeIcon");
   if(icon) icon.textContent = isLiked ? "💖" : "❤️";
 
-  if(img){
-    img.src = s.image;
-    img.style.display = "block";
+  if(s.mediaType === "video" || (s.image && s.image.startsWith("data:video"))){
+    if(img) img.style.display = "none";
+    if(vid){
+      vid.style.display = "block";
+      vid.src = s.image;
+      vid.currentTime = 0;
+      vid.play().catch(()=>{});
+    }
+  } else {
+    if(vid){
+      vid.style.display = "none";
+      try { vid.pause(); vid.src = ""; } catch(e){}
+    }
+    if(img){
+      img.src = s.image;
+      img.style.display = "block";
+    }
   }
-  if(vid) vid.style.display = "none";
 
   if(_storyProgressTimer) clearInterval(_storyProgressTimer);
   if(progressBar) progressBar.style.width = "0%";
@@ -9898,3 +9931,129 @@ export function viewAdFromStory(){
   if(typeof openPost === "function") openPost(s.id);
 }
 window.viewAdFromStory = viewAdFromStory;
+
+/* ============================================
+   📸 نشر الإعلان في قصتك (Story Publisher)
+   ============================================ */
+let _pendingStoryPost = null;
+
+window.handleMyStoryClick = function(){
+  if(!auth.currentUser){
+    pendingAction = "mine";
+    if(authOverlay) authOverlay.classList.remove("hidden");
+    return;
+  }
+  showMyPosts();
+  showToast("💡 اختر أي إعلان واضغط على زر [ 📸 قصتك ] لنشره في الستوري فوراً!", "info", 4000);
+};
+
+window.publishPostToStory = function(postId, event){
+  if(event) event.stopPropagation();
+  const p = allPosts.find(x => x.id === postId);
+  if(!p) return;
+  _pendingStoryPost = p;
+
+  const modal = document.getElementById("publishStoryModal");
+  const imgEl = document.getElementById("pubStoryPostImg");
+  const titleEl = document.getElementById("pubStoryPostTitle");
+  const priceEl = document.getElementById("pubStoryPostPrice");
+  const statusEl = document.getElementById("pubStoryUploadStatus");
+
+  if(imgEl) imgEl.src = (p.images && p.images[0]) || p.imageUrl || "car.png";
+  if(titleEl) titleEl.textContent = p.title || "إعلان";
+  if(priceEl) priceEl.textContent = p.price ? formatPrice(p.price) + " د.ل" : "تواصل";
+  if(statusEl) statusEl.style.display = "none";
+
+  if(modal) modal.classList.remove("hidden");
+};
+
+window.closePublishStoryModal = function(){
+  const modal = document.getElementById("publishStoryModal");
+  if(modal) modal.classList.add("hidden");
+  _pendingStoryPost = null;
+};
+
+window.confirmPublishCurrentPhotoStory = async function(){
+  if(!_pendingStoryPost) return;
+  const p = _pendingStoryPost;
+  const img = (p.images && p.images[0]) || p.imageUrl || "car.png";
+  await saveAndActivateStory(p, img, "image");
+};
+
+window.handleStoryCustomFileSelected = async function(input){
+  if(!input.files || input.files.length === 0 || !_pendingStoryPost) return;
+  const file = input.files[0];
+  const isVideo = file.type.startsWith("video");
+  const statusEl = document.getElementById("pubStoryUploadStatus");
+  
+  if(file.size > 25 * 1024 * 1024){
+    showToast("⚠️ حجم الملف كبير، يرجى اختيار فيديو أو صورة أقل من 25 ميجابايت", "warn");
+    return;
+  }
+
+  if(statusEl){
+    statusEl.style.display = "block";
+    statusEl.textContent = "⏳ جاري تجهيز " + (isVideo ? "الفيديو..." : "الصورة...");
+  }
+
+  try {
+    let finalUrl = "";
+    if(!isVideo && typeof uploadToImgBB === "function"){
+      finalUrl = await uploadToImgBB(file);
+    } else {
+      finalUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    await saveAndActivateStory(_pendingStoryPost, finalUrl, isVideo ? "video" : "image");
+  } catch(err){
+    console.error("Story file upload error:", err);
+    if(statusEl) statusEl.textContent = "❌ تعذر رفع الملف، يرجى المحاولة بصيغة أخرى.";
+  }
+};
+
+async function saveAndActivateStory(post, mediaUrl, mediaType){
+  const me = auth.currentUser;
+  if(!me){
+    showToast("يرجى تسجيل الدخول أولاً", "warn");
+    return;
+  }
+
+  const storyItem = {
+    id: "user_story_" + post.id,
+    postId: post.id,
+    title: post.title || "إعلان",
+    price: post.price ? formatPrice(post.price) + " د.ل" : "تواصل",
+    image: mediaUrl,
+    mediaType: mediaType,
+    userName: post.storeName || post.sellerName || (window.currentProfile && window.currentProfile.name) || "قصتي",
+    userAvatar: post.storeLogo || "icon-192.png",
+    likes: 1,
+    timeAgo: "الآن",
+    uid: me.uid,
+    isUserStory: true,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+    createdAt: Date.now(),
+    post: post
+  };
+
+  if(!window._customUserStories) window._customUserStories = [];
+  window._customUserStories.unshift(storyItem);
+
+  try {
+    await addDoc(collection(db, "feedback"), {
+      type: "active_user_story",
+      message: JSON.stringify(storyItem),
+      uid: me.uid,
+      created_at: Date.now()
+    });
+  } catch(e){}
+
+  closePublishStoryModal();
+  renderHomeStoriesBar();
+  showToast("🎉 تم نشر قصتك في الستوري بنجاح! ستظهر لكل زوار الموقع لمدة 24 ساعة 🚀", "success");
+}
