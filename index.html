@@ -330,85 +330,172 @@ OneSignalDeferred.push(async function(OneSignal){
 </div>
 
 <!-- ============================================ -->
-<!-- Overlay حسابي -->
+<!-- 👤 شاشة حسابي الكاملة (Account Full Screen) -->
 <!-- ============================================ -->
-<div id="accountOverlay" class="overlay hidden">
-<div class="sheet">
-<h3>حسابي</h3>
-<div class="accountEmail" id="accountEmail" style="display:none"></div>
-<div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
-<div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
-<div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
+<div id="accountScreen" class="screen hidden">
+  <div class="screenHeader" style="background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20">
+    <button class="back" onclick="backFromAccount()" style="font-size:22px;padding:4px 8px;cursor:pointer">➔</button>
+    <h3 style="flex:1;text-align:center;padding-left:36px;font-weight:900;font-size:16px">👤 حسابي الشخصي</h3>
+  </div>
 
-<!-- 💳 بطاقة المحفظة الإلكترونية للمستخدم -->
-<div class="userWalletCard" id="accountWalletCard">
-  <div class="uwcTop">
-    <div class="uwcBrand">
-      <span class="uwcIcon">💳</span>
-      <div>
-        <div class="uwcTitle">المحفظة الإلكترونية</div>
-        <div class="uwcSubtitle">رصيدك الآمن للطلبات والمشتريات</div>
+  <div style="padding:16px 16px 90px;max-width:600px;margin:auto;display:flex;flex-direction:column;gap:14px">
+    
+    <!-- 📇 كرت الملف الشخصي الأنيق (Profile Hero Card) -->
+    <div style="background:linear-gradient(135deg, #0f766e, #0d9488);border-radius:18px;padding:18px;color:#fff;box-shadow:0 6px 20px rgba(15,118,110,0.22);position:relative">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div id="accHeroAvatar" style="width:58px;height:58px;border-radius:50%;background:#fff;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.15)">👤</div>
+        <div style="flex:1;min-width:0">
+          <div id="accountName" style="font-size:18px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">مستخدم</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px">
+            <span id="accountMemberNo" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-block">#...</span>
+            <span id="accountUsername" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;direction:ltr;display:inline-block">@...</span>
+          </div>
+          <div id="accountEmail" style="display:none"></div>
+        </div>
       </div>
     </div>
-    <div class="uwcBadge">🟢 حساب مفعل</div>
-  </div>
-  <div class="uwcBalanceArea">
-    <div class="uwcBalanceLabel">الرصيد المتاح حالياً</div>
-    <div class="uwcBalanceNum"><span id="userWalletBalanceText">0.00</span> <small>د.ل</small></div>
-  </div>
-  <div class="uwcButtonsGrid">
-    <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
-      <span>⚡</span> شحن المحفظة
+
+    <!-- 💳 بطاقة المحفظة الإلكترونية للمستخدم -->
+    <div class="userWalletCard" id="accountWalletCard" style="margin:0;box-shadow:0 4px 14px rgba(2,132,199,0.12)">
+      <div class="uwcTop">
+        <div class="uwcBrand">
+          <span class="uwcIcon">💳</span>
+          <div>
+            <div class="uwcTitle">المحفظة الإلكترونية</div>
+            <div class="uwcSubtitle">رصيدك الآمن للطلبات والمشتريات</div>
+          </div>
+        </div>
+        <div class="uwcBadge">🟢 حساب مفعل</div>
+      </div>
+      <div class="uwcBalanceArea">
+        <div class="uwcBalanceLabel">الرصيد المتاح حالياً</div>
+        <div class="uwcBalanceNum"><span id="userWalletBalanceText">0.00</span> <small>د.ل</small></div>
+      </div>
+      <div class="uwcButtonsGrid">
+        <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
+          <span>⚡</span> شحن المحفظة
+        </button>
+        <button type="button" class="uwcBtnHistory" onclick="openMyWalletHistory()">
+          <span>📜</span> كشف الحساب
+        </button>
+      </div>
+    </div>
+
+    <!-- 💬 كرت الانتقال السريع لصندوق المحادثات والرسائل -->
+    <div onclick="openInbox()" style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.03)">
+      <div style="width:42px;height:42px;border-radius:12px;background:#eff6ff;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💬</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:900;font-size:14.5px;color:var(--text);display:flex;align-items:center;gap:6px">
+          صندوق المحادثات والرسائل
+          <span id="accountChatBadge" class="inboxBadge" style="display:none;position:static">0</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">تواصل مع المشترين والبائعين الذين راسلتهم</div>
+      </div>
+      <div style="font-size:18px;color:var(--muted)">‹</div>
+    </div>
+
+    <!-- 🏪 متجري / إدارة المتجر -->
+    <div id="accountStoreSection" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+      <div id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:13.5px;margin-bottom:8px"></div>
+      <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e;margin:0">🏪 فتح صفحة متجر أو مطعم جديد</button>
+      <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none;margin:0">🏪 الدخول لمتجري</button>
+      <button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none;margin-top:8px">🔔 طلبات المطعم الحية المباشرة</button>
+    </div>
+
+    <!-- 🎁 شارك واربح كروت شحن -->
+    <div class="referralCardBox" id="accountRefCard" style="margin:0">
+      <h4>🎁 شارك واربح كروت شحن!</h4>
+      <p>ادعُ أصحابك للتسجيل بجوجل واكسب 40 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
+      <div class="referralLinkDisplay" id="myRefLinkDisplay">https://tasawuqnow.com/?ref=...</div>
+      <div class="referralBtnsRow">
+        <button type="button" style="background:#fff;color:#0284c7" onclick="copyRefLink()">📋 نسخ الرابط</button>
+        <button type="button" style="background:#25d366;color:#fff" onclick="shareRefOnWhatsapp()">💬 واتساب</button>
+      </div>
+    </div>
+
+    <!-- ✏️ بطاقة تعديل بيانات الحساب -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px">
+      <div style="font-weight:900;font-size:14.5px;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <span>✏️</span> تعديل وتحديث بيانات الحساب
+      </div>
+      
+      <div class="field" style="margin-bottom:12px">
+        <label>اسمك الظاهر</label>
+        <div style="display:flex;gap:6px">
+          <input id="myName" maxlength="30" placeholder="اسمك الكامل" style="flex:1">
+          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyName()">💾 حفظ</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label>اسم المستخدم (@username)</label>
+        <div style="display:flex;gap:6px">
+          <input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" style="flex:1" oninput="normalizeUsernameInput()">
+          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyUsername()">🏷️ حفظ</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:4px">
+        <label>📱 رقم الواتساب (يظهر في كل إعلاناتك للتواصل)</label>
+        <div style="display:flex;gap:6px">
+          <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" style="flex:1" oninput="normalizePhoneInput()">
+          <button class="btnGhost accountBtn" style="width:auto;margin:0;padding:10px 16px" onclick="saveMyPhone()">📱 حفظ</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div>
+      </div>
+    </div>
+
+    <!-- 🛠️ خيارات إضافية -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="openMySeller()">
+        <span style="font-weight:800;font-size:14px">👤 صفحتي العامة كبائع وتقييماتي</span>
+        <span>‹</span>
+      </button>
+
+      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="showMyPosts()">
+        <span style="font-weight:800;font-size:14px">📋 إعلاناتي المعروضة</span>
+        <span>‹</span>
+      </button>
+
+      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="showFavorites()">
+        <span style="font-weight:800;font-size:14px">❤️ قائمة إعلاناتي المفضلة</span>
+        <span>‹</span>
+      </button>
+
+      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="openFeedback()">
+        <span style="font-weight:800;font-size:14px">💬 إرسال اقتراح أو شكوى للإدارة</span>
+        <span>‹</span>
+      </button>
+
+      <button class="btnGhost" style="background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin:0;border-radius:12px" onclick="enableNotifications()">
+        <span style="font-weight:800;font-size:14px">🔔 تفعيل الإشعارات في الهاتف</span>
+        <span>‹</span>
+      </button>
+    </div>
+
+    <!-- 👑 أدوات الإدارة للأدمن -->
+    <div id="accAdminSection" style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:16px;padding:14px">
+      <div style="font-weight:900;color:#92400e;font-size:14px;margin-bottom:10px">👑 لوحة أدوات الإدارة (خاصة بالأدمن)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button id="moderationBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openModeration()">⏳ قيد المراجعة</button>
+        <button id="storesModerationBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openStoresModeration()">🏪 إدارة المتاجر</button>
+        <button id="reportsBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openReports()">🚩 الإبلاغات</button>
+        <button id="expiredBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openExpired()">⏰ منتهية</button>
+        <button id="limitsBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openLimits()">⚙️ إدارة الحدود</button>
+        <button id="dashboardBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openDashboard()">📈 الإحصائيات</button>
+        <button id="sendNotifBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openSendNotification()">📢 إرسال إشعار</button>
+        <button id="adminWalletBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openAdminWallet()">💰 الإدارة المالية</button>
+        <button id="adminCreateStoreBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="startOpenStore(true)">➕ فتح متجر لعميل</button>
+      </div>
+      <button id="adminPanelBtn" class="btnMain hidden" style="margin-top:10px;margin-bottom:0;background:linear-gradient(135deg,#0284c7,#38bdf8);font-size:13.5px;padding:11px" onclick="window.location.href='admin.html'">⚙️ لوحة الأدمن الكاملة</button>
+    </div>
+
+    <!-- 🚪 زر تسجيل الخروج -->
+    <button class="btnMain" style="background:#dc2626;color:#fff;margin-top:8px;padding:14px;border-radius:12px" onclick="logout();showCategoriesScreenDirect()">
+      🚪 تسجيل الخروج من الحساب
     </button>
-    <button type="button" class="uwcBtnHistory" onclick="openMyWalletHistory()">
-      <span>📜</span> كشف الحساب
-    </button>
+
   </div>
-</div>
-
-
-
-<div class="referralCardBox" id="accountRefCard">
-  <h4>🎁 شارك واربح كروت شحن!</h4>
-  <p>ادعُ أصحابك للتسجيل بجوجل واكسب 40 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
-  <div class="referralLinkDisplay" id="myRefLinkDisplay">https://tasawuqnow.com/?ref=...</div>
-  <div class="referralBtnsRow">
-    <button type="button" style="background:#fff;color:#0284c7" onclick="copyRefLink()">📋 نسخ الرابط</button>
-    <button type="button" style="background:#25d366;color:#fff" onclick="shareRefOnWhatsapp()">💬 واتساب</button>
-  </div>
-</div>
-
-
-<div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
-<div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
-<button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
-<div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
-<button class="btnGhost accountBtn" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
-<div class="field" style="margin-top:12px;margin-bottom:8px"><label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label><input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div></div>
-<button class="btnGhost accountBtn" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
-<button class="btnGhost" onclick="openInbox()" style="background:#eff6ff;color:#1e40af;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px">
-  💬 صندوق الرسائل والمحادثات
-  <span id="accountChatBadge" class="inboxBadge" style="display:none">0</span>
-</button>
-<button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
-<button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
-<button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
-<button class="btnGhost accountBtn" onclick="openMySeller()">👤 صفحتي كبائع</button>
-<button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
-<button class="btnGhost accountBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
-<button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
-<button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
-<button id="storesModerationBtn" class="btnGhost hidden" onclick="openStoresModeration()" style="background:#fff7e6;color:#92400e">🏪 إدارة المتاجر</button>
-<button id="expiredBtn" class="btnGhost hidden" onclick="openExpired()" style="background:#f3f4f6;color:#4b5563">⏰ إعلانات منتهية</button>
-<button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
-<button id="dashboardBtn" class="btnGhost hidden" onclick="openDashboard()" style="background:#ede9fe;color:#6d28d9">📈 لوحة الإحصائيات</button>
-  <button id="sendNotifBtn" class="btnGhost hidden" onclick="openSendNotification()" style="background:#fef3c7;color:#92400e">📢 إرسال إشعار للمستخدمين</button>
-<button id="adminCreateStoreBtn" class="btnGhost hidden" onclick="startOpenStore(true)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800">➕ فتح صفحة مطعم/متجر لعميل (أدمن)</button>
-<button id="adminWalletBtn" class="btnGhost hidden" onclick="openAdminWallet()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800">💰 الإدارة المالية والمحفظة (أدمن)</button>
-<button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
-<button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
-<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
-</div>
 </div>
 
 
@@ -1294,81 +1381,101 @@ OneSignalDeferred.push(async function(OneSignal){
 
 
 <!-- ============================================ -->
-<!-- 💬 نافذة صندوق المحادثات والرسائل للمستخدم -->
+<!-- 💬 شاشة المحادثات والرسائل الكاملة (Inbox Full Screen) -->
 <!-- ============================================ -->
-<div id="userInboxOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:92vh;display:flex;flex-direction:column;border-radius:18px 18px 0 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px">
-      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">
-        💬 الرسائل والمحادثات
-      </h3>
-      <button class="iconBtn" onclick="closeInbox()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
-    </div>
-
-    <div id="userInboxList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:10px">
-      <div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>
-    </div>
-
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:8px" onclick="closeInbox()">إغلاق</button>
+<div id="inboxScreen" class="screen hidden">
+  <div class="screenHeader" style="background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20">
+    <button class="back" onclick="backFromInbox()" style="font-size:22px;padding:4px 8px;cursor:pointer">➔</button>
+    <h3 style="flex:1;text-align:center;padding-left:36px;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;gap:6px">
+      💬 صندوق المحادثات والرسائل
+      <span id="inboxTotalCountBadge" style="background:#0284c7;color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:800;display:none">0</span>
+    </h3>
   </div>
-</div>
 
-<!-- ============================================ -->
-<!-- 💬 نافذة الدردشة المباشرة بين الشاري والبائع -->
-<!-- ============================================ -->
-<div id="userChatOverlay" class="overlay hidden">
-  <div class="sheet" style="height:92vh;max-height:92vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:18px 18px 0 0">
-    <!-- رأس شاشة الدردشة -->
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border)">
-      <button type="button" onclick="closeUserChat()" style="background:none;border:none;font-size:22px;color:var(--text);cursor:pointer;padding:0 6px">✕</button>
-      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:0 0 auto" id="chatTargetAvatar">👤</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:900;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatTargetName">البائع</div>
-        <div style="font-size:11.5px;color:#16a34a;display:flex;align-items:center;gap:4px">
-          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a"></span> محادثة مباشرة
-        </div>
-      </div>
-    </div>
-
-    <!-- كرت الإعلان أو المتجر محل التفاوض (Context Banner) -->
-    <div id="chatPostContextBar" style="display:none;background:#f8fafc;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;gap:10px">
-      <img id="chatContextImg" src="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex:0 0 auto">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:800;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatContextTitle">عنوان الإعلان</div>
-        <div style="font-size:12px;font-weight:900;color:var(--teal-dark)" id="chatContextPrice">0 د.ل</div>
-      </div>
-      <button type="button" class="btnGhost" id="chatContextViewBtn" style="padding:4px 10px;font-size:11px;border:1px solid var(--border);margin:0;border-radius:6px;width:auto">👁️ عرض</button>
-    </div>
-
-    <!-- منطقة رسائل الدردشة -->
-    <div id="chatMessagesBox" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
-      <div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>
-    </div>
-
-    <!-- شريط إرسال الرسائل السريع -->
-    <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center">
+  <div style="padding:14px 16px 90px;max-width:600px;margin:auto">
+    <!-- شريط البحث في المحادثات -->
+    <div style="margin-bottom:12px">
       <input 
         type="text" 
-        id="chatMessageInput" 
-        placeholder="اكتب رسالتك للبائع هنا..." 
-        dir="auto" 
-        autocomplete="off"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
-        style="flex:1;height:44px;box-sizing:border-box;padding:8px 14px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none"
+        id="inboxSearchInput" 
+        placeholder="🔍 ابحث في المحادثات، أسماء البائعين، أو السلع..." 
+        oninput="filterInboxScreenList()"
+        style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:14px;outline:none"
       >
-      <button 
-        type="button" 
-        id="btnSendUserChat" 
-        onclick="sendUserChatMessage()" 
-        style="width:44px;height:44px;border-radius:50%;background:#0284c7;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 2px 6px rgba(2,132,199,0.3)"
-      >
-        <span style="font-size:16px">🚀</span>
-      </button>
     </div>
+
+    <!-- فلاتر التبويب السريعة -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px" id="inboxFilterTabs">
+      <button type="button" class="filterBtn active" onclick="setInboxTab('all')" id="inboxTabAll" style="font-size:12px;padding:6px 14px;border-radius:20px">الكل</button>
+      <button type="button" class="filterBtn" onclick="setInboxTab('unread')" id="inboxTabUnread" style="font-size:12px;padding:6px 14px;border-radius:20px">غير المقروءة 🔴</button>
+      <button type="button" class="filterBtn" onclick="setInboxTab('posts')" id="inboxTabPosts" style="font-size:12px;padding:6px 14px;border-radius:20px">الإعلانات 📦</button>
+      <button type="button" class="filterBtn" onclick="setInboxTab('stores')" id="inboxTabStores" style="font-size:12px;padding:6px 14px;border-radius:20px">المتاجر 🏪</button>
+    </div>
+
+    <!-- قائمة المحادثات -->
+    <div id="inboxFullList" style="display:flex;flex-direction:column;gap:10px">
+      <div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>
+    </div>
+    <div id="userInboxList" style="display:none"></div>
+    <div id="userInboxOverlay" class="hidden" style="display:none"></div>
   </div>
 </div>
 
-<script type="module" src="app.js?v=29"></script>
+<!-- ============================================ -->
+<!-- 💬 شاشة الدردشة المباشرة الكاملة بين الشاري والبائع -->
+<!-- ============================================ -->
+<div id="userChatOverlay" class="screen hidden" style="position:fixed;inset:0;z-index:1100;background:var(--bg);display:flex;flex-direction:column;height:100vh;max-height:100vh">
+  <!-- رأس شاشة الدردشة -->
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:15">
+    <button type="button" onclick="closeUserChat()" style="background:none;border:none;font-size:22px;color:var(--text);cursor:pointer;padding:0 6px">➔</button>
+    <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex-shrink:0" id="chatTargetAvatar">👤</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:900;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatTargetName">البائع</div>
+      <div style="font-size:11.5px;color:#16a34a;display:flex;align-items:center;gap:4px">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a"></span> محادثة مباشرة
+      </div>
+    </div>
+  </div>
+
+  <!-- كرت الإعلان أو المتجر محل التفاوض (Context Banner) -->
+  <div id="chatPostContextBar" style="display:none;background:#f8fafc;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;gap:10px">
+    <img id="chatContextImg" src="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0">
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:800;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatContextTitle">عنوان الإعلان</div>
+      <div style="font-size:12px;font-weight:900;color:var(--teal-dark)" id="chatContextPrice">0 د.ل</div>
+    </div>
+    <button type="button" class="btnGhost" id="chatContextViewBtn" style="padding:4px 10px;font-size:11px;border:1px solid var(--border);margin:0;border-radius:6px;width:auto">👁️ عرض</button>
+  </div>
+
+  <!-- منطقة رسائل الدردشة -->
+  <div id="chatMessagesBox" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
+    <div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>
+  </div>
+
+  <!-- شريط إرسال الرسائل السريع -->
+  <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center">
+    <input 
+      type="text" 
+      id="chatMessageInput" 
+      placeholder="اكتب رسالتك للبائع هنا..." 
+      dir="auto" 
+      maxlength="500"
+      autocomplete="off"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
+      style="flex:1;height:44px;box-sizing:border-box;padding:8px 14px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none"
+    >
+    <button 
+      type="button" 
+      id="btnSendUserChat" 
+      onclick="sendUserChatMessage()" 
+      style="width:44px;height:44px;border-radius:50%;background:#0284c7;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 2px 6px rgba(2,132,199,0.3)"
+    >
+      <span style="font-size:16px">🚀</span>
+    </button>
+  </div>
+</div>
+
+<script type="module" src="app.js?v=31"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
