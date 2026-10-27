@@ -1045,7 +1045,7 @@ updateCartUI();
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
 const categoriesScreen=document.getElementById("categoriesScreen");
 const mainTopbar=document.getElementById("mainTopbar");
-const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountScreen")||document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
+const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
 const moderationBtn=document.getElementById("moderationBtn"),moderationOverlay=document.getElementById("moderationOverlay"),limitsOverlay=document.getElementById("limitsOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=document.getElementById("postOverlay"),warnOverlay=document.getElementById("warnOverlay"),upgradeOverlay=document.getElementById("upgradeOverlay");
 const adminChip=document.getElementById("adminChip"),navHome=document.getElementById("navHome"),navMine=document.getElementById("navMine"),navFav=document.getElementById("navFav");
@@ -5686,7 +5686,13 @@ function showFavoritesDirect(){if(showOnlyFavorites && !showOnlyMine){showCatego
 window.showFavoritesDirect=showFavoritesDirect;
 window.showFavorites=(skipHistory)=>{showFavoritesDirect();if(!skipHistory)pushNavState({screen:'fav'},'#favorites');};
 
-function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
+function setActiveNav(w){
+  if(navHome) navHome.classList.toggle("active",w==="home");
+  if(navMine) navMine.classList.toggle("active",w==="mine");
+  if(navFav) navFav.classList.toggle("active",w==="fav");
+  const na = document.getElementById("navAccount");
+  if(na) na.classList.toggle("active",w==="account");
+}
 window.showHome=()=>{showCategoriesScreen();};
 
 window.showFollowingPosts=()=>{
@@ -5833,18 +5839,20 @@ window.openAccount = (skipHistory) => {
     const as = document.getElementById("accountScreen");
     if(!as) return;
 
+    // إغلاق أي نوافذ منبثقة أولاً
+    closeOverlayDirect();
+
     // إخفاء كافة الشاشات الأخرى لفتح صفحة حسابي كاملة
-    categoriesScreen.classList.add("hidden");
-    home.classList.add("hidden");
-    form.classList.add("hidden");
+    if(typeof categoriesScreen !== 'undefined' && categoriesScreen) categoriesScreen.classList.add("hidden");
+    if(typeof home !== 'undefined' && home) home.classList.add("hidden");
+    if(typeof form !== 'undefined' && form) form.classList.add("hidden");
     const ss = document.getElementById("storesScreen"); if(ss) ss.classList.add("hidden");
     const sc = document.getElementById("storeScreen"); if(sc) sc.classList.add("hidden");
     const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
 
     as.classList.remove("hidden");
-    closeOverlayDirect();
     setActiveNav("account");
-    hideFloatingButtons();
+    if(typeof hideFloatingButtons === 'function') hideFloatingButtons();
     window.scrollTo(0, 0);
 
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
@@ -5866,16 +5874,17 @@ window.openAccount = (skipHistory) => {
 
 function updateAccountScreenUI(){
   if(!auth.currentUser) return;
-  const dn = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+  const rawName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+  const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
   
   const accNameEl = document.getElementById("accountName");
   if(accNameEl) accNameEl.textContent = dn;
 
   const heroAvatar = document.getElementById("accHeroAvatar");
-  if(heroAvatar) heroAvatar.textContent = dn ? dn.trim()[0].toUpperCase() : '👤';
+  if(heroAvatar) heroAvatar.textContent = dn ? dn[0].toUpperCase() : '👤';
 
   const myNameInput = document.getElementById("myName");
-  if(myNameInput && document.activeElement !== myNameInput) myNameInput.value = (myProfile && myProfile.name) || auth.currentUser.displayName || "";
+  if(myNameInput && document.activeElement !== myNameInput) myNameInput.value = dn;
 
   const mnEl = document.getElementById("accountMemberNo");
   if(mnEl){
@@ -5979,9 +5988,7 @@ window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverla
 
 function closeOverlayDirect(){
   authOverlay.classList.add("hidden");
-  const as = document.getElementById("accountScreen"); if(as) as.classList.add("hidden");
-  const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
-  if(typeof accountOverlay !== 'undefined' && accountOverlay) accountOverlay.classList.add("hidden");
+  if(typeof accountOverlay !== 'undefined' && accountOverlay && accountOverlay.id === "accountOverlay") accountOverlay.classList.add("hidden");
   reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
   warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");
@@ -6014,7 +6021,6 @@ window.closeOverlay=()=>{
     window.history.state.screen === 'post' ||
     window.history.state.screen === 'cart' ||
     window.history.state.screen === 'seller' ||
-    window.history.state.screen === 'account' ||
     window.history.state.screen === 'overlay'
   )){
     window.history.back();
@@ -6036,7 +6042,9 @@ window.saveMyName=async()=>{
     if(!myProfile) myProfile={};
     myProfile.name=name;
     const anEl=document.getElementById("accountName");
-    if(anEl) anEl.textContent="👤 "+name;
+    if(anEl) anEl.textContent=name;
+    const heroAvatar = document.getElementById("accHeroAvatar");
+    if(heroAvatar) heroAvatar.textContent = name ? name[0].toUpperCase() : '👤';
     const mine=allPosts.filter(p=>p.uid===me.uid);
     await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
     if(myStore){
@@ -6062,7 +6070,7 @@ window.saveMyUsername=async()=>{
     myProfile.username=res.value;
     if(input) input.value=res.value;
     const unEl=document.getElementById("accountUsername");
-    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="block";}
+    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="inline-block";}
     showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
     if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
   }else{
