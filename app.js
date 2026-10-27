@@ -1045,7 +1045,7 @@ updateCartUI();
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
 const categoriesScreen=document.getElementById("categoriesScreen");
 const mainTopbar=document.getElementById("mainTopbar");
-const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
+const authOverlay=document.getElementById("authOverlay"),accountOverlay=document.getElementById("accountScreen")||document.getElementById("accountOverlay"),reportsOverlay=document.getElementById("reportsOverlay"),reportsBtn=document.getElementById("reportsBtn");
 const moderationBtn=document.getElementById("moderationBtn"),moderationOverlay=document.getElementById("moderationOverlay"),limitsOverlay=document.getElementById("limitsOverlay");
 const sellerOverlay=document.getElementById("sellerOverlay"),postOverlay=document.getElementById("postOverlay"),warnOverlay=document.getElementById("warnOverlay"),upgradeOverlay=document.getElementById("upgradeOverlay");
 const adminChip=document.getElementById("adminChip"),navHome=document.getElementById("navHome"),navMine=document.getElementById("navMine"),navFav=document.getElementById("navFav");
@@ -1261,6 +1261,15 @@ function getActiveTopView() {
   const tp = document.getElementById("transferPostsOverlay");
   if (tp) return { type: 'customOverlay', el: tp };
 
+  const chatSc = document.getElementById("userChatOverlay");
+  if (chatSc && !chatSc.classList.contains("hidden")) return { type: 'chat' };
+
+  const inboxSc = document.getElementById("inboxScreen");
+  if (inboxSc && !inboxSc.classList.contains("hidden")) return { type: 'inbox' };
+
+  const accSc = document.getElementById("accountScreen");
+  if (accSc && !accSc.classList.contains("hidden")) return { type: 'account' };
+
   if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
 
   const openOverlay = document.querySelector(".overlay:not(.hidden)");
@@ -1301,6 +1310,21 @@ function performBackAction() {
   }
   if (top.type === 'customOverlay') {
     if (top.el && top.el.remove) top.el.remove();
+    return true;
+  }
+  if (top.type === 'chat') {
+    if (typeof closeUserChatDirect === 'function') closeUserChatDirect();
+    else closeUserChat();
+    return true;
+  }
+  if (top.type === 'inbox') {
+    if (typeof backFromInboxDirect === 'function') backFromInboxDirect();
+    else { const is = document.getElementById("inboxScreen"); if (is) is.classList.add("hidden"); showCategoriesScreenDirect(); }
+    return true;
+  }
+  if (top.type === 'account') {
+    if (typeof backFromAccountDirect === 'function') backFromAccountDirect();
+    else { const as = document.getElementById("accountScreen"); if (as) as.classList.add("hidden"); showCategoriesScreenDirect(); }
     return true;
   }
   if (top.type === 'post') {
@@ -1359,6 +1383,8 @@ function showCategoriesScreenDirect(){
   categoriesScreen.classList.remove("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
+  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
+  const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("sticky");
   renderRecentlyViewed();updateCartUI();updateCompareUI();window.scrollTo(0,0);
   showFloatingButtons();
@@ -1379,6 +1405,8 @@ function openCategoryDirect(cat){
   categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
+  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
+  const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("scroll");
   const cr=document.getElementById("catsRow");
   if(cr) cr.classList.toggle("hidden", cat!=="الكل");
@@ -4628,6 +4656,8 @@ window.openStores=(mode='stores',skipHistory)=>{
   document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
   categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
+  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
+  const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   const ss=document.getElementById("storesScreen");
   if(ss)ss.classList.remove("hidden");
   const titleEl=document.getElementById("storesScreenTitle");
@@ -4731,6 +4761,8 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     window._storeBackTo=backTo||"categories";
     closeOverlayDirect();
     const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
+    const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
+    const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
     categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
     const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
     const box=document.getElementById("storeContent");
@@ -5794,84 +5826,163 @@ function renderSubCats(){
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 
 /* ============================================
-   حسابي + Overlay
+   حسابي (صفحة كاملة Full Screen)
    ============================================ */
-window.openAccount=(skipHistory)=>{
+window.openAccount = (skipHistory) => {
   if(auth.currentUser){
+    const as = document.getElementById("accountScreen");
+    if(!as) return;
+
+    // إخفاء كافة الشاشات الأخرى لفتح صفحة حسابي كاملة
+    categoriesScreen.classList.add("hidden");
+    home.classList.add("hidden");
+    form.classList.add("hidden");
+    const ss = document.getElementById("storesScreen"); if(ss) ss.classList.add("hidden");
+    const sc = document.getElementById("storeScreen"); if(sc) sc.classList.add("hidden");
+    const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
+
+    as.classList.remove("hidden");
+    closeOverlayDirect();
+    setActiveNav("account");
+    hideFloatingButtons();
+    window.scrollTo(0, 0);
+
+    if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
+
     // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان ظهور اليوزر نيم ورقم الهاتف فوراً
     getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
       if(snap.exists()){
-        myProfile=snap.data();
-        const unEl=document.getElementById("accountUsername");
-        if(unEl){
-          if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}
-          else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}
-        }
-        const myUserInput=document.getElementById("myUsername");
-        if(myUserInput && myProfile.username && document.activeElement!==myUserInput) myUserInput.value=myProfile.username;
-        const myPhoneInput=document.getElementById("myPhone");
-        if(myPhoneInput && myProfile.phone && document.activeElement!==myPhoneInput) myPhoneInput.value=formatCallPhone(myProfile.phone);
-        const mnEl=document.getElementById("accountMemberNo");
-        if(mnEl && myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}
+        myProfile = snap.data();
+        updateAccountScreenUI();
       }
     }).catch(()=>{});
 
-    document.getElementById("accountEmail").textContent="";
-    const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";
-    document.getElementById("accountName").textContent="👤 "+dn;
-    document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
-    const mnEl=document.getElementById("accountMemberNo");
-    if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}
-    const unEl=document.getElementById("accountUsername");
-    const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
-    const refDisplay = document.getElementById("myRefLinkDisplay");
-    if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
-    if(unEl){if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}}
-    const stEl=document.getElementById("accountStore");
-    if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
-    const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
-    const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";
-    const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
-    if(myStore){
-      if(openBtn)openBtn.style.display="none";
-      if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}
-      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
-      if(myRestBtn){
-        const isRest=isRestaurantStore(myStore);
-        myRestBtn.style.display=(isRest && myStore.status==="approved")?"block":"none";
-        myRestBtn.onclick=()=>openRestaurantLiveOrders(myStore.id);
-      }
-    }else{
-      if(openBtn)openBtn.style.display="block";
-      if(myBtn)myBtn.style.display="none";
-      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
-      if(myRestBtn)myRestBtn.style.display="none";
-    }
-    reportsBtn.classList.toggle("hidden",!isAdmin);
-    if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
-    const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
-    const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
-    const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
-    const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
-    const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
-    const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
-    const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
-    const awb=document.getElementById("adminWalletBtn");if(awb)awb.classList.toggle("hidden",!isAdmin);
-    if(typeof getUserWallet === 'function'){
-      getUserWallet(auth.currentUser.uid).then(wal=>{
-        if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
-      }).catch(()=>{});
-    }
-    accountOverlay.classList.remove("hidden");
-    if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
-  }else{pendingAction=null;authOverlay.classList.remove("hidden");}
+    updateAccountScreenUI();
+  } else {
+    pendingAction = null;
+    authOverlay.classList.remove("hidden");
+  }
 };
-window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
-window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
-window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+
+function updateAccountScreenUI(){
+  if(!auth.currentUser) return;
+  const dn = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+  
+  const accNameEl = document.getElementById("accountName");
+  if(accNameEl) accNameEl.textContent = dn;
+
+  const heroAvatar = document.getElementById("accHeroAvatar");
+  if(heroAvatar) heroAvatar.textContent = dn ? dn.trim()[0].toUpperCase() : '👤';
+
+  const myNameInput = document.getElementById("myName");
+  if(myNameInput && document.activeElement !== myNameInput) myNameInput.value = (myProfile && myProfile.name) || auth.currentUser.displayName || "";
+
+  const mnEl = document.getElementById("accountMemberNo");
+  if(mnEl){
+    if(myProfile && myProfile.memberNo != null){
+      mnEl.textContent = "🔢 رقم العضوية: #" + myProfile.memberNo;
+      mnEl.style.display = "inline-block";
+    } else {
+      mnEl.textContent = "⏳ جاري تعيين رقم العضوية...";
+      mnEl.style.display = "inline-block";
+    }
+  }
+
+  const unEl = document.getElementById("accountUsername");
+  if(unEl){
+    if(myProfile && myProfile.username){
+      unEl.textContent = "🏷️ @" + myProfile.username;
+      unEl.style.display = "inline-block";
+    } else {
+      unEl.textContent = "⚠️ لم تختر اسم مستخدم بعد";
+      unEl.style.display = "inline-block";
+    }
+  }
+
+  const myUserInput = document.getElementById("myUsername");
+  if(myUserInput && document.activeElement !== myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
+
+  const myPhoneInput = document.getElementById("myPhone");
+  if(myPhoneInput && document.activeElement !== myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? formatCallPhone(myProfile.phone) : "";
+
+  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+  const refDisplay = document.getElementById("myRefLinkDisplay");
+  if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
+
+  const stEl = document.getElementById("accountStore");
+  if(stEl){
+    if(myStore){
+      const st = myStore.status === "approved" ? "✅ متجر: " : myStore.status === "pending" ? "⏳ متجر (قيد المراجعة): " : "❌ متجر (مرفوض): ";
+      stEl.textContent = st + myStore.name;
+      stEl.style.display = "block";
+    } else {
+      stEl.style.display = "none";
+    }
+  }
+
+  const openBtn = document.getElementById("openStoreBtn");
+  const myBtn = document.getElementById("myStoreBtn");
+  if(myStore){
+    if(openBtn) openBtn.style.display = "none";
+    if(myBtn){
+      myBtn.style.display = "block";
+      myBtn.textContent = myStore.status === "approved" ? "🏪 الدخول لمتجري" : myStore.status === "pending" ? "⏳ متجري (قيد المراجعة)" : "❌ متجري (مرفوض)";
+    }
+    const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
+    if(myRestBtn){
+      const isRest = isRestaurantStore(myStore);
+      myRestBtn.style.display = (isRest && myStore.status === "approved") ? "block" : "none";
+      myRestBtn.onclick = () => openRestaurantLiveOrders(myStore.id);
+    }
+  } else {
+    if(openBtn) openBtn.style.display = "block";
+    if(myBtn) myBtn.style.display = "none";
+    const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
+    if(myRestBtn) myRestBtn.style.display = "none";
+  }
+
+  // أزرار الأدمن
+  const adminSec = document.getElementById("accAdminSection");
+  if(adminSec) adminSec.style.display = isAdmin ? "block" : "none";
+
+  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn"];
+  adminIds.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.toggle("hidden", !isAdmin);
+  });
+
+  if(typeof getUserWallet === 'function'){
+    getUserWallet(auth.currentUser.uid).then(wal => {
+      if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
+    }).catch(()=>{});
+  }
+}
+window.updateAccountScreenUI = updateAccountScreenUI;
+
+function backFromAccountDirect(){
+  const as = document.getElementById("accountScreen");
+  if(as) as.classList.add("hidden");
+  showCategoriesScreenDirect();
+}
+window.backFromAccountDirect = backFromAccountDirect;
+window.backFromAccount = () => {
+  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'account'){
+    window.history.back();
+    return;
+  }
+  backFromAccountDirect();
+};
+
+window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");};
+window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");};
+window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");};
 
 function closeOverlayDirect(){
-  authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
+  authOverlay.classList.add("hidden");
+  const as = document.getElementById("accountScreen"); if(as) as.classList.add("hidden");
+  const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
+  if(typeof accountOverlay !== 'undefined' && accountOverlay) accountOverlay.classList.add("hidden");
+  reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
   warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");
   postTypeOverlay.classList.add("hidden");
@@ -8532,10 +8643,12 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     }
   }
 
-  // عرض نافذة الدردشة وإغلاق الصندوق لو كان مفتوحاً
+  // عرض شاشة الدردشة وتحديث مسار الرجوع
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.remove("hidden");
-  closeInbox();
+  const oldInboxOverlay = document.getElementById("userInboxOverlay");
+  if(oldInboxOverlay) oldInboxOverlay.classList.add("hidden");
+  pushNavState({ screen: 'chat' });
 
   // تركيز حقل الكتابة
   setTimeout(() => {
@@ -8548,6 +8661,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
   window._activeChat.pollTimer = setInterval(() => {
+    if(document.hidden) return; // توقف مؤقت لو الشاشة مقفلة أو المتصفح في الخلفية
     if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
       if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
       return;
@@ -8557,13 +8671,26 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 }
 window.openChatWithSeller = openChatWithSeller;
 
-export function closeUserChat(){
+export function closeUserChatDirect(){
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.add("hidden");
   if(window._activeChat && window._activeChat.pollTimer){
     clearInterval(window._activeChat.pollTimer);
   }
   window._activeChat = null;
+  const is = document.getElementById("inboxScreen");
+  if(is && !is.classList.contains("hidden")){
+    if(typeof openInbox === "function") openInbox(true);
+  }
+}
+window.closeUserChatDirect = closeUserChatDirect;
+
+export function closeUserChat(){
+  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'chat'){
+    window.history.back();
+    return;
+  }
+  closeUserChatDirect();
 }
 window.closeUserChat = closeUserChat;
 
@@ -8575,7 +8702,7 @@ export async function sendUserChatMessage(){
   }
   const input = document.getElementById("chatMessageInput");
   if(!input) return;
-  const text = (input.value || "").trim();
+  const text = (input.value || "").trim().slice(0, 500);
   if(!text) return;
 
   const me = auth.currentUser;
@@ -8670,24 +8797,38 @@ export async function loadChatMessages(convId, isPoll){
   }
 
   try {
-    const qSnap = await getDocs(query(
-      collection(db, "feedback"),
-      where("type", "==", "chat_message"),
-      limit(100)
-    ));
+    let rows = [];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "chat_message")
+        .ilike("message", `%${convId}%`)
+        .order("created_at", { ascending: true })
+        .limit(60);
+      if(!error && data) rows = data;
+    }
+
+    if(rows.length === 0 && !window.supabase){
+      const qSnap = await getDocs(query(
+        collection(db, "feedback"),
+        where("type", "==", "chat_message"),
+        limit(60)
+      ));
+      rows = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
 
     const myUid = auth.currentUser ? auth.currentUser.uid : null;
     const messages = [];
 
-    qSnap.docs.forEach(d => {
-      const data = d.data();
+    rows.forEach(d => {
       try {
-        const parsed = JSON.parse(data.message || "{}");
+        const parsed = JSON.parse(d.message || "{}");
         if(parsed.convId === convId){
           messages.push({
             id: d.id,
             ...parsed,
-            createdAt: parsed.createdAt || data.created_at || Date.now()
+            createdAt: parsed.createdAt || d.created_at || Date.now()
           });
         }
       } catch(e){}
@@ -8736,115 +8877,307 @@ export async function loadChatMessages(convId, isPoll){
 }
 window.loadChatMessages = loadChatMessages;
 
-export async function openInbox(){
+window._inboxConversationsCache = [];
+window._inboxCurrentTab = "all";
+
+export async function openInbox(isSilentRefresh = false){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
     if(typeof openAuthModal === "function") openAuthModal();
     return;
   }
-  const overlay = document.getElementById("userInboxOverlay");
-  const list = document.getElementById("userInboxList");
-  if(!overlay || !list) return;
 
-  overlay.classList.remove("hidden");
-  list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
+  const myUid = auth.currentUser.uid;
+  const screen = document.getElementById("inboxScreen");
+  const fullList = document.getElementById("inboxFullList") || document.getElementById("userInboxList");
+  if(!screen || !fullList) return;
+
+  if(!isSilentRefresh){
+    if(typeof closeOverlayDirect === "function") closeOverlayDirect();
+    if(typeof hideFloatingButtons === "function") hideFloatingButtons();
+
+    const homeEl = document.getElementById("home");
+    const catScEl = document.getElementById("categoriesScreen");
+    const formEl = document.getElementById("form");
+    const storesScEl = document.getElementById("storesScreen");
+    const storeScEl = document.getElementById("storeScreen");
+    const accountScEl = document.getElementById("accountScreen");
+
+    if(homeEl) homeEl.classList.add("hidden");
+    if(catScEl) catScEl.classList.add("hidden");
+    if(formEl) formEl.classList.add("hidden");
+    if(storesScEl) storesScEl.classList.add("hidden");
+    if(storeScEl) storeScEl.classList.add("hidden");
+    if(accountScEl) accountScEl.classList.add("hidden");
+
+    screen.classList.remove("hidden");
+    window.scrollTo(0, 0);
+    pushNavState({ screen: 'inbox' });
+
+    if(!window._inboxConversationsCache || window._inboxConversationsCache.length === 0){
+      fullList.innerHTML = `<div class="reportsEmpty" style="padding:40px 20px">⏳ جاري تحميل المحادثات...</div>`;
+    }
+  }
 
   try {
     localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
     updateGlobalUnreadChatCount();
 
-    const qSnap = await getDocs(query(
-      collection(db, "feedback"),
-      where("type", "==", "chat_conversation"),
-      limit(80)
-    ));
-
-    const myUid = auth.currentUser.uid;
-    const convs = [];
-
-    qSnap.docs.forEach(d => {
-      const data = d.data();
+    let rows = [];
+    if(window.supabase){
       try {
-        const c = JSON.parse(data.message || "{}");
-        if(c.convId && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
-          convs.push({
-            id: d.id,
-            ...c,
-            updatedAt: c.updatedAt || data.created_at || Date.now()
-          });
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_conversation")
+          .ilike("message", `%${myUid}%`)
+          .order("created_at", { ascending: false })
+          .limit(80);
+        if(!error && Array.isArray(data)) rows = data;
+      } catch(e){
+        console.warn("Supabase fetch inbox err:", e);
+      }
+    }
+
+    if(rows.length === 0){
+      try {
+        const qSnap = await getDocs(query(
+          collection(db, "feedback"),
+          where("type", "==", "chat_conversation"),
+          limit(60)
+        ));
+        rows = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch(e){
+        console.warn("Firebase fetch inbox err:", e);
+      }
+    }
+
+    const convMap = new Map();
+
+    rows.forEach(d => {
+      try {
+        const c = JSON.parse(d.message || "{}");
+        const hasMyUid = (c.convId && c.convId.includes(myUid)) ||
+                         (Array.isArray(c.participants) && c.participants.includes(myUid)) ||
+                         (d.uid === myUid);
+        if(hasMyUid && (c.convId || d.id)){
+          const k = c.convId || d.id;
+          const upTime = c.updatedAt || d.created_at || 0;
+          const existing = convMap.get(k);
+          if(!existing || upTime > (existing.updatedAt || 0)){
+            convMap.set(k, {
+              id: d.id,
+              ...c,
+              convId: k,
+              updatedAt: upTime
+            });
+          }
         }
       } catch(e){}
     });
 
+    const convs = Array.from(convMap.values());
     convs.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    window._inboxConversationsCache = convs;
 
-    if(convs.length === 0){
-      list.innerHTML = `
-        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
-          <div style="font-size:42px;margin-bottom:8px">📭</div>
-          <div style="font-weight:800;font-size:15px;color:var(--text);margin-bottom:6px">صندوق الرسائل فارغ</div>
-          <div style="font-size:12px;margin-bottom:14px">لم تبدأ أي محادثة مع أي بائع أو مشترٍ بعد.</div>
-          <button class="btnMain" style="margin:auto;max-width:200px;font-size:13px;padding:10px" onclick="closeInbox()">تصفح الإعلانات الآن</button>
-        </div>
-      `;
-      return;
+    // تحديث شارة العدد الكلي
+    const badge = document.getElementById("inboxTotalCountBadge");
+    if(badge){
+      if(convs.length > 0){
+        badge.style.display = "inline-block";
+        badge.textContent = convs.length;
+      } else {
+        badge.style.display = "none";
+      }
     }
 
-    list.innerHTML = convs.map(c => {
-      const otherUid = Array.isArray(c.participants) 
-        ? c.participants.find(u => u !== myUid) 
-        : c.convId.split('_').find(u => u !== myUid);
-
-      let otherName = "البائع";
-      if(c.lastSenderUid !== myUid && c.lastSenderName){
-        otherName = c.lastSenderName;
-      }else if(c.postContext?.title){
-        otherName = c.postContext.title;
-      }else if(c.storeContext?.name){
-        otherName = c.storeContext.name;
-      }
-
-      if(otherName === "البائع" && otherUid){
-        const s = allStores.find(x => x.ownerUid === otherUid);
-        if(s) otherName = s.name;
-        else {
-          const p = allPosts.find(x => x.uid === otherUid);
-          if(p) otherName = p.storeName || p.sellerName || "البائع";
-        }
-      }
-
-      const initial = otherName ? otherName.trim()[0].toUpperCase() : '👤';
-      const postTag = c.postContext?.title ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.postContext.title)}</span>` : '';
-      const storeTag = c.storeContext?.name ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.storeContext.name)}</span>` : '';
-      const tagHtml = postTag || storeTag;
-
-      return `
-        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
-          <div class="inboxAvatar">${initial}</div>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-              <div style="font-weight:800;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(otherName)}</div>
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updatedAt)}</div>
-            </div>
-            ${tagHtml ? `<div style="margin-bottom:3px">${tagHtml}</div>` : ''}
-            <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              ${c.lastSenderUid === myUid ? 'أنت: ' : ''}${escapeHtml(c.lastMessage || '')}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+    renderInboxFilteredList();
 
   } catch(err) {
     console.error("Error loading inbox:", err);
-    list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
+    if(!isSilentRefresh){
+      fullList.innerHTML = `<div class="reportsEmpty" style="padding:40px 20px">⚠️ تعذر تحميل المحادثات، يرجى المحاولة لاحقاً</div>`;
+    }
   }
 }
 window.openInbox = openInbox;
 
+export function renderInboxFilteredList(){
+  const fullList = document.getElementById("inboxFullList") || document.getElementById("userInboxList");
+  if(!fullList) return;
+
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
+  const convs = window._inboxConversationsCache || [];
+  const currentTab = window._inboxCurrentTab || "all";
+  const searchInput = document.getElementById("inboxSearchInput");
+  const queryText = (searchInput ? searchInput.value : "").trim().toLowerCase();
+  const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
+
+  // تصفية حسب التبويب
+  let filtered = convs.filter(c => {
+    const isUnread = (c.updatedAt || 0) > lastSeen && c.lastSenderUid !== myUid;
+    if(currentTab === "unread") return isUnread;
+    if(currentTab === "posts") return !!(c.postContext && c.postContext.title);
+    if(currentTab === "stores") return !!(c.storeContext && c.storeContext.name);
+    return true; // "all"
+  });
+
+  // تصفية حسب نص البحث
+  if(queryText){
+    filtered = filtered.filter(c => {
+      const otherUid = Array.isArray(c.participants) 
+        ? c.participants.find(u => u !== myUid) 
+        : (c.convId ? c.convId.split('_').find(u => u !== myUid) : null);
+      
+      let otherName = "";
+      if(c.lastSenderUid !== myUid && c.lastSenderName){
+        otherName = c.lastSenderName;
+      } else if(c.postContext?.title){
+        otherName = c.postContext.title;
+      } else if(c.storeContext?.name){
+        otherName = c.storeContext.name;
+      }
+      if(!otherName && otherUid){
+        const s = (allStores || []).find(x => x.ownerUid === otherUid);
+        if(s) otherName = s.name;
+        else {
+          const p = (allPosts || []).find(x => x.uid === otherUid);
+          if(p) otherName = p.storeName || p.sellerName || "";
+        }
+      }
+
+      const matchName = otherName.toLowerCase().includes(queryText);
+      const matchMsg = (c.lastMessage || "").toLowerCase().includes(queryText);
+      const matchPost = (c.postContext?.title || "").toLowerCase().includes(queryText);
+      const matchStore = (c.storeContext?.name || "").toLowerCase().includes(queryText);
+      return matchName || matchMsg || matchPost || matchStore;
+    });
+  }
+
+  if(filtered.length === 0){
+    if(queryText || currentTab !== "all"){
+      fullList.innerHTML = `
+        <div style="text-align:center;padding:50px 20px;background:var(--card);border-radius:18px;border:1px solid var(--border);margin-top:10px">
+          <div style="font-size:46px;margin-bottom:10px">🔍</div>
+          <div style="font-weight:900;font-size:16px;color:var(--text);margin-bottom:6px">لا توجد محادثات مطابقة للبحث</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">جرب البحث بكلمة أخرى أو قم بتبديل التصنيف أعلاه.</div>
+          <button class="btnMain" style="margin:auto;max-width:180px;font-size:13px;padding:8px 16px" onclick="setInboxTab('all'); if(document.getElementById('inboxSearchInput')) document.getElementById('inboxSearchInput').value=''; renderInboxFilteredList();">عرض كل الرسائل</button>
+        </div>
+      `;
+    } else {
+      fullList.innerHTML = `
+        <div style="text-align:center;padding:50px 20px;background:var(--card);border-radius:18px;border:1px solid var(--border);margin-top:10px">
+          <div style="font-size:48px;margin-bottom:10px">📭</div>
+          <div style="font-weight:900;font-size:16px;color:var(--text);margin-bottom:6px">صندوق الرسائل فارغ</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">لم تبدأ أي محادثة بعد. يمكنك التواصل مباشرة مع أي بائع أو صاحب متجر وسوف تظهر كل محادثاتك هنا بشكل أنيق ومنظم!</div>
+          <button class="btnMain" style="margin:auto;max-width:220px;font-size:13px;padding:11px 20px;border-radius:12px" onclick="backFromInbox()">تصفح الإعلانات والمتاجر</button>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  fullList.innerHTML = filtered.map(c => {
+    const otherUid = Array.isArray(c.participants) 
+      ? c.participants.find(u => u !== myUid) 
+      : (c.convId ? c.convId.split('_').find(u => u !== myUid) : null);
+
+    let otherName = "";
+    if(c.lastSenderUid !== myUid && c.lastSenderName){
+      otherName = c.lastSenderName;
+    } else if(otherUid){
+      const s = (allStores || []).find(x => x.ownerUid === otherUid || (c.storeContext && x.id === c.storeContext.id));
+      if(s) otherName = s.name;
+      else {
+        const p = (allPosts || []).find(x => x.uid === otherUid || (c.postContext && x.id === c.postContext.id));
+        if(p) otherName = p.storeName || p.sellerName || p.title;
+      }
+    }
+    if(!otherName && c.postContext?.title) otherName = c.postContext.title;
+    if(!otherName && c.storeContext?.name) otherName = c.storeContext.name;
+    if(!otherName) otherName = "مستخدم تسوق الآن";
+
+    const initial = otherName.trim() ? otherName.trim()[0].toUpperCase() : '👤';
+    const postTag = c.postContext?.title 
+      ? `<span style="font-size:11px;font-weight:700;color:#0284c7;background:#f0f9ff;border:1px solid #bae6fd;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">📦 ${escapeHtml(c.postContext.title)}${c.postContext.price ? ' · ' + escapeHtml(c.postContext.price) : ''}</span>` 
+      : '';
+    const storeTag = c.storeContext?.name 
+      ? `<span style="font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">🏪 ${escapeHtml(c.storeContext.name)}</span>` 
+      : '';
+    const tagHtml = postTag || storeTag;
+
+    const isUnread = (c.updatedAt || 0) > lastSeen && c.lastSenderUid !== myUid;
+    const borderStyle = isUnread ? "border:2px solid #0284c7;background:rgba(2,132,199,0.03)" : "border:1.5px solid var(--border);background:var(--card)";
+
+    return `
+      <div class="inboxRow" style="${borderStyle};border-radius:16px;padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,0.03)" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
+        <div class="inboxAvatar" style="width:48px;height:48px;border-radius:50%;font-size:18px;font-weight:900;flex-shrink:0;box-shadow:0 2px 8px rgba(2,132,199,0.25)">
+          ${escapeHtml(initial)}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-weight:900;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px">
+              ${escapeHtml(otherName)}
+              ${isUnread ? '<span style="width:8px;height:8px;border-radius:50%;background:#0284c7;display:inline-block"></span>' : ''}
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);white-space:nowrap;flex-shrink:0">${timeAgo(c.updatedAt)}</div>
+          </div>
+          ${tagHtml ? `<div style="margin-bottom:5px">${tagHtml}</div>` : ''}
+          <div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4">
+            ${c.lastSenderUid === myUid ? '<span style="color:#0284c7;font-weight:700">أنت: </span>' : ''}${escapeHtml(c.lastMessage || 'بدء المحادثة')}
+          </div>
+        </div>
+        <div style="font-size:16px;color:var(--muted);transform:rotate(180deg);padding-right:4px">➔</div>
+      </div>
+    `;
+  }).join("");
+}
+window.renderInboxFilteredList = renderInboxFilteredList;
+window.filterInboxScreenList = renderInboxFilteredList;
+
+export function setInboxTab(tab){
+  window._inboxCurrentTab = tab;
+  ['all', 'unread', 'posts', 'stores'].forEach(t => {
+    const btn = document.getElementById("inboxTab" + t.charAt(0).toUpperCase() + t.slice(1));
+    if(btn){
+      if(t === tab){
+        btn.classList.add("active");
+        btn.style.background = "#0284c7";
+        btn.style.color = "#fff";
+        btn.style.borderColor = "#0284c7";
+      } else {
+        btn.classList.remove("active");
+        btn.style.background = "var(--card)";
+        btn.style.color = "var(--text)";
+        btn.style.borderColor = "var(--border)";
+      }
+    }
+  });
+  renderInboxFilteredList();
+}
+window.setInboxTab = setInboxTab;
+
+export function backFromInboxDirect(){
+  const is = document.getElementById("inboxScreen");
+  if(is) is.classList.add("hidden");
+  showCategoriesScreenDirect();
+}
+window.backFromInboxDirect = backFromInboxDirect;
+
+export function backFromInbox(){
+  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'inbox'){
+    window.history.back();
+    return;
+  }
+  backFromInboxDirect();
+}
+window.backFromInbox = backFromInbox;
+
 export function closeInbox(){
   const overlay = document.getElementById("userInboxOverlay");
   if(overlay) overlay.classList.add("hidden");
+  const is = document.getElementById("inboxScreen");
+  if(is) is.classList.add("hidden");
 }
 window.closeInbox = closeInbox;
 
@@ -8854,18 +9187,35 @@ export async function updateGlobalUnreadChatCount(){
   const aBadge = document.getElementById("accountChatBadge");
 
   try {
-    const qSnap = await getDocs(query(
-      collection(db, "feedback"),
-      where("type", "==", "chat_conversation"),
-      limit(40)
-    ));
     const myUid = auth.currentUser.uid;
+    let rows = [];
+    if(window.supabase){
+      try {
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("message")
+          .eq("type", "chat_conversation")
+          .ilike("message", `%${myUid}%`)
+          .limit(40);
+        if(!error && Array.isArray(data)) rows = data;
+      } catch(e){}
+    }
+
+    if(rows.length === 0){
+      const qSnap = await getDocs(query(
+        collection(db, "feedback"),
+        where("type", "==", "chat_conversation"),
+        limit(40)
+      ));
+      rows = qSnap.docs.map(d => d.data());
+    }
+
     let unreadCount = 0;
     const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
 
-    qSnap.docs.forEach(d => {
+    rows.forEach(d => {
       try {
-        const c = JSON.parse(d.data().message || "{}");
+        const c = JSON.parse(d.message || "{}");
         if(c.convId && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
           unreadCount++;
         }
