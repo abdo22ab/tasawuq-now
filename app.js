@@ -5968,6 +5968,24 @@ function updateAccountScreenUI(){
 }
 window.updateAccountScreenUI = updateAccountScreenUI;
 
+window.toggleEditProfileSection = () => {
+  const box = document.getElementById("editProfileSectionBox");
+  const arrow = document.getElementById("editProfileToggleArrow");
+  if(!box) return;
+  const isHidden = box.style.display === "none";
+  box.style.display = isHidden ? "block" : "none";
+  if(arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+};
+
+window.toggleAdminSection = () => {
+  const box = document.getElementById("adminButtonsGridBox");
+  const arrow = document.getElementById("adminToggleArrow");
+  if(!box) return;
+  const isHidden = box.style.display === "none";
+  box.style.display = isHidden ? "block" : "none";
+  if(arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+};
+
 function backFromAccountDirect(){
   const as = document.getElementById("accountScreen");
   if(as) as.classList.add("hidden");
@@ -8658,6 +8676,11 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   if(oldInboxOverlay) oldInboxOverlay.classList.add("hidden");
   pushNavState({ screen: 'chat' });
 
+  // تفعيل إذن الإشعارات بنعومة للمستخدم
+  if("Notification" in window && Notification.permission === "default"){
+    Notification.requestPermission().catch(()=>{});
+  }
+
   // تركيز حقل الكتابة
   setTimeout(() => {
     const input = document.getElementById("chatMessageInput");
@@ -8669,7 +8692,6 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
   window._activeChat.pollTimer = setInterval(() => {
-    if(document.hidden) return; // توقف مؤقت لو الشاشة مقفلة أو المتصفح في الخلفية
     if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
       if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
       return;
@@ -8678,6 +8700,60 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   }, 3000);
 }
 window.openChatWithSeller = openChatWithSeller;
+
+// 🔊 نغمة تنبيه ناعمة عند وصول رسالة جديدة عبر Web Audio API
+export function playChatChime(){
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e){}
+}
+window.playChatChime = playChatChime;
+
+// 🔔 إشعار هاتف رسمي يظهر في شريط إشعارات الهاتف حتى خارج الموقع
+export async function sendSystemChatNotification(senderName, text, convId, targetUid){
+  try {
+    if(!("Notification" in window)) return;
+    if(Notification.permission !== "granted"){
+      if(Notification.permission !== "denied"){
+        await Notification.requestPermission();
+      }
+    }
+    if(Notification.permission === "granted"){
+      const title = "💬 " + (senderName || "رسالة جديدة في تسوق الآن");
+      const options = {
+        body: text || "لديك رسالة جديدة",
+        icon: "icon-192.png",
+        badge: "icon-192.png",
+        tag: "chat_" + (convId || "general"),
+        renotify: true,
+        data: { convId, targetUid }
+      };
+
+      if(navigator.serviceWorker && navigator.serviceWorker.ready){
+        const reg = await navigator.serviceWorker.ready;
+        if(reg && reg.showNotification){
+          reg.showNotification(title, options);
+          return;
+        }
+      }
+      new Notification(title, options);
+    }
+  } catch(e){}
+}
+window.sendSystemChatNotification = sendSystemChatNotification;
 
 export function closeUserChatDirect(){
   const chatOverlay = document.getElementById("userChatOverlay");
@@ -8721,15 +8797,23 @@ export async function sendUserChatMessage(){
   input.value = "";
   input.focus();
 
-  // إظهار الرسالة مباشرة في الشاشة (Optimistic UI)
+  // إظهار الرسالة مباشرة في الشاشة (Optimistic UI - فقاعة على اليسار مع صح واحد مؤقت)
   const box = document.getElementById("chatMessagesBox");
   if(box){
     const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
     if(emptyNotice) box.innerHTML = "";
     
+    const d = new Date();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const tempDiv = document.createElement("div");
     tempDiv.className = "chatBubble outgoing";
-    tempDiv.innerHTML = `${escapeHtml(text)}<div class="chatTime">الآن ⏳</div>`;
+    tempDiv.innerHTML = `
+      <div class="chatBubbleContent">${escapeHtml(text)}</div>
+      <div class="chatBubbleMeta">
+        <span class="chatTime">${timeStr}</span>
+        <span class="chatTicks" style="color:rgba(255,255,255,0.7)">✓</span>
+      </div>
+    `;
     box.appendChild(tempDiv);
     box.scrollTop = box.scrollHeight;
   }
@@ -8813,7 +8897,7 @@ export async function loadChatMessages(convId, isPoll){
         .eq("type", "chat_message")
         .ilike("message", `%${convId}%`)
         .order("created_at", { ascending: true })
-        .limit(60);
+        .limit(80);
       if(!error && data) rows = data;
     }
 
@@ -8821,7 +8905,7 @@ export async function loadChatMessages(convId, isPoll){
       const qSnap = await getDocs(query(
         collection(db, "feedback"),
         where("type", "==", "chat_message"),
-        limit(60)
+        limit(80)
       ));
       rows = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
@@ -8844,12 +8928,24 @@ export async function loadChatMessages(convId, isPoll){
 
     messages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-    if(isPoll && window._activeChat && window._activeChat.lastMsgCount === messages.length){
+    const prevCount = (window._activeChat && window._activeChat.lastMsgCount) || 0;
+    if(isPoll && window._activeChat && prevCount === messages.length){
       return;
     }
 
     if(window._activeChat){
       window._activeChat.lastMsgCount = messages.length;
+    }
+
+    // تنبيه بصوت وإشعار عند استلام رسالة جديدة من الطرف الآخر
+    if(isPoll && prevCount > 0 && messages.length > prevCount){
+      const latestMsg = messages[messages.length - 1];
+      if(latestMsg && latestMsg.senderUid !== myUid){
+        playChatChime();
+        if(document.hidden || document.getElementById("userChatOverlay")?.classList.contains("hidden")){
+          sendSystemChatNotification(latestMsg.senderName || window._activeChat?.targetName || "مستخدم", latestMsg.text, convId, latestMsg.senderUid);
+        }
+      }
     }
 
     if(messages.length === 0){
@@ -8863,14 +8959,30 @@ export async function loadChatMessages(convId, isPoll){
       return;
     }
 
+    let lastDateStr = "";
     box.innerHTML = messages.map(m => {
       const isMe = m.senderUid === myUid;
-      const d = new Date(m.createdAt);
+      const d = new Date(m.createdAt || Date.now());
       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      let dateDivider = "";
+      const curDateStr = d.toLocaleDateString();
+      if(curDateStr !== lastDateStr){
+        lastDateStr = curDateStr;
+        const todayStr = new Date().toLocaleDateString();
+        const yesterdayStr = new Date(Date.now() - 86400000).toLocaleDateString();
+        const label = curDateStr === todayStr ? "اليوم" : curDateStr === yesterdayStr ? "أمس" : curDateStr;
+        dateDivider = `<div class="chatDateDivider">${label}</div>`;
+      }
+
       return `
+        ${dateDivider}
         <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
-          ${escapeHtml(m.text || '')}
-          <div class="chatTime">${timeStr}</div>
+          <div class="chatBubbleContent">${escapeHtml(m.text || '')}</div>
+          <div class="chatBubbleMeta">
+            <span class="chatTime">${timeStr}</span>
+            ${isMe ? '<span class="chatTicks">✓✓</span>' : ''}
+          </div>
         </div>
       `;
     }).join("");
@@ -9246,6 +9358,15 @@ export async function updateGlobalUnreadChatCount(){
         aBadge.style.display = "none";
       }
     }
+
+    // تنبيه بالصوت وإشعار النظام عند زيادة عدد الرسائل غير المقروءة في الخلفية
+    if(typeof window._lastGlobalUnreadCount === "number" && unreadCount > window._lastGlobalUnreadCount){
+      playChatChime();
+      if(document.hidden){
+        sendSystemChatNotification("رسالة جديدة", `لديك ${unreadCount} رسالة جديدة غير مقروءة`, "inbox", myUid);
+      }
+    }
+    window._lastGlobalUnreadCount = unreadCount;
   } catch(e){}
 }
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
