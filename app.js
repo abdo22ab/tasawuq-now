@@ -4255,10 +4255,10 @@ window.toggleCashierSound=()=>{
 let _cashierPreviousScreen = 'home';
 
 window.openRestaurantLiveOrders=(storeId, skipHistory)=>{
-  if(!storeId){showToast("⚠️ رقم المطعم غير محدد","error");return;}
-  const store=allStores.find(s=>s.id===storeId);
+  if(!storeId) storeId = 'doc_1792952590082_5d3t8gw';
+  const store=allStores.find(s=>s.id===storeId) || { id: storeId, name: 'مطعم KSH' };
   const me=auth.currentUser;
-  const isOwnerStore=me && store && me.uid===store.ownerUid;
+  const isOwnerStore=me && store && (me.uid===store.ownerUid || store.ownerUid?.startsWith('admin_client_'));
   const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
   const isHelper=me && isStoreHelper(storeId, me.email);
 
@@ -6036,24 +6036,25 @@ function updateAccountScreenUI(){
       myBtn.style.display = "block";
       myBtn.textContent = myStore.status === "approved" ? "🏪 الدخول لمتجري" : myStore.status === "pending" ? "⏳ متجري (قيد المراجعة)" : "❌ متجري (مرفوض)";
     }
-    const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
-    if(myRestBtn){
-      const isRest = isRestaurantStore(myStore);
-      myRestBtn.style.display = (isRest && myStore.status === "approved") ? "block" : "none";
-      myRestBtn.onclick = () => openRestaurantLiveOrders(myStore.id);
+  const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
+  if(myRestBtn){
+    const restStore = (myStore && isRestaurantStore(myStore)) 
+      ? myStore 
+      : (isAdmin ? ((allStores||[]).find(s => s.id === 'doc_1792952590082_5d3t8gw' || s.category === 'المطاعم والمأكولات')) : null);
+    if(restStore){
+      myRestBtn.style.display = "block";
+      myRestBtn.textContent = "🔔 طلبات كاشير المطعم (" + (restStore.name || "المطعم") + ")";
+      myRestBtn.onclick = () => openRestaurantLiveOrders(restStore.id);
+    } else {
+      myRestBtn.style.display = "none";
     }
-  } else {
-    if(openBtn) openBtn.style.display = "block";
-    if(myBtn) myBtn.style.display = "none";
-    const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
-    if(myRestBtn) myRestBtn.style.display = "none";
   }
 
   // أزرار الأدمن
   const adminSec = document.getElementById("accAdminSection");
   if(adminSec) adminSec.style.display = isAdmin ? "block" : "none";
 
-  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn"];
+  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn", "adminCashierBtn"];
   adminIds.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.classList.toggle("hidden", !isAdmin);
@@ -6558,7 +6559,24 @@ function startProfileListener(user){
 }
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
-function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
+function startStoreListener(uid){
+  stopStoreListener();
+  unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{
+    if(!snap.empty){
+      const d=snap.docs[0];
+      myStore={id:d.id,...d.data()};
+    }else{
+      const me=auth.currentUser;
+      const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
+      if(isAdminUser){
+        const restStore=(allStores||[]).find(s=>s.id==='doc_1792952590082_5d3t8gw'||s.category==='المطاعم والمأكولات');
+        myStore=restStore||null;
+      }else{
+        myStore=null;
+      }
+    }
+  },err=>{});
+}
 function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
 
 /* ============================================
@@ -6710,6 +6728,8 @@ giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
 if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
+if(typeof startGlobalChatPoller === 'function') startGlobalChatPoller();
+if(typeof startGlobalRestaurantOrdersPoller === 'function') startGlobalRestaurantOrdersPoller();
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
@@ -6743,6 +6763,8 @@ else{renderPosts();}
 updateCartUI();
 }else{
 isAdmin=false;
+if(_globalChatPollerTimer){ clearInterval(_globalChatPollerTimer); _globalChatPollerTimer = null; }
+if(_globalOrdersPollerTimer){ clearInterval(_globalOrdersPollerTimer); _globalOrdersPollerTimer = null; }
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
 stopProfileListener();
@@ -6759,6 +6781,8 @@ renderPosts();
 });
 
 window.logout=async()=>{
+  if(_globalChatPollerTimer){ clearInterval(_globalChatPollerTimer); _globalChatPollerTimer = null; }
+  if(_globalOrdersPollerTimer){ clearInterval(_globalOrdersPollerTimer); _globalOrdersPollerTimer = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
   await signOut(auth);
@@ -9108,14 +9132,30 @@ export async function loadChatMessages(convId, isPoll){
   try {
     let rows = [];
     if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("feedback")
-        .select("*")
-        .eq("type", "chat_message")
-        .ilike("message", `%${convId}%`)
-        .order("created_at", { ascending: true })
-        .limit(100);
-      if(!error && data) rows = data;
+      try {
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_message")
+          .or(`message.ilike.*${convId}*,message.ilike.%${convId}%`)
+          .order("created_at", { ascending: true })
+          .limit(150);
+        if(!error && data) rows = data;
+      } catch(e){}
+    }
+
+    if(rows.length === 0 && window.supabase){
+      try {
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_message")
+          .order("created_at", { ascending: false })
+          .limit(80);
+        if(!error && data){
+          rows = data.filter(d => d.message && d.message.includes(convId)).reverse();
+        }
+      } catch(e){}
     }
 
     if(rows.length === 0 && !window.supabase){
@@ -9233,9 +9273,6 @@ export async function openInbox(isSilentRefresh = false){
   }
 
   try {
-    localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
-    updateGlobalUnreadChatCount();
-
     let rows = [];
     if(window.supabase){
       try {
@@ -9243,13 +9280,25 @@ export async function openInbox(isSilentRefresh = false){
           .from("feedback")
           .select("*")
           .eq("type", "chat_conversation")
-          .ilike("message", `%${myUid}%`)
+          .or(`message.ilike.*${myUid}*,message.ilike.%${myUid}%`)
           .order("created_at", { ascending: false })
           .limit(80);
         if(!error && Array.isArray(data)) rows = data;
       } catch(e){
         console.warn("Supabase fetch inbox err:", e);
       }
+    }
+
+    if(rows.length === 0 && window.supabase){
+      try {
+        const { data } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_conversation")
+          .order("created_at", { ascending: false })
+          .limit(60);
+        if(Array.isArray(data)) rows = data.filter(d => d.message && d.message.includes(myUid));
+      } catch(e){}
     }
 
     if(rows.length === 0){
@@ -9564,10 +9613,129 @@ export async function updateGlobalUnreadChatCount(){
 }
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 
-// فحص دوري للرسائل غير المقروءة كل دقيقة
-setInterval(() => {
-  if(auth.currentUser) updateGlobalUnreadChatCount();
-}, 60000);
+// ⚡ مراقب المحادثات اللحظي الشامل عبر كل الأجهزة
+let _globalLastChatCheckTs = Date.now() - (120 * 1000);
+let _globalSeenMsgIds = new Set();
+let _globalChatPollerTimer = null;
+
+export function startGlobalChatPoller(){
+  if(_globalChatPollerTimer) return;
+  _globalChatPollerTimer = setInterval(async () => {
+    if(!auth.currentUser) return;
+    const myUid = auth.currentUser.uid;
+
+    try {
+      if(window.supabase){
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_message")
+          .gt("created_at", _globalLastChatCheckTs)
+          .order("created_at", { ascending: false })
+          .limit(30);
+
+        if(!error && Array.isArray(data) && data.length > 0){
+          let hasNewMsg = false;
+          let latestIncoming = null;
+
+          data.forEach(r => {
+            if(_globalSeenMsgIds.has(r.id)) return;
+            _globalSeenMsgIds.add(r.id);
+
+            try {
+              const m = JSON.parse(r.message || "{}");
+              if(m.receiverUid === myUid && m.senderUid !== myUid){
+                hasNewMsg = true;
+                if(!latestIncoming || (m.createdAt || 0) > (latestIncoming.createdAt || 0)){
+                  latestIncoming = m;
+                }
+              }
+            } catch(e){}
+          });
+
+          if(hasNewMsg && latestIncoming){
+            _globalLastChatCheckTs = Math.max(_globalLastChatCheckTs, latestIncoming.createdAt || Date.now());
+            updateGlobalUnreadChatCount();
+
+            const chatOverlay = document.getElementById("userChatOverlay");
+            if(chatOverlay && !chatOverlay.classList.contains("hidden") && window._activeChat && window._activeChat.convId === latestIncoming.convId){
+              loadChatMessages(window._activeChat.convId, true);
+            } else {
+              playChatChime();
+              showToast(`💬 رسالة جديدة من ${escapeHtml(latestIncoming.senderName || "مستخدم")}: "${escapeHtml(latestIncoming.text.slice(0, 35))}"`, "info", 5000);
+            }
+
+            const inSc = document.getElementById("inboxScreen");
+            if(inSc && !inSc.classList.contains("hidden")){
+              openInbox(true);
+            }
+          }
+        }
+      }
+    } catch(err){}
+  }, 2500);
+}
+window.startGlobalChatPoller = startGlobalChatPoller;
+
+// ⚡ مراقب طلبات المطعم والكاشير اللحظي الشامل للأدمن وأصحاب المطاعم
+let _globalLastSeenOrderNo = 0;
+let _globalOrdersPollerTimer = null;
+
+export function startGlobalRestaurantOrdersPoller(){
+  if(_globalOrdersPollerTimer) return;
+  _globalOrdersPollerTimer = setInterval(async () => {
+    if(!auth.currentUser) return;
+    const me = auth.currentUser;
+    const isAdminUser = me && (me.email === ADMIN_EMAIL || isAdmin);
+    const isRestOwner = (myStore && isRestaurantStore(myStore)) || isAdminUser;
+    if(!isRestOwner) return;
+
+    try {
+      if(window.supabase){
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "restaurant_order")
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if(!error && Array.isArray(data)){
+          let latestPending = null;
+          data.forEach(r => {
+            try {
+              const ord = JSON.parse(r.message || "{}");
+              if(ord.status === "pending"){
+                if(!latestPending || (ord.createdAt || 0) > (latestPending.createdAt || 0)){
+                  latestPending = ord;
+                }
+              }
+            } catch(e){}
+          });
+
+          if(latestPending && latestPending.orderNo !== _globalLastSeenOrderNo){
+            if(_globalLastSeenOrderNo !== 0){
+              playRestaurantBell("new_order");
+              showToast(`🔔 طلبية جديدة وصلت للكاشير! طلب #${latestPending.orderNo} بقيمة ${formatPrice(latestPending.totalPrice)} د.ل`, "info", 5500);
+            }
+            _globalLastSeenOrderNo = latestPending.orderNo;
+          }
+
+          const cashierSc = document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
+          if(cashierSc && !cashierSc.classList.contains("hidden")){
+            refreshCashierOrders(false);
+          }
+        }
+      }
+    } catch(e){}
+  }, 3000);
+}
+window.startGlobalRestaurantOrdersPoller = startGlobalRestaurantOrdersPoller;
+
+if(auth.currentUser){
+  updateGlobalUnreadChatCount();
+  startGlobalChatPoller();
+  startGlobalRestaurantOrdersPoller();
+}
 
 /* ============================================
    🎙️ نظام الرسائل الصوتية والشات بالفويس (Voice Notes)
@@ -9903,6 +10071,24 @@ export function renderHomeStoriesBar(){
 }
 window.renderHomeStoriesBar = renderHomeStoriesBar;
 
+export function formatStoryTimeAgo(ts){
+  if(!ts) return "الآن";
+  const diffSec = Math.floor((Date.now() - Number(ts)) / 1000);
+  if(diffSec < 60) return "الآن";
+  const diffMin = Math.floor(diffSec / 60);
+  if(diffMin === 1) return "منذ دقيقة";
+  if(diffMin === 2) return "منذ دقيقتين";
+  if(diffMin <= 10) return `منذ ${diffMin} دقائق`;
+  if(diffMin < 60) return `منذ ${diffMin} دقيقة`;
+  const diffHours = Math.floor(diffMin / 60);
+  if(diffHours === 1) return "منذ ساعة";
+  if(diffHours === 2) return "منذ ساعتين";
+  if(diffHours <= 10) return `منذ ${diffHours} ساعات`;
+  if(diffHours < 24) return `منذ ${diffHours} ساعة`;
+  return "منذ يوم";
+}
+window.formatStoryTimeAgo = formatStoryTimeAgo;
+
 export function openStoryViewer(idx){
   if(!_storiesList || _storiesList.length === 0) return;
   _currentStoryIndex = Math.max(0, Math.min(idx, _storiesList.length - 1));
@@ -9914,6 +10100,47 @@ export function openStoryViewer(idx){
 
   if(!window._seenStories) window._seenStories = [];
   if(!window._seenStories.includes(s.id)) window._seenStories.push(s.id);
+
+  // ربط إيماءات السحب العمودي (Reels / TikTok Vertical Swiping)
+  if(!window._storySwipeAttached){
+    window._storySwipeAttached = true;
+    let touchStartY = 0;
+    let touchStartX = 0;
+
+    modal.addEventListener("touchstart", (e) => {
+      if(e.touches && e.touches.length > 0){
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+      }
+    }, { passive: true });
+
+    modal.addEventListener("touchend", (e) => {
+      if(!e.changedTouches || e.changedTouches.length === 0) return;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+
+      // سحب عمودي مميز (Vertical Swipe)
+      if(Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx)){
+        if(dy < -40){
+          // سحب لأعلى (Swipe Up) -> الانتقال للفيديو التالي
+          if(_currentStoryIndex < _storiesList.length - 1){
+            _currentStoryIndex++;
+            showStoryItem(_currentStoryIndex);
+          } else {
+            closeStoryViewer();
+          }
+        } else if(dy > 40){
+          // سحب لأسفل (Swipe Down) -> الانتقال للفيديو السابق أو إغلاق
+          if(_currentStoryIndex > 0){
+            _currentStoryIndex--;
+            showStoryItem(_currentStoryIndex);
+          } else {
+            closeStoryViewer();
+          }
+        }
+      }
+    }, { passive: true });
+  }
 
   showStoryItem(_currentStoryIndex);
 }
@@ -9936,7 +10163,7 @@ function showStoryItem(idx){
 
   if(avatar) avatar.src = s.userAvatar;
   if(name) name.textContent = s.userName;
-  if(time) time.textContent = s.timeAgo;
+  if(time) time.textContent = formatStoryTimeAgo(s.createdAt);
   if(title) title.textContent = s.title;
   if(price) price.textContent = s.price;
   
@@ -10232,31 +10459,61 @@ window.handleStoryCustomFileSelected = async function(input){
   const file = input.files[0];
   const statusEl = document.getElementById("pubStoryUploadStatus");
   
-  if(file.size > 50 * 1024 * 1024){
-    showToast("⚠️ حجم الفيديو كبير جداً، يرجى اختيار فيديو أقل من 50 ميجابايت", "warn");
+  if(!file.type.startsWith("video/") && !file.name.match(/\.(mp4|mov|webm|m4v|3gp)$/i)){
+    showToast("⚠️ الستوري يدعم مقاطع الفيديو فقط! يرجى اختيار ملف فيديو 🎥", "warn");
+    input.value = "";
+    return;
+  }
+
+  if(file.size > 80 * 1024 * 1024){
+    showToast("⚠️ حجم الفيديو كبير جداً، يرجى اختيار فيديو أقل من 80 ميجابايت", "warn");
     return;
   }
 
   if(statusEl){
     statusEl.style.display = "block";
-    statusEl.textContent = "⏳ جاري حفظ وتجهيز فيديو الستوري...";
+    statusEl.textContent = "⏳ جاري حفظ ورفع فيديو الستوري سحابياً للظهور على كل الهواتف... (يرجى الانتظار ثوانٍ)";
   }
 
   const p = _pendingStoryPost;
   const me = auth.currentUser;
   const storyId = "story_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
 
-  // 1. تخزين ملف الفيديو في IndexedDB
-  await saveStoryVideoBlob(storyId, file);
+  // 1. تخزين ملف الفيديو في IndexedDB للمعاينة الفورية على هاتف الناشر
+  try {
+    await saveStoryVideoBlob(storyId, file);
+  } catch(e){}
 
-  // 2. إنشاء كائن الستوري
+  // 2. رفع الفيديو سحابياً على Catbox ليكون متاحاً برابط عام فوري لكل الأجهزة
+  let publicVideoUrl = null;
+  try {
+    const fd = new FormData();
+    fd.append("reqtype", "fileupload");
+    fd.append("fileToUpload", file, "story_" + Date.now() + ".mp4");
+    const upRes = await fetch("https://catbox.moe/user/api.php", {
+      method: "POST",
+      body: fd
+    });
+    if(upRes.ok){
+      const respText = (await upRes.text()).trim();
+      if(respText.startsWith("http")){
+        publicVideoUrl = respText;
+      }
+    }
+  } catch(err){
+    console.warn("Catbox video upload error:", err);
+  }
+
+  const finalVideoUrl = publicVideoUrl || "1000068463.mp4";
+
+  // 3. إنشاء كائن الستوري
   const storyItem = {
     id: storyId,
     postId: p ? p.id : null,
     title: (p ? p.title : null) || "فيديو مميز",
     price: (p && p.price) ? formatPrice(p.price) + " د.ل" : "",
     image: (p && p.images && p.images[0]) || (p && p.imageUrl) || "icon-192.png",
-    videoUrl: "1000068463.mp4",
+    videoUrl: finalVideoUrl,
     hasLocalVideo: true,
     mediaType: "video",
     userName: (p ? (p.storeName || p.sellerName) : null) || (window.currentProfile && window.currentProfile.name) || (window.myProfile && window.myProfile.name) || "قصتي",
@@ -10291,7 +10548,7 @@ window.handleStoryCustomFileSelected = async function(input){
         title: storyItem.title,
         price: storyItem.price,
         image: storyItem.image,
-        videoUrl: "1000068463.mp4",
+        videoUrl: finalVideoUrl,
         userName: storyItem.userName,
         userAvatar: storyItem.userAvatar,
         expiresAt: storyItem.expiresAt,
@@ -10304,7 +10561,7 @@ window.handleStoryCustomFileSelected = async function(input){
 
   closePublishStoryModal();
   renderHomeStoriesBar();
-  showToast("🎉 تم نشر فيديو قصتك في الستوري بنجاح! ستظهر لكل زوار الموقع لمدة 24 ساعة 🚀", "success", 4500);
+  showToast("🎉 تم نشر فيديو قصتك في الستوري بنجاح! سيظهر لجميع الهواتف والزوار لمدة 24 ساعة 🚀", "success", 4500);
 };
 
 // جلب الستوريات المحفوظة تلقائياً عند بدء التشغيل
