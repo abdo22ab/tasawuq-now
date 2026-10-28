@@ -165,6 +165,7 @@ let _tempStoreData=null;
 let currentStoreHelpers=[];
 window._globalChatPollerTimer = null;
 window._globalOrdersPollerTimer = null;
+window._chatRealtimeChannel = null;
 window._globalLastChatCheckTs = Date.now() - (120 * 1000);
 window._globalSeenMsgIds = new Set();
 window._globalLastSeenOrderNo = 0;
@@ -8862,19 +8863,64 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     } catch(e){}
   }
 
-  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
+  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي والاشتراك اللحظي المباشر
   await loadChatMessages(convId, false);
 
+  // ⚡ اشتراك لحظي فوري عبر قنوات Supabase Realtime لاستقبال الرد في أجزاء من الثانية
+  if(window._chatRealtimeChannel && window.supabase){
+    try { window.supabase.removeChannel(window._chatRealtimeChannel); } catch(e){}
+    window._chatRealtimeChannel = null;
+  }
+  if(window.supabase && typeof window.supabase.channel === 'function'){
+    try {
+      window._chatRealtimeChannel = window.supabase
+        .channel('chat_room_' + convId)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'feedback'
+        }, (payload) => {
+          if(payload && payload.new && payload.new.type === 'chat_message' && payload.new.message && payload.new.message.includes(convId)){
+            loadChatMessages(convId, true);
+          }
+        })
+        .subscribe();
+    } catch(e){}
+  }
+
+  // ⚡ تحديث فائق السرعة كل ثانية كضمان محكم للمحادثة المباشرة على شبكات الهاتف
   if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
   window._activeChat.pollTimer = setInterval(() => {
-    if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
+    const chat = document.getElementById("userChatOverlay");
+    if(!window._activeChat || !chat || chat.classList.contains("hidden")){
       if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
       return;
     }
     loadChatMessages(window._activeChat.convId, true);
-  }, 3000);
+  }, 1000);
 }
 window.openChatWithSeller = openChatWithSeller;
+
+// 🔊 نغمة إرسال سريعة وفورية عند ضغط إرسال (مثل واتساب وتلغرام)
+export function playChatSendSound(){
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(480, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.16);
+  } catch(e){}
+}
+window.playChatSendSound = playChatSendSound;
 
 // 🔊 نغمة تنبيه ناعمة عند وصول رسالة جديدة عبر Web Audio API
 export function playChatChime(){
@@ -8941,6 +8987,10 @@ export function closeUserChatDirect(){
   if(window._activeChat && window._activeChat.pollTimer){
     clearInterval(window._activeChat.pollTimer);
   }
+  if(window._chatRealtimeChannel && window.supabase){
+    try { window.supabase.removeChannel(window._chatRealtimeChannel); } catch(e){}
+    window._chatRealtimeChannel = null;
+  }
   window._activeChat = null;
   const is = document.getElementById("inboxScreen");
   if(is && !is.classList.contains("hidden")){
@@ -8992,7 +9042,10 @@ export async function sendUserChatMessage(){
   // تنظيف الحقل فوراً واستعادة التركيز
   input.value = "";
   handleChatInputChange(input);
-  input.focus();
+  setTimeout(() => { if(input) input.focus(); }, 30);
+
+  // تشغيل نغمة الإرسال الفورية
+  playChatSendSound();
 
   const msgId = "msg_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
   const msgPayload = {
@@ -9007,10 +9060,15 @@ export async function sendUserChatMessage(){
     createdAt: Date.now()
   };
 
-  // إضافة الرسالة فورياً للذاكرة المحلية لمنع أي اختفاء
+  // إضافة الرسالة فورياً للذاكرة المحلية لمنع أي اختفاء وظهورها اللحظي المباشر
   if(!_activeChatMessages) _activeChatMessages = [];
   _activeChatMessages.push(msgPayload);
+  if(window._activeChat){
+    window._activeChat.lastMsgCount = _activeChatMessages.length;
+    window._activeChat.lastMsgId = msgId;
+  }
   renderChatMessagesList(_activeChatMessages);
+  scrollChatToBottom(true);
 
   try {
     // 1. تسجيل الرسالة في feedback
@@ -9063,6 +9121,27 @@ export async function sendUserChatMessage(){
   }
 }
 window.sendUserChatMessage = sendUserChatMessage;
+
+// 📜 نزول ذكي ومرن لأسفل الشات عبر دورات العرض لضمان رؤية الرسائل على كل الهواتف
+export function scrollChatToBottom(smooth = false){
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  const doScroll = () => {
+    try {
+      box.scrollTo({
+        top: box.scrollHeight + 1000,
+        behavior: smooth ? "smooth" : "auto"
+      });
+    } catch(e){
+      box.scrollTop = box.scrollHeight + 1000;
+    }
+  };
+  doScroll();
+  if(window.requestAnimationFrame) requestAnimationFrame(doScroll);
+  setTimeout(doScroll, 40);
+  setTimeout(doScroll, 160);
+}
+window.scrollChatToBottom = scrollChatToBottom;
 
 export function renderChatMessagesList(messages){
   const box = document.getElementById("chatMessagesBox");
@@ -9128,7 +9207,7 @@ export function renderChatMessagesList(messages){
     `;
   }).join("");
 
-  box.scrollTop = box.scrollHeight;
+  scrollChatToBottom(false);
 }
 window.renderChatMessagesList = renderChatMessagesList;
 
@@ -9147,10 +9226,12 @@ export async function loadChatMessages(convId, isPoll){
           .from("feedback")
           .select("*")
           .eq("type", "chat_message")
-          .or(`message.ilike.*${convId}*,message.ilike.%${convId}%`)
+          .ilike("message", `*${convId}*`)
           .order("created_at", { ascending: true })
-          .limit(150);
-        if(!error && data) rows = data;
+          .limit(200);
+        if(!error && Array.isArray(data) && data.length > 0){
+          rows = data;
+        }
       } catch(e){}
     }
 
@@ -9161,7 +9242,7 @@ export async function loadChatMessages(convId, isPoll){
           .select("*")
           .eq("type", "chat_message")
           .order("created_at", { ascending: false })
-          .limit(80);
+          .limit(100);
         if(!error && data){
           rows = data.filter(d => d.message && d.message.includes(convId)).reverse();
         }
@@ -9210,16 +9291,22 @@ export async function loadChatMessages(convId, isPoll){
     _activeChatMessages = merged;
 
     const prevCount = (window._activeChat && window._activeChat.lastMsgCount) || 0;
-    if(isPoll && window._activeChat && prevCount === merged.length){
+    const latestServerMsg = merged.length > 0 ? merged[merged.length - 1] : null;
+    const latestServerMsgId = latestServerMsg ? (latestServerMsg.id || (latestServerMsg.createdAt + "_" + latestServerMsg.text)) : "";
+    const prevLastId = (window._activeChat && window._activeChat.lastMsgId) || "";
+
+    // إذا كان فحصاً دورياً ولم تتغير الرسائل مطلقاً نتوقف لتوفير أداء الجهاز
+    if(isPoll && window._activeChat && prevCount === merged.length && prevLastId === latestServerMsgId){
       return;
     }
 
     if(window._activeChat){
       window._activeChat.lastMsgCount = merged.length;
+      window._activeChat.lastMsgId = latestServerMsgId;
     }
 
-    // تنبيه صوتي عند استلام رسالة جديدة من الطرف الآخر
-    if(isPoll && prevCount > 0 && merged.length > prevCount){
+    // تنبيه صوتي فوري عند استلام رسالة جديدة من الطرف الآخر
+    if(isPoll && prevCount > 0 && (merged.length > prevCount || prevLastId !== latestServerMsgId)){
       const latestMsg = merged[merged.length - 1];
       if(latestMsg && latestMsg.senderUid !== myUid){
         playChatChime();
@@ -9397,9 +9484,9 @@ export function renderInboxFilteredList(){
   // تصفية حسب نص البحث
   if(queryText){
     filtered = filtered.filter(c => {
-      const otherUid = Array.isArray(c.participants) 
-        ? c.participants.find(u => u !== myUid) 
-        : (c.convId ? c.convId.split('_').find(u => u !== myUid) : null);
+      const cleanConvId = (c.convId || c.id || "").replace(/^conv_/, "");
+      const parts = cleanConvId.split("_").filter(x => x && x !== "conv" && x !== myUid);
+      const otherUid = (Array.isArray(c.participants) && c.participants.find(u => u && u !== myUid)) || parts[0] || null;
       
       let otherName = "";
       if(c.lastSenderUid !== myUid && c.lastSenderName){
@@ -9450,9 +9537,9 @@ export function renderInboxFilteredList(){
   }
 
   fullList.innerHTML = filtered.map(c => {
-    const otherUid = Array.isArray(c.participants) 
-      ? c.participants.find(u => u !== myUid) 
-      : (c.convId ? c.convId.split('_').find(u => u !== myUid) : null);
+    const cleanConvId = (c.convId || c.id || "").replace(/^conv_/, "");
+    const parts = cleanConvId.split("_").filter(x => x && x !== "conv" && x !== myUid);
+    const otherUid = (Array.isArray(c.participants) && c.participants.find(u => u && u !== myUid)) || parts[0] || null;
 
     let otherName = "";
     if(c.lastSenderUid !== myUid && c.lastSenderName){
@@ -9636,7 +9723,6 @@ export function startGlobalChatPoller(){
           .from("feedback")
           .select("*")
           .eq("type", "chat_message")
-          .gt("created_at", window._globalLastChatCheckTs)
           .order("created_at", { ascending: false })
           .limit(30);
 
@@ -9680,7 +9766,7 @@ export function startGlobalChatPoller(){
         }
       }
     } catch(err){}
-  }, 2500);
+  }, 1800);
 }
 window.startGlobalChatPoller = startGlobalChatPoller;
 
