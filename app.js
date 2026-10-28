@@ -9116,7 +9116,8 @@ export async function sendUserChatMessage(){
   // تشغيل نغمة الإرسال الفورية
   playChatSendSound();
 
-  const msgId = "msg_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+  const nowTs = Date.now();
+  const msgId = "msg_" + nowTs + "_" + Math.floor(Math.random() * 10000);
   const msgPayload = {
     id: msgId,
     convId: activeChat.convId,
@@ -9126,8 +9127,8 @@ export async function sendUserChatMessage(){
     text: text,
     postId: activeChat.postId,
     storeId: activeChat.storeId,
-    status: "sending", // حالة الإرسال المبدئية: جاري الإرسال
-    createdAt: Date.now()
+    status: "sending", // حالة الإرسال المبدئية: جاري الإرسال ⏳
+    createdAt: nowTs
   };
 
   // إضافة الرسالة فورياً للذاكرة المحلية لمنع أي اختفاء وظهورها اللحظي المباشر
@@ -9152,7 +9153,7 @@ export async function sendUserChatMessage(){
     lastMessage: text,
     lastSenderUid: me.uid,
     lastSenderName: senderName,
-    updatedAt: Date.now(),
+    updatedAt: nowTs,
     postContext: activeChat.postId ? {
       id: activeChat.postId,
       title: postTitle,
@@ -9166,15 +9167,16 @@ export async function sendUserChatMessage(){
   };
 
   try {
+    const payloadForServer = { ...msgPayload, status: "sent" };
     if(window.supabase){
       const pMsg = window.supabase.from("feedback").insert({
         id: msgId,
         type: "chat_message",
-        message: JSON.stringify(msgPayload),
+        message: JSON.stringify(payloadForServer),
         uid: me.uid,
         user_name: senderName,
         user_phone: me.phoneNumber || "",
-        created_at: Date.now()
+        created_at: nowTs
       });
 
       const pConv = window.supabase.from("feedback").upsert({
@@ -9183,7 +9185,7 @@ export async function sendUserChatMessage(){
         message: JSON.stringify(convSummary),
         uid: me.uid,
         user_name: senderName,
-        created_at: Date.now()
+        created_at: nowTs
       });
 
       const [resMsg] = await Promise.all([pMsg, pConv]);
@@ -9193,18 +9195,18 @@ export async function sendUserChatMessage(){
         addDoc(collection(db, "feedback"), {
           id: msgId,
           type: "chat_message",
-          message: JSON.stringify(msgPayload),
+          message: JSON.stringify(payloadForServer),
           uid: me.uid,
           user_name: senderName,
           user_phone: me.phoneNumber || "",
-          created_at: Date.now()
+          created_at: nowTs
         }),
         setDoc(doc(db, "feedback", convDocId), {
           type: "chat_conversation",
           message: JSON.stringify(convSummary),
           uid: me.uid,
           user_name: senderName,
-          created_at: Date.now()
+          created_at: nowTs
         }, { merge: true })
       ]);
     }
@@ -9212,6 +9214,9 @@ export async function sendUserChatMessage(){
     // ✅ تأكيد التسليم الناجح فوراً وتحويل الحالة إلى "تم الإرسال"
     msgPayload.status = "sent";
     updateChatMessageStatus(msgId, "sent");
+    if(window._activeChat){
+      window._activeChat.lastFetchedTs = Math.max(window._activeChat.lastFetchedTs || 0, nowTs);
+    }
 
   } catch(err) {
     console.error("Error sending chat message:", err);
@@ -9326,12 +9331,101 @@ window.renderChatMessagesList = renderChatMessagesList;
 export async function loadChatMessages(convId, isPoll){
   const box = document.getElementById("chatMessagesBox");
   if(!box) return;
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
+  const targetUid = window._activeChat ? window._activeChat.targetUid : null;
+
   if(!isPoll && (!box.children.length || box.querySelector(".reportsEmpty"))){
     box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>`;
   }
 
   try {
     let rows = [];
+
+    // ⚡ الفحص التزايدي الفائق الخفة (Incremental Delta Sync) أثناء المحادثة النشطة:
+    // جلب الرسائل الجديدة فقط بعد آخر طابع زمني لتفادي استهلاك الإنترنت والبطارية نهائياً
+    if(isPoll && window._activeChat && window._activeChat.convId === convId && window._activeChat.lastFetchedTs){
+      const sinceTs = window._activeChat.lastFetchedTs - 1500;
+      if(window.supabase){
+        try {
+          const { data, error } = await window.supabase
+            .from("feedback")
+            .select("*")
+            .eq("type", "chat_message")
+            .ilike("message", `*${convId}*`)
+            .gt("created_at", sinceTs)
+            .order("created_at", { ascending: true })
+            .limit(30);
+          if(!error && Array.isArray(data)){
+            rows = data;
+          }
+        } catch(e){}
+      }
+
+      // إذا لم تصل أي رسالة جديدة من السيرفر، نتوقف فوراً دون أي إعادة رسم
+      if(rows.length === 0){
+        return;
+      }
+
+      let hasNewIncoming = false;
+      let stateChanged = false;
+
+      rows.forEach(d => {
+        try {
+          const parsed = JSON.parse(d.message || "{}");
+          const matchConv = parsed.convId === convId;
+          const matchUsers = targetUid && myUid && (
+            (parsed.senderUid === myUid && parsed.receiverUid === targetUid) ||
+            (parsed.senderUid === targetUid && parsed.receiverUid === myUid)
+          );
+          if(!matchConv && !matchUsers) return;
+
+          const msgTs = Number(parsed.createdAt || d.created_at || Date.now());
+          if(msgTs > window._activeChat.lastFetchedTs){
+            window._activeChat.lastFetchedTs = msgTs;
+          }
+
+          const existingIdx = _activeChatMessages.findIndex(m => m.id === d.id || (m.createdAt === msgTs && m.text === parsed.text));
+          if(existingIdx >= 0){
+            // رسالتنا مسجلة محلياً، نؤكد تحويل حالتها فوراً إلى "تم الإرسال"
+            if(_activeChatMessages[existingIdx].status !== "sent"){
+              _activeChatMessages[existingIdx].status = "sent";
+              updateChatMessageStatus(_activeChatMessages[existingIdx].id || d.id, "sent");
+            }
+          } else {
+            // رسالة جديدة وصلت من الطرف الآخر أو جهاز آخر!
+            const newMsg = {
+              id: d.id,
+              ...parsed,
+              status: "sent",
+              createdAt: msgTs
+            };
+            _activeChatMessages.push(newMsg);
+            stateChanged = true;
+            if(parsed.senderUid !== myUid){
+              hasNewIncoming = true;
+            }
+          }
+        } catch(e){}
+      });
+
+      if(stateChanged){
+        _activeChatMessages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+        renderChatMessagesList(_activeChatMessages);
+        if(hasNewIncoming){
+          playChatChime();
+          if(document.hidden || document.getElementById("userChatOverlay")?.classList.contains("hidden")){
+            const last = _activeChatMessages[_activeChatMessages.length - 1];
+            sendSystemChatNotification(last?.senderName || window._activeChat?.targetName || "مستخدم", last?.text || "رسالة جديدة", convId, last?.senderUid);
+          }
+          scrollChatToBottom(true);
+        } else {
+          scrollChatToBottom(false);
+        }
+      }
+      return;
+    }
+
+    // --- التحميل الأولي الكامل (Full Initial Load) عند فتح المحادثة لأول مرة ---
     if(window.supabase){
       try {
         const { data, error } = await window.supabase
@@ -9340,7 +9434,7 @@ export async function loadChatMessages(convId, isPoll){
           .eq("type", "chat_message")
           .ilike("message", `*${convId}*`)
           .order("created_at", { ascending: true })
-          .limit(200);
+          .limit(80);
         if(!error && Array.isArray(data) && data.length > 0){
           rows = data;
         }
@@ -9349,14 +9443,12 @@ export async function loadChatMessages(convId, isPoll){
 
     if(rows.length === 0 && window.supabase){
       try {
-        const targetUid = window._activeChat?.targetUid;
-        const myUid = auth.currentUser?.uid;
         let query = window.supabase
           .from("feedback")
           .select("*")
           .eq("type", "chat_message")
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(60);
         if(myUid && targetUid){
           query = query.in("uid", [myUid, targetUid]);
         }
@@ -9371,14 +9463,13 @@ export async function loadChatMessages(convId, isPoll){
       const qSnap = await getDocs(query(
         collection(db, "feedback"),
         where("type", "==", "chat_message"),
-        limit(100)
+        limit(80)
       ));
       rows = qSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    const myUid = auth.currentUser ? auth.currentUser.uid : null;
-    const targetUid = window._activeChat ? window._activeChat.targetUid : null;
     const serverMessages = [];
+    let maxTs = 0;
 
     rows.forEach(d => {
       try {
@@ -9389,11 +9480,13 @@ export async function loadChatMessages(convId, isPoll){
           (parsed.senderUid === targetUid && parsed.receiverUid === myUid)
         );
         if(matchConv || matchUsers){
+          const msgTs = Number(parsed.createdAt || d.created_at || Date.now());
+          if(msgTs > maxTs) maxTs = msgTs;
           serverMessages.push({
             id: d.id,
             ...parsed,
             status: "sent",
-            createdAt: parsed.createdAt || d.created_at || Date.now()
+            createdAt: msgTs
           });
         }
       } catch(e){}
@@ -9415,33 +9508,14 @@ export async function loadChatMessages(convId, isPoll){
     merged.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
     _activeChatMessages = merged;
 
-    const prevCount = (window._activeChat && window._activeChat.lastMsgCount) || 0;
-    const latestServerMsg = merged.length > 0 ? merged[merged.length - 1] : null;
-    const latestServerMsgId = latestServerMsg ? (latestServerMsg.id || (latestServerMsg.createdAt + "_" + latestServerMsg.text)) : "";
-    const prevLastId = (window._activeChat && window._activeChat.lastMsgId) || "";
-
-    // إذا كان فحصاً دورياً ولم تتغير الرسائل مطلقاً نتوقف لتوفير أداء الجهاز
-    if(isPoll && window._activeChat && prevCount === merged.length && prevLastId === latestServerMsgId){
-      return;
-    }
-
     if(window._activeChat){
       window._activeChat.lastMsgCount = merged.length;
-      window._activeChat.lastMsgId = latestServerMsgId;
-    }
-
-    // تنبيه صوتي فوري عند استلام رسالة جديدة من الطرف الآخر
-    if(isPoll && prevCount > 0 && (merged.length > prevCount || prevLastId !== latestServerMsgId)){
-      const latestMsg = merged[merged.length - 1];
-      if(latestMsg && latestMsg.senderUid !== myUid){
-        playChatChime();
-        if(document.hidden || document.getElementById("userChatOverlay")?.classList.contains("hidden")){
-          sendSystemChatNotification(latestMsg.senderName || window._activeChat?.targetName || "مستخدم", latestMsg.text, convId, latestMsg.senderUid);
-        }
-      }
+      window._activeChat.lastMsgId = merged.length > 0 ? (merged[merged.length - 1].id || "") : "";
+      window._activeChat.lastFetchedTs = maxTs || Date.now();
     }
 
     renderChatMessagesList(_activeChatMessages);
+    scrollChatToBottom(false);
 
   } catch(err) {
     console.error("Error loading chat messages:", err);
@@ -9835,33 +9909,50 @@ export async function updateGlobalUnreadChatCount(){
 }
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 
-// ⚡ مراقب المحادثات اللحظي الشامل عبر كل الأجهزة
+// ⚡ مراقب المحادثات اللحظي الشامل عبر كل الأجهزة (خفيف وسريع جداً بتقنية Delta Sync)
 export function startGlobalChatPoller(){
   if(window._globalChatPollerTimer) return;
+  if(!window._globalSeenMsgIds) window._globalSeenMsgIds = new Set();
+  if(!window._globalLastChatCheckTs) window._globalLastChatCheckTs = Date.now() - 5000;
+
   if(!window._globalChatPollerInit && window.supabase){
     window._globalChatPollerInit = true;
-    window.supabase.from("feedback").select("id").eq("type", "chat_message").order("created_at", { ascending: false }).limit(40).then(({ data }) => {
-      if(Array.isArray(data)) data.forEach(r => window._globalSeenMsgIds.add(r.id));
+    window.supabase.from("feedback").select("id, created_at").eq("type", "chat_message").order("created_at", { ascending: false }).limit(20).then(({ data }) => {
+      if(Array.isArray(data)){
+        data.forEach(r => {
+          window._globalSeenMsgIds.add(r.id);
+          const ts = Number(r.created_at || 0);
+          if(ts > window._globalLastChatCheckTs) window._globalLastChatCheckTs = ts;
+        });
+      }
     }).catch(()=>{});
   }
+
   window._globalChatPollerTimer = setInterval(async () => {
     if(!auth.currentUser) return;
     const myUid = auth.currentUser.uid;
 
     try {
       if(window.supabase){
+        // جلب الرسائل الجديدة فقط التي وصلت بعد آخر فحص زمني لتوفير باقة الهاتف والبطارية
+        const sinceTs = (window._globalLastChatCheckTs || (Date.now() - 30000)) - 1000;
         const { data, error } = await window.supabase
           .from("feedback")
-          .select("*")
+          .select("id, uid, user_name, created_at, message")
           .eq("type", "chat_message")
-          .order("created_at", { ascending: false })
-          .limit(30);
+          .gt("created_at", sinceTs)
+          .order("created_at", { ascending: true })
+          .limit(15);
 
         if(!error && Array.isArray(data) && data.length > 0){
           let hasNewMsg = false;
           let latestIncoming = null;
 
           data.forEach(r => {
+            const rTs = Number(r.created_at || Date.now());
+            if(rTs > window._globalLastChatCheckTs){
+              window._globalLastChatCheckTs = rTs;
+            }
             if(window._globalSeenMsgIds.has(r.id)) return;
             window._globalSeenMsgIds.add(r.id);
 
@@ -9877,7 +9968,6 @@ export function startGlobalChatPoller(){
           });
 
           if(hasNewMsg && latestIncoming){
-            window._globalLastChatCheckTs = Math.max(window._globalLastChatCheckTs, latestIncoming.createdAt || Date.now());
             updateGlobalUnreadChatCount();
 
             const chatOverlay = document.getElementById("userChatOverlay");
@@ -9897,7 +9987,7 @@ export function startGlobalChatPoller(){
         }
       }
     } catch(err){}
-  }, 1200);
+  }, 1500);
 }
 window.startGlobalChatPoller = startGlobalChatPoller;
 
@@ -9988,7 +10078,9 @@ export async function startChatVoiceRecord(){
       }
     }
 
-    _voiceMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    const recOptions = { audioBitsPerSecond: 24000 };
+    if(mimeType) recOptions.mimeType = mimeType;
+    _voiceMediaRecorder = new MediaRecorder(stream, recOptions);
     
     _voiceMediaRecorder.ondataavailable = (e) => {
       if(e.data && e.data.size > 0) _voiceAudioChunks.push(e.data);
@@ -10089,36 +10181,14 @@ window.stopAndSendChatVoiceRecord = stopAndSendChatVoiceRecord;
 export async function sendVoiceChatMessage(audioBase64, duration){
   if(!window._activeChat || !auth.currentUser) return;
   const me = auth.currentUser;
-  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || (window.myProfile && window.myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
 
-  const box = document.getElementById("chatMessagesBox");
-  if(box){
-    const d = new Date();
-    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const tempDiv = document.createElement("div");
-    tempDiv.className = "chatBubble outgoing";
-    tempDiv.innerHTML = `
-      <div class="chatBubbleContent">
-        <div class="voicePlayerBubble" data-audio-src="${escapeHtml(audioBase64)}">
-          <button type="button" class="voicePlayBtn" onclick="toggleVoicePlayback(this, '${escapeHtml(audioBase64)}')">▶</button>
-          <div class="voiceWaveWrap">
-            <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
-            <div class="voiceWaveBar"></div><div class="voiceWaveBar"></div><div class="voiceWaveBar"></div>
-          </div>
-          <span class="voiceDuration">${duration}s 🎙️</span>
-        </div>
-      </div>
-      <div class="chatBubbleMeta">
-        <span class="chatTime">${timeStr}</span>
-        <span class="chatTicks" style="color:rgba(255,255,255,0.7)">✓</span>
-      </div>
-    `;
-    box.appendChild(tempDiv);
-    box.scrollTop = box.scrollHeight;
-  }
+  const msgId = "voice_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+  const nowTs = Date.now();
 
   const msgPayload = {
+    id: msgId,
     convId: activeChat.convId,
     senderUid: me.uid,
     senderName: senderName,
@@ -10129,38 +10199,87 @@ export async function sendVoiceChatMessage(audioBase64, duration){
     text: "🎙️ رسالة صوتية (" + duration + " ثانية)",
     postId: activeChat.postId,
     storeId: activeChat.storeId,
-    createdAt: Date.now()
+    status: "sending", // جاري الإرسال ⏳
+    createdAt: nowTs
+  };
+
+  if(!_activeChatMessages) _activeChatMessages = [];
+  _activeChatMessages.push(msgPayload);
+  if(window._activeChat){
+    window._activeChat.lastMsgCount = _activeChatMessages.length;
+    window._activeChat.lastMsgId = msgId;
+  }
+  renderChatMessagesList(_activeChatMessages);
+  scrollChatToBottom(true);
+  playChatSendSound();
+
+  const convDocId = "conv_" + activeChat.convId;
+  const convSummary = {
+    convId: activeChat.convId,
+    participants: [me.uid, activeChat.targetUid],
+    lastMessage: "🎙️ رسالة صوتية (" + duration + " ث)",
+    lastSenderUid: me.uid,
+    lastSenderName: senderName,
+    updatedAt: nowTs
   };
 
   try {
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_message",
-      message: JSON.stringify(msgPayload),
-      uid: me.uid,
-      user_name: senderName,
-      user_phone: me.phoneNumber || "",
-      created_at: Date.now()
-    });
+    const payloadForServer = { ...msgPayload, status: "sent" };
+    if(window.supabase){
+      const pMsg = window.supabase.from("feedback").insert({
+        id: msgId,
+        type: "chat_message",
+        message: JSON.stringify(payloadForServer),
+        uid: me.uid,
+        user_name: senderName,
+        user_phone: me.phoneNumber || "",
+        created_at: nowTs
+      });
 
-    const convDocId = "conv_" + activeChat.convId;
-    await setDoc(doc(db, "feedback", convDocId), {
-      type: "chat_conversation",
-      message: JSON.stringify({
-        convId: activeChat.convId,
-        participants: [me.uid, activeChat.targetUid],
-        lastMessage: "🎙️ رسالة صوتية (" + duration + " ث)",
-        lastSenderUid: me.uid,
-        lastSenderName: senderName,
-        updatedAt: Date.now()
-      }),
-      uid: me.uid,
-      user_name: senderName,
-      created_at: Date.now()
-    }, { merge: true });
+      const pConv = window.supabase.from("feedback").upsert({
+        id: convDocId,
+        type: "chat_conversation",
+        message: JSON.stringify(convSummary),
+        uid: me.uid,
+        user_name: senderName,
+        created_at: nowTs
+      });
+
+      const [resMsg] = await Promise.all([pMsg, pConv]);
+      if(resMsg && resMsg.error) throw resMsg.error;
+    } else {
+      await Promise.all([
+        addDoc(collection(db, "feedback"), {
+          id: msgId,
+          type: "chat_message",
+          message: JSON.stringify(payloadForServer),
+          uid: me.uid,
+          user_name: senderName,
+          user_phone: me.phoneNumber || "",
+          created_at: nowTs
+        }),
+        setDoc(doc(db, "feedback", convDocId), {
+          type: "chat_conversation",
+          message: JSON.stringify(convSummary),
+          uid: me.uid,
+          user_name: senderName,
+          created_at: nowTs
+        }, { merge: true })
+      ]);
+    }
+
+    // ✅ تأكيد التسليم الناجح فوراً وتحويل الحالة إلى "تم الإرسال"
+    msgPayload.status = "sent";
+    updateChatMessageStatus(msgId, "sent");
+    if(window._activeChat){
+      window._activeChat.lastFetchedTs = Math.max(window._activeChat.lastFetchedTs || 0, nowTs);
+    }
 
   } catch(err) {
     console.error("Error sending voice note:", err);
-    showToast("تعذر إرسال التسجيل الصوتي", "error");
+    msgPayload.status = "failed";
+    updateChatMessageStatus(msgId, "failed");
+    showToast("تعذر إرسال التسجيل الصوتي: " + (err.message || err), "error");
   }
 }
 window.sendVoiceChatMessage = sendVoiceChatMessage;
