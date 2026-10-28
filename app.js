@@ -163,6 +163,11 @@ let editStoreLogoImage=null;
 let editStoreCurrentId=null;
 let _tempStoreData=null;
 let currentStoreHelpers=[];
+window._globalChatPollerTimer = null;
+window._globalOrdersPollerTimer = null;
+window._globalLastChatCheckTs = Date.now() - (120 * 1000);
+window._globalSeenMsgIds = new Set();
+window._globalLastSeenOrderNo = 0;
 let compareList=[];
 try{compareList=JSON.parse(localStorage.getItem('compareList')||'[]');}catch(e){compareList=[];}
 function saveCompare(){try{localStorage.setItem('compareList',JSON.stringify(compareList));}catch(e){}}
@@ -6763,8 +6768,8 @@ else{renderPosts();}
 updateCartUI();
 }else{
 isAdmin=false;
-if(_globalChatPollerTimer){ clearInterval(_globalChatPollerTimer); _globalChatPollerTimer = null; }
-if(_globalOrdersPollerTimer){ clearInterval(_globalOrdersPollerTimer); _globalOrdersPollerTimer = null; }
+if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer); window._globalChatPollerTimer = null; }
+if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
 stopProfileListener();
@@ -6781,8 +6786,8 @@ renderPosts();
 });
 
 window.logout=async()=>{
-  if(_globalChatPollerTimer){ clearInterval(_globalChatPollerTimer); _globalChatPollerTimer = null; }
-  if(_globalOrdersPollerTimer){ clearInterval(_globalOrdersPollerTimer); _globalOrdersPollerTimer = null; }
+  if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer); window._globalChatPollerTimer = null; }
+  if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
   await signOut(auth);
@@ -9614,13 +9619,9 @@ export async function updateGlobalUnreadChatCount(){
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 
 // ⚡ مراقب المحادثات اللحظي الشامل عبر كل الأجهزة
-let _globalLastChatCheckTs = Date.now() - (120 * 1000);
-let _globalSeenMsgIds = new Set();
-let _globalChatPollerTimer = null;
-
 export function startGlobalChatPoller(){
-  if(_globalChatPollerTimer) return;
-  _globalChatPollerTimer = setInterval(async () => {
+  if(window._globalChatPollerTimer) return;
+  window._globalChatPollerTimer = setInterval(async () => {
     if(!auth.currentUser) return;
     const myUid = auth.currentUser.uid;
 
@@ -9630,7 +9631,7 @@ export function startGlobalChatPoller(){
           .from("feedback")
           .select("*")
           .eq("type", "chat_message")
-          .gt("created_at", _globalLastChatCheckTs)
+          .gt("created_at", window._globalLastChatCheckTs)
           .order("created_at", { ascending: false })
           .limit(30);
 
@@ -9639,8 +9640,8 @@ export function startGlobalChatPoller(){
           let latestIncoming = null;
 
           data.forEach(r => {
-            if(_globalSeenMsgIds.has(r.id)) return;
-            _globalSeenMsgIds.add(r.id);
+            if(window._globalSeenMsgIds.has(r.id)) return;
+            window._globalSeenMsgIds.add(r.id);
 
             try {
               const m = JSON.parse(r.message || "{}");
@@ -9654,7 +9655,7 @@ export function startGlobalChatPoller(){
           });
 
           if(hasNewMsg && latestIncoming){
-            _globalLastChatCheckTs = Math.max(_globalLastChatCheckTs, latestIncoming.createdAt || Date.now());
+            window._globalLastChatCheckTs = Math.max(window._globalLastChatCheckTs, latestIncoming.createdAt || Date.now());
             updateGlobalUnreadChatCount();
 
             const chatOverlay = document.getElementById("userChatOverlay");
@@ -9662,7 +9663,8 @@ export function startGlobalChatPoller(){
               loadChatMessages(window._activeChat.convId, true);
             } else {
               playChatChime();
-              showToast(`💬 رسالة جديدة من ${escapeHtml(latestIncoming.senderName || "مستخدم")}: "${escapeHtml(latestIncoming.text.slice(0, 35))}"`, "info", 5000);
+              const msgPreview = (latestIncoming.text || "رسالة جديدة").slice(0, 35);
+              showToast(`💬 رسالة جديدة من ${escapeHtml(latestIncoming.senderName || "مستخدم")}: "${escapeHtml(msgPreview)}"`, "info", 5000);
             }
 
             const inSc = document.getElementById("inboxScreen");
@@ -9678,12 +9680,9 @@ export function startGlobalChatPoller(){
 window.startGlobalChatPoller = startGlobalChatPoller;
 
 // ⚡ مراقب طلبات المطعم والكاشير اللحظي الشامل للأدمن وأصحاب المطاعم
-let _globalLastSeenOrderNo = 0;
-let _globalOrdersPollerTimer = null;
-
 export function startGlobalRestaurantOrdersPoller(){
-  if(_globalOrdersPollerTimer) return;
-  _globalOrdersPollerTimer = setInterval(async () => {
+  if(window._globalOrdersPollerTimer) return;
+  window._globalOrdersPollerTimer = setInterval(async () => {
     if(!auth.currentUser) return;
     const me = auth.currentUser;
     const isAdminUser = me && (me.email === ADMIN_EMAIL || isAdmin);
@@ -9712,12 +9711,12 @@ export function startGlobalRestaurantOrdersPoller(){
             } catch(e){}
           });
 
-          if(latestPending && latestPending.orderNo !== _globalLastSeenOrderNo){
-            if(_globalLastSeenOrderNo !== 0){
+          if(latestPending && latestPending.orderNo !== window._globalLastSeenOrderNo){
+            if(window._globalLastSeenOrderNo !== 0){
               playRestaurantBell("new_order");
               showToast(`🔔 طلبية جديدة وصلت للكاشير! طلب #${latestPending.orderNo} بقيمة ${formatPrice(latestPending.totalPrice)} د.ل`, "info", 5500);
             }
-            _globalLastSeenOrderNo = latestPending.orderNo;
+            window._globalLastSeenOrderNo = latestPending.orderNo;
           }
 
           const cashierSc = document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
@@ -9730,12 +9729,6 @@ export function startGlobalRestaurantOrdersPoller(){
   }, 3000);
 }
 window.startGlobalRestaurantOrdersPoller = startGlobalRestaurantOrdersPoller;
-
-if(auth.currentUser){
-  updateGlobalUnreadChatCount();
-  startGlobalChatPoller();
-  startGlobalRestaurantOrdersPoller();
-}
 
 /* ============================================
    🎙️ نظام الرسائل الصوتية والشات بالفويس (Voice Notes)
