@@ -3859,6 +3859,11 @@ if(typeof document !== 'undefined'){
       if(_currentTrackingOrderId){
         refreshTrackingOrder(_currentTrackingOrderId);
       }
+      if(window._activeChat){
+        const chat = document.getElementById("userChatOverlay");
+        if(chat && !chat.classList.contains("hidden")) loadChatMessages(window._activeChat.convId, true);
+      }
+      if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
     }
   });
   window.addEventListener("focus", () => {
@@ -3868,6 +3873,10 @@ if(typeof document !== 'undefined'){
     }
     if(_currentTrackingOrderId){
       refreshTrackingOrder(_currentTrackingOrderId);
+    }
+    if(window._activeChat){
+      const chat = document.getElementById("userChatOverlay");
+      if(chat && !chat.classList.contains("hidden")) loadChatMessages(window._activeChat.convId, true);
     }
   });
 }
@@ -9020,6 +9029,66 @@ window.handleChatInputChange = handleChatInputChange;
 
 let _activeChatMessages = [];
 
+// 🔄 تحديث فوري لحالة تسليم الرسالة في الواجهة دون إعادة رسم كامل المحادثة
+export function updateChatMessageStatus(msgId, newStatus){
+  if(!msgId) return;
+  if(_activeChatMessages){
+    const found = _activeChatMessages.find(m => m.id === msgId);
+    if(found) found.status = newStatus;
+  }
+  const el = document.getElementById("csi_" + msgId);
+  if(el){
+    if(newStatus === "sending"){
+      el.innerHTML = `<span class="chatStatusSending">جاري الإرسال <span class="chatSpinDot">⏳</span></span>`;
+    } else if(newStatus === "sent"){
+      el.innerHTML = `<span class="chatStatusSent">تم الإرسال <span class="chatTicks">✓✓</span></span>`;
+    } else if(newStatus === "failed"){
+      el.innerHTML = `<span class="chatStatusFailed" onclick="retrySendChatMessage('${escapeHtml(msgId)}')">فشل الإرسال ⚠️ إعادة</span>`;
+    }
+  }
+}
+window.updateChatMessageStatus = updateChatMessageStatus;
+
+// 🔁 إعادة إرسال الرسالة المتعثرة
+export async function retrySendChatMessage(msgId){
+  if(!_activeChatMessages) return;
+  const m = _activeChatMessages.find(x => x.id === msgId);
+  if(!m) return;
+  m.status = "sending";
+  updateChatMessageStatus(msgId, "sending");
+
+  try {
+    if(window.supabase){
+      const { error } = await window.supabase.from("feedback").insert({
+        id: m.id,
+        type: "chat_message",
+        message: JSON.stringify(m),
+        uid: m.senderUid,
+        user_name: m.senderName,
+        created_at: Date.now()
+      });
+      if(error) throw error;
+    } else {
+      await addDoc(collection(db, "feedback"), {
+        id: m.id,
+        type: "chat_message",
+        message: JSON.stringify(m),
+        uid: m.senderUid,
+        user_name: m.senderName,
+        created_at: Date.now()
+      });
+    }
+    m.status = "sent";
+    updateChatMessageStatus(msgId, "sent");
+    showToast("✅ تم إرسال الرسالة بنجاح", "success", 2000);
+  } catch(e){
+    m.status = "failed";
+    updateChatMessageStatus(msgId, "failed");
+    showToast("❌ تعذر الإرسال: " + (e.message || e), "error");
+  }
+}
+window.retrySendChatMessage = retrySendChatMessage;
+
 export async function sendUserChatMessage(){
   if(!window._activeChat){
     showToast("يرجى فتح المحادثة أولاً 💬", "warn");
@@ -9057,6 +9126,7 @@ export async function sendUserChatMessage(){
     text: text,
     postId: activeChat.postId,
     storeId: activeChat.storeId,
+    status: "sending", // حالة الإرسال المبدئية: جاري الإرسال
     createdAt: Date.now()
   };
 
@@ -9070,53 +9140,83 @@ export async function sendUserChatMessage(){
   renderChatMessagesList(_activeChatMessages);
   scrollChatToBottom(true);
 
+  // ⚡ إرسال فوري متوازي (Parallel Send) إلى Supabase بدون أي تأخير زمني
+  const convDocId = "conv_" + activeChat.convId;
+  const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
+  const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
+  const postImage = document.getElementById("chatContextImg")?.src || "";
+
+  const convSummary = {
+    convId: activeChat.convId,
+    participants: [me.uid, activeChat.targetUid],
+    lastMessage: text,
+    lastSenderUid: me.uid,
+    lastSenderName: senderName,
+    updatedAt: Date.now(),
+    postContext: activeChat.postId ? {
+      id: activeChat.postId,
+      title: postTitle,
+      price: postPrice,
+      image: postImage
+    } : null,
+    storeContext: activeChat.storeId ? {
+      id: activeChat.storeId,
+      name: postTitle
+    } : null
+  };
+
   try {
-    // 1. تسجيل الرسالة في feedback
-    await addDoc(collection(db, "feedback"), {
-      id: msgId,
-      type: "chat_message",
-      message: JSON.stringify(msgPayload),
-      uid: me.uid,
-      user_name: senderName,
-      user_phone: me.phoneNumber || "",
-      created_at: Date.now()
-    });
+    if(window.supabase){
+      const pMsg = window.supabase.from("feedback").insert({
+        id: msgId,
+        type: "chat_message",
+        message: JSON.stringify(msgPayload),
+        uid: me.uid,
+        user_name: senderName,
+        user_phone: me.phoneNumber || "",
+        created_at: Date.now()
+      });
 
-    // 2. تحديث وثيقة ملخص المحادثة لصندوق الرسائل
-    const convDocId = "conv_" + activeChat.convId;
-    const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
-    const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
-    const postImage = document.getElementById("chatContextImg")?.src || "";
+      const pConv = window.supabase.from("feedback").upsert({
+        id: convDocId,
+        type: "chat_conversation",
+        message: JSON.stringify(convSummary),
+        uid: me.uid,
+        user_name: senderName,
+        created_at: Date.now()
+      });
 
-    const convSummary = {
-      convId: activeChat.convId,
-      participants: [me.uid, activeChat.targetUid],
-      lastMessage: text,
-      lastSenderUid: me.uid,
-      lastSenderName: senderName,
-      updatedAt: Date.now(),
-      postContext: activeChat.postId ? {
-        id: activeChat.postId,
-        title: postTitle,
-        price: postPrice,
-        image: postImage
-      } : null,
-      storeContext: activeChat.storeId ? {
-        id: activeChat.storeId,
-        name: postTitle
-      } : null
-    };
+      const [resMsg] = await Promise.all([pMsg, pConv]);
+      if(resMsg && resMsg.error) throw resMsg.error;
+    } else {
+      await Promise.all([
+        addDoc(collection(db, "feedback"), {
+          id: msgId,
+          type: "chat_message",
+          message: JSON.stringify(msgPayload),
+          uid: me.uid,
+          user_name: senderName,
+          user_phone: me.phoneNumber || "",
+          created_at: Date.now()
+        }),
+        setDoc(doc(db, "feedback", convDocId), {
+          type: "chat_conversation",
+          message: JSON.stringify(convSummary),
+          uid: me.uid,
+          user_name: senderName,
+          created_at: Date.now()
+        }, { merge: true })
+      ]);
+    }
 
-    await setDoc(doc(db, "feedback", convDocId), {
-      type: "chat_conversation",
-      message: JSON.stringify(convSummary),
-      uid: me.uid,
-      user_name: senderName,
-      created_at: Date.now()
-    }, { merge: true });
+    // ✅ تأكيد التسليم الناجح فوراً وتحويل الحالة إلى "تم الإرسال"
+    msgPayload.status = "sent";
+    updateChatMessageStatus(msgId, "sent");
 
   } catch(err) {
     console.error("Error sending chat message:", err);
+    msgPayload.status = "failed";
+    updateChatMessageStatus(msgId, "failed");
     showToast("تعذر إرسال الرسالة: " + (err.message || err), "error");
   }
 }
@@ -9182,6 +9282,18 @@ export function renderChatMessagesList(messages){
       window._chatAudioMap[m.id] = m.audioData;
     }
 
+    const deliveryStatusHtml = isMe ? `
+      <span class="chatStatusIndicator" id="csi_${escapeHtml(m.id || '')}">
+        ${m.status === 'sending' ? `
+          <span class="chatStatusSending">جاري الإرسال <span class="chatSpinDot">⏳</span></span>
+        ` : m.status === 'failed' ? `
+          <span class="chatStatusFailed" onclick="retrySendChatMessage('${escapeHtml(m.id || '')}')">فشل الإرسال ⚠️ إعادة</span>
+        ` : `
+          <span class="chatStatusSent">تم الإرسال <span class="chatTicks">✓✓</span></span>
+        `}
+      </span>
+    ` : '';
+
     return `
       ${dateDivider}
       <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
@@ -9201,7 +9313,7 @@ export function renderChatMessagesList(messages){
         `}
         <div class="chatBubbleMeta">
           <span class="chatTime">${timeStr}</span>
-          ${isMe ? '<span class="chatTicks">✓✓</span>' : ''}
+          ${deliveryStatusHtml}
         </div>
       </div>
     `;
@@ -9237,14 +9349,20 @@ export async function loadChatMessages(convId, isPoll){
 
     if(rows.length === 0 && window.supabase){
       try {
-        const { data, error } = await window.supabase
+        const targetUid = window._activeChat?.targetUid;
+        const myUid = auth.currentUser?.uid;
+        let query = window.supabase
           .from("feedback")
           .select("*")
           .eq("type", "chat_message")
           .order("created_at", { ascending: false })
           .limit(100);
-        if(!error && data){
-          rows = data.filter(d => d.message && d.message.includes(convId)).reverse();
+        if(myUid && targetUid){
+          query = query.in("uid", [myUid, targetUid]);
+        }
+        const { data, error } = await query;
+        if(!error && Array.isArray(data)){
+          rows = data.reverse();
         }
       } catch(e){}
     }
@@ -9259,15 +9377,22 @@ export async function loadChatMessages(convId, isPoll){
     }
 
     const myUid = auth.currentUser ? auth.currentUser.uid : null;
+    const targetUid = window._activeChat ? window._activeChat.targetUid : null;
     const serverMessages = [];
 
     rows.forEach(d => {
       try {
         const parsed = JSON.parse(d.message || "{}");
-        if(parsed.convId === convId){
+        const matchConv = parsed.convId === convId;
+        const matchUsers = targetUid && myUid && (
+          (parsed.senderUid === myUid && parsed.receiverUid === targetUid) ||
+          (parsed.senderUid === targetUid && parsed.receiverUid === myUid)
+        );
+        if(matchConv || matchUsers){
           serverMessages.push({
             id: d.id,
             ...parsed,
+            status: "sent",
             createdAt: parsed.createdAt || d.created_at || Date.now()
           });
         }
@@ -9377,7 +9502,7 @@ export async function openInbox(isSilentRefresh = false){
           .from("feedback")
           .select("*")
           .eq("type", "chat_conversation")
-          .or(`message.ilike.*${myUid}*,message.ilike.%${myUid}%`)
+          .ilike("message", `*${myUid}*`)
           .order("created_at", { ascending: false })
           .limit(80);
         if(!error && Array.isArray(data)) rows = data;
@@ -9654,7 +9779,7 @@ export async function updateGlobalUnreadChatCount(){
           .from("feedback")
           .select("message")
           .eq("type", "chat_conversation")
-          .ilike("message", `%${myUid}%`)
+          .ilike("message", `*${myUid}*`)
           .limit(40);
         if(!error && Array.isArray(data)) rows = data;
       } catch(e){}
@@ -9713,6 +9838,12 @@ window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 // ⚡ مراقب المحادثات اللحظي الشامل عبر كل الأجهزة
 export function startGlobalChatPoller(){
   if(window._globalChatPollerTimer) return;
+  if(!window._globalChatPollerInit && window.supabase){
+    window._globalChatPollerInit = true;
+    window.supabase.from("feedback").select("id").eq("type", "chat_message").order("created_at", { ascending: false }).limit(40).then(({ data }) => {
+      if(Array.isArray(data)) data.forEach(r => window._globalSeenMsgIds.add(r.id));
+    }).catch(()=>{});
+  }
   window._globalChatPollerTimer = setInterval(async () => {
     if(!auth.currentUser) return;
     const myUid = auth.currentUser.uid;
@@ -9766,7 +9897,7 @@ export function startGlobalChatPoller(){
         }
       }
     } catch(err){}
-  }, 1800);
+  }, 1200);
 }
 window.startGlobalChatPoller = startGlobalChatPoller;
 
