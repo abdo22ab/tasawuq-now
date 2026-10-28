@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=41">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -1602,65 +1602,6 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-  <div class="storyViewerContainer">
-    <!-- مؤشرات التقدم الزمنية (Progress Bars) -->
-    <div class="storyProgressLineWrap" id="storyProgressLineWrap">
-      <div class="storyProgressSegment"><div class="storyProgressBarInner" id="storyProgressBarInner"></div></div>
-    </div>
-
-    <!-- الترويسة العلوية للستوري -->
-    <div class="storyTopBar">
-      <img id="storyUserAvatar" class="storyUserAvatar" src="icon-192.png" alt="Avatar">
-      <div>
-        <div id="storyUserName" class="storyUserName">اسم المعلن</div>
-        <div id="storyTimeAgo" class="storyTimeAgo">منذ قليل</div>
-      </div>
-      <button type="button" class="storyCloseBtn" onclick="closeStoryViewer()" title="إغلاق">✕</button>
-    </div>
-
-    <!-- منطقة عرض الصورة أو الفيديو -->
-    <div class="storyMediaBox" id="storyMediaBox" onclick="handleStoryTap(event)">
-      <img id="storyMediaImg" class="storyMediaImg" src="" alt="Story Media" style="display:none">
-      <video id="storyMediaVideo" class="storyMediaVideo" playsinline style="display:none"></video>
-    </div>
-
-    <!-- الأزرار التفاعلية الجانبية (لايك، تعليق، مشاركة، إبلاغ) -->
-    <div class="storySideActions">
-      <!-- زر لايك -->
-      <button type="button" class="storyActionButton" id="storyLikeBtn" onclick="toggleStoryLike()">
-        <span id="storyLikeIcon">❤️</span>
-        <span class="storyActionCount" id="storyLikeCount">0</span>
-      </button>
-
-      <!-- زر تعليق / تواصل -->
-      <button type="button" class="storyActionButton" onclick="openStoryChat()">
-        <span>💬</span>
-        <span class="storyActionCount">رد</span>
-      </button>
-
-      <!-- زر مشاركة -->
-      <button type="button" class="storyActionButton" onclick="shareCurrentStory()">
-        <span>🔗</span>
-        <span class="storyActionCount">مشاركة</span>
-      </button>
-
-      <!-- زر إبلاغ رسمي -->
-      <button type="button" class="storyActionButton" onclick="reportCurrentStory()" title="إبلاغ عن محتوى مخالف">
-        <span>⚠️</span>
-        <span class="storyActionCount" style="font-size:9px">إبلاغ</span>
-      </button>
-    </div>
-
-    <!-- الشريط السفلي لتفاصيل الإعلان المعروض في الستوري -->
-    <div class="storyBottomDetails" id="storyBottomDetails">
-      <div style="flex:1;min-width:0">
-        <div class="storyBottomTitle" id="storyBottomTitle">عنوان الإعلان</div>
-        <div class="storyBottomPrice" id="storyBottomPrice">0 د.ل</div>
-      </div>
-      <button type="button" class="storyViewAdBtn" id="storyViewAdBtn" onclick="viewAdFromStory()">تفاصيل 👁️</button>
-    </div>
-  </div>
-</div>
 
 <!-- ============================================ -->
 <!-- 🎥 نافذة نشر فيديو في قصتك (Video Story Publisher Modal) -->
@@ -1693,7 +1634,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=45"></script>
+<script type="module" src="app.js?v=47"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
