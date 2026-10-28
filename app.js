@@ -6041,6 +6041,11 @@ function updateAccountScreenUI(){
       myBtn.style.display = "block";
       myBtn.textContent = myStore.status === "approved" ? "🏪 الدخول لمتجري" : myStore.status === "pending" ? "⏳ متجري (قيد المراجعة)" : "❌ متجري (مرفوض)";
     }
+  } else {
+    if(openBtn) openBtn.style.display = "block";
+    if(myBtn) myBtn.style.display = "none";
+  }
+
   const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
   if(myRestBtn){
     const restStore = (myStore && isRestaurantStore(myStore)) 
