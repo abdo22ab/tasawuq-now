@@ -2069,6 +2069,47 @@ html.dark-mode .chatDateDivider {
   color: #bae6fd;
 }
 
+.chatStatusIndicator {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+}
+.chatStatusSending {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.chatStatusSent {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.chatStatusFailed {
+  font-size: 9.5px;
+  color: #fca5a5;
+  font-weight: 800;
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.25);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+@keyframes chatSpinPulse {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.6; }
+}
+.chatSpinDot {
+  display: inline-block;
+  animation: chatSpinPulse 1.1s infinite ease-in-out;
+  font-size: 9px;
+}
+
 .chatBubble .chatTime {
   font-size: 10px;
   display: inline-block;
