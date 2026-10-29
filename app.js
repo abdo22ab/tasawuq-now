@@ -109,6 +109,7 @@ function normalizePhone(p){
   if (s.startsWith("00218")) s = s.slice(5);
   else if (s.startsWith("218")) s = s.slice(3);
   while (s.startsWith("0")) s = s.slice(1);
+  if (!s || s.length < 8) return "";
   return "218" + s;
 }
 window.normalizePhone = normalizePhone;
@@ -131,6 +132,101 @@ function validatePhone(p){
   return {ok: true, value: normalized};
 }
 window.validatePhone = validatePhone;
+
+// نافذة تأكيد عصرية بديلة لـ window.confirm لمنع حجب المتصفح للرسائل المتتالية
+function showConfirmModal(message, options = {}){
+  return new Promise((resolve) => {
+    let overlay = document.getElementById('appConfirmModalOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'appConfirmModalOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      document.body.appendChild(overlay);
+    }
+    const title = options.title || 'تأكيد الإجراء';
+    const confirmText = options.confirmText || 'نعم، تأكيد';
+    const cancelText = options.cancelText || 'إلغاء';
+    const isDanger = options.danger !== false;
+
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.25);font-family:'Cairo',sans-serif;animation:popIn .2s ease-out">
+        <div style="font-size:38px;margin-bottom:8px">${options.icon || (isDanger ? '⚠️' : '❓')}</div>
+        <div style="font-weight:900;font-size:16px;color:#0f172a;margin-bottom:8px">${title}</div>
+        <div style="font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;white-space:pre-line">${escapeHtml(message)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button id="appConfirmCancelBtn" style="padding:11px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${cancelText}</button>
+          <button id="appConfirmOkBtn" style="padding:11px;border:none;background:${isDanger ? '#e5484d' : '#0284c7'};color:#fff;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${confirmText}</button>
+        </div>
+      </div>
+    `;
+    overlay.style.display = 'flex';
+
+    function cleanUp(result){
+      overlay.style.display = 'none';
+      resolve(result);
+    }
+
+    const okBtn = overlay.querySelector('#appConfirmOkBtn');
+    const cancelBtn = overlay.querySelector('#appConfirmCancelBtn');
+    if(okBtn) okBtn.onclick = () => cleanUp(true);
+    if(cancelBtn) cancelBtn.onclick = () => cleanUp(false);
+  });
+}
+window.showConfirmModal = showConfirmModal;
+
+// نافذة إدخال عصرية بديلة لـ window.prompt لمنع تجميد الشاشة أو الحظر في PWA
+function showPromptModal(message, defaultValue = '', options = {}){
+  return new Promise((resolve) => {
+    let overlay = document.getElementById('appPromptModalOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'appPromptModalOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      document.body.appendChild(overlay);
+    }
+    const title = options.title || 'إدخال بيانات';
+    const confirmText = options.confirmText || 'تأكيد';
+    const cancelText = options.cancelText || 'إلغاء';
+    const placeholder = options.placeholder || '';
+    const inputType = options.inputType || 'text';
+
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.25);font-family:'Cairo',sans-serif;animation:popIn .2s ease-out">
+        <div style="font-size:38px;margin-bottom:8px">${options.icon || '✏️'}</div>
+        <div style="font-weight:900;font-size:16px;color:#0f172a;margin-bottom:8px">${title}</div>
+        <div style="font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:14px;white-space:pre-line">${escapeHtml(message)}</div>
+        <input id="appPromptModalInput" type="${inputType}" value="${escapeHtml(defaultValue || '')}" placeholder="${escapeHtml(placeholder)}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px;outline:none" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button id="appPromptCancelBtn" style="padding:11px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${cancelText}</button>
+          <button id="appPromptOkBtn" style="padding:11px;border:none;background:#0284c7;color:#fff;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${confirmText}</button>
+        </div>
+      </div>
+    `;
+    overlay.style.display = 'flex';
+
+    const input = overlay.querySelector('#appPromptModalInput');
+    const okBtn = overlay.querySelector('#appPromptOkBtn');
+    const cancelBtn = overlay.querySelector('#appPromptCancelBtn');
+
+    function cleanUp(val){
+      overlay.style.display = 'none';
+      resolve(val);
+    }
+
+    if(input){
+      setTimeout(() => {
+        try { input.focus(); input.select(); } catch(e){}
+      }, 50);
+      input.onkeydown = (e) => {
+        if(e.key === 'Enter') cleanUp(input.value);
+        if(e.key === 'Escape') cleanUp(null);
+      };
+    }
+    if(okBtn) okBtn.onclick = () => cleanUp(input ? input.value : '');
+    if(cancelBtn) cancelBtn.onclick = () => cleanUp(null);
+  });
+}
+window.showPromptModal = showPromptModal;
 
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
 window.normalizePhoneInput=()=>{
@@ -176,7 +272,7 @@ function saveCompare(){try{localStorage.setItem('compareList',JSON.stringify(com
 function isRestaurantStore(store){return !!(store && isRestaurantCategory(store.category));}
 
 let _toastTimer=null;
-function showToast(text,type="info",duration=2200){
+function showToast(text,type="info",duration=2200,onClick=null){
   let t=document.getElementById("globalToast");
   if(!t){
     t=document.createElement("div");
@@ -186,6 +282,17 @@ function showToast(text,type="info",duration=2200){
   }
   t.textContent=text;
   t.className="toast "+type;
+  if(typeof onClick === "function"){
+    t.style.cursor = "pointer";
+    t.onclick = (e) => {
+      e.stopPropagation();
+      t.classList.remove("show");
+      onClick();
+    };
+  } else {
+    t.style.cursor = "default";
+    t.onclick = null;
+  }
   void t.offsetWidth;
   t.classList.add("show");
   if(_toastTimer)clearTimeout(_toastTimer);
@@ -457,7 +564,9 @@ async function addPoints(uid, amount, title, activity){
 }
 window.addPoints = addPoints;
 
+let _isRedeemingReward = false;
 window.redeemReward = async function(rewardId){
+  if(_isRedeemingReward) return;
   if(!auth.currentUser){
     showToast('⚠️ سجّل دخولك أولاً', 'warn');
     return;
@@ -469,8 +578,18 @@ window.redeemReward = async function(rewardId){
     showToast(`⚠️ تحتاج ${discountedCost - myPoints} نقطة إضافية`, 'warn');
     return;
   }
-  if(!confirm(`استبدال ${discountedCost} نقطة بـ "${reward.title}"؟`)) return;
+  const confirmed = await showConfirmModal(`استبدال ${discountedCost} نقطة بـ "${reward.title}"؟`, { confirmText: "نعم، استبدال" });
+  if(!confirmed) return;
+  _isRedeemingReward = true;
   try{
+    // فحص رصيد النقاط الفعلي من قاعدة البيانات لمنع التكرار بالتزامن
+    const userRef = doc(db, 'userPoints', auth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const actualPoints = (snap.exists() && snap.data().points) || 0;
+    if(actualPoints < discountedCost){
+      showToast('⚠️ رصيدك الفعلي من النقاط غير كافٍ لإتمام الاستبدال', 'warn');
+      return;
+    }
     await addPoints(auth.currentUser.uid, -discountedCost, `استبدال: ${reward.title}`, 'redeem');
     await addDoc(collection(db, 'userRedemptions'), {
       uid: auth.currentUser.uid,
@@ -486,6 +605,8 @@ window.redeemReward = async function(rewardId){
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, '_blank');
   } catch(e){
     showToast('❌ خطأ: ' + e.message, 'error');
+  } finally {
+    _isRedeemingReward = false;
   }
 };
 
@@ -582,6 +703,10 @@ function getWheelStatus(){
   try{
     const data = JSON.parse(localStorage.getItem(WHEEL_STORAGE_KEY) || 'null');
     if(!data || !data.timestamp) return { canSpin: true, lastSpin: 0 };
+    if(data.timestamp > Date.now() + 60000){
+      localStorage.removeItem(WHEEL_STORAGE_KEY);
+      return { canSpin: true, lastSpin: 0 };
+    }
     const elapsed = Date.now() - data.timestamp;
     return {
       canSpin: elapsed >= WHEEL_COOLDOWN_MS,
@@ -662,6 +787,11 @@ function startWheelCooldown(){
 
 window.spinLuckyWheel = async function(){
   if(wheelSpinning) return;
+  if(!auth.currentUser){
+    showToast('⚠️ يرجى تسجيل الدخول أولاً لتدوير العجلة وحفظ جوائزك', 'warn');
+    if(typeof openAuthModal === 'function') openAuthModal();
+    return;
+  }
   const status = getWheelStatus();
   if(!status.canSpin){
     showToast('⏰ العجلة مغلقة، تعال بعد', 'warn');
@@ -1105,8 +1235,9 @@ window.addStoreHelper=()=>{
   renderStoreHelpersList();
   showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات","success",3000);
 };
-window.removeStoreHelper=(index)=>{
-  if(!confirm("حذف هذا المساعد؟"))return;
+window.removeStoreHelper=async(index)=>{
+  const ok = await showConfirmModal("هل تريد إزالة هذا المساعد من المتجر؟", { isDanger: true, confirmText: "إزالة" });
+  if(!ok) return;
   currentStoreHelpers.splice(index,1);
   renderStoreHelpersList();
   showToast("✅ تم الحذف — لا تنسى حفظ التعديلات","success",3000);
@@ -1554,7 +1685,6 @@ async function searchServerPosts(term){
   if(!term || term.trim().length < 2) return;
   const cleanTerm = term.trim().toLowerCase();
   if(_serverSearchCache[cleanTerm]) return;
-  _serverSearchCache[cleanTerm] = true;
 
   try {
     const seenIds = new Set(allPosts.map(p => p.id));
@@ -1566,8 +1696,15 @@ async function searchServerPosts(term){
       .order('created_at', { ascending: false })
       .limit(30);
 
+    if (error) {
+      delete _serverSearchCache[cleanTerm];
+      console.warn("Supabase search error:", error);
+      return;
+    }
+
+    _serverSearchCache[cleanTerm] = true;
     let addedCount = 0;
-    if (!error && data) {
+    if (data) {
       data.forEach(item => {
         const p = objectFromDb(item);
         if(!seenIds.has(p.id)){
@@ -1583,6 +1720,7 @@ async function searchServerPosts(term){
       renderPosts();
     }
   } catch(err){
+    delete _serverSearchCache[cleanTerm];
     console.warn("Server search error:", err);
   }
 }
@@ -1598,7 +1736,7 @@ if(searchInputEl){
     _searchDebounceTimer=setTimeout(()=>{
       if(v.trim().length>=2){searchServerPosts(v.trim());}
       if(typeof renderPosts==='function')renderPosts();
-    },300);
+    },400);
   });
   searchInputEl.addEventListener('focus',function(){if(typeof showSearchDropdown==='function')showSearchDropdown();});
 }
@@ -1607,7 +1745,13 @@ if(clearSearchBtnEl){clearSearchBtnEl.addEventListener('click',function(e){e.pre
 function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
-function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
+async function clearSearchHistory(event){
+  if(event)event.stopPropagation();
+  const confirmed = await showConfirmModal("مسح كل سجل البحث السابق؟", { confirmText: "مسح السجل" });
+  if(!confirmed) return;
+  try{localStorage.removeItem('searchHistory');}catch(e){}
+  showSearchDropdown();
+}
 function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
 
 window.showSearchDropdown=function(){
@@ -1754,16 +1898,17 @@ window.openStoreRating=async(storeId)=>{
   if(!me){pendingAction={type:"storeRating",storeId};authOverlay.classList.remove("hidden");return;}
   const ratings=await loadStoreRatings(storeId);
   const mine=ratings.find(r=>r.raterUid===me.uid);
-  const stars=prompt(`⭐ قيّم المتجر (1-5)\n${mine?"تقييمك الحالي: "+mine.stars:"لم تقيّم بعد"}`,mine?String(mine.stars):"5");
+  const stars = await showPromptModal(`⭐ قيّم المتجر (من 1 إلى 5 نجوم):\n${mine?"تقييمك الحالي: "+mine.stars:"لم تقيّم بعد"}`, mine ? String(mine.stars) : "5", { title: "تقييم المتجر", icon: "⭐", inputType: "number", confirmText: "التالي" });
   if(stars===null) return;
   const s=parseInt(stars,10);
   if(isNaN(s)||s<1||s>5){showToast("⚠️ اختر من 1 إلى 5","warn");return;}
-  const comment=prompt("💬 تعليق (اختياري):",mine?(mine.comment||""):"")||"";
+  const comment = await showPromptModal("💬 أضف تعليقاً على تجربتك (اختياري):", mine ? (mine.comment || "") : "", { title: "تعليق على المتجر", icon: "💬", confirmText: "حفظ التقييم", placeholder: "أخبرنا عن جودة الخدمة والمنتجات..." });
+  if(comment===null) return;
   try{
     await setDoc(doc(db,"storeRatings",storeId+"_"+me.uid),{
       storeId,raterUid:me.uid,
       raterName:(myProfile&&myProfile.name)||me.displayName||"مستخدم",
-      stars:s,comment:comment.trim().slice(0,300),createdAt:Date.now()
+      stars:s,comment:(comment||"").trim().slice(0,300),createdAt:Date.now()
     });
     delete allStoreRatings[storeId];
     await loadStoreRatings(storeId);
@@ -1987,7 +2132,7 @@ function renderKshFoodItemHtml(p, canManage){
         ${actionsHtml}
       </div>
       <div class="kshPic">
-        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : '<div class="kshPicEmoji">🍔</div>'}
+        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}" onerror="this.onerror=null;this.outerHTML='<div class=\\'kshPicEmoji\\'>🍔</div>'">` : '<div class="kshPicEmoji">🍔</div>'}
         ${addBtnHtml}
       </div>
     </div>
@@ -2105,7 +2250,7 @@ function renderStoreProducts(){
     }
     const cartRow=cartBtnHtml?`<div style="display:flex;gap:6px;margin-top:6px;align-items:center">${cartBtnHtml}</div>`:"";
     const viewsLine=canManage?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
-    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
+    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5\\'>🖼️</div>'"/>`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -2236,6 +2381,10 @@ function updateSEOMeta(post){
    ============================================ */
 window.toggleCompare=(postId,event)=>{
   if(event){event.stopPropagation();event.preventDefault();}
+  if(allPosts && allPosts.length > 0){
+    const validIds = new Set(allPosts.map(p => p.id));
+    compareList = compareList.filter(id => validIds.has(id));
+  }
   const idx=compareList.indexOf(postId);
   if(idx>=0){compareList.splice(idx,1);}
   else{
@@ -2247,6 +2396,10 @@ window.toggleCompare=(postId,event)=>{
 function updateCompareUI(){
   const fab=document.getElementById("compareFAB");
   if(!fab)return;
+  if(allPosts && allPosts.length > 0){
+    const validIds = new Set(allPosts.map(p => p.id));
+    compareList = compareList.filter(id => validIds.has(id));
+  }
   if(compareList.length>0){
     fab.classList.remove("fabOff");
     fab.innerHTML=`⚖️ قارن (${compareList.length})`;
@@ -2353,13 +2506,19 @@ async function loadPostsBatch(isInitial = false) {
   } catch (err) {
     console.warn("Error loading posts batch:", err);
     if (isInitial && allPosts.length === 0) {
-      postsBox.innerHTML = "<div class='empty'>تعذر تحميل الإعلانات. يرجى إعادة المحاولة.</div>";
+      postsBox.innerHTML = `<div class='empty' style='padding:30px 16px;text-align:center'>
+        <div style='font-size:32px;margin-bottom:8px'>📡</div>
+        <div style='font-weight:800;font-size:15px;margin-bottom:6px'>تعذر تحميل الإعلانات حالياً</div>
+        <div style='color:var(--muted);font-size:13px;margin-bottom:14px'>تأكد من اتصالك بالإنترنت واضغط زر إعادة المحاولة</div>
+        <button class='btnMain' onclick='window.loadPostsBatch && window.loadPostsBatch(true)' style='max-width:200px;margin:0 auto;padding:10px 18px;font-size:14px'>🔄 إعادة المحاولة</button>
+      </div>`;
     }
   } finally {
     isLoadingPostsBatch = false;
     if (btn) btn.disabled = false;
   }
 }
+window.loadPostsBatch = loadPostsBatch;
 
 function updateLoadMoreButton() {
   let btn = document.getElementById("loadMorePostsBtn");
@@ -2772,6 +2931,17 @@ const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCas
 const favs=getFavorites();
 const me=auth.currentUser;
 
+// خريطة سريعة للمتاجر وعدد إعلانات البائع لتسريع الرسم من O(n²) إلى O(n) الفوري
+const storesMap = new Map();
+(allStores || []).forEach(s => storesMap.set(s.id, s));
+
+const sellerApprovedCountMap = new Map();
+allPosts.forEach(x => {
+  if(!x.storeId && x.uid && getStatus(x) === "approved"){
+    sellerApprovedCountMap.set(x.uid, (sellerApprovedCountMap.get(x.uid) || 0) + 1);
+  }
+});
+
 // إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
 if(isRestaurantCategory(currentCategory)){
   const _hrb=document.getElementById("homeRestaurantsBox");if(_hrb){_hrb.innerHTML="";_hrb.classList.add("hidden");}
@@ -2803,7 +2973,7 @@ let list=allPosts.filter(p=>{
   if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;
 
   // استبعاد وجبات المطاعم الفردية من قسم الكل عشان ما تتبعثرش وسط الإعلانات
-  const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
+  const postStore=p.storeId?storesMap.get(p.storeId):null;
   const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
   if(!currentStoreFilter && isRestaurantPost && (currentCategory==="الكل" || !isRestaurantCategory(currentCategory))){
     return false;
@@ -2859,13 +3029,19 @@ if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && 
   if(currentCity!=="الكل"){
     approvedRests=approvedRests.filter(s=>s.city===currentCity);
   }
+  const storePostsMap = new Map();
+  allPosts.forEach(p => {
+    if(p.storeId && getStatus(p) === "approved"){
+      const pt = Number(p.createdAt) || 0;
+      const prev = storePostsMap.get(p.storeId) || 0;
+      if(pt > prev) storePostsMap.set(p.storeId, pt);
+    }
+  });
+
   approvedRests.forEach(s=>{
     let restTime=Number(s.createdAt)||Number(s.approvedAt)||0;
-    const storePosts=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved");
-    storePosts.forEach(p=>{
-      const pt=Number(p.createdAt)||0;
-      if(pt>restTime) restTime=pt;
-    });
+    const latestPostTime = storePostsMap.get(s.id) || 0;
+    if(latestPostTime > restTime) restTime = latestPostTime;
     list.push({
       isRestaurantStructure:true,
       storeData:s,
@@ -2904,7 +3080,7 @@ const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&p.uid===me
 const expired=isExpired(p);const days=daysLeft(p);const isSold=!!p.sold;
 const wanted=isWanted(p);
 const images=getImages(p);const dots=dotsHtml(images);
-const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
+const postStore=p.storeId?storesMap.get(p.storeId):null;
 const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
 const cleanPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn=(p.phone && !isSold)
@@ -2934,7 +3110,7 @@ const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<
 const memberTag=p.sellerMemberNo?`<span class="memberNoBadge" style="margin-left:6px">#${p.sellerMemberNo}</span>`:"";
 const userTag=p.sellerUsername?`<span class="usernameBadge" style="margin-left:6px">@${escapeHtml(p.sellerUsername)}</span>`:"";
 const storeTag=p.storeId?`<span class="storeBadge" style="margin-left:6px">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`:"";
-const sellerPostsCount=!p.storeId && p.uid ? allPosts.filter(x=>x.uid===p.uid && getStatus(x)==="approved").length : 0;
+const sellerPostsCount=(!p.storeId && p.uid) ? (sellerApprovedCountMap.get(p.uid) || 0) : 0;
 const tierTag=!p.storeId && sellerPostsCount>0 ? renderSellerTierBadge(p.uid,sellerPostsCount) : "";
 const sellerLineHtml=p.storeId?`<div class="sellerLine" onclick="event.stopPropagation();openStore('${p.storeId}',false,'home')">${storeTag} ›</div>`:(p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ${userTag}${tierTag} ›</div>`:"");
 let expiryLine="";
@@ -3145,13 +3321,26 @@ if(!subCategory){
 }
 const postKeywords=generateKeywords(title, description, brand, category, city, specs);
 if(wasEditing){
-const oldPost=allPosts.find(p=>p.id===editingPostId);
-const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
-const newExpires=Date.now()+POST_DURATION_MS;
-const newStatus = (isAdmin || (oldPost && oldPost.status === "approved")) ? "approved" : "pending";
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:newStatus,approvedAt:newStatus==="approved"?(oldPost?.approvedAt||Date.now()):null,rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
-if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
-await updateDoc(doc(db,"posts",editingPostId),upd);
+  const oldPost=allPosts.find(p=>p.id===editingPostId);
+  if(!oldPost){
+    showToast("❌ هذا الإعلان غير موجود أو تم حذفه مسبقاً","error");
+    return;
+  }
+  const isMyStorePost = (myStore && oldPost.storeId === myStore.id) || (storeToUse && oldPost.storeId === storeToUse.id);
+  const isOwner = auth.currentUser && (auth.currentUser.uid === oldPost.uid || isMyStorePost);
+  if(!isOwner && !isAdmin){
+    showToast("❌ ليس لديك صلاحية تعديل هذا الإعلان","error");
+    return;
+  }
+  const originalData={title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone};
+  const newExpires=oldPost.expiresAt ? oldPost.expiresAt : (Date.now()+POST_DURATION_MS);
+  const newStatus = isAdmin ? "approved" : "pending";
+  const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:newStatus,approvedAt:newStatus==="approved"?(oldPost.approvedAt||Date.now()):null,rejectReason:null,wasEdited:true,originalData:{...originalData,specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+  if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
+  await updateDoc(doc(db,"posts",editingPostId),upd);
+  Object.assign(oldPost, upd);
+  renderPosts();
+  showToast(isAdmin ? "✅ تم حفظ تعديلات الإعلان بنجاح" : "✅ تم حفظ التعديل، وبانتظار مراجعة الإدارة", "success");
 }
 else{
   const now=Date.now();
@@ -3178,33 +3367,34 @@ else{
     base.sellerMemberNo=sellerMemberNo;
     base.sellerUsername=sellerUsername;
   }
-  await addDoc(collection(db,"posts"),base);
+  const newDocRef = await addDoc(collection(db,"posts"),base);
+  const newPostObj = { id: newDocRef.id, ...base };
+  allPosts.unshift(newPostObj);
+  renderPosts();
   showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
   if(isStore && window._currentStoreId){
     setTimeout(()=>openStore(window._currentStoreId, true), 300);
   }
 }
-editingPostId=null;
-_tempStoreData=null;
-try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
-document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
-if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
-if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
-const _cCb2=document.getElementById("contactPrice");if(_cCb2)_cCb2.checked=false;
-const _nCb2=document.getElementById("negotiablePrice");if(_nCb2)_nCb2.checked=false;
-onPriceTypeChange();
-selectedImages=[];renderImagePicker();
-currentFormSpecsState={};
-const _dynC=document.getElementById("dynamicSpecsContainer");
-if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}
-if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
+  document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
+  if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
+  if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
+  const _cCb2=document.getElementById("contactPrice");if(_cCb2)_cCb2.checked=false;
+  const _nCb2=document.getElementById("negotiablePrice");if(_nCb2)_nCb2.checked=false;
+  onPriceTypeChange();
+  selectedImages=[];renderImagePicker();
+  currentFormSpecsState={};
+  const _dynC=document.getElementById("dynamicSpecsContainer");
+  if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}
+  editingPostId=null;
+  _tempStoreData=null;
+  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
 }catch(e){showToast("خطأ أثناء الحفظ: "+e.message,"error");}
 finally{
   saveBtn.disabled=false;
-  saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";
-  _tempStoreData=null;
-  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  saveBtn.textContent=editingPostId ? "حفظ التعديلات" : (isStore ? "إضافة المنتج للمتجر" : "نشر الإعلان");
 }
 };
 
@@ -3228,14 +3418,18 @@ window.renewPost=async(id,event)=>{
   const isOwner=me.uid===p.uid||isMyStorePost;
   if(!isOwner && !isAdmin){showToast("❌ هذا الإعلان ليس لك","error");return;}
   const expired=isExpired(p);
-  const msg=expired?"⏰ هذا الإعلان منتهي. هل تريد تجديده 30 يوم إضافية؟":"🔄 هل تريد تمديد الإعلان 30 يوم إضافية؟";
-  if(!confirm(msg))return;
+  const msg=expired?"هذا الإعلان منتهي. هل تريد تجديده 30 يوماً إضافية؟":"هل تريد تمديد صلاحية الإعلان 30 يوماً إضافية؟";
+  if(!(await showConfirmModal(msg, { icon: "🔄", danger: false, confirmText: "تجديد الآن" }))) return;
   try{
     const now=Date.now();
     const currentExpires=getExpiresAt(p)||now;
     const base=currentExpires>now?currentExpires:now;
     const newExpires=base+POST_DURATION_MS;
     await updateDoc(doc(db,"posts",id),{expiresAt:newExpires,status:"pending",rejectReason:null});
+    p.expiresAt = newExpires;
+    p.status = "pending";
+    p.rejectReason = null;
+    renderPosts();
     showToast("✅ تم التجديد 30 يوم إضافية","success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -3244,15 +3438,79 @@ window.approvePost=async(id)=>{
   try{
     const post=allPosts.find(p=>p.id===id);
     await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
-    if(post && post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
-    if(post) sendPostToTelegram(post);
+    if(post){
+      post.status = "approved";
+      post.approvedAt = Date.now();
+      post.rejectReason = null;
+      post.originalData = null;
+      post.wasEdited = false;
+      if(post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
+      sendPostToTelegram(post);
+    }
+    renderPosts();
     showToast("✅ تم قبول الإعلان","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
-window.rejectPost=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","محتوى غير مناسب");if(reason===null)return;try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});showToast("✅ تم رفض الإعلان","success");closeOverlay();}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin)return;const p=allPosts.find(x=>x.id===id);if(!p)return;const isFeat=isPostFeatured(p);if(!confirm(isFeat?"إلغاء التمييز؟":"تمييز الإعلان 7 أيام مجاناً؟"))return;try{if(isFeat){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+7*24*60*60*1000,featuredPlan:"admin"});}showToast("✅ تم","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+days*24*60*60*1000,featuredPlan:"admin",featuredBy:"admin"});}showToast("✅ تم تفعيل التمييز","success");closeOverlay();}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.rejectPost=async(id)=>{
+  if(!isAdmin)return;
+  const reason = await showPromptModal("سبب الرفض:", "محتوى غير مناسب", { title: "رفض الإعلان", icon: "🚫", confirmText: "رفض الإعلان" });
+  if(reason===null)return;
+  try{
+    await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
+    const post=allPosts.find(p=>p.id===id);
+    if(post){
+      post.status = "rejected";
+      post.rejectReason = reason || "محتوى غير مناسب";
+      post.rejectedAt = Date.now();
+    }
+    renderPosts();
+    showToast("✅ تم رفض الإعلان","success");
+    closeOverlay();
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+window.toggleFeatured=async(id,event)=>{
+  if(event)event.stopPropagation();
+  if(!isAdmin)return;
+  const p=allPosts.find(x=>x.id===id);
+  if(!p)return;
+  const isFeat=isPostFeatured(p);
+  const ok = await showConfirmModal(isFeat?"إلغاء تمييز هذا الإعلان؟":"تمييز هذا الإعلان لمدة 7 أيام مجاناً؟", { confirmText: isFeat ? "إلغاء التمييز" : "تمييز الإعلان" });
+  if(!ok) return;
+  try{
+    if(isFeat){
+      await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});
+      p.featured = false;
+      p.featuredUntil = 0;
+      p.featuredPlan = null;
+    }else{
+      const until = Date.now()+7*24*60*60*1000;
+      await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:"admin"});
+      p.featured = true;
+      p.featuredUntil = until;
+      p.featuredPlan = "admin";
+    }
+    renderPosts();
+    showToast("✅ تم","success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+window.adminFeature=async(id,days)=>{
+  if(!isAdmin)return;
+  const p=allPosts.find(x=>x.id===id);
+  try{
+    if(days===0){
+      await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});
+      if(p){ p.featured = false; p.featuredUntil = 0; p.featuredPlan = null; }
+    }else{
+      const until = Date.now()+days*24*60*60*1000;
+      await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:"admin",featuredBy:"admin"});
+      if(p){ p.featured = true; p.featuredUntil = until; p.featuredPlan = "admin"; p.featuredBy = "admin"; }
+    }
+    renderPosts();
+    showToast("✅ تم تفعيل التمييز","success");
+    closeOverlay();
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
 /* ============================================
    الإدارة - المراجعة
@@ -3318,14 +3576,18 @@ window.approveAllPending=async()=>{
   if(!isAdmin)return;
   const pending=allPendingPosts.slice();
   if(pending.length===0){showToast("لا توجد إعلانات","info");return;}
-  if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;
+  const okConfirm = await showConfirmModal(`هل أنت متأكد من الموافقة على ${pending.length} إعلان قيد المراجعة؟`, { confirmText: "نعم، موافقة للكل" });
+  if(!okConfirm) return;
   let ok=0,fail=0;
   for(const p of pending){
     try{
       await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
+      const inAll = allPosts.find(x => x.id === p.id);
+      if(inAll){ inAll.status = "approved"; inAll.approvedAt = Date.now(); }
       ok++;
     }catch(e){fail++;}
   }
+  renderPosts();
   showToast(`✅ تم قبول ${ok}`,"success");
   renderModeration();
 };
@@ -3334,16 +3596,20 @@ window.deleteAllPending=async()=>{
   if(!isAdmin)return;
   const pending=allPendingPosts.slice();
   if(pending.length===0){showToast("لا توجد","info");return;}
-  if(!confirm(`رفض ${pending.length} إعلان؟`))return;
-  const reason=prompt("سبب الرفض:","محتوى غير مناسب");
+  const okConfirm = await showConfirmModal(`هل أنت متأكد من رفض كافة الإعلانات المعلقة (${pending.length})؟`, { isDanger: true, confirmText: "رفض الكل" });
+  if(!okConfirm) return;
+  const reason = await showPromptModal("سبب الرفض للجميع:", "محتوى غير مناسب", { title: "سبب رفض كافة الإعلانات", icon: "🚫", confirmText: "رفض الكل" });
   if(reason===null)return;
   let ok=0;
   for(const p of pending){
     try{
       await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
+      const inAll = allPosts.find(x => x.id === p.id);
+      if(inAll){ inAll.status = "rejected"; }
       ok++;
     }catch(e){}
   }
+  renderPosts();
   showToast(`✅ تم رفض ${ok}`,"success");
   renderModeration();
 };
@@ -3357,7 +3623,16 @@ function updateModBadge(){
 /* ============================================
    الإبلاغات
    ============================================ */
-window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});showToast("تم إرسال الإبلاغ، شكراً لك","success");}catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}};
+window.reportPost=async(id)=>{
+  if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}
+  const reason = await showPromptModal("سبب الإبلاغ (اختياري):", "", { title: "إبلاغ عن إعلان مخالف", icon: "🚩", confirmText: "إرسال الإبلاغ", placeholder: "مثال: إعلان احتيالي، سلعة مخالفة..." });
+  if(reason===null)return;
+  try{
+    const post=allPosts.find(p=>p.id===id);
+    await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});
+    showToast("تم إرسال الإبلاغ، شكراً لك","success");
+  }catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}
+};
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
 function renderReports(){
 const list=document.getElementById("reportsList");if(!list)return;
@@ -3374,11 +3649,25 @@ return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;mar
 }).join("");
 list.innerHTML=toolbar+items;
 }
-window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}if(!confirm(`تجاهل ${allReports.length} إبلاغ؟`))return;let ok=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){}}showToast(`✅ تم تجاهل ${ok}`,"success");renderReports();};
-window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){showToast("تم الإلغاء","info");return;}let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
+window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ok=await showConfirmModal(`تجاهل وحذف ${allReports.length} إبلاغ؟`,{confirmText:"تجاهل الكل"});if(!ok)return;let okC=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okC++;}catch(e){}}showToast(`✅ تم تجاهل ${okC}`,"success");renderReports();};
+window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];const ok=await showConfirmModal(`هل أنت متأكد من حذف ${ids.length} إعلان مبلغ عنه نهائياً؟`,{isDanger:true,confirmText:"نعم، حذف الكل"});if(!ok)return;let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));allPosts=allPosts.filter(x=>x.id!==pid);okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}renderPosts();showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deleteReportedPost=async(pid,rid)=>{const ok=await showConfirmModal("حذف هذا الإعلان المبلغ عنه نهائياً؟",{isDanger:true,confirmText:"حذف الإعلان"});if(!ok)return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));allPosts=allPosts.filter(x=>x.id!==pid);renderPosts();renderReports();showToast("✅ تم الحذف بنجاح","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deletePost=async(id)=>{
+  if(!(await showConfirmModal("هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً؟", { danger: true, confirmText: "نعم، حذف" }))) return;
+  try{
+    if(cart.items.some(i=>i.postId===id)){
+      cart.items=cart.items.filter(i=>i.postId!==id);
+      if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
+      saveCart();updateCartUI();
+    }
+    await deleteDoc(doc(db,"posts",id));
+    allPosts=allPosts.filter(x=>x.id!==id);
+    renderPosts();
+    closeOverlay();
+    showToast("✅ تم حذف الإعلان بنجاح","success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
 /* ============================================
    Admin: Limits
@@ -3393,7 +3682,15 @@ function renderLimits(){
   }).join("");
 }
 window.editLimit=(uid)=>{const l=allLimits.find(x=>x.uid===uid);if(!l)return;document.getElementById("limitSearch").value=l.username?l.username:(l.memberNo?String(l.memberNo):(l.email||""));document.getElementById("limitNumber").value=l.limit||3;document.getElementById("storeLimitNumber").value=l.storeLimit||20;};
-window.removeLimit=async(uid)=>{if(!confirm("إلغاء الحد المخصص؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));delete userLimitsCache[uid];showToast("✅ تم الإلغاء","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.removeLimit=async(uid)=>{
+  const ok=await showConfirmModal("هل تريد إلغاء الحد المخصص لهذا المستخدم وإعادته للحد الافتراضي العام؟", { confirmText: "إلغاء الحد" });
+  if(!ok) return;
+  try{
+    await deleteDoc(doc(db,"userLimits",uid));
+    delete userLimitsCache[uid];
+    showToast("✅ تم الإلغاء بنجاح","success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
 async function findUserByAny(search){const s=String(search||"").trim();if(!s)return null;const clean=s.replace(/^@/,"").toLowerCase();try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}const num=parseInt(s,10);if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}return null;}
 window.applyUserLimit=async()=>{
   if(!isAdmin)return;
@@ -3414,7 +3711,7 @@ window.applyUserLimit=async()=>{
    Admin: Expired
    ============================================ */
 window.openExpired=()=>{if(!isAdmin)return;accountOverlay.classList.add("hidden");expiredOverlay.classList.remove("hidden");renderExpiredList();};
-async function autoDeleteOldExpired(){if(!isAdmin)return;try{const toDelete=allPosts.filter(p=>expiredGracePassed(p));if(toDelete.length===0)return;let ok=0;for(const p of toDelete){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}}catch(e){}}
+async function autoDeleteOldExpired(){if(!isAdmin)return;try{const toDelete=allPosts.filter(p=>expiredGracePassed(p));if(toDelete.length===0)return;let ok=0;for(const p of toDelete){try{await deleteDoc(doc(db,"posts",p.id));allPosts=allPosts.filter(x=>x.id!==p.id);ok++;}catch(e){}}if(ok>0)renderPosts();}catch(e){}}
 function renderExpiredList(){
   const list=document.getElementById("expiredList");if(!list)return;
   const expired=allPosts.filter(p=>isExpired(p));
@@ -3429,16 +3726,80 @@ function renderExpiredList(){
   }).join("");
   list.innerHTML=toolbar+items;
 }
-window.deleteExpiredPost=async(id)=>{if(!isAdmin)return;if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));renderExpiredList();}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.deleteAllExpired=async()=>{if(!isAdmin)return;const expired=allPosts.filter(p=>isExpired(p));if(expired.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${expired.length}؟`))return;const c=prompt('اكتب "حذف":');if(c!=="حذف"){return;}let ok=0;for(const p of expired){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ تم حذف ${ok}`,"success");renderExpiredList();};
-window.deleteAutoReadyExpired=async()=>{if(!isAdmin)return;const ready=allPosts.filter(p=>expiredGracePassed(p));if(ready.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${ready.length}؟`))return;let ok=0;for(const p of ready){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ ${ok}`,"success");renderExpiredList();};
+window.deleteExpiredPost=async(id)=>{
+  if(!isAdmin)return;
+  const ok=await showConfirmModal("حذف هذا الإعلان المنتهي نهائياً؟", { isDanger: true, confirmText: "نعم، حذف" });
+  if(!ok) return;
+  try{
+    await deleteDoc(doc(db,"posts",id));
+    allPosts=allPosts.filter(x=>x.id!==id);
+    renderPosts();
+    renderExpiredList();
+    showToast("✅ تم الحذف بنجاح","success");
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+window.deleteAllExpired=async()=>{
+  if(!isAdmin)return;
+  const expired=allPosts.filter(p=>isExpired(p));
+  if(expired.length===0){showToast("لا توجد إعلانات منتهية","info");return;}
+  const ok=await showConfirmModal(`هل أنت متأكد من حذف كافة الإعلانات المنتهية (${expired.length}) نهائياً؟`, { isDanger: true, confirmText: "حذف الكل" });
+  if(!ok) return;
+  let okP=0;
+  for(const p of expired){
+    try{
+      await deleteDoc(doc(db,"posts",p.id));
+      allPosts=allPosts.filter(x=>x.id!==p.id);
+      okP++;
+    }catch(e){}
+  }
+  renderPosts();
+  showToast(`✅ تم حذف ${okP} إعلان منتهي`,"success");
+  renderExpiredList();
+};
+window.deleteAutoReadyExpired=async()=>{
+  if(!isAdmin)return;
+  const ready=allPosts.filter(p=>expiredGracePassed(p));
+  if(ready.length===0){showToast("لا توجد إعلانات مؤهلة للحذف التلقائي","info");return;}
+  const ok=await showConfirmModal(`حذف ${ready.length} إعلان منتهي تجاوزت فترة السماح (7+ أيام)؟`, { isDanger: true, confirmText: "حذف" });
+  if(!ok) return;
+  let okP=0;
+  for(const p of ready){
+    try{
+      await deleteDoc(doc(db,"posts",p.id));
+      allPosts=allPosts.filter(x=>x.id!==p.id);
+      okP++;
+    }catch(e){}
+  }
+  renderPosts();
+  showToast(`✅ تم حذف ${okP} إعلان`,"success");
+  renderExpiredList();
+};
 
 /* ============================================
    Upgrade + Dashboard
    ============================================ */
 window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();showToast("✅ بعد الدفع، اضغط الرابط","info");},400);};
-function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){showToast("⚠️ الإعلان غير موجود","warn");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
+function tryApplyPendingUpgrade(){
+  if(!pendingAutoUpgrade)return;
+  if(!isAdmin)return;
+  const d=pendingAutoUpgrade;
+  pendingAutoUpgrade=null;
+  setTimeout(async()=>{
+    const p=allPosts.find(x=>x.id===d.postId);
+    if(!p){
+      showToast("⚠️ الإعلان غير موجود","warn");
+      history.replaceState(null,'',window.location.pathname);
+      return;
+    }
+    const cm=`⭐ تفعيل ترقية الإعلان\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;
+    const ok = await showConfirmModal(cm, { confirmText: "نعم، تفعيل الترقية" });
+    if(ok){
+      adminFeature(d.postId,d.days);
+    }
+    history.replaceState(null,'',window.location.pathname);
+  },1200);
+}
 
 window.openSendNotification=()=>{
   if(!isAdmin)return;
@@ -3603,14 +3964,21 @@ window.addToCart=async(postId,event)=>{
   const isRestaurant=isRestaurantStore(store)||isRestaurantCategory(p.category);
   const storeName=p.storeName||(store?store.name:(isRestaurant?"مطعم":"متجر"));
   if(cart.storeId && cart.storeId!==p.storeId && cart.items.length>0){
-    if(!confirm(`⚠️ سلتك فيها أصناف من "${cart.storeName}"\n\nلإضافة صنف من مكان آخر، يجب إفراغ السلة أولاً.`))return;
+    const confirmed = await showConfirmModal(`⚠️ سلتك تحتوي على أصناف من "${cart.storeName}".\n\nلإضافة صنف من متجر آخر، يجب إفراغ السلة أولاً. هل تريد إفراغها والبدء من جديد؟`, { isDanger: true, confirmText: "إفراغ والبدء" });
+    if(!confirmed) return;
     cart.items=[];
   }
   cart.storeId=p.storeId;
   cart.storeName=storeName;
   cart.storePhone=(store?(store.phone||store.storePhone):p.phone)||p.phone||"";
   const existing=cart.items.find(i=>i.postId===postId);
-  if(existing){existing.qty=(existing.qty||1)+1;}
+  if(existing){
+    if((existing.qty || 1) >= 50){
+      showToast("⚠️ الحد الأقصى للطلب هو 50 قطعة","warn");
+      return;
+    }
+    existing.qty=(existing.qty||1)+1;
+  }
   else{const imgs=getImages(p);cart.items.push({postId:p.id,title:p.title||"",price:Number(p.price)||0,image:imgs[0]||"",qty:1});}
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
@@ -3627,13 +3995,18 @@ window.changeQty=(postId,delta)=>{
   if(!item)return;
   const newQty=(item.qty||1)+delta;
   if(newQty<1)return;
+  if(newQty>50){
+    showToast("⚠️ الحد الأقصى للطلب هو 50 قطعة","warn");
+    return;
+  }
   item.qty=newQty;
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 };
-window.clearCart=()=>{
+window.clearCart=async()=>{
   if(cart.items.length===0)return;
-  if(!confirm("إفراغ السلة بالكامل؟"))return;
+  const confirmed = await showConfirmModal("هل أنت متأكد من إفراغ السلة بالكامل؟", { isDanger: true, confirmText: "إفراغ السلة" });
+  if(!confirmed) return;
   cart={storeId:null,storeName:"",storePhone:"",items:[]};
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
@@ -3672,10 +4045,27 @@ window.sendCartToCall=()=>{
    منظومة طلبات المطاعم الحية (لوحة الكاشير + تتبع الزبون بالعداد الآلي)
    ===================================================== */
 
-// نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي
+// نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي (Singleton Context لمنع استنزاف الموارد)
+let _sharedAudioCtx = null;
+function getSharedAudioCtx(){
+  try{
+    if(!_sharedAudioCtx){
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if(AudioCtxClass) _sharedAudioCtx = new AudioCtxClass();
+    }
+    if(_sharedAudioCtx && _sharedAudioCtx.state === 'suspended'){
+      _sharedAudioCtx.resume().catch(()=>{});
+    }
+    return _sharedAudioCtx;
+  }catch(e){
+    return null;
+  }
+}
+
 function playRestaurantBell(type='new_order'){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = getSharedAudioCtx();
+    if(!ctx) return;
     const now=ctx.currentTime;
     if(type==='new_order'){
       const osc1=ctx.createOscillator();const gain1=ctx.createGain();
@@ -3736,7 +4126,21 @@ window.submitRestaurantDirectOrder=async()=>{
   if(btn){btn.disabled=true;btn.textContent="⏳ جاري إرسال الطلبية للكاشير...";}
 
   try{
-    const totalToPay = cartTotalPrice();
+    // التحقق من الأسعار ومطابقتها مع قاعدة بيانات المنتجات لمنع أي تلاعب محلي
+    let computedTotal = 0;
+    const sanitizedItems = cart.items.map(i => {
+      const realPost = allPosts.find(p => p.id === i.postId);
+      const realPrice = (realPost && typeof realPost.price === 'number') ? realPost.price : (Number(i.price) || 0);
+      const safeQty = Math.max(1, parseInt(i.qty, 10) || 1);
+      computedTotal += realPrice * safeQty;
+      return {
+        postId: i.postId,
+        title: realPost ? realPost.title : i.title,
+        price: realPrice,
+        qty: safeQty
+      };
+    });
+    const totalToPay = computedTotal > 0 ? computedTotal : cartTotalPrice();
     let walletDebitRes = null;
 
     if(paymentMethod === "wallet"){
@@ -3780,7 +4184,7 @@ window.submitRestaurantDirectOrder=async()=>{
       deliveryType:deliveryType,
       deliveryAddress:address,
       notes:notes,
-      items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1})),
+      items:sanitizedItems,
       totalPrice:totalToPay,
       totalCount:cartTotalCount(),
       paymentMethod:paymentMethod,
@@ -3850,6 +4254,17 @@ window.submitRestaurantDirectOrder=async()=>{
     showToast("🎉 تم إرسال طلبيتك إلى كاشير المطعم بنجاح!","success",4000);
     openOrderTracker(orderId);
   }catch(e){
+    // التراجع عن خصم المحفظة إذا فشل إنشاء الطلب في قاعدة البيانات لضمان عدم ضياع الأموال
+    if(walletDebitRes && walletDebitRes.ok && auth.currentUser){
+      try{
+        await creditUserWallet(
+          auth.currentUser.uid,
+          totalToPay,
+          `استرجاع تلقائي: تعذر إرسال الطلبية للكاشير`,
+          { txType: "order_create_failed_refund" }
+        );
+      }catch(rollErr){ console.error("Wallet refund rollback error:", rollErr); }
+    }
     showToast("خطأ أثناء إرسال الطلب: "+e.message,"error");
   }finally{
     if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
@@ -4309,8 +4724,8 @@ window.openRestaurantLiveOrders=(storeId, skipHistory)=>{
   if(!storeId) storeId = 'doc_1792952590082_5d3t8gw';
   const store=allStores.find(s=>s.id===storeId) || { id: storeId, name: 'مطعم KSH' };
   const me=auth.currentUser;
-  const isOwnerStore=me && store && (me.uid===store.ownerUid || store.ownerUid?.startsWith('admin_client_'));
   const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
+  const isOwnerStore=me && store && (me.uid===store.ownerUid || (isAdminUser && store.ownerUid?.startsWith('admin_client_')));
   const isHelper=me && isStoreHelper(storeId, me.email);
 
   if(!isOwnerStore && !isAdminUser && !isHelper){
@@ -4367,8 +4782,8 @@ function closeRestaurantCashierDirect(){
   // العودة التلقائية للشاشة السابقة التي فُتح منها الكاشير
   if(_cashierPreviousScreen === 'account'){
     openAccount(true);
-  } else if(_cashierPreviousScreen === 'store' && currentStore){
-    openStore(currentStore.id, null, true);
+  } else if(_cashierPreviousScreen === 'store' && window._currentStoreId){
+    openStore(window._currentStoreId, null, true);
   } else if(_cashierPreviousScreen === 'stores'){
     openStores(window._storesFilterMode || 'all', true);
   } else {
@@ -4658,6 +5073,14 @@ window.cashierAcceptOrder=async(docId, minutes)=>{
   try{
     const order = await getRestaurantOrderFromDb(docId);
     if(!order) return;
+    if(_rloStoreId && order.storeId && order.storeId !== _rloStoreId && !isAdmin){
+      showToast("❌ هذا الطلب يتبع متجراً آخر","error");
+      return;
+    }
+    if(order.status === 'completed' || order.status === 'rejected'){
+      showToast("⚠️ هذا الطلب مغلق بالفعل ولا يمكن قبوله مجدداً","warn");
+      return;
+    }
     const now=Date.now();
     order.status='accepted';
     order.prepMinutes=minutes;
@@ -4681,7 +5104,7 @@ window.cashierAcceptOrder=async(docId, minutes)=>{
 };
 
 window.cashierCustomTimeOrder=async(docId)=>{
-  const m=prompt("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):","20");
+  const m = await showPromptModal("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):", "20", { title: "تحديد وقت التحضير", icon: "⏱️", inputType: "number", confirmText: "تأكيد الوقت" });
   if(!m)return;
   const mins=parseInt(m,10);
   if(isNaN(mins)||mins<=0){showToast("⚠️ وقت غير صحيح","warn");return;}
@@ -4689,20 +5112,31 @@ window.cashierCustomTimeOrder=async(docId)=>{
 };
 
 window.cashierRejectOrder=async(docId)=>{
-  if(!confirm("هل أنت متأكد من الاعتذار عن هذا الطلب؟"))return;
+  const ok = await showConfirmModal("هل أنت متأكد من الاعتذار عن قبول هذا الطلب؟", { isDanger: true, confirmText: "نعم، اعتذار" });
+  if(!ok) return;
   try{
     const order = await getRestaurantOrderFromDb(docId);
     if(!order) return;
+    if(_rloStoreId && order.storeId && order.storeId !== _rloStoreId && !isAdmin){
+      showToast("❌ هذا الطلب يتبع متجراً آخر","error");
+      return;
+    }
+    if(order.status === 'completed' || order.status === 'rejected'){
+      showToast("⚠️ هذا الطلب مغلق بالفعل","warn");
+      return;
+    }
     order.status='rejected';
 
     let didRefund = false;
     if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
       try{
         if(typeof refundOrderToWallet === 'function'){
-          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
-          order.isRefunded = true;
-          order.refundedAt = Date.now();
-          didRefund = true;
+          const refRes = await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
+          if(refRes && refRes.ok){
+            order.isRefunded = true;
+            order.refundedAt = Date.now();
+            didRefund = true;
+          }
         }
       }catch(err){
         console.error("Auto refund error:", err);
@@ -4773,14 +5207,22 @@ window.toggleSold=async(id,event)=>{
   const isOwner=me.uid===p.uid||isMyStorePost;
   if(!isOwner && !isAdmin){showToast("❌ هذا الإعلان ليس لك","error");return;}
   const newSold=!p.sold;
-  const msg=newSold?"✅ تم بيع المنتج؟":"↩️ إلغاء حالة (تم البيع)؟";
-  if(!confirm(msg))return;
+  const msg=newSold?"هل تم بيع هذا المنتج وتريد وضع علامة (تم البيع)؟":"هل تريد إلغاء حالة (تم البيع) وإعادة إتاحة الإعلان؟";
+  if(!(await showConfirmModal(msg, { icon: newSold ? "✅" : "↩️", danger: false, confirmText: newSold ? "نعم، تم البيع" : "إلغاء البيع" }))) return;
   try{
-    await updateDoc(doc(db,"posts",id),{sold:newSold,soldAt:newSold?Date.now():null});
+    const soldAt = newSold ? Date.now() : null;
+    await updateDoc(doc(db,"posts",id),{sold:newSold,soldAt:soldAt});
+    p.sold = newSold;
+    p.soldAt = soldAt;
     if(newSold && cart.items.some(i=>i.postId===id)){
       cart.items=cart.items.filter(i=>i.postId!==id);
       if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
       saveCart();updateCartUI();
+    }
+    renderPosts();
+    const ov=document.getElementById("postOverlay");
+    if(ov && !ov.classList.contains("hidden")){
+      openPost(id);
     }
     showToast(newSold?"✅ تم وضع علامة (تم البيع)":"✅ تم إلغاء العلامة","success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -4798,11 +5240,48 @@ function dotsHtml(images){if(images.length<=1)return"";return `<div class="dots"
 document.addEventListener("scroll",e=>{const el=e.target;if(!el||!el.classList||!el.classList.contains("carousel"))return;const d=el.parentElement&&el.parentElement.querySelector(".dots");if(!d)return;const i=Math.round(el.scrollLeft/(el.clientWidth||1));Array.from(d.children).forEach((x,idx)=>x.classList.toggle("active",idx===i));},true);
 window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 
-async function compressImage(file,maxSize=1200,quality=0.82){try{const bmp=await createImageBitmap(file);const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(bmp,0,0,w,h);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));return b||file;}catch(e){return file;}}
+async function compressImage(file,maxSize=1200,quality=0.82){
+  try{
+    if(file && (file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name || ''))){
+      showToast("⚠️ صور آيفون بصيغة HEIC غير مدعومة مباشرة، يرجى اختيار صور JPG أو PNG", "warn", 6000);
+      return file;
+    }
+    const bmp=await createImageBitmap(file);
+    const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));
+    const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    const ctx=c.getContext("2d");
+    ctx.imageSmoothingEnabled=true;
+    ctx.imageSmoothingQuality="high";
+    ctx.drawImage(bmp,0,0,w,h);
+    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));
+    return b||file;
+  }catch(e){
+    return file;
+  }
+}
 async function uploadToImgBB(file){const fd=new FormData();const toSend=await compressImage(file);fd.append("image",toSend,"photo.jpg");const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:fd});const data=await res.json();if(!data.success)throw new Error("فشل رفع الصورة");return data.data.url;}
 function renderImagePicker(){const box=document.getElementById("imgThumbs");box.innerHTML=selectedImages.map((item,i)=>{const src=item.type==="existing"?item.url:item.previewUrl;return `<div class="imgThumb"><img src="${escapeHtml(src)}"><button class="rm" onclick="removeImage(${i})">×</button></div>`;}).join("");document.getElementById("imgAddTile").classList.toggle("hidden",selectedImages.length>=10);}
 window.removeImage=(i)=>{selectedImages.splice(i,1);renderImagePicker();};
-window.handleFilesSelected=()=>{const input=document.getElementById("imageFile");const files=Array.from(input.files);const remaining=10-selectedImages.length;files.slice(0,remaining).forEach(file=>{selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});});input.value="";renderImagePicker();};
+window.handleFilesSelected=()=>{
+  const input=document.getElementById("imageFile");
+  const files=Array.from(input.files);
+  const remaining=10-selectedImages.length;
+  let hasHeic = false;
+  files.slice(0,remaining).forEach(file=>{
+    const isHeic = file && (file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name || ''));
+    if(isHeic){
+      hasHeic = true;
+      return;
+    }
+    selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});
+  });
+  if(hasHeic){
+    showToast("⚠️ تم تجاهل بعض صور الآيفون (HEIC). يرجى تحويل كاميرا الآيفون لـ (الأكثر توافقاً) من الإعدادات أو اختيار صور JPG/PNG", "warn", 7000);
+  }
+  input.value="";
+  renderImagePicker();
+};
 
 /* ============================================
    المتاجر — القائمة + الصفحة
@@ -4931,6 +5410,7 @@ window.refreshOpenStore=async(storeId)=>{
   await openStore(storeId,true);
 };
 window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
+  const savedScrollY = keepScroll ? (window.scrollY || document.documentElement.scrollTop || 0) : 0;
   try{
     if(!keepScroll){window._currentStoreId=storeId;}
     window._storeBackTo=backTo||"categories";
@@ -4950,7 +5430,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       try{
         const snap=await Promise.race([
           getDoc(doc(db,"stores",storeId)),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error("مهلة التحميل انتهت")),8000))
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error("مهلة التحميل انتهت")),20000))
         ]);
         if(snap && snap.exists()) store={id:snap.id,...snap.data()};
       }catch(e){
@@ -4958,7 +5438,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       }
     }
     if(!store){
-      box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود أو تم حذفه<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
+      box.innerHTML=`<div class='reportsEmpty'>❌ تعذر تحميل المتجر حالياً (قد يكون هناك بطء في الشبكة أو المتجر غير متاح)<br><br><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class='btnMain' style='max-width:180px' onclick="openStore('${escapeHtml(storeId)}')">🔄 إعادة المحاولة</button><button class='btnGhost' style='max-width:180px' onclick='openStores()'>العودة لدليل المتاجر</button></div></div>`;
       return;
     }
     window._currentStoreId=storeId;
@@ -5151,6 +5631,9 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
       sec.innerHTML=`<h4>⭐ التقييمات (${ratings.length}) — متوسط ${avg.toFixed(1)}/5</h4>`+ratings.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${escapeHtml(r.raterName||"مستخدم")}</b><span style="color:#f5a623">${"★".repeat(r.stars||0)}${"☆".repeat(5-(r.stars||0))}</span></div>${r.comment?`<div style="font-size:13px;margin-top:4px">${escapeHtml(r.comment)}</div>`:""}</div>`).join("");
     }).catch(e=>console.warn("Ratings error:",e));
+    if(keepScroll && savedScrollY > 0){
+      requestAnimationFrame(()=>{ window.scrollTo({ top: savedScrollY, behavior: 'instant' }); });
+    }
     hideFloatingButtons();
   }catch(err){
     console.error("Critical error in openStore:",err);
@@ -5195,7 +5678,22 @@ window.goAddStorePost=(storeId)=>{
   setTimeout(()=>showForm(true),200);
 };
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
-window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deleteStoreProduct=async(id)=>{
+  const confirmed = await showConfirmModal("هل أنت متأكد من حذف هذا المنتج من المتجر؟", { isDanger: true, confirmText: "نعم، حذف" });
+  if(!confirmed) return;
+  try{
+    if(cart.items.some(i=>i.postId===id)){
+      cart.items=cart.items.filter(i=>i.postId!==id);
+      if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
+      saveCart();updateCartUI();
+    }
+    await deleteDoc(doc(db,"posts",id));
+    allPosts=allPosts.filter(x=>x.id!==id);
+    renderPosts();
+    showToast("✅ تم حذف المنتج بنجاح","success");
+    setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
 /* ✅ دالة نقل الإعلانات الفردية للمتجر (يدوياً بضغطة زر) */
 window.transferMyPostsToStore=async(storeId)=>{
@@ -5283,22 +5781,38 @@ window.transferMyPostsToStore=async(storeId)=>{
     if(checked.length===0){showToast('⚠️ اختر إعلان واحد على الأقل','warn');return;}
     const ids=Array.from(checked).map(c=>c.getAttribute('data-post-id'));
     const btn=overlay.querySelector('#transferConfirmBtn');
+    
+    // فحص حد المتجر قبل إتمام النقل لمنع تجاوزه بصمت
+    const currentStorePostsCount = allPosts.filter(p => p.storeId === store.id).length;
+    const storeLimit = await getUserStoreLimit(store.ownerUid);
+    if (!isAdmin && (currentStorePostsCount + ids.length) > storeLimit) {
+      const allowed = Math.max(0, storeLimit - currentStorePostsCount);
+      showToast(`⚠️ لا يمكن النقل: يتجاوز الحد الأقصى للمتجر (${storeLimit} منتج). المتبقي المتاح: ${allowed}`, "warn", 6000);
+      return;
+    }
+
     btn.disabled=true;
     btn.textContent='⏳ جاري النقل...';
     let ok=0,fail=0;
     for(const pid of ids){
       try{
         const p=myPosts.find(x=>x.id===pid);
-        await updateDoc(doc(db,'posts',pid),{
+        const upd = {
           storeId:store.id,
           storeName:store.name,
           storeCategory:store.category,
           storePhone:store.phone||'',
           phone:store.phone||(p&&p.phone)||''
-        });
+        };
+        await updateDoc(doc(db,'posts',pid), upd);
+        const inMem = allPosts.find(x => x.id === pid);
+        if(inMem){
+          Object.assign(inMem, upd);
+        }
         ok++;
       }catch(e){fail++;}
     }
+    renderPosts();
     overlay.remove();
     showToast('✅ تم نقل '+ok+' إعلان للمتجر'+(fail>0?' (فشل '+fail+')':''),'success',3500);
     if(window._currentStoreId===store.id){setTimeout(()=>openStore(store.id,true),500);}
@@ -5493,12 +6007,33 @@ window.saveStoreEdits=async()=>{
     }
     btn.textContent="⏳ جاري الحفظ...";
     await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
-    if(store.name!==newName){
-      try{const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);for(const p of storePosts){try{await updateDoc(doc(db,"posts",p.id),{storeName:newName});}catch(e){}}}catch(e){}
+    Object.assign(store, updates);
+    if(store.name!==newName || updates.category || updates.phone){
+      try{
+        const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);
+        for(const p of storePosts){
+          try{await updateDoc(doc(db,"posts",p.id),{storeName:newName,storeCategory:newCategory,storePhone:updates.phone||store.phone});}catch(e){}
+        }
+      }catch(e){}
     }
+    // تحديث الإعلانات والمتجر في الذاكرة الحية فورياً
+    allPosts.filter(p => p.storeId === editStoreCurrentId).forEach(p => {
+      p.storeName = newName;
+      if(updates.category) p.storeCategory = updates.category;
+      if(updates.phone) p.storePhone = updates.phone;
+    });
+    if(myStore && myStore.id === editStoreCurrentId){
+      Object.assign(myStore, updates);
+    }
+    renderPosts();
+    renderStoresList();
     showToast("✅ تم حفظ التعديلات والشعار بنجاح","success");
+    const savedId = editStoreCurrentId;
     closeOverlay();
-    if(window._currentStoreId===editStoreCurrentId){setTimeout(()=>openStore(editStoreCurrentId,true),300);}
+    editStoreCurrentId = null;
+    editStoreLogoImage = null;
+    editStoreCoverImage = null;
+    if(window._currentStoreId===savedId){setTimeout(()=>openStore(savedId,true),300);}
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
   finally{btn.disabled=false;btn.textContent="💾 حفظ التعديلات";}
 };
@@ -5666,8 +6201,9 @@ window.toggleStoreVerify=async(id)=>{
   const store=allStores.find(s=>s.id===id);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
   const isVerified=!!store.verified;
-  const msg=isVerified ? `إلغاء توثيق المتجر: ${store.name}؟` : `توثيق المتجر: ${store.name}؟\n\nراح تظهر العلامة الزرقاء ✓ على المتجر.`;
-  if(!confirm(msg))return;
+  const msg=isVerified ? `هل أنت متأكد من إلغاء توثيق المتجر: "${store.name}"؟` : `هل ترغب في توثيق المتجر: "${store.name}"؟\n\nستظهر شارة التوثيق الزرقاء (✓) على المتجر وإعلاناته.`;
+  const ok = await showConfirmModal(msg, { icon: isVerified ? "❌" : "🛡️", isDanger: isVerified, confirmText: isVerified ? "نعم، إلغاء التوثيق" : "نعم، توثيق المتجر" });
+  if(!ok) return;
   try{
     await updateDoc(doc(db,"stores",id),{
       verified:!isVerified,
@@ -5702,24 +6238,73 @@ function renderStoresModeration(){
   }).join("");
 }
 window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});showToast("✅ تم قبول المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","معلومات غير كافية");if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});showToast("✅","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=await showPromptModal("سبب رفض المتجر:","معلومات غير كافية",{title:"رفض المتجر",icon:"🚫",confirmText:"رفض المتجر"});if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});showToast("✅ تم رفض المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteStore=async(id)=>{
   if(!isAdmin)return;
   const store=allStores.find(s=>s.id===id);
   if(!store)return;
   const count=allPosts.filter(p=>p.storeId===id).length;
-  if(!confirm(`⚠️ حذف نهائي\n\n🏪 ${store.name}\n📦 ${count} منتج`))return;
-  const c=prompt('اكتب "حذف" للتأكيد:');
-  if(c!=="حذف"){showToast("تم الإلغاء","info");return;}
+  const confirmed = await showConfirmModal(`⚠️ تأكيد الحذف النهائي لمتجر "${store.name}" وكافة المنتجات التابعة له؟`, {
+    isDanger: true,
+    confirmText: "نعم، حذف نهائي"
+  });
+  if(!confirmed) return;
   try{
     let okP=0;
-    for(const p of allPosts.filter(p=>p.storeId===id)){try{await deleteDoc(doc(db,"posts",p.id));okP++;}catch(e){}}
+    // جلب وحذف كافة منتجات المتجر من قاعدة البيانات حتى لو لم تكن محملة في الذاكرة
+    let storePostDocs = [];
+    try {
+      const qSnap = await getDocs(query(collection(db, "posts"), where("storeId", "==", id)));
+      qSnap.forEach(d => storePostDocs.push({ id: d.id }));
+    } catch(e) {
+      storePostDocs = allPosts.filter(p => p.storeId === id);
+    }
+    for(const p of storePostDocs){
+      try{
+        await deleteDoc(doc(db,"posts",p.id));
+        okP++;
+      }catch(e){}
+    }
     await deleteDoc(doc(db,"stores",id));
-    if(store.ownerUid){try{await updateDoc(doc(db,"profiles",store.ownerUid),{storeId:null});}catch(e){}}
-    if(cart.storeId===id){cart={storeId:null,storeName:"",storePhone:"",items:[]};saveCart();updateCartUI();}
-    showToast(`✅ تم الحذف + ${okP} منتج`,"success");
+    if(store.ownerUid){
+      try{
+        await setDoc(doc(db,"profiles",store.ownerUid),{storeId:null},{merge:true});
+      }catch(e){}
+    }
+    allPosts = allPosts.filter(p => p.storeId !== id);
+    allStores = allStores.filter(s => s.id !== id);
+    if(cart.storeId===id){
+      cart={storeId:null,storeName:"",storePhone:"",items:[]};
+      saveCart();
+      updateCartUI();
+    }
+    renderPosts();
+    renderStoresList();
+    showToast(`✅ تم حذف المتجر مع ${okP} منتج بنجاح`,"success");
     renderStoresModeration();
   }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
+window.transferStoreOwnership = async(storeId, newOwnerUid) => {
+  if(!isAdmin){ showToast("صلاحية للأدمن فقط", "warn"); return; }
+  if(!storeId || !newOwnerUid){ showToast("يرجى إدخال معرف المتجر ومعرف المالك الجديد", "warn"); return; }
+  try {
+    const store = allStores.find(s => s.id === storeId);
+    if(!store){ showToast("المتجر غير موجود", "error"); return; }
+    await updateDoc(doc(db, "stores", storeId), {
+      ownerUid: newOwnerUid,
+      createdByAdmin: false
+    });
+    try {
+      await setDoc(doc(db, "profiles", newOwnerUid), { storeId: storeId }, { merge: true });
+    } catch(e){}
+    store.ownerUid = newOwnerUid;
+    store.createdByAdmin = false;
+    showToast(`✅ تم نقل ملكية متجر "${store.name}" بنجاح للمستخدم الجديد`, "success");
+    renderStoresModeration();
+  } catch(e) {
+    showToast("خطأ أثناء نقل الملكية: " + e.message, "error");
+  }
 };
   /* ============================================
    تعديل الإعلان (editPost) — مع خيارات السعر
@@ -5794,11 +6379,23 @@ if(isStore && (!storeForPost || storeForPost.status!=="approved")){showToast("�
 if(!isStore && !isAdmin){
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
   const limit=await getUserLimit(auth.currentUser.uid);
-  if(myCount>=limit){const msg=`🛒 طلب إعلانات إضافية\n\n👤 ${(myProfile&&myProfile.name)||'مستخدم'}\n📊 ${myCount}\n⚙️ ${limit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${limit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+  if(myCount>=limit){
+    const msg=`🛒 طلب إعلانات إضافية\n\n👤 ${(myProfile&&myProfile.name)||'مستخدم'}\n📊 ${myCount}\n⚙️ ${limit}`;
+    const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+    const ok = await showConfirmModal(`⚠️ وصلت للحد الأقصى للإعلانات المسموح بها (${limit}).\n\nهل ترغب في التواصل مع الإدارة لطلب زيادة الحد؟`, { title: "الحد الأقصى للإعلانات", icon: "⚠️", danger: false, confirmText: "📱 مراسلة عبر واتساب", cancelText: "إلغاء" });
+    if(ok) window.open(waUrl,'_blank');
+    return;
+  }
 }else if(isStore && !isAdmin){
   const stCount=allPosts.filter(p=>p.storeId===storeForPost.id).length;
   const storeLimit=await getUserStoreLimit(auth.currentUser.uid);
-  if(stCount>=storeLimit){const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${storeLimit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
+  if(stCount>=storeLimit){
+    const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;
+    const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+    const ok = await showConfirmModal(`⚠️ وصلت للحد الأقصى لمنتجات المتجر (${storeLimit}).\n\nهل ترغب في التواصل مع الإدارة لطلب زيادة حد المتجر؟`, { title: "حد منتجات المتجر", icon: "🏪", danger: false, confirmText: "📱 مراسلة عبر واتساب", cancelText: "إلغاء" });
+    if(ok) window.open(waUrl,'_blank');
+    return;
+  }
 }
 editingPostId=null;
 window._isStorePost=isStore;
@@ -5911,11 +6508,10 @@ window.startAddPost=async()=>{
   postTypeOverlay.classList.remove("hidden");
 };
 window.chooseOpenStoreFromPlus=()=>{closeOverlay();setTimeout(()=>startOpenStore(),300);};
-window.chooseIndividualPost=()=>{
+window.chooseIndividualPost=async()=>{
   if(myStore && myStore.status==="approved"){
-    if(!confirm("⚠️ عندك متجر معتمد.\n\nلو كملت كإعلان فردي:\n• مش هيظهر في صفحة المتجر\n• هيتحسب من الحد الشخصي (3 إعلانات)\n\nلو عايز إعلان داخل متجرك، اختر (إعلان متجر).\n\nهل تريد المتابعة كإعلان فردي؟")){
-      return;
-    }
+    const ok = await showConfirmModal("⚠️ لديك متجر معتمد في المنصة.\n\nعند النشر كإعلان فردي:\n• لن يظهر في صفحة متجرك\n• سيُحسب من حدك الشخصي للإعلانات الفردية\n\nهل ترغب في المتابعة ونشره كإعلان فردي؟", { confirmText: "نعم، إعلان فردي", cancelText: "الرجوع" });
+    if(!ok) return;
   }
   closeOverlay();
   _tempStoreData=null;
@@ -6036,6 +6632,7 @@ window.openAccount = (skipHistory) => {
     getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
       if(snap.exists()){
         myProfile = snap.data();
+        window.myProfile = myProfile;
         updateAccountScreenUI();
       }
     }).catch(()=>{});
@@ -6203,7 +6800,12 @@ function closeOverlayDirect(){
   const dsh=document.getElementById("dashboardOverlay");if(dsh)dsh.classList.add("hidden");
   const sno=document.getElementById("sendNotifOverlay");if(sno)sno.classList.add("hidden");
   const eso=document.getElementById("editStoreOverlay");
-  if(eso)eso.classList.add("hidden");
+  if(eso){
+    eso.classList.add("hidden");
+    editStoreCurrentId=null;
+    editStoreLogoImage=null;
+    editStoreCoverImage=null;
+  }
   const oto=document.getElementById("orderTrackerOverlay");if(oto)oto.classList.add("hidden");
   const rlo=document.getElementById("restaurantLiveOrdersOverlay");if(rlo)rlo.classList.add("hidden");
   const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
@@ -6282,7 +6884,8 @@ window.saveMyUsername=async()=>{
   const oldUsername=(myProfile&&myProfile.username)||"";
   if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
   if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
-  if(!confirm(`هل تريد حفظ اسم المستخدم: @${raw}؟`))return;
+  const ok = await showConfirmModal(`هل تريد حفظ اسم المستخدم: @${raw}؟`, { confirmText: "نعم، حفظ" });
+  if(!ok) return;
   showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
   const res=await reserveUsername(me,raw,oldUsername);
   if(res.ok){
@@ -6320,7 +6923,8 @@ window.saveMyPhone=async()=>{
   }else{
     confirmMsg=`هل تريد تغيير رقمك من (${displayOld}) إلى (${displayNew})؟\n\n⚠️ سيتم فك ارتباط رقمك السابق وإتاحته، وتثبيت الرقم الجديد بحسابك فقط.`;
   }
-  if(!confirm(confirmMsg))return;
+  const ok = await showConfirmModal(confirmMsg, { confirmText: "نعم، ربط الرقم" });
+  if(!ok) return;
 
   showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
   const res=await reservePhone(me,cleanNew,cleanOld);
@@ -6438,7 +7042,24 @@ window.submitRating=async()=>{
     await openSeller(uid);
   }catch(e){showToast("تعذر إرسال التقييم: "+e.message,"error");}
 };
-window.deleteRating=async(id)=>{if(!confirm("حذف هذا التقييم؟"))return;try{await deleteDoc(doc(db,"ratings",id));await openSeller(sellerPanelUid);}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deleteRating=async(id)=>{
+  const ok = await showConfirmModal("هل أنت متأكد من حذف هذا التقييم؟", { isDanger: true, confirmText: "نعم، حذف" });
+  if(!ok) return;
+  const me=auth.currentUser;
+  if(!me){showToast("⚠️ سجّل دخولك أولاً","warn");return;}
+  try{
+    const snap = await getDoc(doc(db,"ratings",id));
+    if(!snap.exists()){showToast("التقييم غير موجود أو محذوف","info");return;}
+    const r = snap.data();
+    if(r.raterUid !== me.uid && !isAdmin){
+      showToast("❌ لا تملك صلاحية حذف هذا التقييم","error");
+      return;
+    }
+    await deleteDoc(doc(db,"ratings",id));
+    showToast("✅ تم حذف التقييم","success");
+    if(sellerPanelUid) await openSeller(sellerPanelUid);
+  }catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
 /* ============================================
    البروفايل + الترقيم + اسم المستخدم
@@ -6621,7 +7242,10 @@ function startProfileListener(user){
       const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
       const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
       const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
-      if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}
+      if(myProfile.memberNo==null && !assignAttempted){
+        assignAttempted=true;
+        assignMemberNumber(user).catch(e=>{ assignAttempted=false; });
+      }
       if(myProfile.phone){
         const cleanPh=normalizePhone(myProfile.phone);
         if(cleanPh){
@@ -6635,27 +7259,22 @@ function startProfileListener(user){
       if(!unsubStore){startStoreListener(user.uid);}
     }else if(!profileCreateTried){
       profileCreateTried=true;
-      assignMemberNumber(user).catch(e=>{});
+      assignMemberNumber(user).catch(e=>{ profileCreateTried=false; });
     }
   },err=>{});
 }
-function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
+function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;window.myProfile=null;}
 
 function startStoreListener(uid){
   stopStoreListener();
   unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{
     if(!snap.empty){
-      const d=snap.docs[0];
-      myStore={id:d.id,...d.data()};
+      const targetDoc = (myProfile && myProfile.storeId)
+        ? (snap.docs.find(d => d.id === myProfile.storeId) || snap.docs[0])
+        : snap.docs[0];
+      myStore={id:targetDoc.id,...targetDoc.data()};
     }else{
-      const me=auth.currentUser;
-      const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
-      if(isAdminUser){
-        const restStore=(allStores||[]).find(s=>s.id==='doc_1792952590082_5d3t8gw'||s.category==='المطاعم والمأكولات');
-        myStore=restStore||null;
-      }else{
-        myStore=null;
-      }
+      myStore=null;
     }
   },err=>{});
 }
@@ -6741,8 +7360,8 @@ function startBannerAuto(){
 /* ============================================
    GPS + إشعارات
    ============================================ */
-window.detectCity=async()=>{
-  const btn=event?.target;
+window.detectCity=async(evt)=>{
+  const btn=(evt && evt.target) || (typeof event !== 'undefined' && event?.target) || document.querySelector('.detectCityBtn') || document.getElementById('detectCityBtn');
   if(!btn)return;
   const oldText=btn.textContent;
   if(!navigator.geolocation){showToast("❌ المتصفح لا يدعم تحديد الموقع","error");return;}
@@ -6754,21 +7373,13 @@ window.detectCity=async()=>{
       const data=await res.json();
       const cityName=data.address?.city||data.address?.town||data.address?.village||data.address?.state||"";
       const allCities=Object.values(LIBYA_CITIES).flat();
-      let match=allCities.find(c=>cityName.includes(c)||c.includes(cityName));
-      if(!match){
-        let minDist=Infinity;
-        allCities.forEach(c=>{
-          if(typeof c==="string"){
-            const dist=Math.abs(c.length-cityName.length);
-            if(dist<minDist && cityName.length>2){minDist=dist;match=c;}
-          }
-        });
-      }
+      let match=allCities.find(c=>cityName && (cityName.includes(c)||c.includes(cityName)));
       if(match){
-        document.getElementById("city").value=match;
-        showToast(`✅ تم تحديد: ${match}`,"success");
+        const citySelect = document.getElementById("city");
+        if(citySelect) citySelect.value = match;
+        showToast(`✅ تم تحديد موقعك: ${match}`,"success");
       }else{
-        showToast("⚠️ لم نتعرف على مدينتك — اخترها يدوياً","warn");
+        showToast("⚠️ لم نتعرف على المدينة بدقة — يرجى اختيارها من القائمة","info");
       }
     }catch(e){showToast("⚠️ فشل تحديد الموقع","error");}
     finally{btn.disabled=false;btn.textContent=oldText;}
@@ -6867,6 +7478,16 @@ window.logout=async()=>{
   if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  allReports = [];
+  allLimits = [];
+  allPendingPosts = [];
+  myProfile = null;
+  window.myProfile = null;
+  myStore = null;
+  compareList = [];
+  saveCompare();
+  cart = {storeId:null, storeName:"", storePhone:"", items:[]};
+  saveCart();
   await signOut(auth);
 };
 
@@ -6907,15 +7528,22 @@ window.loginWithEmail=async()=>{
 /* ============================================
    📢 إشعارات داخل التطبيق (In-App)
    ============================================ */
+let _appNotificationsCache = [];
+
 function listenToAppNotifications(){
   onSnapshot(collection(db,"app_notifications"), snap => {
     if(snap.empty) return;
-    const notifs = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>b.createdAt-a.createdAt);
-    const latest = notifs[0];
-    const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
-    if(seen.includes(latest.id)) return;
-    showInAppBanner(latest);
+    _appNotificationsCache = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    checkAndShowNextInAppBanner();
   });
+}
+
+function checkAndShowNextInAppBanner(){
+  if(!_appNotificationsCache || _appNotificationsCache.length === 0) return;
+  const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
+  const nextUnseen = _appNotificationsCache.find(n => !seen.includes(n.id));
+  if(!nextUnseen) return;
+  showInAppBanner(nextUnseen);
 }
 
 function showInAppBanner(notif){
@@ -6951,10 +7579,11 @@ window.dismissInAppBanner = (id) => {
     const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
     if(!seen.includes(id)){
       seen.push(id);
-      if(seen.length > 20) seen.shift();
+      if(seen.length > 30) seen.shift();
       localStorage.setItem("seenAppNotifs", JSON.stringify(seen));
     }
   }catch(e){}
+  setTimeout(checkAndShowNextInAppBanner, 1500);
 };
 
 /* ============================================
@@ -6973,20 +7602,19 @@ setTimeout(()=>{
   }
 }, 800);
 
-window.addEventListener('load',()=>{
-  const hash=window.location.hash;
-  if(hash&&hash.startsWith('#store-')){
+function handleHashRouting(hash){
+  if(!hash) return;
+  if(hash.startsWith('#store-')){
     const sid=hash.substring(7);
     let t=0;
     const iv=setInterval(()=>{
       t++;
-      if(allStores.find(s=>s.id===sid) || t>20){
+      if(allStores.find(s=>s.id===sid) || t>25){
         clearInterval(iv);
         if(allStores.find(s=>s.id===sid)) openStore(sid,false,'categories');
       }
-    },500);
-  }
-  if(hash&&hash.startsWith('#post-')){
+    },400);
+  } else if(hash.startsWith('#post-')){
     const [pp,qp]=hash.split('?');
     const id=pp.substring(6);
     const params=new URLSearchParams(qp||'');
@@ -6997,9 +7625,38 @@ window.addEventListener('load',()=>{
     const iv=setInterval(()=>{
       t++;
       if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}
-      else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}
-    },500);
+      else if(t>25){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}
+    },400);
+  } else if(hash.startsWith('#cat-')){
+    const cat = decodeURIComponent(hash.substring(5));
+    setTimeout(()=>{ if(typeof openCategory === 'function') openCategory(cat); }, 400);
+  } else if(hash === '#cart'){
+    setTimeout(()=>{ if(typeof openCart === 'function') openCart(); }, 400);
+  } else if(hash === '#form'){
+    setTimeout(()=>{ if(typeof openFormScreen === 'function') openFormScreen(); }, 400);
+  } else if(hash === '#account'){
+    setTimeout(()=>{ if(typeof openAccount === 'function') openAccount(); }, 400);
+  } else if(hash === '#inbox'){
+    setTimeout(()=>{ if(typeof openInbox === 'function') openInbox(); }, 500);
+  } else if(hash.startsWith('#seller-')){
+    const sellerUid = hash.substring(8);
+    setTimeout(()=>{ if(typeof openSeller === 'function') openSeller(sellerUid); }, 400);
+  } else if(hash === '#stores'){
+    setTimeout(()=>{ if(typeof openStores === 'function') openStores('stores'); }, 400);
+  } else if(hash === '#restaurants'){
+    setTimeout(()=>{ if(typeof openStores === 'function') openStores('restaurants'); }, 400);
+  } else if(hash.startsWith('#restaurant-orders')){
+    const parts = hash.split('-');
+    const sid = parts.length >= 3 ? parts[2] : (myStore ? myStore.id : '');
+    if(sid){
+      setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
+    }
   }
+}
+window.handleHashRouting = handleHashRouting;
+
+window.addEventListener('load',()=>{
+  handleHashRouting(window.location.hash);
   try {
     const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
     if(activeOrdId){
@@ -7008,12 +7665,11 @@ window.addEventListener('load',()=>{
       }, 1500);
     }
   }catch(e){}
-  if(hash && hash.startsWith('#restaurant-orders')){
-    const parts = hash.split('-');
-    const sid = parts.length >= 3 ? parts[2] : (myStore ? myStore.id : '');
-    if(sid){
-      setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
-    }
+});
+
+window.addEventListener('hashchange', ()=>{
+  if(typeof _isHistoryNavigating !== 'undefined' && !_isHistoryNavigating){
+    handleHashRouting(window.location.hash);
   }
 });
 
@@ -7072,10 +7728,16 @@ let currentStoryDataUrl = null;
 let currentStoryPost = null;
 
 async function generateStoryImage(post) {
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch(e){}
+  }
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
   canvas.height = 1920;
   const ctx = canvas.getContext("2d");
+  if ('direction' in ctx) {
+    ctx.direction = 'rtl';
+  }
 
   // خلفية تدرج لوني فخم
   const grad = ctx.createLinearGradient(0, 0, 0, 1920);
@@ -7531,22 +8193,34 @@ try {
 let _userWalletBalance = 0;
 let _walletUnsub = null;
 const WALLET_THROTTLE_KEY = "tasawuq_wallet_throttle";
+let _cachedWalletsMap = new Map();
 
-// 1. استرجاع بيانات محفظة المستخدم
-export async function getUserWallet(uid){
+// 1. استرجاع بيانات محفظة المستخدم مع كاش خفيف لمدة 5 ثوانٍ لمنع تكرار طلبات DB
+export async function getUserWallet(uid, forceRefresh = false){
   if(!uid) return { balance: 0.00, updatedAt: Date.now() };
+  const now = Date.now();
+  if(!forceRefresh && _cachedWalletsMap.has(uid)){
+    const cached = _cachedWalletsMap.get(uid);
+    if(now - cached.cachedAt < 5000){
+      return cached.data;
+    }
+  }
   try{
     const snap = await getDoc(doc(db, "feedback", "wallet_" + uid));
     if(snap && snap.exists()){
       const raw = snap.data();
       const parsed = raw.message ? JSON.parse(raw.message) : {};
       const bal = Math.max(0, Number(parsed.balance || 0));
-      return { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
+      const result = { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
+      _cachedWalletsMap.set(uid, { cachedAt: now, data: result });
+      return result;
     }
   }catch(e){
     console.warn("getUserWallet error:", e);
   }
-  return { balance: 0.00, updatedAt: Date.now() };
+  const fallback = { balance: 0.00, updatedAt: Date.now() };
+  _cachedWalletsMap.set(uid, { cachedAt: now, data: fallback });
+  return fallback;
 }
 window.getUserWallet = getUserWallet;
 
@@ -7608,6 +8282,7 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       updatedAt: Date.now()
     }, { merge: true });
 
+    _cachedWalletsMap.delete(uid);
     const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
@@ -7644,6 +8319,7 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       updatedAt: Date.now()
     }, { merge: true });
 
+    _cachedWalletsMap.delete(uid);
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
@@ -7892,7 +8568,7 @@ window.submitCardRecharge = async()=>{
 
     resetWalletThrottle();
 
-    // حرق الكارت
+    // حرق الكارت مع آلية التراجع التلقائي لمنع ضياع الكارت
     cardData.isUsed = true;
     cardData.usedByUid = auth.currentUser.uid;
     cardData.usedByName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
@@ -7907,12 +8583,30 @@ window.submitCardRecharge = async()=>{
     });
 
     // إضافة الرصيد لحساب الزبون
-    const creditRes = await creditUserWallet(
-      auth.currentUser.uid,
-      cardAmount,
-      `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
-      { txType: "card_recharge", cardCode: cleanCode }
-    );
+    let creditRes;
+    try {
+      creditRes = await creditUserWallet(
+        auth.currentUser.uid,
+        cardAmount,
+        `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
+        { txType: "card_recharge", cardCode: cleanCode }
+      );
+      if(!creditRes || !creditRes.ok){
+        throw new Error(creditRes?.error || "فشل تسجيل الرصيد");
+      }
+    } catch(creditErr){
+      // التراجع عن حرق الكارت عند فشل شحن الرصيد
+      cardData.isUsed = false;
+      delete cardData.usedByUid;
+      delete cardData.usedByName;
+      delete cardData.usedByPhone;
+      delete cardData.usedAt;
+      await updateDoc(doc(db, "feedback", cardDocId), {
+        message: JSON.stringify(cardData),
+        updatedAt: Date.now()
+      }).catch(()=>{});
+      throw creditErr;
+    }
 
     if(inputEl) inputEl.value = "";
     if(statusBox){
@@ -8084,7 +8778,8 @@ window.adminGenerateCardsBatch = async()=>{
   const outBox = document.getElementById("admGeneratedCardsOutput");
   const outText = document.getElementById("admGeneratedCardsText");
 
-  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`)) return;
+  const okConfirm = await showConfirmModal(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`, { confirmText: "نعم، توليد الكروت" });
+  if(!okConfirm) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري توليد وحفظ الكروت..."; }
 
@@ -8581,7 +9276,11 @@ window.adminExecuteDeposit = async()=>{
   }
 
   const opLabel = type === 'credit' ? `إيداع مبلغ +${amt} د.ل` : `خصم مبلغ -${amt} د.ل`;
-  if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
+  const okConfirm = await showConfirmModal(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`, {
+    isDanger: type === 'debit',
+    confirmText: type === 'credit' ? "نعم، إيداع" : "نعم، خصم"
+  });
+  if(!okConfirm) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
 
@@ -8986,20 +9685,20 @@ window.openChatWithSeller = openChatWithSeller;
 // 🔊 نغمة إرسال سريعة وفورية عند ضغط إرسال (مثل واتساب وتلغرام)
 export function playChatSendSound(){
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if(!AudioContext) return;
-    const ctx = new AudioContext();
+    const ctx = (typeof getSharedAudioCtx === 'function') ? getSharedAudioCtx() : null;
+    if(!ctx) return;
+    const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(480, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.06, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(480, now);
+    osc.frequency.exponentialRampToValueAtTime(750, now + 0.08);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.16);
+    osc.start(now);
+    osc.stop(now + 0.16);
   } catch(e){}
 }
 window.playChatSendSound = playChatSendSound;
@@ -9007,20 +9706,20 @@ window.playChatSendSound = playChatSendSound;
 // 🔊 نغمة تنبيه ناعمة عند وصول رسالة جديدة عبر Web Audio API
 export function playChatChime(){
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if(!AudioContext) return;
-    const ctx = new AudioContext();
+    const ctx = (typeof getSharedAudioCtx === 'function') ? getSharedAudioCtx() : null;
+    if(!ctx) return;
+    const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    osc.frequency.setValueAtTime(587.33, now);
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
   } catch(e){}
 }
 window.playChatChime = playChatChime;
@@ -9052,7 +9751,13 @@ export async function sendSystemChatNotification(senderName, text, convId, targe
           return;
         }
       }
-      new Notification(title, options);
+      const notif = new Notification(title, options);
+      notif.onclick = () => {
+        try { window.focus(); } catch(e){}
+        if(targetUid && typeof openChatWithSeller === "function"){
+          openChatWithSeller(targetUid, null, null, senderName);
+        }
+      };
     }
   } catch(e){}
 }
@@ -9525,8 +10230,23 @@ export async function loadChatMessages(convId, isPoll){
           .eq("type", "chat_message")
           .ilike("message", `%${convId}%`)
           .order("created_at", { ascending: true })
-          .limit(80);
+          .limit(100);
         if(!error && Array.isArray(data) && data.length > 0){
+          rows = data;
+        }
+      } catch(e){}
+    }
+
+    if(rows.length === 0 && window.supabase && targetUid){
+      try {
+        const { data } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_message")
+          .ilike("message", `%${targetUid}%`)
+          .order("created_at", { ascending: true })
+          .limit(100);
+        if(Array.isArray(data) && data.length > 0){
           rows = data;
         }
       } catch(e){}
@@ -9729,6 +10449,49 @@ export async function openInbox(isSilentRefresh = false){
         }
       } catch(e){}
     });
+
+    // جلب إضافي من الرسائل الفعلية لضمان ظهور أي محادثة وصلت رسائلها حتى لو تعطل حفظ الملخص
+    if(window.supabase){
+      try {
+        const { data: msgRows } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "chat_message")
+          .ilike("message", `%${myUid}%`)
+          .order("created_at", { ascending: false })
+          .limit(80);
+        if(Array.isArray(msgRows)){
+          msgRows.forEach(mr => {
+            try {
+              const m = JSON.parse(mr.message || "{}");
+              const k = m.convId || [m.senderUid, m.receiverUid].filter(Boolean).sort().join("_");
+              if(!k) return;
+              const mTs = Number(m.createdAt || mr.created_at || 0);
+              const otherUid = m.senderUid === myUid ? m.receiverUid : m.senderUid;
+              const existing = convMap.get(k) || convMap.get("conv_" + k);
+              if(!existing){
+                convMap.set(k, {
+                  id: "conv_" + k,
+                  convId: k,
+                  participants: [m.senderUid, m.receiverUid],
+                  lastMessage: m.text || (m.type === "voice" ? "🎙️ تسجيل صوتي" : "رسالة جديدة"),
+                  lastSenderUid: m.senderUid,
+                  lastSenderName: m.senderName || "مستخدم",
+                  postContext: m.postId ? { id: m.postId } : null,
+                  storeContext: m.storeId ? { id: m.storeId } : null,
+                  updatedAt: mTs
+                });
+              } else if(mTs > (existing.updatedAt || 0)){
+                existing.lastMessage = m.text || (m.type === "voice" ? "🎙️ تسجيل صوتي" : existing.lastMessage);
+                existing.lastSenderUid = m.senderUid;
+                existing.lastSenderName = m.senderName || existing.lastSenderName;
+                existing.updatedAt = mTs;
+              }
+            } catch(e){}
+          });
+        }
+      } catch(e){}
+    }
 
     const convs = Array.from(convMap.values());
     convs.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -10083,8 +10846,12 @@ export function startGlobalChatPoller(){
               loadChatMessages(window._activeChat.convId, true);
             } else {
               playChatChime();
-              const msgPreview = (latestIncoming.text || "رسالة جديدة").slice(0, 35);
-              showToast(`💬 رسالة جديدة من ${escapeHtml(latestIncoming.senderName || "مستخدم")}: "${escapeHtml(msgPreview)}"`, "info", 5000);
+              const sName = latestIncoming.senderName || "مستخدم";
+              const msgPreview = (latestIncoming.text || (latestIncoming.type === "voice" ? "🎙️ تسجيل صوتي" : "رسالة جديدة")).slice(0, 35);
+              showToast(`💬 رسالة من ${escapeHtml(sName)}: "${escapeHtml(msgPreview)}" (اضغط للرد 💬)`, "info", 7000, () => {
+                openChatWithSeller(latestIncoming.senderUid, latestIncoming.postId, latestIncoming.storeId, sName);
+              });
+              sendSystemChatNotification(sName, msgPreview, latestIncoming.convId, latestIncoming.senderUid);
             }
 
             const inSc = document.getElementById("inboxScreen");
@@ -10469,9 +11236,16 @@ export function renderHomeStoriesBar(){
     setTimeout(() => { if(typeof loadCustomUserStories === "function") loadCustomUserStories(); }, 300);
   }
 
-  // استدعاء الإعلانات بشكل سليم وموثوق
+  // استدعاء الإعلانات بشكل سليم وسريع ومحدود لـ 15 قصة فقط
   const rawPosts = (typeof allPosts !== "undefined" && Array.isArray(allPosts)) ? allPosts : ((window.allPosts && Array.isArray(window.allPosts)) ? window.allPosts : []);
-  const approved = rawPosts.filter(p => getStatus(p) === "approved" && !isExpired(p));
+  const approved = [];
+  for(let i = 0; i < rawPosts.length; i++){
+    const p = rawPosts[i];
+    if(getStatus(p) === "approved" && !isExpired(p)){
+      approved.push(p);
+      if(approved.length >= 15) break;
+    }
+  }
 
   const myStoryCircle = `
     <div class="storyCircleItem" onclick="handleMyStoryClick()" title="نشر فيديو في قصتك">
@@ -10483,7 +11257,7 @@ export function renderHomeStoriesBar(){
   `;
 
   // تحويل القصص إلى فيديوهات بالكامل (فيديو ريلز عمودي)
-  const defaultStories = approved.slice(0, 15).map((p, idx) => ({
+  const defaultStories = approved.map((p, idx) => ({
     id: p.id,
     title: p.title || "فيديو مميز",
     price: p.price ? formatPrice(p.price) + " د.ل" : "تواصل",
@@ -10510,7 +11284,7 @@ export function renderHomeStoriesBar(){
   bar.innerHTML = myStoryCircle + _storiesList.map((s, idx) => `
     <div class="storyCircleItem" onclick="openStoryViewer(${idx})">
       <div class="storyRing ${window._seenStories && window._seenStories.includes(s.id) ? 'seen' : ''}" style="position:relative">
-        <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy">
+        <img class="storyThumb" src="${escapeHtml(s.image)}" alt="${escapeHtml(s.title)}" loading="lazy" onerror="this.onerror=null;this.src='car.png'">
         <span class="storyVideoBadge">▶</span>
       </div>
       <div class="storyTitle">${escapeHtml(s.title)}</div>
@@ -10783,7 +11557,7 @@ window.shareCurrentStory = shareCurrentStory;
 export async function reportCurrentStory(){
   const s = _storiesList[_currentStoryIndex];
   if(!s) return;
-  const reason = prompt("ما هو سبب الإبلاغ عن هذا الستوري؟ (مثال: محتوى غير لائق، إعلان احتيالي، سلعة مخالفة):");
+  const reason = await showPromptModal("ما هو سبب الإبلاغ عن هذا الستوري؟", "", { title: "إبلاغ عن ستوري مخالف", icon: "🚩", confirmText: "إرسال البلاغ", placeholder: "مثال: محتوى غير لائق، إعلان احتيالي، سلعة مخالفة..." });
   if(!reason || !reason.trim()) return;
 
   try {
@@ -10923,14 +11697,14 @@ window.handleStoryCustomFileSelected = async function(input){
     return;
   }
 
-  if(file.size > 80 * 1024 * 1024){
-    showToast("⚠️ حجم الفيديو كبير جداً، يرجى اختيار فيديو أقل من 80 ميجابايت", "warn");
+  if(file.size > 15 * 1024 * 1024){
+    showToast("⚠️ حجم الفيديو كبير، يرجى اختيار فيديو مدته 10-15 ثانية (أقل من 15MB) ليظهر بسرعة لجميع الزوار", "warn", 4500);
     return;
   }
 
   if(statusEl){
     statusEl.style.display = "block";
-    statusEl.textContent = "⏳ جاري حفظ ورفع فيديو الستوري سحابياً للظهور على كل الهواتف... (يرجى الانتظار ثوانٍ)";
+    statusEl.textContent = "⏳ جاري تحويل ورفع فيديو الستوري سحابياً لجميع الزوار... (يرجى الانتظار ثوانٍ)";
   }
 
   const p = _pendingStoryPost;
@@ -10942,27 +11716,20 @@ window.handleStoryCustomFileSelected = async function(input){
     await saveStoryVideoBlob(storyId, file);
   } catch(e){}
 
-  // 2. رفع الفيديو سحابياً على Catbox ليكون متاحاً برابط عام فوري لكل الأجهزة
-  let publicVideoUrl = null;
+  // 2. تحويل ملف الفيديو إلى Data URL سحابي ليعمل على كافة الهواتف فوراً
+  let videoDataUrl = null;
   try {
-    const fd = new FormData();
-    fd.append("reqtype", "fileupload");
-    fd.append("fileToUpload", file, "story_" + Date.now() + ".mp4");
-    const upRes = await fetch("https://catbox.moe/user/api.php", {
-      method: "POST",
-      body: fd
+    videoDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-    if(upRes.ok){
-      const respText = (await upRes.text()).trim();
-      if(respText.startsWith("http")){
-        publicVideoUrl = respText;
-      }
-    }
   } catch(err){
-    console.warn("Catbox video upload error:", err);
+    console.warn("Video convert error:", err);
   }
 
-  const finalVideoUrl = publicVideoUrl || "1000068463.mp4";
+  const finalVideoUrl = videoDataUrl || "1000068463.mp4";
 
   // 3. إنشاء كائن الستوري
   const storyItem = {
