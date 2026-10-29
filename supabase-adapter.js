@@ -416,13 +416,17 @@ export async function setDoc(docRef, data, options = {}) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (payload.username === "" || payload.username === undefined) {
+    if (!payload.username || String(payload.username).trim() === "") {
       delete payload.username;
     }
   }
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload);
     if (!error) return true;
+    if (error.message && error.message.includes("profiles_username_key")) {
+      delete payload.username;
+      continue;
+    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
       delete payload[match[1]];
@@ -441,13 +445,17 @@ export async function addDoc(colRef, data) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (payload.username === "" || payload.username === undefined) {
+    if (!payload.username || String(payload.username).trim() === "") {
       delete payload.username;
     }
   }
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
+    if (error.message && error.message.includes("profiles_username_key")) {
+      delete payload.username;
+      continue;
+    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
       delete payload[match[1]];
@@ -473,7 +481,7 @@ export async function updateDoc(docRef, data) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (payload.username === "" || payload.username === undefined) {
+    if (!payload.username || String(payload.username).trim() === "") {
       delete payload.username;
     }
   }
@@ -492,6 +500,10 @@ export async function updateDoc(docRef, data) {
       return true;
     }
 
+    if (error.message && error.message.includes("profiles_username_key")) {
+      delete payload.username;
+      continue;
+    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
       delete payload[match[1]];
