@@ -3272,10 +3272,11 @@ const wasEditing=!!editingPostId;
 const userPhone=(myProfile&&myProfile.phone)||"";
 const isStorePostFlag=!!window._isStorePost;
 const storeForPhone=isStorePostFlag && _tempStoreData ? _tempStoreData : myStore;
-const phone=(isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : userPhone;
+const rawInputPhone = (document.getElementById("phone")?.value || "").replace(/[^0-9+]/g, "");
+const phone=(isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : (userPhone || rawInputPhone);
 const adType=document.querySelector('input[name="adType"]:checked')?.value||"offer";
 const originalPrice=parseFloat(document.getElementById("originalPrice")?.value)||0;
-if(!phone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
+if(!phone || phone === "218"){showToast("❌ يجب تسجيل أو كتابة رقم الواتساب أولاً.","error");return;}
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
 const sellerMemberNo=(myProfile&&myProfile.memberNo)||null;
 const sellerUsername=(myProfile&&myProfile.username)||"";
@@ -3370,6 +3371,11 @@ else{
   const newDocRef = await addDoc(collection(db,"posts"),base);
   const newPostObj = { id: newDocRef.id, ...base };
   allPosts.unshift(newPostObj);
+  if(base.status === "pending"){
+    allPendingPosts = allPendingPosts.filter(p => p.id !== newPostObj.id);
+    allPendingPosts.unshift(newPostObj);
+    updateModBadge();
+  }
   renderPosts();
   showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
@@ -3448,6 +3454,9 @@ window.approvePost=async(id)=>{
       sendPostToTelegram(post);
     }
     renderPosts();
+    allPendingPosts = allPendingPosts.filter(p => p.id !== id);
+    updateModBadge();
+    renderModeration();
     showToast("✅ تم قبول الإعلان","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -3465,6 +3474,9 @@ window.rejectPost=async(id)=>{
       post.rejectedAt = Date.now();
     }
     renderPosts();
+    allPendingPosts = allPendingPosts.filter(p => p.id !== id);
+    updateModBadge();
+    renderModeration();
     showToast("✅ تم رفض الإعلان","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -3519,21 +3531,54 @@ let allPendingPosts = [];
 let pendingPostsListenerStarted = false;
 let unsubPendingPosts = null;
 
+async function refreshPendingPosts(){
+  try {
+    let list = [];
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if(!error && Array.isArray(data)){
+        list = data.map(item => typeof objectFromDb === 'function' ? objectFromDb(item) : item);
+      }
+    }
+    if(!list.length){
+      try {
+        const snap = await getDocs(query(collection(db, "posts"), where("status", "==", "pending")));
+        list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch(e){}
+    }
+    allPendingPosts = list;
+    allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    updateModBadge();
+    return allPendingPosts;
+  } catch(e){
+    console.warn("refreshPendingPosts error:", e);
+    return [];
+  }
+}
+window.refreshPendingPosts = refreshPendingPosts;
+
 function startPendingPostsListener(){
   if(unsubPendingPosts) return;
   pendingPostsListenerStarted = true;
-  const q = query(collection(db, "posts"), where("status", "==", "pending"));
-  unsubPendingPosts = onSnapshot(q, snap => {
-    allPendingPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-    updateModBadge();
-    const modOverlay = document.getElementById("moderationOverlay");
-    if(modOverlay && !modOverlay.classList.contains("hidden")){
-      renderModeration();
-    }
-  }, err => {
-    console.warn("Pending posts listener error:", err);
-  });
+  refreshPendingPosts();
+  try {
+    const q = query(collection(db, "posts"), where("status", "==", "pending"));
+    unsubPendingPosts = onSnapshot(q, snap => {
+      allPendingPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+      updateModBadge();
+      const modOverlay = document.getElementById("moderationOverlay");
+      if(modOverlay && !modOverlay.classList.contains("hidden")){
+        renderModeration();
+      }
+    }, err => {
+      console.warn("Pending posts listener error:", err);
+    });
+  } catch(e){}
 }
 
 function stopPendingPostsListener(){
@@ -4576,10 +4621,20 @@ function renderOrderTrackerUI(order,errorMsg){
       ${order.notes ? `<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:8px;margin-top:8px">📝 ملاحظاتك: ${escapeHtml(order.notes)}</div>` : ''}
     </div>
     ${callBtn}
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btnGhost" onclick="${(order.status==='completed'||order.status==='rejected') ? 'finishAndDismissActiveOrder(false)' : 'closeOrderTracker()'}" style="flex:1;background:transparent;color:var(--muted)">
-        ${(order.status==='completed'||order.status==='rejected') ? 'إغلاق الشاشة' : 'تصغير الشاشة ومتابعة التصفح'}
-      </button>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      ${(order.status==='pending'||order.status==='accepted') ? `
+        <button type="button" class="btnMain" onclick="customerCancelOrder('${escapeHtml(order.orderId || _currentTrackingOrderId || '')}')" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;padding:11px;font-size:13.5px;font-weight:900;border-radius:12px;cursor:pointer;margin:0">
+          ❌ إلغاء الطلبية وتصكيرها ${order.paymentMethod==='wallet' ? '(واسترجاع الرصيد للمحفظة فوراً)' : ''}
+        </button>
+      ` : ''}
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btnGhost" onclick="closeOrderTracker()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
+          🔽 تصغير الشاشة
+        </button>
+        <button type="button" class="btnGhost" onclick="finishAndDismissActiveOrder(false)" style="flex:1;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
+          ✕ تصكير وإنهاء التتبع
+        </button>
+      </div>
     </div>
   `;
 }
@@ -4640,6 +4695,57 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
     }catch(e){}
   }
   showToast("تم إنهاء التتبع بنجاح ✅","info",2000);
+};
+
+window.customerCancelOrder = async (orderId) => {
+  if(!orderId) orderId = _currentTrackingOrderId || (function(){try{return localStorage.getItem('tasawuq_active_order_id');}catch(e){return null;}})();
+  if(!orderId) return;
+
+  const ok = await showConfirmModal("هل أنت متأكد من رغبتك في إلغاء وتصكير هذه الطلبية؟", {
+    icon: "⚠️",
+    danger: true,
+    confirmText: "نعم، إلغاء الطلبية",
+    cancelText: "تراجع"
+  });
+  if(!ok) return;
+
+  try {
+    const order = await getRestaurantOrderFromDb(orderId);
+    if(!order || order.status === 'completed'){
+      showToast("⚠️ هذه الطلبية مكتملة بالفعل ولا يمكن إلغاؤها", "warn");
+      return;
+    }
+
+    order.status = 'rejected';
+    order.cancelReason = 'تم الإلغاء بواسطة الزبون';
+    order.cancelledAt = Date.now();
+
+    let refunded = false;
+    if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && auth.currentUser){
+      try{
+        if(typeof refundOrderToWallet === 'function'){
+          const refRes = await refundOrderToWallet(auth.currentUser.uid, order.totalPrice, order.orderNo, order.storeName);
+          if(refRes && refRes.ok){
+            order.isRefunded = true;
+            order.refundedAt = Date.now();
+            refunded = true;
+          }
+        }
+      }catch(err){ console.error("Refund on cancel error:", err); }
+    }
+
+    const docId = order._docId || orderId;
+    await updateRestaurantOrderInDb(docId, order);
+
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'rejected' }); }catch(e){}
+    }
+
+    await finishAndDismissActiveOrder(false);
+    showToast(`✅ تم إلغاء وتصكير الطلبية بنجاح${refunded ? ' وتم استرجاع المبلغ لمحفظتك' : ''}`, "success", 4000);
+  } catch(e){
+    showToast("خطأ أثناء إلغاء الطلبية: " + e.message, "error");
+  }
 };
 
 window.checkActiveOrderSilently=async(orderId)=>{
@@ -4833,13 +4939,28 @@ window.refreshCashierOrders=async(manual=false)=>{
   try{
     let rawList=[];
     if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("feedback")
-        .select("*")
-        .eq("type", "restaurant_order")
-        .order("created_at", { ascending: false })
-        .limit(60);
-      if(!error && data) rawList = data;
+      try {
+        const { data: dStore, error: eStore } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "restaurant_order")
+          .eq("uid", _rloStoreId)
+          .order("created_at", { ascending: false })
+          .limit(100);
+        if(!eStore && Array.isArray(dStore) && dStore.length > 0){
+          rawList = dStore;
+        } else {
+          const { data: dAll, error: eAll } = await window.supabase
+            .from("feedback")
+            .select("*")
+            .eq("type", "restaurant_order")
+            .order("created_at", { ascending: false })
+            .limit(200);
+          if(!eAll && Array.isArray(dAll)) rawList = dAll;
+        }
+      } catch(sbErr){
+        console.warn("Supabase cashier order query error:", sbErr);
+      }
     }
     if(!rawList.length){
       try{
@@ -4850,10 +4971,11 @@ window.refreshCashierOrders=async(manual=false)=>{
 
     const matched=[];
     rawList.forEach(row=>{
-      if(row.type === "restaurant_order" && (row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`)))){
+      if(row.type === "restaurant_order"){
         let ord=null;
-        try{ord=JSON.parse(row.message||"{}");}catch(e){}
-        if(ord){
+        try{ ord = typeof row.message === "object" ? row.message : JSON.parse(row.message || "{}"); }catch(e){}
+        const matchesStore = (row.uid === _rloStoreId) || (ord && ord.storeId === _rloStoreId) || (typeof row.message === "string" && row.message.includes(`"storeId":"${_rloStoreId}"`));
+        if(matchesStore && ord){
           ord._docId=row.id;
           matched.push(ord);
         }
@@ -6724,25 +6846,11 @@ function updateAccountScreenUI(){
     if(myBtn) myBtn.style.display = "none";
   }
 
-  const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
-  if(myRestBtn){
-    const restStore = (myStore && isRestaurantStore(myStore)) 
-      ? myStore 
-      : (isAdmin ? ((allStores||[]).find(s => s.id === 'doc_1792952590082_5d3t8gw' || s.category === 'المطاعم والمأكولات')) : null);
-    if(restStore){
-      myRestBtn.style.display = "block";
-      myRestBtn.textContent = "🔔 طلبات كاشير المطعم (" + (restStore.name || "المطعم") + ")";
-      myRestBtn.onclick = () => openRestaurantLiveOrders(restStore.id);
-    } else {
-      myRestBtn.style.display = "none";
-    }
-  }
-
   // أزرار الأدمن
   const adminSec = document.getElementById("accAdminSection");
   if(adminSec) adminSec.style.display = isAdmin ? "block" : "none";
 
-  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn", "adminCashierBtn"];
+  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn"];
   adminIds.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.classList.toggle("hidden", !isAdmin);
@@ -6789,7 +6897,19 @@ window.backFromAccount = () => {
 };
 
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");};
-window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");};
+window.openModeration=async()=>{
+  if(!isAdmin){showToast("❌ خاص بالإدارة فقط","error");return;}
+  moderationOverlay.classList.remove("hidden");
+  const list = document.getElementById("moderationList");
+  if(allPendingPosts.length === 0 && list){
+    list.innerHTML = `<div class="reportsEmpty">⏳ جاري فحص وجلب الإعلانات قيد المراجعة...</div>`;
+  } else {
+    renderModeration();
+  }
+  await refreshPendingPosts();
+  renderModeration();
+  if(!pendingPostsListenerStarted) startPendingPostsListener();
+};
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");};
 
 function closeOverlayDirect(){
