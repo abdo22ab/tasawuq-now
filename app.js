@@ -6753,6 +6753,46 @@ window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPo
 /* ============================================
    حسابي (صفحة كاملة Full Screen)
    ============================================ */
+async function syncFullUserProfile(uid){
+  if(!uid) return;
+  try {
+    // 1. جلب مباشر لسجل البروفايل
+    const profSnap = await getDoc(doc(db, "profiles", uid));
+    let profData = (profSnap && profSnap.exists()) ? (profSnap.data() || {}) : {};
+
+    // 2. إذا كان رقم الهاتف مفقوداً أو فارغاً في profiles، اطلبه فوراً من جدول phones
+    if(!profData.phone){
+      try {
+        const { data: pList } = await supabase.from("phones").select("*").eq("uid", uid).limit(1);
+        if(pList && pList.length > 0 && pList[0].phone){
+          profData.phone = pList[0].phone;
+          await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }).catch(()=>{});
+        }
+      } catch(e){}
+    }
+
+    // 3. إذا كان اسم المستخدم مفقوداً في profiles، اطلبه فوراً من جدول usernames
+    if(!profData.username){
+      try {
+        const { data: uList } = await supabase.from("usernames").select("*").eq("uid", uid).order("created_at", { ascending: false }).limit(1);
+        if(uList && uList.length > 0 && uList[0].username){
+          profData.username = uList[0].username;
+          await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }).catch(()=>{});
+        }
+      } catch(e){}
+    }
+
+    if(!myProfile) myProfile = {};
+    Object.assign(myProfile, profData);
+    window.myProfile = myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
+  } catch(e){
+    console.warn("syncFullUserProfile error:", e);
+  }
+}
+window.syncFullUserProfile = syncFullUserProfile;
+
 window.openAccount = (skipHistory) => {
   if(auth.currentUser){
     const as = document.getElementById("accountScreen");
@@ -6779,17 +6819,8 @@ window.openAccount = (skipHistory) => {
     // أولاً: عرض فوري لكافة البيانات من الكاش أو الذاكرة لمنع أي تفريغ للخانات
     updateAccountScreenUI();
 
-    // ثانياً: جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان دقة وتطابق البيانات فوراً
-    getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
-      if(snap.exists()){
-        const fresh = snap.data() || {};
-        if(!myProfile) myProfile = {};
-        Object.assign(myProfile, fresh);
-        window.myProfile = myProfile;
-        saveCachedProfile(myProfile);
-        updateAccountScreenUI();
-      }
-    }).catch(()=>{});
+    // ثانياً: مزامنة موثوقة وشاملة من قاعدة البيانات عبر كافة الجداول
+    syncFullUserProfile(auth.currentUser.uid);
   } else {
     pendingAction = null;
     authOverlay.classList.remove("hidden");
@@ -6835,20 +6866,14 @@ function updateAccountScreenUI(){
 
   const myUserInput = document.getElementById("myUsername");
   if(myUserInput && document.activeElement !== myUserInput) {
-    if (myProfile && myProfile.username) {
-      myUserInput.value = myProfile.username;
-    } else if (myProfile && myProfile.username === "") {
-      myUserInput.value = "";
-    }
+    const uVal = (myProfile && myProfile.username) || "";
+    if(uVal) myUserInput.value = uVal;
   }
 
   const myPhoneInput = document.getElementById("myPhone");
   if(myPhoneInput && document.activeElement !== myPhoneInput) {
-    if (myProfile && myProfile.phone) {
-      myPhoneInput.value = formatCallPhone(myProfile.phone);
-    } else if (myProfile && myProfile.phone === "") {
-      myPhoneInput.value = "";
-    }
+    const pVal = (myProfile && myProfile.phone) || "";
+    if(pVal) myPhoneInput.value = formatCallPhone(pVal);
   }
 
   const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (me ? me.uid : "");
@@ -7046,7 +7071,6 @@ window.saveMyUsername=async()=>{
   const raw=(input.value||"").trim().toLowerCase();
   const oldUsername=(myProfile&&myProfile.username)||"";
   if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
-  if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
   const ok = await showConfirmModal(`هل تريد حفظ اسم المستخدم: @${raw}؟`, { confirmText: "نعم، حفظ" });
   if(!ok) return;
   showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
@@ -7076,7 +7100,6 @@ window.saveMyPhone=async()=>{
   const cleanNew=v.value;
   const oldPhone=(myProfile&&myProfile.phone)||"";
   const cleanOld=oldPhone?normalizePhone(oldPhone):"";
-  if(cleanOld && cleanOld===cleanNew){showToast("هذا رقمك الحالي بالفعل","info");return;}
 
   const displayNew=formatCallPhone(cleanNew);
   const displayOld=cleanOld?formatCallPhone(cleanOld):"";
@@ -7084,7 +7107,7 @@ window.saveMyPhone=async()=>{
   if(!cleanOld){
     confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: ${displayNew} بحسابك؟\n\n⚠️ سيتم قفل هذا الرقم لحسابك فقط ولن يتمكن أي شخص آخر من استخدامه.`;
   }else{
-    confirmMsg=`هل تريد تغيير رقمك من (${displayOld}) إلى (${displayNew})؟\n\n⚠️ سيتم فك ارتباط رقمك السابق وإتاحته، وتثبيت الرقم الجديد بحسابك فقط.`;
+    confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: (${displayNew}) بحسابك؟\n\n⚠️ سيتم تثبيت الرقم الجديد بحسابك فقط وإتاحته في إعلاناتك.`;
   }
   const ok = await showConfirmModal(confirmMsg, { confirmText: "نعم، ربط الرقم" });
   if(!ok) return;
@@ -7100,6 +7123,70 @@ window.saveMyPhone=async()=>{
     showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
   }else{
     showToast("❌ "+res.msg,"error",5000);
+  }
+};
+
+window.saveAllProfileData=async()=>{
+  const me=auth.currentUser;
+  if(!me){authOverlay.classList.remove("hidden");return;}
+  const nameInput=document.getElementById("myName");
+  const userInput=document.getElementById("myUsername");
+  const phoneInput=document.getElementById("myPhone");
+
+  const nameVal=(nameInput?.value||"").trim();
+  const userVal=(userInput?.value||"").trim().toLowerCase();
+  const phoneVal=(phoneInput?.value||"").trim();
+
+  if(nameVal && (nameVal.length<2||nameVal.length>30)){
+    showToast("الاسم بين 2 و30 حرفاً","warn");
+    return;
+  }
+  let cleanPhone="";
+  if(phoneVal){
+    const v=validatePhone(phoneVal);
+    if(!v.ok){showToast("❌ "+v.msg,"error");return;}
+    cleanPhone=v.value;
+  }
+
+  showToast("⏳ جاري حفظ وتثبيت بيانات حسابك...","info",2000);
+  try{
+    const updates={ updatedAt: Date.now() };
+    if(nameVal) updates.name=nameVal;
+    if(cleanPhone) updates.phone=cleanPhone;
+
+    if(userVal){
+      const v=validateUsername(userVal);
+      if(!v.ok){showToast("❌ "+v.msg,"error");return;}
+      const uSnap=await getDoc(doc(db,"usernames",v.value));
+      if(uSnap.exists() && uSnap.data()?.uid && uSnap.data().uid!==me.uid){
+        showToast("❌ اسم المستخدم @" + v.value + " محجوز، اختر اسماً آخر","error");
+        return;
+      }
+      updates.username=v.value;
+      await setDoc(doc(db,"usernames",v.value),{uid:me.uid,createdAt:Date.now()},{merge:true});
+    }
+
+    if(cleanPhone){
+      const pSnap=await getDoc(doc(db,"phones",cleanPhone));
+      if(pSnap.exists() && pSnap.data()?.uid && pSnap.data().uid!==me.uid){
+        showToast("❌ رقم الهاتف مربوط بحساب آخر","error");
+        return;
+      }
+      await setDoc(doc(db,"phones",cleanPhone),{uid:me.uid,email:me.email||"",phone:cleanPhone,localPhone:formatCallPhone(cleanPhone),linkedAt:Date.now()},{merge:true});
+    }
+
+    await setDoc(doc(db,"profiles",me.uid),updates,{merge:true});
+
+    if(!myProfile) myProfile={};
+    Object.assign(myProfile, updates);
+    window.myProfile=myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
+
+    showToast("✅ تم حفظ وتأكيد جميع بيانات حسابك بنجاح","success");
+  }catch(e){
+    console.error("saveAllProfileData error:", e);
+    showToast("❌ تعذر حفظ البيانات: "+(e.message||"خطأ"),"error");
   }
 };
 
@@ -7420,6 +7507,9 @@ function startProfileListener(user){
       window.myProfile = myProfile;
       saveCachedProfile(myProfile);
       updateAccountScreenUI();
+      if(!myProfile.phone || !myProfile.username){
+        syncFullUserProfile(user.uid);
+      }
       if(myProfile.memberNo==null && !assignAttempted){
         assignAttempted=true;
         assignMemberNumber(user).catch(e=>{ assignAttempted=false; });
@@ -7594,6 +7684,7 @@ isAdmin=user.email===ADMIN_EMAIL;
 adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
+syncFullUserProfile(user.uid);
 startFollowingListener(user);
 giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
