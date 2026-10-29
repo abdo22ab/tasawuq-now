@@ -38,19 +38,17 @@ function checkSystemIntegrity() {
     ['تأمين تنفيذ الإيداع اليدوي للأدمن فقط (admWebExecuteDeposit)', loaded.admin.includes('admWebExecuteDeposit')],
     ['التحقق من إيميل الأدمن المعتمد الرئيسي', loaded.app.includes('abdoalk73@gmail.com') && loaded.admin.includes('abdoalk73@gmail.com')],
 
-    // 2. أمان ونظام الدردشة الفورية
-    ['وحدة فتح الدردشة المباشرة (openChatWithSeller)', loaded.app.includes('window.openChatWithSeller = openChatWithSeller')],
-    ['وحدة إرسال رسائل الدردشة المشفرة (sendUserChatMessage)', loaded.app.includes('window.sendUserChatMessage = sendUserChatMessage')],
-    ['وحدة صندوق الوارد للمحادثات (openInbox)', loaded.app.includes('window.openInbox = openInbox')],
-    ['زر الدردشة في تفاصيل الإعلانات (chatSellerBtn)', loaded.app.includes('chatSellerBtn')],
-    ['زر الدردشة في صفحات المتاجر والمطاعم (chatStoreBtn)', loaded.app.includes('chatStoreBtn')],
+    // 2. التواصل المباشر والأمان
+    ['التواصل المباشر عبر واتساب (contactSeller)', loaded.app.includes('contactSeller')],
+    ['الاتصال الهاتفي المباشر (formatCallPhone)', loaded.app.includes('formatCallPhone')],
+    ['نظام النقاط والمكافآت (addPoints)', loaded.app.includes('addPoints')],
+    ['تحديث شارة النقاط في الترويسة (updatePointsBadge)', loaded.app.includes('updatePointsBadge')],
 
     // 3. واجهات المستخدم والقوالب
-    ['نافذة الدردشة المباشرة (userChatOverlay)', loaded.index.includes('id="userChatOverlay"')],
-    ['شاشة صندوق الرسائل الكاملة (inboxScreen / userInboxOverlay)', loaded.index.includes('id="inboxScreen"') || loaded.index.includes('id="userInboxOverlay"')],
-    ['زر التنبيهات والرسائل في الترويسة (chatHeaderBtn)', loaded.index.includes('id="chatHeaderBtn"')],
-    ['أنماط وتنسيقات فقاعات الدردشة (chatBubble)', loaded.css.includes('.chatBubble')],
-    ['أنماط وتنسيقات صفوف صندوق الوارد (inboxRow)', loaded.css.includes('.inboxRow')]
+    ['شاشة الإعلانات وقبول النشر التلقائي', loaded.app.includes('status:"approved"')],
+    ['لوحة وسجل المراجعة والتحكم (renderModeration)', loaded.app.includes('renderModeration')],
+    ['شاشة الأقسام والبحث السريع', loaded.index.includes('id="categoriesScreen"')],
+    ['محول قاعدة البيانات وقنوات التوافق (supabase-adapter)', loaded.index.includes('supabase-adapter.js')]
   ];
 
   let passedCount = 0;
