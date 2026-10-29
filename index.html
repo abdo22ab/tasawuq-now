@@ -278,7 +278,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="field"><label>الوصف (اختياري)</label>
 <textarea id="description" maxlength="1000" rows="5" oninput="updateDescCount()" placeholder="اكتب تفاصيل الإعلان..."></textarea>
 <div class="charCount"><span id="descCount">0</span>/1000</div></div>
-<div class="field"><label>📱 رقم الواتساب (من حسابك — لا يمكن تغييره هنا)</label><input id="phone" class="phoneInput" readonly placeholder="—"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 لتغيير الرقم: اذهب إلى "حسابي" → تعديل رقم الواتساب</div></div>
+<div class="field"><label>📱 رقم الواتساب للتواصل في الإعلان</label><input id="phone" class="phoneInput" placeholder="0912345678" maxlength="16" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 سيظهر هذا الرقم للتواصل في إعلانك ويُثبت تلقائياً في حسابك</div></div>
 <div class="field"><label>الصور (حتى 10)</label>
 <div id="imgThumbs" class="imgThumbs"></div>
 <div id="imgAddTile" class="imgAddTile" onclick="document.getElementById('imageFile').click()">📷 إضافة صورة</div>
@@ -378,6 +378,7 @@ OneSignalDeferred.push(async function(OneSignal){
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px">
             <span id="accountMemberNo" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-block">#...</span>
             <span id="accountUsername" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;direction:ltr;display:inline-block">@...</span>
+            <span id="accountPhoneBadge" style="background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:6px;font-size:11.5px;font-weight:800;direction:ltr;display:inline-block">📱 ...</span>
           </div>
           <div id="accountEmail" style="display:none"></div>
         </div>
@@ -388,12 +389,12 @@ OneSignalDeferred.push(async function(OneSignal){
     <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
       <button type="button" class="btnGhost" onclick="toggleEditProfileSection()" style="background:transparent;color:var(--text);border:none;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin:0;border-radius:0;width:100%">
         <span style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
-          <span>✏️</span> تعديل بيانات الحساب (الاسم، المعرف، الواتساب)
+          <span>✏️</span> بيانات الحساب (الاسم، المعرف، الواتساب)
         </span>
-        <span id="editProfileToggleArrow" style="font-size:13px;color:var(--muted);transition:transform 0.2s">▼</span>
+        <span id="editProfileToggleArrow" style="font-size:13px;color:var(--muted);transition:transform 0.2s">▲</span>
       </button>
 
-      <div id="editProfileSectionBox" style="display:none;padding:14px 16px 16px;border-top:1px solid var(--border)">
+      <div id="editProfileSectionBox" style="display:block;padding:14px 16px 16px;border-top:1px solid var(--border)">
         <div class="field" style="margin-bottom:8px">
           <label>اسمك الظاهر</label>
           <input id="myName" maxlength="30" placeholder="اسمك الكامل" style="font-size:16px">
@@ -1628,7 +1629,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=56"></script>
+<script type="module" src="app.js?v=57"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
