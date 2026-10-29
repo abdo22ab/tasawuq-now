@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=11";
+} from "./supabase-adapter.js?v=12";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {

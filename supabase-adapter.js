@@ -7,7 +7,18 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
-    detectSessionInUrl: false
+    detectSessionInUrl: false,
+    storage: {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {}
+    }
+  },
+  global: {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    }
   }
 });
 window.supabase = supabase;
@@ -427,6 +438,19 @@ export async function setDoc(docRef, data, options = {}) {
   }
 
   let payload = { ...row };
+  if (table === "usernames") {
+    try {
+      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
+      if (existing && existing.username) {
+        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
+        if (!updateErr) return true;
+      } else {
+        const { error: insertErr } = await supabase.from("usernames").insert(payload);
+        if (!insertErr) return true;
+      }
+    } catch(e) {}
+  }
+
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
@@ -448,6 +472,10 @@ export async function setDoc(docRef, data, options = {}) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload, { onConflict: onConflictKey });
     if (!error) return true;
+    if (error.code === "42501" || (error.message && error.message.includes("USING expression"))) {
+      const { error: updateErr } = await supabase.from(table).update(payload).eq(onConflictKey, payload[onConflictKey]);
+      if (!updateErr) return true;
+    }
     if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
       throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
     }
@@ -472,6 +500,19 @@ export async function addDoc(colRef, data) {
   row.id = newId;
 
   let payload = { ...row };
+  if (table === "usernames") {
+    try {
+      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
+      if (existing && existing.username) {
+        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
+        if (!updateErr) return true;
+      } else {
+        const { error: insertErr } = await supabase.from("usernames").insert(payload);
+        if (!insertErr) return true;
+      }
+    } catch(e) {}
+  }
+
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
@@ -530,6 +571,19 @@ export async function updateDoc(docRef, data) {
   }
 
   let payload = { ...row };
+  if (table === "usernames") {
+    try {
+      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
+      if (existing && existing.username) {
+        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
+        if (!updateErr) return true;
+      } else {
+        const { error: insertErr } = await supabase.from("usernames").insert(payload);
+        if (!insertErr) return true;
+      }
+    } catch(e) {}
+  }
+
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
