@@ -5080,6 +5080,7 @@ function closeRestaurantCashierDirect(){
   if(screenEl) screenEl.classList.add("hidden");
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
   if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
+  if(typeof showFloatingButtons === 'function') showFloatingButtons();
 
   // العودة التلقائية للشاشة السابقة التي فُتح منها الكاشير
   if(_cashierPreviousScreen === 'account'){
@@ -5093,6 +5094,15 @@ function closeRestaurantCashierDirect(){
   }
 }
 window.closeRestaurantCashierDirect = closeRestaurantCashierDirect;
+
+window.cashierGoHome = () => {
+  const screenEl=document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
+  if(screenEl) screenEl.classList.add("hidden");
+  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
+  if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
+  if(typeof showFloatingButtons === 'function') showFloatingButtons();
+  showCategoriesScreenDirect();
+};
 
 window.closeRestaurantCashier = () => {
   if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'cashier'){
@@ -5263,8 +5273,14 @@ function renderCashierOrdersList(){
   else filtered=_rloOrders.filter(o=>o.status==='ready'||o.status==='completed'||o.status==='rejected');
 
   if(filtered.length===0){
-    const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة بعد ✅");
-    listEl.innerHTML=`<div class="reportsEmpty">${msg}</div>`;
+    const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة أو ملغية بعد ✅");
+    listEl.innerHTML=`
+      <div class="reportsEmpty" style="padding:28px 14px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">${_rloActiveTab==='pending'?'🔔':(_rloActiveTab==='active'?'🍳':'✅')}</div>
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">${msg}</div>
+        ${_rloActiveTab==='pending' ? `<button type="button" class="btnMain" style="display:inline-block;max-width:240px;margin:0 auto;padding:10px 16px;font-size:13px;border-radius:10px" onclick="cashierCreateTestOrder()">➕ إنشاء طلب تجريبي للتجربة</button>` : ''}
+      </div>
+    `;
     return;
   }
 
@@ -5293,24 +5309,53 @@ function renderCashierOrdersList(){
             <button class="rloBtnTime" style="background:#0284c7" onclick="cashierCustomTimeOrder('${order._docId}')">⏱️ مخصص</button>
             <button class="rloBtnReject" onclick="cashierRejectOrder('${order._docId}')">❌ اعتذار</button>
           </div>
+          <div style="margin-top:8px;text-align:left">
+            <button type="button" class="btnGhost" style="font-size:11px;padding:4px 8px;color:#dc2626;border-color:#fca5a5;border-radius:8px" onclick="cashierDeleteOrder('${order._docId}')">🗑️ حذف الطلب</button>
+          </div>
         </div>
       `;
     }else if(order.status==='accepted'){
       const minsLeft = Math.max(0, Math.ceil(((order.readyAt||0) - Date.now()) / 60000));
       actionsHtml=`
-        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
-          <div>
-            <div style="font-size:12px;color:#15803d;font-weight:700">قيد التحضير (متبقي ~${minsLeft} دقيقة)</div>
-            <div style="font-size:11px;color:var(--muted)">تتحول تلقائياً إلى جاهزة عند انتهاء الوقت</div>
+        <div style="margin-top:12px;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <div style="font-size:12px;color:#15803d;font-weight:700">قيد التحضير (متبقي ~${minsLeft} دقيقة)</div>
+              <div style="font-size:11px;color:var(--muted)">تتحول تلقائياً إلى جاهزة عند انتهاء الوقت</div>
+            </div>
+            <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
           </div>
-          <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
+          <div style="display:flex;gap:6px;margin-top:6px;border-top:1px dashed #bbf7d0;padding-top:6px">
+            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#b91c1c;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierRejectOrder('${order._docId}')">❌ اعتذار / إلغاء</button>
+            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')">↩️ إعادة كطلب جديد</button>
+          </div>
         </div>
       `;
     }else if(order.status==='ready'){
       actionsHtml=`
-        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="color:#16a34a;font-weight:800;font-size:13px">🎉 الوجبة جاهزة وتم إشعار الزبون</span>
-          <button class="btnGhost" style="padding:6px 10px;font-size:12px;color:var(--text);border:1px solid var(--border)" onclick="cashierCompleteOrder('${order._docId}')">تسليم وإغلاق الطلب ✔️</button>
+        <div style="margin-top:10px;background:#fefce8;padding:10px 12px;border-radius:12px;border:1px solid #fef08a">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="color:#16a34a;font-weight:800;font-size:13px">🎉 الوجبة جاهزة وتم إشعار الزبون</span>
+            <button class="btnGhost" style="padding:6px 12px;font-size:12px;color:#15803d;border:1px solid #86efac;background:#fff;font-weight:800;border-radius:8px" onclick="cashierCompleteOrder('${order._docId}')">تسليم وإغلاق الطلب ✔️</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px;border-top:1px dashed #fde047;padding-top:6px">
+            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#b91c1c;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierRejectOrder('${order._docId}')">❌ إلغاء الطلب</button>
+            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')">↩️ إعادة كطلب جديد</button>
+          </div>
+        </div>
+      `;
+    }else if(order.status==='completed' || order.status==='rejected'){
+      const isRej = order.status==='rejected';
+      actionsHtml=`
+        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;background:${isRej?'#fef2f2':'#f8fafc'};padding:8px 12px;border-radius:10px;border:1px solid ${isRej?'#fecaca':'var(--border)'}">
+          <span style="font-size:12px;font-weight:800;color:${isRej?'#dc2626':'#16a34a'}">
+            ${isRej ? '❌ تم الاعتذار / ملغي' : '✅ تم التسليم بنجاح'}
+            ${order.isRefunded ? ' (مسترجع للمحفظة)' : ''}
+          </span>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btnGhost" style="font-size:11.5px;padding:5px 9px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')" title="إعادة فتح الطلب للتجربة">↩️ إعادة كطلب جديد</button>
+            <button type="button" class="btnGhost" style="font-size:11.5px;padding:5px 9px;color:#dc2626;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierDeleteOrder('${order._docId}')" title="حذف من السجل">🗑️ حذف</button>
+          </div>
         </div>
       `;
     }
@@ -5430,7 +5475,7 @@ window.cashierCustomTimeOrder=async(docId)=>{
 };
 
 window.cashierRejectOrder=async(docId)=>{
-  const ok = await showConfirmModal("هل أنت متأكد من الاعتذار عن قبول هذا الطلب؟", { isDanger: true, confirmText: "نعم، اعتذار" });
+  const ok = await showConfirmModal("هل أنت متأكد من الاعتذار عن قبول / إلغاء هذا الطلب؟", { isDanger: true, confirmText: "نعم، اعتذار" });
   if(!ok) return;
   try{
     const order = await getRestaurantOrderFromDb(docId);
@@ -5440,10 +5485,11 @@ window.cashierRejectOrder=async(docId)=>{
       return;
     }
     if(order.status === 'completed' || order.status === 'rejected'){
-      showToast("⚠️ هذا الطلب مغلق بالفعل","warn");
+      showToast("⚠️ هذا الطلب مغلق بالفعل. يمكنك حذفه أو إعادة فتحه كطلب جديد","warn");
       return;
     }
     order.status='rejected';
+    order.rejectedAt = Date.now();
 
     let didRefund = false;
     if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
@@ -5512,6 +5558,186 @@ window.cashierCompleteOrder=async(docId)=>{
     }
     showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo}`,"success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
+};
+
+window.cashierReopenOrder=async(docId)=>{
+  const ok = await showConfirmModal("هل تريد إعادة فتح هذا الطلب ونقله إلى قائمة (بانتظار القبول) لتجربة قبوله أو رفضه مجدداً؟", {
+    icon: "↩️",
+    confirmText: "نعم، إعادة فتح الطلب"
+  });
+  if(!ok) return;
+
+  try {
+    const order = await getRestaurantOrderFromDb(docId);
+    if(!order) {
+      showToast("❌ لم يتم العثور على الطلب", "error");
+      return;
+    }
+    order.status = 'pending';
+    order.prepMinutes = null;
+    order.acceptedAt = null;
+    order.readyAt = null;
+    order.completedAt = null;
+    order.rejectedAt = null;
+    order.createdAt = Date.now();
+
+    await updateRestaurantOrderInDb(docId, order);
+
+    const ordIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId);
+    if(ordIdx !== -1){
+      _rloOrders[ordIdx] = { ..._rloOrders[ordIdx], ...order };
+    } else {
+      _rloOrders.unshift(order);
+    }
+
+    updateCashierBadges();
+    switchRloTab('pending');
+    playRestaurantBell('new_order');
+    showToast(`↩️ تم إعادة الطلب #${order.orderNo} كطلب جديد بانتظار القبول!`, "success");
+    if(restBroadcast){
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
+    }
+  } catch(e) {
+    showToast("خطأ أثناء إعادة الطلب: " + e.message, "error");
+  }
+};
+
+window.cashierDeleteOrder=async(docId)=>{
+  const ok = await showConfirmModal("هل أنت متأكد من رغبتك في حذف هذا الطلب نهائياً من السجلات؟", {
+    isDanger: true,
+    confirmText: "نعم، حذف نهائي"
+  });
+  if(!ok) return;
+
+  try {
+    if(window.supabase){
+      try {
+        await window.supabase.from("feedback").delete().eq("id", docId);
+      } catch(err){
+        console.warn("Supabase delete order err:", err);
+      }
+    }
+    try {
+      await deleteDoc(doc(db, "feedback", docId));
+    } catch(err){}
+
+    _rloOrders = _rloOrders.filter(o => o._docId !== docId && o.orderId !== docId);
+    _seenOrderIds.delete(docId);
+    updateCashierBadges();
+    renderCashierOrdersList();
+    showToast("🗑️ تم حذف الطلب بنجاح من السجلات", "success");
+  } catch(e) {
+    showToast("خطأ أثناء الحذف: " + e.message, "error");
+  }
+};
+
+window.cashierClearOldOrders=async()=>{
+  const oldOrders = _rloOrders.filter(o => o.status === 'completed' || o.status === 'rejected');
+  if(oldOrders.length === 0){
+    showToast("ℹ️ لا توجد طلبات مكتملة أو ملغية قديمة لتنظيفها", "info");
+    return;
+  }
+
+  const ok = await showConfirmModal(`هل أنت متأكد من حذف جميع الطلبات القديمة المكتملة والملغية (${oldOrders.length} طلب) لتنظيف لوحة الكاشير؟`, {
+    isDanger: true,
+    icon: "🗑️",
+    confirmText: "نعم، تنظيف السجلات"
+  });
+  if(!ok) return;
+
+  try {
+    for(const ord of oldOrders){
+      const docId = ord._docId || ord.orderId;
+      if(window.supabase){
+        try { await window.supabase.from("feedback").delete().eq("id", docId); } catch(e){}
+      }
+      try { await deleteDoc(doc(db, "feedback", docId)); } catch(e){}
+      _seenOrderIds.delete(docId);
+    }
+
+    _rloOrders = _rloOrders.filter(o => o.status !== 'completed' && o.status !== 'rejected');
+    updateCashierBadges();
+    renderCashierOrdersList();
+    showToast("🗑️ تم تنظيف السجلات القديمة بنجاح!", "success");
+  } catch(e) {
+    showToast("خطأ أثناء تنظيف السجلات: " + e.message, "error");
+  }
+};
+
+window.cashierCreateTestOrder=async()=>{
+  const storeId = _rloStoreId || 'doc_1792952590082_5d3t8gw';
+  const store = allStores.find(s => s.id === storeId) || myStore || { id: storeId, name: "مطعم KSH", phone: "0944325093" };
+  const randomNo = Math.floor(100 + Math.random() * 900);
+  const nowTs = Date.now();
+  const orderId = `order_${nowTs}_${randomNo}`;
+
+  const testOrderData = {
+    orderId: orderId,
+    orderNo: randomNo,
+    storeId: storeId,
+    storeName: store.name || "المطعم",
+    storePhone: store.phone || "0944325093",
+    customerUid: (auth.currentUser ? auth.currentUser.uid : ("guest_" + nowTs)),
+    customerName: (auth.currentUser?.displayName || "زبون تجريبي"),
+    customerPhone: (currentUserPhone || "0912345678"),
+    deliveryType: "pickup",
+    deliveryAddress: "",
+    notes: "طلب تجريبي لاختبار لوحة الكاشير وأزرار القبول والرفض",
+    items: [
+      { postId: "test_item_1", title: "وجبة شاورما دجاج عائلي", price: 28, qty: 1 },
+      { postId: "test_item_2", title: "بطاطا مقلية مقرمشة", price: 8, qty: 1 },
+      { postId: "test_item_3", title: "مشروب غازي بارد", price: 4, qty: 2 }
+    ],
+    totalPrice: 44,
+    totalCount: 4,
+    paymentMethod: "cash",
+    isPaid: false,
+    status: "pending",
+    prepMinutes: null,
+    createdAt: nowTs,
+    acceptedAt: null,
+    readyAt: null
+  };
+
+  try {
+    if(window.supabase){
+      try {
+        await window.supabase.from("feedback").insert({
+          id: orderId,
+          type: "restaurant_order",
+          uid: storeId,
+          user_name: testOrderData.customerName,
+          user_phone: testOrderData.customerPhone,
+          message: JSON.stringify(testOrderData),
+          created_at: nowTs
+        });
+      } catch(err){
+        console.warn("Supabase test order err:", err);
+      }
+    }
+
+    try {
+      await setDoc(doc(db, "feedback", orderId), {
+        id: orderId,
+        type: "restaurant_order",
+        uid: storeId,
+        user_name: testOrderData.customerName,
+        user_phone: testOrderData.customerPhone,
+        message: JSON.stringify(testOrderData),
+        createdAt: nowTs
+      });
+    } catch(e){}
+
+    testOrderData._docId = orderId;
+    _rloOrders.unshift(testOrderData);
+    _seenOrderIds.add(orderId);
+    updateCashierBadges();
+    switchRloTab('pending');
+    playRestaurantBell('new_order');
+    showToast(`🔔 تم إنشاء طلب تجريبي جديد (#${randomNo}) بنجاح! يمكنك الآن تجربة قبوله أو رفضه`, "success", 4000);
+  } catch(e) {
+    showToast("خطأ أثناء إنشاء الطلب: " + e.message, "error");
+  }
 };
 
 

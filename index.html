@@ -848,18 +848,21 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- 🍽️ صفحة كاشير المطعم المباشرة الكاملة (Restaurant Cashier Screen) -->
 <!-- ============================================ -->
 <div id="restaurantCashierScreen" class="screen hidden" style="background:var(--bg);min-height:100vh;min-height:100dvh;padding-bottom:70px">
-  <div class="screenHeader" style="position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button type="button" class="back" onclick="closeRestaurantCashier()" style="font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;background:var(--bg);color:var(--text);border-radius:50%;width:38px;height:38px" title="رجوع">→</button>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:24px">🍽️</span>
+  <div class="screenHeader" style="position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 14px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button type="button" onclick="closeRestaurantCashier()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;padding:7px 12px;font-weight:800" title="رجوع للخلف">🔙 رجوع</button>
+      <button type="button" onclick="cashierGoHome()" style="font-size:12.5px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;padding:7px 12px;font-weight:800" title="الرئيسية">🏠 الرئيسية</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:22px">🍽️</span>
         <div>
-          <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--text)" id="rloStoreTitle">طلبات المطعم الحية</h3>
-          <div style="font-size:11.5px;color:#16a34a;font-weight:700" id="rloLiveStatus"><span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً</div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:var(--text)" id="rloStoreTitle">طلبات المطعم الحية</h3>
+          <div style="font-size:11px;color:#16a34a;font-weight:700" id="rloLiveStatus"><span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً</div>
         </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <button type="button" onclick="cashierCreateTestOrder()" style="border:1px solid #16a34a;background:#f0fdf4;color:#15803d;border-radius:10px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:800" title="إنشاء طلب تجريبي فوري لتجربة القبول والرفض">➕ طلب تجريبي</button>
+      <button type="button" onclick="cashierClearOldOrders()" style="border:1px solid #ef4444;background:#fef2f2;color:#dc2626;border-radius:10px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:800" title="مسح الطلبات المكتملة والملغية القديمة">🗑️ تنظيف</button>
       <button type="button" id="rloRefreshBtn" onclick="refreshCashierOrders(true)" style="border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:700" title="تحديث يدوي فوري">🔄 تحديث</button>
       <button type="button" id="rloSoundToggle" onclick="toggleCashierSound()" style="border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;padding:7px 11px;font-size:12px;cursor:pointer;font-weight:700">🔔 رنين: مفعّل</button>
     </div>
@@ -1377,7 +1380,7 @@ OneSignalDeferred.push(async function(OneSignal){
 
 
 
-<script type="module" src="app.js?v=71"></script>
+<script type="module" src="app.js?v=72"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
