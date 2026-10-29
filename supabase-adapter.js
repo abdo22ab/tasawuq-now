@@ -5,9 +5,9 @@ export const SUPABASE_ANON_KEY = "sb_publishable_6N_kXZ3e5fB4XM7xKKfT-g_7AHN25Tp
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
   }
 });
 window.supabase = supabase;
@@ -340,9 +340,11 @@ export async function getDoc(docRef) {
     else req = req.eq("id", docRef.id);
 
     const { data, error } = await req.maybeSingle();
+    if (error) console.error("getDoc فشل:", table, docRef.id, error.message);
     if (error || !data) return makeDocSnap(docRef.id, null);
     return makeDocSnap(docRef.id, objectFromDb(data));
   } catch (err) {
+    console.error("getDoc استثناء:", table, docRef.id, err.message);
     return makeDocSnap(docRef.id, null);
   }
 }
@@ -389,6 +391,7 @@ export async function getDocs(target) {
     }
 
     const { data, error } = await req;
+    if (error) console.error("getDocs فشل:", table, error.message);
     if (error || !data) return makeQuerySnap([]);
 
     const docs = data.map(item => {
@@ -453,6 +456,7 @@ export async function setDoc(docRef, data, options = {}) {
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
+      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
@@ -471,18 +475,15 @@ export async function addDoc(colRef, data) {
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
-      if (!uStr) delete payload.username;
-      else payload.username = uStr;
+      payload.username = uStr || null;
     }
     if (payload.phone !== undefined) {
       const pStr = String(payload.phone || "").trim();
-      if (!pStr) delete payload.phone;
-      else payload.phone = pStr;
+      payload.phone = pStr || null;
     }
     if (payload.email !== undefined) {
       const eStr = String(payload.email || "").trim();
-      if (!eStr) delete payload.email;
-      else payload.email = eStr;
+      payload.email = eStr || null;
     }
     if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
       delete payload.member_no;
@@ -492,14 +493,15 @@ export async function addDoc(colRef, data) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
-    if (error.message && error.message.includes("profiles_username_key")) {
+    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
       throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
     }
-    if (error.message && error.message.includes("profiles_phone_key")) {
+    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
       throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
+      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
@@ -569,6 +571,7 @@ export async function updateDoc(docRef, data) {
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
+      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
