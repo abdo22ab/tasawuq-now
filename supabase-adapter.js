@@ -427,18 +427,15 @@ export async function setDoc(docRef, data, options = {}) {
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
-      if (!uStr) delete payload.username;
-      else payload.username = uStr;
+      payload.username = uStr || null;
     }
     if (payload.phone !== undefined) {
       const pStr = String(payload.phone || "").trim();
-      if (!pStr) delete payload.phone;
-      else payload.phone = pStr;
+      payload.phone = pStr || null;
     }
     if (payload.email !== undefined) {
       const eStr = String(payload.email || "").trim();
-      if (!eStr) delete payload.email;
-      else payload.email = eStr;
+      payload.email = eStr || null;
     }
     if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
       delete payload.member_no;
@@ -448,10 +445,10 @@ export async function setDoc(docRef, data, options = {}) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload, { onConflict: onConflictKey });
     if (!error) return true;
-    if (error.message && error.message.includes("profiles_username_key")) {
+    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
       throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
     }
-    if (error.message && error.message.includes("profiles_phone_key")) {
+    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
       throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
@@ -534,18 +531,15 @@ export async function updateDoc(docRef, data) {
   if (table === "profiles") {
     if (payload.username !== undefined) {
       const uStr = String(payload.username || "").trim().toLowerCase();
-      if (!uStr) delete payload.username;
-      else payload.username = uStr;
+      payload.username = uStr || null;
     }
     if (payload.phone !== undefined) {
       const pStr = String(payload.phone || "").trim();
-      if (!pStr) delete payload.phone;
-      else payload.phone = pStr;
+      payload.phone = pStr || null;
     }
     if (payload.email !== undefined) {
       const eStr = String(payload.email || "").trim();
-      if (!eStr) delete payload.email;
-      else payload.email = eStr;
+      payload.email = eStr || null;
     }
     if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
       delete payload.member_no;
@@ -567,10 +561,10 @@ export async function updateDoc(docRef, data) {
       return true;
     }
 
-    if (error.message && error.message.includes("profiles_username_key")) {
+    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
       throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
     }
-    if (error.message && error.message.includes("profiles_phone_key")) {
+    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
       throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
