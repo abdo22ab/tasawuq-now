@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=8";
+} from "./supabase-adapter.js?v=10";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -6810,7 +6810,7 @@ window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPo
 async function syncFullUserProfile(uid){
   if(!uid) return;
   try {
-    // 1. جلب مباشر لسجل البروفايل
+    // 1. جلب مباشر لسجل البروفايل من قاعدة البيانات
     const profSnap = await getDoc(doc(db, "profiles", uid));
     let profData = (profSnap && profSnap.exists()) ? (profSnap.data() || {}) : {};
 
@@ -6837,7 +6837,13 @@ async function syncFullUserProfile(uid){
     }
 
     if(!myProfile) myProfile = {};
-    Object.assign(myProfile, profData);
+    if(profData.name) myProfile.name = profData.name;
+    if(profData.username) myProfile.username = profData.username;
+    if(profData.phone) myProfile.phone = profData.phone;
+    if(profData.memberNo != null) myProfile.memberNo = profData.memberNo;
+    if(profData.storeId !== undefined) myProfile.storeId = profData.storeId;
+    if(profData.email && !myProfile.email) myProfile.email = profData.email;
+
     window.myProfile = myProfile;
     saveCachedProfile(myProfile);
     updateAccountScreenUI();
@@ -6933,13 +6939,15 @@ function updateAccountScreenUI(){
   const myUserInput = document.getElementById("myUsername");
   if(myUserInput && document.activeElement !== myUserInput) {
     const uVal = (myProfile && myProfile.username) || "";
-    myUserInput.value = uVal || "";
+    if (uVal) myUserInput.value = uVal;
+    else if (!myUserInput.value) myUserInput.value = "";
   }
 
   const myPhoneInput = document.getElementById("myPhone");
   if(myPhoneInput && document.activeElement !== myPhoneInput) {
     const pVal = (myProfile && myProfile.phone) || "";
-    myPhoneInput.value = pVal ? formatCallPhone(pVal) : "";
+    if (pVal) myPhoneInput.value = formatCallPhone(pVal);
+    else if (!myPhoneInput.value) myPhoneInput.value = "";
   }
 
   const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (me ? me.uid : "");
@@ -7115,14 +7123,18 @@ window.saveMyName=async()=>{
   const name=(document.getElementById("myName")?.value||"").trim();
   if(name.length<2||name.length>30){showToast("الاسم بين 2 و30 حرفاً","warn");return;}
   try{
-    await setDoc(doc(db,"profiles",me.uid),{name},{merge:true});
+    const now = Date.now();
+    const { error } = await supabase.from("profiles").update({ name, updated_at: now }).eq("id", me.uid);
+    if(error){
+      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, name, updated_at: now }, { onConflict: "id" });
+    }
     if(!myProfile) myProfile={};
     myProfile.name=name;
     window.myProfile=myProfile;
     saveCachedProfile(myProfile);
     updateAccountScreenUI();
     const mine=allPosts.filter(p=>p.uid===me.uid);
-    await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
+    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
     if(myStore){
       try{ await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""}); }catch(e){}
     }
@@ -7134,23 +7146,52 @@ window.saveMyUsername=async()=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
   const input=document.getElementById("myUsername");
-  const raw=(input.value||"").trim().toLowerCase();
-  const oldUsername=(myProfile&&myProfile.username)||"";
+  const raw=(input?.value||"").trim().toLowerCase().replace(/^@/,'');
   if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
-  const ok = await showConfirmModal(`هل تريد حفظ اسم المستخدم: @${raw}؟`, { confirmText: "نعم، حفظ" });
+  const v=validateUsername(raw);
+  if(!v.ok){showToast("❌ "+v.msg,"error");return;}
+
+  const ok = await showConfirmModal(`هل تريد حفظ اسم المستخدم: @${v.value}؟`, { confirmText: "نعم، حفظ" });
   if(!ok) return;
+
   showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
-  const res=await reserveUsername(me,raw,oldUsername);
-  if(res.ok){
+  try{
+    // فحص الفرادة أولاً في قاعدة البيانات لمنع أي تصادم
+    const { data: uExist } = await supabase.from("profiles").select("id").eq("username", v.value).neq("id", me.uid).limit(1).maybeSingle();
+    if(uExist && uExist.id){
+      showToast("❌ هذا الاسم محجوز لحساب آخر، اختر اسماً ثانياً","error");
+      return;
+    }
+
+    const now = Date.now();
+    const { error } = await supabase.from("profiles").update({ username: v.value, updated_at: now }).eq("id", me.uid);
+    if(error){
+      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, username: v.value, updated_at: now }, { onConflict: "id" });
+    }
+    await setDoc(doc(db,"usernames",v.value),{uid:me.uid,createdAt:now},{merge:true}).catch(()=>{});
+
+    try{
+      const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
+      if(allU && allU.length > 0){
+        for(const item of allU){
+          if(item.username !== v.value) await supabase.from("usernames").delete().eq("username", item.username).catch(()=>{});
+        }
+      }
+    }catch(e){}
+
     if(!myProfile) myProfile={};
-    myProfile.username=res.value;
+    myProfile.username=v.value;
     window.myProfile=myProfile;
     saveCachedProfile(myProfile);
     updateAccountScreenUI();
-    showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
-    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
-  }else{
-    showToast("❌ "+res.msg,"error");
+
+    const mine=allPosts.filter(p=>p.uid===me.uid);
+    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:v.value}).catch(()=>{})));
+
+    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:v.value});}catch(e){}}
+    showToast("✅ تم حفظ اسم المستخدم: @"+v.value,"success");
+  }catch(e){
+    showToast("❌ تعذر حفظ اسم المستخدم: "+e.message,"error");
   }
 };
 
@@ -7164,31 +7205,49 @@ window.saveMyPhone=async()=>{
   const v=validatePhone(raw);
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
   const cleanNew=v.value;
-  const oldPhone=(myProfile&&myProfile.phone)||"";
-  const cleanOld=oldPhone?normalizePhone(oldPhone):"";
 
   const displayNew=formatCallPhone(cleanNew);
-  const displayOld=cleanOld?formatCallPhone(cleanOld):"";
-  let confirmMsg="";
-  if(!cleanOld){
-    confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: ${displayNew} بحسابك؟\n\n⚠️ سيتم قفل هذا الرقم لحسابك فقط ولن يتمكن أي شخص آخر من استخدامه.`;
-  }else{
-    confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: (${displayNew}) بحسابك؟\n\n⚠️ سيتم تثبيت الرقم الجديد بحسابك فقط وإتاحته في إعلاناتك.`;
-  }
+  const confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: (${displayNew}) بحسابك؟\n\n⚠️ سيتم تثبيت الرقم الجديد بحسابك فقط وإتاحته في إعلاناتك.`;
   const ok = await showConfirmModal(confirmMsg, { confirmText: "نعم، ربط الرقم" });
   if(!ok) return;
 
   showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
-  const res=await reservePhone(me,cleanNew,cleanOld);
-  if(res.ok){
+  try{
+    // فحص الفرادة أولاً في قاعدة البيانات لمنع أي تضارب
+    const { data: pExist } = await supabase.from("profiles").select("id").eq("phone", cleanNew).neq("id", me.uid).limit(1).maybeSingle();
+    if(pExist && pExist.id){
+      showToast("❌ هذا الرقم مربوط بحساب شخص آخر بالفعل ولا يمكن استخدامه","error",5000);
+      return;
+    }
+
+    const now = Date.now();
+    const { error } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: now }).eq("id", me.uid);
+    if(error){
+      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, phone: cleanNew, updated_at: now }, { onConflict: "id" });
+    }
+    await setDoc(doc(db,"phones",cleanNew),{uid:me.uid,email:me.email||"",phone:cleanNew,localPhone:formatCallPhone(cleanNew),linkedAt:now},{merge:true}).catch(()=>{});
+
+    try{
+      const { data: allP } = await supabase.from("phones").select("phone").eq("uid", me.uid);
+      if(allP && allP.length > 0){
+        for(const item of allP){
+          if(item.phone !== cleanNew) await supabase.from("phones").delete().eq("phone", item.phone).catch(()=>{});
+        }
+      }
+    }catch(e){}
+
     if(!myProfile) myProfile={};
-    myProfile.phone=res.value;
+    myProfile.phone=cleanNew;
     window.myProfile=myProfile;
     saveCachedProfile(myProfile);
     updateAccountScreenUI();
-    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
-  }else{
-    showToast("❌ "+res.msg,"error",5000);
+
+    const mine=allPosts.filter(p=>p.uid===me.uid);
+    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{})));
+
+    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
+  }catch(e){
+    showToast("❌ تعذر حفظ رقم الهاتف: "+e.message,"error",5000);
   }
 };
 
@@ -7200,7 +7259,7 @@ window.saveAllProfileData=async()=>{
   const phoneInput=document.getElementById("myPhone");
 
   const nameVal=(nameInput?.value||"").trim();
-  const userVal=(userInput?.value||"").trim().toLowerCase();
+  const userVal=(userInput?.value||"").trim().toLowerCase().replace(/^@/,'');
   const phoneVal=(phoneInput?.value||"").trim();
 
   if(nameVal && (nameVal.length<2||nameVal.length>30)){
@@ -7216,37 +7275,40 @@ window.saveAllProfileData=async()=>{
 
   showToast("⏳ جاري حفظ وتثبيت بيانات حسابك...","info",2000);
   try{
-    const updates={ updatedAt: Date.now() };
+    const updates={ updated_at: Date.now() };
     if(nameVal) updates.name=nameVal;
-    if(cleanPhone) updates.phone=cleanPhone;
+
+    if(cleanPhone){
+      const { data: pExist } = await supabase.from("profiles").select("id").eq("phone", cleanPhone).neq("id", me.uid).limit(1).maybeSingle();
+      if(pExist && pExist.id){
+        showToast("❌ رقم الهاتف مربوط بحساب شخص آخر","error");
+        return;
+      }
+      updates.phone=cleanPhone;
+    }
 
     if(userVal){
       const v=validateUsername(userVal);
       if(!v.ok){showToast("❌ "+v.msg,"error");return;}
-      const uSnap=await getDoc(doc(db,"usernames",v.value));
-      if(uSnap.exists() && uSnap.data()?.uid && uSnap.data().uid!==me.uid){
-        showToast("❌ اسم المستخدم @" + v.value + " محجوز، اختر اسماً آخر","error");
+      const { data: uExist } = await supabase.from("profiles").select("id").eq("username", v.value).neq("id", me.uid).limit(1).maybeSingle();
+      if(uExist && uExist.id){
+        showToast("❌ اسم المستخدم @" + v.value + " محجوز لحساب آخر","error");
         return;
       }
       updates.username=v.value;
-      await setDoc(doc(db,"usernames",v.value),{uid:me.uid,createdAt:Date.now()},{merge:true});
-      try{
-        const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
-        if(allU){
-          for(const it of allU){
-            if(it.username !== v.value) await supabase.from("usernames").delete().eq("username", it.username).catch(()=>{});
-          }
-        }
-      }catch(e){}
     }
 
+    // 1. تحديث مباشر وقاطع في جدول profiles
+    const { error: profErr } = await supabase.from("profiles").update(updates).eq("id", me.uid);
+    if(profErr){
+      const { error: insErr } = await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, ...updates }, { onConflict: "id" });
+      if(insErr) throw insErr;
+    }
+
+    // 2. تحديث جداول المساعدة
+    const now = Date.now();
     if(cleanPhone){
-      const pSnap=await getDoc(doc(db,"phones",cleanPhone));
-      if(pSnap.exists() && pSnap.data()?.uid && pSnap.data().uid!==me.uid){
-        showToast("❌ رقم الهاتف مربوط بحساب آخر","error");
-        return;
-      }
-      await setDoc(doc(db,"phones",cleanPhone),{uid:me.uid,email:me.email||"",phone:cleanPhone,localPhone:formatCallPhone(cleanPhone),linkedAt:Date.now()},{merge:true});
+      await setDoc(doc(db,"phones",cleanPhone),{uid:me.uid,email:me.email||"",phone:cleanPhone,localPhone:formatCallPhone(cleanPhone),linkedAt:now},{merge:true}).catch(()=>{});
       try{
         const { data: allP } = await supabase.from("phones").select("phone").eq("uid", me.uid);
         if(allP){
@@ -7257,13 +7319,37 @@ window.saveAllProfileData=async()=>{
       }catch(e){}
     }
 
-    await setDoc(doc(db,"profiles",me.uid),updates,{merge:true});
+    if(userVal){
+      await setDoc(doc(db,"usernames",userVal),{uid:me.uid,createdAt:now},{merge:true}).catch(()=>{});
+      try{
+        const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
+        if(allU){
+          for(const it of allU){
+            if(it.username !== userVal) await supabase.from("usernames").delete().eq("username", it.username).catch(()=>{});
+          }
+        }
+      }catch(e){}
+    }
 
+    // 3. تثبيت كامل في الذاكرة والكاش وشاشة الحساب
     if(!myProfile) myProfile={};
-    Object.assign(myProfile, updates);
+    if(updates.name) myProfile.name = updates.name;
+    if(updates.phone) myProfile.phone = updates.phone;
+    if(updates.username) myProfile.username = updates.username;
+
     window.myProfile=myProfile;
     saveCachedProfile(myProfile);
     updateAccountScreenUI();
+
+    // تحديث الإعلانات
+    const mine=allPosts.filter(p=>p.uid===me.uid);
+    const postUpd={};
+    if(updates.name) postUpd.sellerName = updates.name;
+    if(updates.phone) postUpd.phone = updates.phone;
+    if(updates.username) postUpd.sellerUsername = updates.username;
+    if(Object.keys(postUpd).length > 0){
+      Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),postUpd).catch(()=>{})));
+    }
 
     showToast("✅ تم حفظ وتأكيد جميع بيانات حسابك بنجاح","success");
   }catch(e){
@@ -7410,7 +7496,11 @@ async function assignMemberNumber(user,customName){
     const existing = (profileSnap && profileSnap.exists()) ? (profileSnap.data() || {}) : {};
     if(existing.memberNo!=null){
       if(!myProfile) myProfile={};
-      Object.assign(myProfile, existing);
+      if(existing.name) myProfile.name = existing.name;
+      if(existing.username) myProfile.username = existing.username;
+      if(existing.phone) myProfile.phone = existing.phone;
+      myProfile.memberNo = existing.memberNo;
+      if(existing.storeId !== undefined) myProfile.storeId = existing.storeId;
       window.myProfile = myProfile;
       saveCachedProfile(myProfile);
       updateAccountScreenUI();
@@ -7434,9 +7524,8 @@ async function assignMemberNumber(user,customName){
     const p = (existing.phone || (myProfile && myProfile.phone) || "").trim();
     if (p) updates.phone = p;
     const un = (existing.username || (myProfile && myProfile.username) || "").trim();
-    if (un) {
-      updates.username = un;
-    }
+    if (un) updates.username = un;
+
     await setDoc(profileRef,updates,{merge:true});
     if(!myProfile) myProfile={};
     Object.assign(myProfile, updates);
@@ -7458,6 +7547,19 @@ async function reserveUsername(user,newUsername,oldUsername){
   const usernameRef=doc(db,"usernames",u);
   const profileRef=doc(db,"profiles",user.uid);
   try{
+    // فحص الفرادة في جدول profiles
+    if(window.supabase){
+      const { data: uExist } = await window.supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", u)
+        .neq("id", user.uid)
+        .limit(1)
+        .maybeSingle();
+      if(uExist && uExist.id){
+        return{ok:false,msg:"هذا الاسم محجوز لحساب آخر، اختر اسماً ثانياً"};
+      }
+    }
     const uSnap=await getDoc(usernameRef);
     if(uSnap.exists()){
       const uData=uSnap.data()||{};
@@ -7467,7 +7569,10 @@ async function reserveUsername(user,newUsername,oldUsername){
     }
     const now=Date.now();
     await setDoc(usernameRef,{uid:user.uid,createdAt:now},{merge:true});
-    await setDoc(profileRef,{username:u},{merge:true});
+    const { error: pErr } = await supabase.from("profiles").update({ username: u, updated_at: now }).eq("id", user.uid);
+    if(pErr){
+      await supabase.from("profiles").upsert({ id: user.uid, username: u, updated_at: now }, { onConflict: "id" });
+    }
 
     try{
       const { data: allUserUsernames } = await supabase.from("usernames").select("username").eq("uid", user.uid);
@@ -7505,7 +7610,20 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   const profileRef=doc(db,"profiles",user.uid);
 
   try{
-    // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر
+    // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر في جدول profiles
+    if(window.supabase){
+      const { data: pExist } = await window.supabase
+        .from("profiles")
+        .select("id")
+        .eq("phone", cleanNew)
+        .neq("id", user.uid)
+        .limit(1)
+        .maybeSingle();
+      if(pExist && pExist.id){
+        return{ok:false,msg:"هذا الرقم مربوط بحساب شخص آخر بالفعل ولا يمكن استخدامه"};
+      }
+    }
+
     const phoneSnap=await getDoc(phoneRef);
     if(phoneSnap.exists()){
       const pData=phoneSnap.data()||{};
@@ -7524,10 +7642,11 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       linkedAt:now
     },{merge:true});
 
-    // حفظ في جدول profiles عبر upsert
-    await setDoc(profileRef,{
-      phone:cleanNew
-    },{merge:true});
+    // حفظ في جدول profiles
+    const { error: pErr } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: now }).eq("id", user.uid);
+    if(pErr){
+      await supabase.from("profiles").upsert({ id: user.uid, phone: cleanNew, updated_at: now }, { onConflict: "id" });
+    }
 
     // تحرير الرقم القديم وحذف أي أرقام أخرى لنفس المستخدم ليبقى رقم واحد فقط
     try{
@@ -7556,9 +7675,11 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
     myProfile.phone=cleanNew;
     return{ok:true,value:cleanNew};
   }catch(e){
-    // في حال تعذر جدول phones، يتم الحفظ بالبروفايل مباشرة
     try{
-      await setDoc(profileRef,{phone:cleanNew},{merge:true});
+      const { error: pErr2 } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: Date.now() }).eq("id", user.uid);
+      if(pErr2){
+        await supabase.from("profiles").upsert({ id: user.uid, phone: cleanNew, updated_at: Date.now() }, { onConflict: "id" });
+      }
       if(!myProfile) myProfile={};
       myProfile.phone=cleanNew;
       return{ok:true,value:cleanNew};
@@ -7576,7 +7697,13 @@ function startProfileListener(user){
     if(snap.exists()){
       const freshData = snap.data() || {};
       if(!myProfile) myProfile = {};
-      Object.assign(myProfile, freshData);
+      if(freshData.name) myProfile.name = freshData.name;
+      if(freshData.username) myProfile.username = freshData.username;
+      if(freshData.phone) myProfile.phone = freshData.phone;
+      if(freshData.memberNo != null) myProfile.memberNo = freshData.memberNo;
+      if(freshData.storeId !== undefined) myProfile.storeId = freshData.storeId;
+      if(freshData.email && !myProfile.email) myProfile.email = freshData.email;
+
       window.myProfile = myProfile;
       saveCachedProfile(myProfile);
       updateAccountScreenUI();
@@ -7812,7 +7939,7 @@ if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer);
 if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
-stopProfileListener(true);
+stopProfileListener(false);
 stopStoreListener();
 stopFollowingListener();
 stopPendingPostsListener();
