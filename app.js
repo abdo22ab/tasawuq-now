@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=6";
+} from "./supabase-adapter.js?v=7";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -3288,11 +3288,30 @@ const wasEditing=!!editingPostId;
 const userPhone=(myProfile&&myProfile.phone)||"";
 const isStorePostFlag=!!window._isStorePost;
 const storeForPhone=isStorePostFlag && _tempStoreData ? _tempStoreData : myStore;
-const rawInputPhone = (document.getElementById("phone")?.value || "").replace(/[^0-9+]/g, "");
-const phone=(isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : (userPhone || rawInputPhone);
+const rawInputPhone = (document.getElementById("phone")?.value || "").trim();
+let phone = "";
+if(isStorePostFlag && storeForPhone && (storeForPhone.phone || storeForPhone.callPhone)){
+  phone = normalizePhone(storeForPhone.phone || storeForPhone.callPhone);
+} else {
+  phone = normalizePhone(rawInputPhone || userPhone);
+}
 const adType=document.querySelector('input[name="adType"]:checked')?.value||"offer";
 const originalPrice=parseFloat(document.getElementById("originalPrice")?.value)||0;
-if(!phone || phone === "218"){showToast("❌ يجب تسجيل أو كتابة رقم الواتساب أولاً.","error");return;}
+if(!phone || phone === "218"){showToast("❌ يجب كتابة رقم الواتساب للتواصل في الإعلان.","error");return;}
+
+// حفظ وربط الرقم بالبروفايل تلقائياً إذا كان جديداً
+if(!isStorePostFlag && phone && auth.currentUser){
+  if(!userPhone || userPhone !== phone){
+    reservePhone(auth.currentUser, phone, userPhone).then(res=>{
+      if(res.ok){
+        if(!myProfile) myProfile={};
+        myProfile.phone = res.value;
+        saveCachedProfile(myProfile);
+        updateAccountScreenUI();
+      }
+    }).catch(()=>{});
+  }
+}
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
 const sellerMemberNo=(myProfile&&myProfile.memberNo)||null;
 const sellerUsername=(myProfile&&myProfile.username)||"";
@@ -4643,14 +4662,12 @@ function renderOrderTrackerUI(order,errorMsg){
           ❌ إلغاء الطلبية وتصكيرها ${order.paymentMethod==='wallet' ? '(واسترجاع الرصيد للمحفظة فوراً)' : ''}
         </button>
       ` : ''}
-      <div style="display:flex;gap:8px">
-        <button type="button" class="btnGhost" onclick="closeOrderTracker()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
-          🔽 تصغير الشاشة
-        </button>
-        <button type="button" class="btnGhost" onclick="finishAndDismissActiveOrder(false)" style="flex:1;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
-          ✕ تصكير وإنهاء التتبع
-        </button>
-      </div>
+      <button type="button" class="btnMain" onclick="customerForceDismissOrder()" style="background:#dc2626;color:#fff;border-radius:12px;padding:11px;font-size:13.5px;font-weight:900;cursor:pointer;margin:0">
+        🚪 تصكير الطلبية والخروج نهائياً
+      </button>
+      <button type="button" class="btnGhost" onclick="closeOrderTracker()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
+        🔽 تصغير الشاشة للأسفل
+      </button>
     </div>
   `;
 }
@@ -4697,13 +4714,11 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
 
   if(markInDb && orderId){
     try{
-      const snap=await getDoc(doc(db,"feedback",orderId));
-      if(snap.exists()){
-        const data=snap.data();
-        let ord=JSON.parse(data.message||"{}");
+      const ord = await getRestaurantOrderFromDb(orderId);
+      if(ord){
         ord.status='completed';
         ord.completedAt=Date.now();
-        await updateDoc(doc(db,"feedback",orderId),{message:JSON.stringify(ord)});
+        await updateRestaurantOrderInDb(orderId, ord);
         if(restBroadcast){
           try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: orderId, status: 'completed' }); }catch(e){}
         }
@@ -4711,6 +4726,31 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
     }catch(e){}
   }
   showToast("تم إنهاء التتبع بنجاح ✅","info",2000);
+};
+
+window.customerForceDismissOrder = async () => {
+  const orderId = _currentTrackingOrderId || (function(){try{return localStorage.getItem('tasawuq_active_order_id');}catch(e){return null;}})();
+  const ok = await showConfirmModal("هل تريد تصكير هذه الطلبية وإنهاء المتابعة فوراً؟", {
+    icon: "⚠️",
+    confirmText: "نعم، تصكير الطلبية",
+    cancelText: "تراجع",
+    danger: true
+  });
+  if(!ok) return;
+
+  if(orderId){
+    try {
+      const ord = await getRestaurantOrderFromDb(orderId);
+      if(ord && (ord.status === 'pending' || ord.status === 'accepted')){
+        await customerCancelOrder(orderId);
+        return;
+      } else {
+        await finishAndDismissActiveOrder(true);
+        return;
+      }
+    } catch(e){}
+  }
+  await finishAndDismissActiveOrder(false);
 };
 
 window.customerCancelOrder = async (orderId) => {
@@ -4822,7 +4862,14 @@ window.closeOrderTracker=()=>{
 function updateActiveOrderFloatingPill(order, statusText){
   const pill=document.getElementById("activeOrderFloatingPill");
   if(!pill)return;
-  pill.innerHTML=`<span>🍽️</span><span>طلب #${order.orderNo}: ${statusText}</span><span style="font-size:15px">›</span>`;
+  pill.innerHTML=`
+    <div style="display:flex;align-items:center;gap:6px;flex:1" onclick="openActiveOrderTracker()">
+      <span>🍽️</span>
+      <span>طلب #${order.orderNo}: ${statusText}</span>
+      <span style="font-size:15px">›</span>
+    </div>
+    <span onclick="event.stopPropagation();customerForceDismissOrder()" title="تصكير الطلب" style="padding:2px 8px;font-size:14px;font-weight:900;opacity:0.8;cursor:pointer">✕</span>
+  `;
   pill.classList.remove("hidden");
 }
 
@@ -5729,9 +5776,9 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             ${transferBtn}
             <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ تقييم</button>
             <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#0284c7">📱 QR</button>
-            ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المطعم</button>`:""}
-            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة وجبة</button>`:""}
-            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="openRestaurantLiveOrders('${store.id}')" style="background:#dc2626;color:#fff;font-weight:800">🔔 طلبات المطعم الحية</button>`:""}
+            ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ ${isRestaurantStore(store) ? "تعديل المطعم" : "تعديل المتجر"}</button>`:""}
+            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ ${isRestaurantStore(store) ? "إضافة وجبة" : "إضافة منتج"}</button>`:""}
+            ${isRestaurantStore(store)&&(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="openRestaurantLiveOrders('${store.id}')" style="background:#dc2626;color:#fff;font-weight:800">🔔 لوحة كاشير المطعم</button>`:""}
           </div>
           <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
           <div class="storeRatingSection" id="storeRatingSection"></div>
@@ -6556,8 +6603,15 @@ document.getElementById("discountPreview").textContent="";
 document.getElementById("discountField").style.display="block";
 const userPhone=(myProfile&&myProfile.phone)||"";
 const displayPhone = (isStore && activeStore && (activeStore.phone || activeStore.callPhone)) ? (activeStore.phone || activeStore.callPhone) : userPhone;
-document.getElementById("phone").value=displayPhone?formatCallPhone(displayPhone):"⚠️ لم تسجل رقمك بعد";
-document.getElementById("phone").setAttribute("readonly","readonly");
+const phoneEl = document.getElementById("phone");
+if(phoneEl){
+  phoneEl.value = displayPhone ? formatCallPhone(displayPhone) : "";
+  if(isStore && activeStore && (activeStore.phone || activeStore.callPhone)){
+    phoneEl.setAttribute("readonly","readonly");
+  } else {
+    phoneEl.removeAttribute("readonly");
+  }
+}
 document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
 document.getElementById("category").value=(isStore?activeStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
@@ -6864,16 +6918,28 @@ function updateAccountScreenUI(){
     }
   }
 
+  const pbEl = document.getElementById("accountPhoneBadge");
+  if(pbEl){
+    const curP = (myProfile && myProfile.phone) || "";
+    if(curP){
+      pbEl.textContent = "📱 " + formatCallPhone(curP);
+      pbEl.style.display = "inline-block";
+    } else {
+      pbEl.textContent = "📱 بدون هاتف";
+      pbEl.style.display = "inline-block";
+    }
+  }
+
   const myUserInput = document.getElementById("myUsername");
   if(myUserInput && document.activeElement !== myUserInput) {
     const uVal = (myProfile && myProfile.username) || "";
-    if(uVal) myUserInput.value = uVal;
+    myUserInput.value = uVal || "";
   }
 
   const myPhoneInput = document.getElementById("myPhone");
   if(myPhoneInput && document.activeElement !== myPhoneInput) {
     const pVal = (myProfile && myProfile.phone) || "";
-    if(pVal) myPhoneInput.value = formatCallPhone(pVal);
+    myPhoneInput.value = pVal ? formatCallPhone(pVal) : "";
   }
 
   const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (me ? me.uid : "");
@@ -7416,7 +7482,6 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   if(!v.ok)return{ok:false,msg:v.msg};
   const cleanNew=v.value;
   const cleanOld=oldPhoneRaw?normalizePhone(oldPhoneRaw):"";
-  if(cleanOld && cleanOld===cleanNew){return{ok:true,value:cleanNew,unchanged:true};}
 
   const phoneRef=doc(db,"phones",cleanNew);
   const profileRef=doc(db,"profiles",user.uid);
@@ -7496,7 +7561,7 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
 }
 
 function startProfileListener(user){
-  stopProfileListener();
+  stopProfileListener(false);
   profileCreateTried=false;
   let assignAttempted=false;
   unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
@@ -7531,7 +7596,14 @@ function startProfileListener(user){
     }
   },err=>{});
 }
-function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;window.myProfile=null;}
+function stopProfileListener(isLogout = false){
+  if(unsubProfile){unsubProfile();unsubProfile=null;}
+  if(isLogout){
+    myProfile=null;
+    window.myProfile=null;
+    try{ localStorage.removeItem("tasawuq_cached_profile"); }catch(e){}
+  }
+}
 
 function startStoreListener(uid){
   stopStoreListener();
@@ -7732,7 +7804,7 @@ if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer);
 if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
-stopProfileListener();
+stopProfileListener(true);
 stopStoreListener();
 stopFollowingListener();
 stopPendingPostsListener();
