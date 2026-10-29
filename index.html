@@ -411,7 +411,9 @@ OneSignalDeferred.push(async function(OneSignal){
           <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()" style="font-size:16px">
           <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div>
         </div>
-        <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:4px" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
+        <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:10px" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
+
+        <button type="button" class="btnMain" style="margin-top:4px;margin-bottom:4px;width:100%;font-weight:900" onclick="saveAllProfileData()">💾 حفظ جميع بيانات الحساب (الاسم والمعرف والرقم)</button>
       </div>
     </div>
 
@@ -1626,7 +1628,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=55"></script>
+<script type="module" src="app.js?v=56"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
