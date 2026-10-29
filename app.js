@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=5";
+} from "./supabase-adapter.js?v=6";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -4202,9 +4202,10 @@ window.submitRestaurantDirectOrder=async()=>{
     const nowTs = Date.now();
     orderData.createdAt = nowTs;
 
+    let orderSaved = false;
     if(window.supabase){
       try {
-        await window.supabase.from("feedback").insert({
+        const { error: sbErr } = await window.supabase.from("feedback").insert({
           id: orderId,
           type: "restaurant_order",
           uid: cart.storeId,
@@ -4213,6 +4214,7 @@ window.submitRestaurantDirectOrder=async()=>{
           message: JSON.stringify(orderData),
           created_at: nowTs
         });
+        if(!sbErr) orderSaved = true;
       } catch(e){
         console.warn("Supabase insert restaurant order error:", e);
       }
@@ -4228,7 +4230,15 @@ window.submitRestaurantDirectOrder=async()=>{
         message: JSON.stringify(orderData),
         createdAt: nowTs
       });
+      orderSaved = true;
     } catch(e){}
+
+    if(!orderSaved && paymentMethod === "wallet" && auth.currentUser){
+      await creditUserWallet(auth.currentUser.uid, totalToPay, "استرجاع تلقائي - تعذر إرسال الطلب");
+      showToast("❌ تعذر إرسال الطلب للنظام، تم استرجاع الرصيد لمحفظتك فوراً", "error", 6000);
+      if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
+      return;
+    }
 
     try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
 
@@ -7088,11 +7098,13 @@ async function assignMemberNumber(user,customName){
       memberNo:newNumber,
       name:customName || defaultName(user),
       createdAt:profileCreatedAt(user),
-      username:(myProfile&&myProfile.username)||"",
       storeId:(myProfile&&myProfile.storeId)||null,
       phone:(myProfile&&myProfile.phone)||"",
       phoneEditsCount:0
     };
+    if (myProfile && myProfile.username && myProfile.username.trim()) {
+      updates.username = myProfile.username.trim();
+    }
     await setDoc(profileRef,updates,{merge:true});
     if(!myProfile) myProfile={};
     Object.assign(myProfile, updates);
@@ -8224,40 +8236,81 @@ export async function getUserWallet(uid, forceRefresh = false){
 }
 window.getUserWallet = getUserWallet;
 
-// 2. تسجيل حركة في السجل المالي العام (Audit Ledger)
+// 2. تسجيل حركة في السجل المالي العام (Audit Ledger) — حفظ ثنائي Supabase + Firebase + LocalStorage
 export async function recordWalletTx(uid, txType, amount, balanceBefore, balanceAfter, reason, meta = {}){
-  try{
-    const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
-    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
-    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-    const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-    const txData = {
-      txId,
-      uid,
-      userName: uName,
-      userPhone: uPhone,
-      txType, // 'card_recharge' | 'order_payment' | 'order_refund' | 'admin_credit' | 'admin_debit'
-      amount: Math.round(Number(amount) * 100) / 100,
-      balanceBefore: Math.round(Number(balanceBefore) * 100) / 100,
-      balanceAfter: Math.round(Number(balanceAfter) * 100) / 100,
-      reason: String(reason || ""),
-      meta: meta || {},
-      timestamp: Date.now()
-    };
-    await addDoc(collection(db, "feedback"), {
-      id: txDocId,
-      type: "wallet_transaction",
-      uid: uid,
-      userName: uName,
-      userPhone: uPhone,
-      message: JSON.stringify(txData),
-      createdAt: Date.now()
-    });
-    return txId;
-  }catch(e){
-    console.error("recordWalletTx error:", e);
-    return null;
+  const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+  const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+  const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
+  const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+  const amountVal = Math.round(Number(amount) * 100) / 100;
+  const beforeVal = Math.round(Number(balanceBefore) * 100) / 100;
+  const afterVal = Math.round(Number(balanceAfter) * 100) / 100;
+  
+  const txData = {
+    txId,
+    uid,
+    userName: uName,
+    userPhone: uPhone,
+    txType,
+    amount: amountVal,
+    balanceBefore: beforeVal,
+    balanceAfter: afterVal,
+    reason: String(reason || ""),
+    meta: meta || {},
+    timestamp: Date.now()
+  };
+  
+  let saved = false;
+  
+  // المحاولة 1: Supabase
+  if(window.supabase){
+    try {
+      const { error } = await window.supabase.from("feedback").insert({
+        id: txDocId,
+        type: "wallet_transaction",
+        uid: uid,
+        user_name: uName,
+        user_phone: uPhone,
+        message: JSON.stringify(txData),
+        created_at: Date.now()
+      });
+      if(error) throw error;
+      saved = true;
+      console.log("✅ Wallet tx saved to Supabase:", txId);
+    } catch(e){
+      console.warn("⚠️ Supabase wallet tx failed, trying Firebase:", e);
+    }
   }
+  
+  // المحاولة 2: Firebase (في حال فشل Supabase)
+  if(!saved){
+    try {
+      await setDoc(doc(db, "feedback", txDocId), {
+        id: txDocId,
+        type: "wallet_transaction",
+        uid: uid,
+        userName: uName,
+        userPhone: uPhone,
+        message: JSON.stringify(txData),
+        createdAt: Date.now()
+      });
+      saved = true;
+      console.log("✅ Wallet tx saved to Firebase:", txId);
+    } catch(e){
+      console.error("🚨 CRITICAL: Wallet tx FAILED to save to both:", txData, e);
+    }
+  }
+  
+  if(!saved){
+    // على الأقل حفظ محلي مؤقت للعرض لاحقاً
+    try {
+      const pending = JSON.parse(localStorage.getItem("pendingWalletTxs") || "[]");
+      pending.unshift(txData);
+      localStorage.setItem("pendingWalletTxs", JSON.stringify(pending.slice(0, 50)));
+    } catch(e){}
+  }
+  
+  return saved ? txId : null;
 }
 window.recordWalletTx = recordWalletTx;
 
@@ -8284,6 +8337,9 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
 
     _cachedWalletsMap.delete(uid);
     const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
+    if(!txId){
+      console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
+    }
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
     }
@@ -8321,6 +8377,9 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
 
     _cachedWalletsMap.delete(uid);
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
+    if(!txId){
+      console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
+    }
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
     }
@@ -8631,8 +8690,8 @@ window.submitCardRecharge = async()=>{
   }
 };
 
-// 12. كشف حساب المستخدم وسجل عملياته الشخصية
-window.openMyWalletHistory = async()=>{
+// 12. كشف حساب المستخدم وسجل عملياته الشخصية (استعلام مرن + فلترة محلية + LocalStorage Pending)
+window.openMyWalletHistory = async () => {
   if(!auth.currentUser){
     showToast("⚠️ يرجى تسجيل الدخول أولاً", "warn");
     return;
@@ -8641,63 +8700,135 @@ window.openMyWalletHistory = async()=>{
   const listEl = document.getElementById("myWalletTxList");
   if(ov) ov.classList.remove("hidden");
   if(listEl) listEl.innerHTML = `<div class="reportsEmpty">⏳ جاري جلب سجل المعاملات...</div>`;
-
-  const cur = await getUserWallet(auth.currentUser.uid);
+  
+  const myUid = auth.currentUser.uid;
+  const cur = await getUserWallet(myUid);
   updateWalletUI(cur.balance);
-
-  try{
-    let txs = [];
+  
+  try {
+    let rows = [];
+    
+    // المحاولة 1: جلب كل الحركات من Supabase بدون فلتر uid (ثم نفلتر محلياً)
     if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("feedback")
-        .select("*")
-        .eq("type", "wallet_transaction")
-        .eq("uid", auth.currentUser.uid)
-        .order("created_at", { ascending: false })
-        .limit(60);
-      if(!error && data) txs = data;
+      try {
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "wallet_transaction")
+          .order("created_at", { ascending: false })
+          .limit(300);
+        if(!error && Array.isArray(data)) rows = data;
+      } catch(e){ console.warn("Supabase history fetch err:", e); }
     }
-
+    
+    // المحاولة 2: Firebase
+    if(rows.length === 0){
+      try {
+        const snap = await getDocs(query(
+          collection(db, "feedback"),
+          where("type", "==", "wallet_transaction")
+        ));
+        rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch(e){ console.warn("Firebase history fetch err:", e); }
+    }
+    
+    // فلترة العمليات الخاصة بالمستخدم فقط (client-side — يغطي كل الحالات)
+    const txs = [];
+    rows.forEach(row => {
+      try {
+        let parsed = {};
+        try { parsed = JSON.parse(row.message || "{}"); } catch(e){}
+        
+        const belongsToMe = (parsed.uid === myUid) || (row.uid === myUid);
+        if(!belongsToMe) return;
+        
+        txs.push({
+          ...parsed,
+          _rowId: row.id,
+          _ts: parsed.timestamp || new Date(row.created_at || row.createdAt || 0).getTime()
+        });
+      } catch(e){}
+    });
+    
+    // دمج أي حركات معلقة في localStorage (لم تُحفظ في DB)
+    try {
+      const pending = JSON.parse(localStorage.getItem("pendingWalletTxs") || "[]");
+      pending.forEach(p => {
+        if(p.uid === myUid && !txs.some(t => t.txId === p.txId)){
+          txs.push({ ...p, _ts: p.timestamp, _isPendingLocal: true });
+        }
+      });
+    } catch(e){}
+    
+    // ترتيب حسب الأحدث
+    txs.sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    
+    // حالة فارغة
     if(txs.length === 0){
       if(listEl) listEl.innerHTML = `
-        <div class="cartEmptyBox" style="padding:20px 0">
+        <div class="cartEmptyBox" style="padding:30px 20px">
           <div class="icon">💳</div>
-          <div style="font-weight:700;font-size:14px">لا توجد حركات مالية بعد</div>
-          <div style="font-size:12px;margin-top:4px">اشحن محفظتك أو اطلب من المطاعم وستظهر جميع عملياتك هنا</div>
+          <div style="font-weight:800;font-size:15px;margin-bottom:6px">لا توجد حركات مالية بعد</div>
+          <div style="font-size:12.5px;line-height:1.6;color:var(--muted)">اشحن محفظتك بكارت الشحن أو اطلب من المطاعم<br>وستظهر جميع عملياتك هنا بشكل مفصل وواضح</div>
         </div>
       `;
       return;
     }
-
-    if(listEl){
-      listEl.innerHTML = txs.map(row=>{
-        let parsed = {};
-        try{ parsed = JSON.parse(row.message || "{}"); }catch(e){}
-        const isIncome = (parsed.amount || 0) >= 0;
-        const icon = isIncome ? '➕' : '🛒';
-        const sign = isIncome ? '+' : '';
-        const cls = isIncome ? 'in' : 'out';
-        const txDate = row.created_at ? new Date(row.created_at).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-        return `
-          <div class="walletTxCard">
-            <div class="txLeft">
-              <div class="txIcon ${cls}">${icon}</div>
-              <div class="txDetails">
-                <div class="txTitle">${escapeHtml(parsed.reason || "حركة مالية")}</div>
-                <div class="txTime">🕒 ${txDate} — رقم: #${escapeHtml(parsed.txId || row.id)}</div>
+    
+    // عرض الحركات
+    const typeLabels = {
+      'card_recharge': { icon: '💳', label: 'شحن كارت', color: '#16a34a' },
+      'order_payment': { icon: '🍽️', label: 'دفع طلب', color: '#dc2626' },
+      'order_refund': { icon: '🔄', label: 'استرجاع طلب', color: '#0284c7' },
+      'admin_credit': { icon: '➕', label: 'إيداع إداري', color: '#16a34a' },
+      'admin_debit': { icon: '➖', label: 'خصم إداري', color: '#dc2626' },
+      'order_create_failed_refund': { icon: '🔄', label: 'استرجاع (فشل طلب)', color: '#0284c7' }
+    };
+    
+    if(listEl) listEl.innerHTML = txs.map(tx => {
+      const amount = Number(tx.amount) || 0;
+      const isIncome = amount >= 0;
+      const sign = isIncome ? '+' : '';
+      const cls = isIncome ? 'in' : 'out';
+      const typeInfo = typeLabels[tx.txType] || { icon: '💱', label: 'حركة مالية', color: '#6b7280' };
+      
+      const txDate = tx._ts ? new Date(tx._ts).toLocaleString('ar-LY', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '—';
+      
+      const pendingBadge = tx._isPendingLocal
+        ? '<span style="font-size:9.5px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:800;margin-right:4px">⏳ لم تُزامن بعد</span>'
+        : '';
+      
+      const reasonText = tx.reason || typeInfo.label;
+      
+      return `
+        <div class="walletTxCard" style="border-right:3px solid ${typeInfo.color}">
+          <div class="txLeft">
+            <div class="txIcon ${cls}" style="background:${isIncome ? '#f0fdf4' : '#fef2f2'};border-color:${isIncome ? '#bbf7d0' : '#fecaca'}">${typeInfo.icon}</div>
+            <div class="txDetails">
+              <div class="txTitle">${escapeHtml(reasonText)} ${pendingBadge}</div>
+              <div class="txTime" style="font-size:10.5px">
+                <span style="color:${typeInfo.color};font-weight:800">${typeInfo.label}</span>
+                <span style="color:var(--muted)"> • 🕒 ${txDate}</span>
               </div>
             </div>
-            <div class="txRight">
-              <div class="txAmount ${cls}">${sign}${parsed.amount} د.ل</div>
-              <div class="txBalanceAfter">الرصيد: ${parsed.balanceAfter != null ? parsed.balanceAfter + ' د.ل' : ''}</div>
-            </div>
           </div>
-        `;
-      }).join("");
-    }
-  }catch(e){
+          <div class="txRight">
+            <div class="txAmount ${cls}" style="font-size:15px">${sign}${Math.abs(amount).toFixed(2)} د.ل</div>
+            <div class="txBalanceAfter">${tx.balanceAfter != null ? `الرصيد: ${Number(tx.balanceAfter).toFixed(2)} د.ل` : ''}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+    
+  } catch(e){
     console.error("openMyWalletHistory error:", e);
-    if(listEl) listEl.innerHTML = `<div class="reportsEmpty">خطأ في جلب البيانات: ${e.message}</div>`;
+    if(listEl) listEl.innerHTML = `<div class="reportsEmpty">❌ خطأ في جلب البيانات: ${escapeHtml(e.message)}</div>`;
   }
 };
 window.closeMyWalletHistory = ()=>{
