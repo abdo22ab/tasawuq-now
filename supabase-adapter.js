@@ -415,6 +415,11 @@ export async function setDoc(docRef, data, options = {}) {
   }
 
   let payload = { ...row };
+  if (table === "profiles") {
+    if (payload.username === "" || payload.username === undefined) {
+      delete payload.username;
+    }
+  }
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload);
     if (!error) return true;
@@ -435,6 +440,11 @@ export async function addDoc(colRef, data) {
   row.id = newId;
 
   let payload = { ...row };
+  if (table === "profiles") {
+    if (payload.username === "" || payload.username === undefined) {
+      delete payload.username;
+    }
+  }
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
@@ -462,6 +472,11 @@ export async function updateDoc(docRef, data) {
   }
 
   let payload = { ...row };
+  if (table === "profiles") {
+    if (payload.username === "" || payload.username === undefined) {
+      delete payload.username;
+    }
+  }
   for (let attempt = 0; attempt < 6; attempt++) {
     let req = supabase.from(table).update(payload);
     if (table === "phones") req = req.eq("phone", docRef.id);
@@ -469,8 +484,13 @@ export async function updateDoc(docRef, data) {
     else if (table === "user_limits") req = req.eq("uid", docRef.id);
     else req = req.eq("id", docRef.id);
 
-    const { error } = await req;
-    if (!error) return true;
+    const { data: resData, error } = await req.select();
+    if (!error) {
+      if (!resData || resData.length === 0) {
+        return await setDoc(docRef, payload, { merge: true });
+      }
+      return true;
+    }
 
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
@@ -533,13 +553,30 @@ export function increment(n) {
 }
 
 export async function runTransaction(dbInstance, updateFunction) {
+  const pending = [];
   const transaction = {
     get: async (ref) => await getDoc(ref),
-    set: async (ref, data) => await setDoc(ref, data),
-    update: async (ref, data) => await updateDoc(ref, data),
-    delete: async (ref) => await deleteDoc(ref)
+    set: (ref, data, opts) => {
+      const p = setDoc(ref, data, opts);
+      pending.push(p);
+      return p;
+    },
+    update: (ref, data) => {
+      const p = updateDoc(ref, data);
+      pending.push(p);
+      return p;
+    },
+    delete: (ref) => {
+      const p = deleteDoc(ref);
+      pending.push(p);
+      return p;
+    }
   };
-  return await updateFunction(transaction);
+  const result = await updateFunction(transaction);
+  if (pending.length > 0) {
+    await Promise.all(pending);
+  }
+  return result;
 }
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
