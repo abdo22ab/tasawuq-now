@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=7";
+} from "./supabase-adapter.js?v=8";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -6814,24 +6814,24 @@ async function syncFullUserProfile(uid){
     const profSnap = await getDoc(doc(db, "profiles", uid));
     let profData = (profSnap && profSnap.exists()) ? (profSnap.data() || {}) : {};
 
-    // 2. إذا كان رقم الهاتف مفقوداً أو فارغاً في profiles، اطلبه فوراً من جدول phones
+    // 2. إذا كان رقم الهاتف مفقوداً أو فارغاً في profiles، اطلبه فوراً من جدول phones بأحدث تاريخ
     if(!profData.phone){
       try {
-        const { data: pList } = await supabase.from("phones").select("*").eq("uid", uid).limit(1);
+        const { data: pList } = await supabase.from("phones").select("*").eq("uid", uid).order("linked_at", { ascending: false }).limit(1);
         if(pList && pList.length > 0 && pList[0].phone){
           profData.phone = pList[0].phone;
-          await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }).catch(()=>{});
+          await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }, { onConflict: "id" }).catch(()=>{});
         }
       } catch(e){}
     }
 
-    // 3. إذا كان اسم المستخدم مفقوداً في profiles، اطلبه فوراً من جدول usernames
+    // 3. إذا كان اسم المستخدم مفقوداً في profiles، اطلبه فوراً من جدول usernames بأحدث تاريخ
     if(!profData.username){
       try {
         const { data: uList } = await supabase.from("usernames").select("*").eq("uid", uid).order("created_at", { ascending: false }).limit(1);
         if(uList && uList.length > 0 && uList[0].username){
           profData.username = uList[0].username;
-          await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }).catch(()=>{});
+          await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }, { onConflict: "id" }).catch(()=>{});
         }
       } catch(e){}
     }
@@ -7230,6 +7230,14 @@ window.saveAllProfileData=async()=>{
       }
       updates.username=v.value;
       await setDoc(doc(db,"usernames",v.value),{uid:me.uid,createdAt:Date.now()},{merge:true});
+      try{
+        const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
+        if(allU){
+          for(const it of allU){
+            if(it.username !== v.value) await supabase.from("usernames").delete().eq("username", it.username).catch(()=>{});
+          }
+        }
+      }catch(e){}
     }
 
     if(cleanPhone){
@@ -7239,6 +7247,14 @@ window.saveAllProfileData=async()=>{
         return;
       }
       await setDoc(doc(db,"phones",cleanPhone),{uid:me.uid,email:me.email||"",phone:cleanPhone,localPhone:formatCallPhone(cleanPhone),linkedAt:Date.now()},{merge:true});
+      try{
+        const { data: allP } = await supabase.from("phones").select("phone").eq("uid", me.uid);
+        if(allP){
+          for(const it of allP){
+            if(it.phone !== cleanPhone) await supabase.from("phones").delete().eq("phone", it.phone).catch(()=>{});
+          }
+        }
+      }catch(e){}
     }
 
     await setDoc(doc(db,"profiles",me.uid),updates,{merge:true});
@@ -7252,7 +7268,7 @@ window.saveAllProfileData=async()=>{
     showToast("✅ تم حفظ وتأكيد جميع بيانات حسابك بنجاح","success");
   }catch(e){
     console.error("saveAllProfileData error:", e);
-    showToast("❌ تعذر حفظ البيانات: "+(e.message||"خطأ"),"error");
+    showToast("❌ "+(e.message||"تعذر حفظ البيانات"),"error");
   }
 };
 
@@ -7413,9 +7429,10 @@ async function assignMemberNumber(user,customName){
       name:existing.name || (myProfile && myProfile.name) || customName || defaultName(user),
       createdAt:existing.createdAt || profileCreatedAt(user),
       storeId:existing.storeId || (myProfile && myProfile.storeId) || null,
-      phone:existing.phone || (myProfile && myProfile.phone) || "",
       phoneEditsCount:existing.phoneEditsCount || 0
     };
+    const p = (existing.phone || (myProfile && myProfile.phone) || "").trim();
+    if (p) updates.phone = p;
     const un = (existing.username || (myProfile && myProfile.username) || "").trim();
     if (un) {
       updates.username = un;
@@ -7452,15 +7469,16 @@ async function reserveUsername(user,newUsername,oldUsername){
     await setDoc(usernameRef,{uid:user.uid,createdAt:now},{merge:true});
     await setDoc(profileRef,{username:u},{merge:true});
 
-    if(oldUsername && oldUsername!==u){
-      try{
-        const oldRef=doc(db,"usernames",oldUsername);
-        const oldSnap=await getDoc(oldRef);
-        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
-          await deleteDoc(oldRef);
+    try{
+      const { data: allUserUsernames } = await supabase.from("usernames").select("username").eq("uid", user.uid);
+      if(allUserUsernames && allUserUsernames.length > 0){
+        for(const item of allUserUsernames){
+          if(item.username !== u){
+            await supabase.from("usernames").delete().eq("username", item.username).catch(()=>{});
+          }
         }
-      }catch(e){}
-    }
+      }
+    }catch(e){}
 
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
@@ -7511,27 +7529,17 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       phone:cleanNew
     },{merge:true});
 
-    // تحرير الرقم القديم ليصبح متاحاً عند تغييره
-    if(cleanOld && cleanOld!==cleanNew){
-      try{
-        const oldPhoneRef=doc(db,"phones",cleanOld);
-        const oldSnap=await getDoc(oldPhoneRef);
-        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
-          await deleteDoc(oldPhoneRef);
-        }
-      }catch(e){}
-
-      const oldLocal=formatCallPhone(cleanOld);
-      if(oldLocal && oldLocal!==cleanOld){
-        try{
-          const oldLocalRef=doc(db,"phones",oldLocal);
-          const oldLocalSnap=await getDoc(oldLocalRef);
-          if(oldLocalSnap.exists() && oldLocalSnap.data()?.uid===user.uid){
-            await deleteDoc(oldLocalRef);
+    // تحرير الرقم القديم وحذف أي أرقام أخرى لنفس المستخدم ليبقى رقم واحد فقط
+    try{
+      const { data: allUserPhones } = await supabase.from("phones").select("phone").eq("uid", user.uid);
+      if(allUserPhones && allUserPhones.length > 0){
+        for(const item of allUserPhones){
+          if(item.phone !== cleanNew){
+            await supabase.from("phones").delete().eq("phone", item.phone).catch(()=>{});
           }
-        }catch(e){}
+        }
       }
-    }
+    }catch(e){}
 
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
