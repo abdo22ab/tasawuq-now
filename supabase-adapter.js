@@ -405,10 +405,19 @@ export async function setDoc(docRef, data, options = {}) {
   const row = objectToDb(data);
   const table = docRef.table;
 
-  if (table === "phones") row.phone = docRef.id;
-  else if (table === "usernames") row.username = docRef.id;
-  else if (table === "user_limits") row.uid = docRef.id;
-  else row.id = docRef.id;
+  let onConflictKey = "id";
+  if (table === "phones") {
+    row.phone = docRef.id;
+    onConflictKey = "phone";
+  } else if (table === "usernames") {
+    row.username = docRef.id;
+    onConflictKey = "username";
+  } else if (table === "user_limits") {
+    row.uid = docRef.id;
+    onConflictKey = "uid";
+  } else {
+    row.id = docRef.id;
+  }
 
   if (docRef.customFields) {
     Object.assign(row, docRef.customFields);
@@ -416,16 +425,34 @@ export async function setDoc(docRef, data, options = {}) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (!payload.username || String(payload.username).trim() === "") {
-      delete payload.username;
+    if (payload.username !== undefined) {
+      const uStr = String(payload.username || "").trim().toLowerCase();
+      if (!uStr) delete payload.username;
+      else payload.username = uStr;
+    }
+    if (payload.phone !== undefined) {
+      const pStr = String(payload.phone || "").trim();
+      if (!pStr) delete payload.phone;
+      else payload.phone = pStr;
+    }
+    if (payload.email !== undefined) {
+      const eStr = String(payload.email || "").trim();
+      if (!eStr) delete payload.email;
+      else payload.email = eStr;
+    }
+    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
+      delete payload.member_no;
     }
   }
+
   for (let attempt = 0; attempt < 6; attempt++) {
-    const { error } = await supabase.from(table).upsert(payload);
+    const { error } = await supabase.from(table).upsert(payload, { onConflict: onConflictKey });
     if (!error) return true;
     if (error.message && error.message.includes("profiles_username_key")) {
-      delete payload.username;
-      continue;
+      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
+    }
+    if (error.message && error.message.includes("profiles_phone_key")) {
+      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
@@ -445,16 +472,34 @@ export async function addDoc(colRef, data) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (!payload.username || String(payload.username).trim() === "") {
-      delete payload.username;
+    if (payload.username !== undefined) {
+      const uStr = String(payload.username || "").trim().toLowerCase();
+      if (!uStr) delete payload.username;
+      else payload.username = uStr;
+    }
+    if (payload.phone !== undefined) {
+      const pStr = String(payload.phone || "").trim();
+      if (!pStr) delete payload.phone;
+      else payload.phone = pStr;
+    }
+    if (payload.email !== undefined) {
+      const eStr = String(payload.email || "").trim();
+      if (!eStr) delete payload.email;
+      else payload.email = eStr;
+    }
+    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
+      delete payload.member_no;
     }
   }
+
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
     if (error.message && error.message.includes("profiles_username_key")) {
-      delete payload.username;
-      continue;
+      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
+    }
+    if (error.message && error.message.includes("profiles_phone_key")) {
+      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
@@ -473,7 +518,13 @@ export async function updateDoc(docRef, data) {
   // Handle increment fields:
   for (const [k, v] of Object.entries(row)) {
     if (v && v.__type === "increment") {
-      const { data: cur } = await supabase.from(table).select(k).eq("id", docRef.id).maybeSingle();
+      let req = supabase.from(table).select(k);
+      if (table === "phones") req = req.eq("phone", docRef.id);
+      else if (table === "usernames") req = req.eq("username", docRef.id);
+      else if (table === "user_limits") req = req.eq("uid", docRef.id);
+      else req = req.eq("id", docRef.id);
+
+      const { data: cur } = await req.maybeSingle();
       const curVal = cur && cur[k] != null ? Number(cur[k]) : 0;
       row[k] = curVal + v.value;
     }
@@ -481,10 +532,26 @@ export async function updateDoc(docRef, data) {
 
   let payload = { ...row };
   if (table === "profiles") {
-    if (!payload.username || String(payload.username).trim() === "") {
-      delete payload.username;
+    if (payload.username !== undefined) {
+      const uStr = String(payload.username || "").trim().toLowerCase();
+      if (!uStr) delete payload.username;
+      else payload.username = uStr;
+    }
+    if (payload.phone !== undefined) {
+      const pStr = String(payload.phone || "").trim();
+      if (!pStr) delete payload.phone;
+      else payload.phone = pStr;
+    }
+    if (payload.email !== undefined) {
+      const eStr = String(payload.email || "").trim();
+      if (!eStr) delete payload.email;
+      else payload.email = eStr;
+    }
+    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
+      delete payload.member_no;
     }
   }
+
   for (let attempt = 0; attempt < 6; attempt++) {
     let req = supabase.from(table).update(payload);
     if (table === "phones") req = req.eq("phone", docRef.id);
@@ -501,8 +568,10 @@ export async function updateDoc(docRef, data) {
     }
 
     if (error.message && error.message.includes("profiles_username_key")) {
-      delete payload.username;
-      continue;
+      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
+    }
+    if (error.message && error.message.includes("profiles_phone_key")) {
+      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
     }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
