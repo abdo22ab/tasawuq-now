@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=10";
+} from "./supabase-adapter.js?v=11";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -6817,23 +6817,31 @@ async function syncFullUserProfile(uid){
     // 2. إذا كان رقم الهاتف مفقوداً أو فارغاً في profiles، اطلبه فوراً من جدول phones بأحدث تاريخ
     if(!profData.phone){
       try {
-        const { data: pList } = await supabase.from("phones").select("*").eq("uid", uid).order("linked_at", { ascending: false }).limit(1);
+        const { data: pList, error: pErr } = await supabase.from("phones").select("*").eq("uid", uid).order("linked_at", { ascending: false }).limit(1);
+        if (pErr) console.error("phones select error:", pErr.message);
         if(pList && pList.length > 0 && pList[0].phone){
           profData.phone = pList[0].phone;
-          await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }, { onConflict: "id" }).catch(()=>{});
+          const { error: e1 } = await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }, { onConflict: "id" });
+          if (e1) console.error("profiles upsert phone error:", e1.message);
         }
-      } catch(e){}
+      } catch(e){
+        console.error("phones sync catch error:", e.message);
+      }
     }
 
     // 3. إذا كان اسم المستخدم مفقوداً في profiles، اطلبه فوراً من جدول usernames بأحدث تاريخ
     if(!profData.username){
       try {
-        const { data: uList } = await supabase.from("usernames").select("*").eq("uid", uid).order("created_at", { ascending: false }).limit(1);
+        const { data: uList, error: uErr } = await supabase.from("usernames").select("*").eq("uid", uid).order("created_at", { ascending: false }).limit(1);
+        if (uErr) console.error("usernames select error:", uErr.message);
         if(uList && uList.length > 0 && uList[0].username){
           profData.username = uList[0].username;
-          await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }, { onConflict: "id" }).catch(()=>{});
+          const { error: e2 } = await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }, { onConflict: "id" });
+          if (e2) console.error("profiles upsert username error:", e2.message);
         }
-      } catch(e){}
+      } catch(e){
+        console.error("usernames sync catch error:", e.message);
+      }
     }
 
     if(!myProfile) myProfile = {};
@@ -6988,9 +6996,10 @@ function updateAccountScreenUI(){
     if(el) el.classList.toggle("hidden", !isAdmin);
   });
 
-  if(typeof getUserWallet === 'function'){
-    getUserWallet(auth.currentUser.uid).then(wal => {
-      if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
+  const targetWalletUid = (me && me.uid) || (myProfile && (myProfile.id || myProfile.uid)) || null;
+  if(typeof getUserWallet === 'function' && targetWalletUid){
+    getUserWallet(targetWalletUid).then(wal => {
+      if(typeof updateWalletUI === 'function' && wal) updateWalletUI(wal.balance);
     }).catch(()=>{});
   }
 }
