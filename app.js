@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=15";
+} from "./supabase-adapter.js?v=5";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -40,27 +40,6 @@ console.log('🚀 تسوق الآن يعمل بالكامل عبر Supabase');
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
-const ADMIN_EMAILS=["abdoalk73@gmail.com"];
-const ADMIN_UIDS=["zoSxkP0PGPWx37J6GMQiOjVgiMC3"];
-const ADMIN_PHONES=["218928476784","0928476784","928476784"];
-const ADMIN_USERNAMES=["abd"];
-
-function checkIsAdmin(user, profile){
-  if(!user && !profile) return false;
-  if(user){
-    if(user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) return true;
-    if(user.uid && ADMIN_UIDS.includes(user.uid)) return true;
-    if(user.phoneNumber && ADMIN_PHONES.some(p => user.phoneNumber.includes(p))) return true;
-  }
-  if(profile){
-    if(profile.email && ADMIN_EMAILS.includes(profile.email.toLowerCase())) return true;
-    if(profile.id && ADMIN_UIDS.includes(profile.id)) return true;
-    if(profile.username && ADMIN_USERNAMES.includes(profile.username.toLowerCase())) return true;
-    if(profile.phone && ADMIN_PHONES.some(p => String(profile.phone).includes(p))) return true;
-  }
-  return false;
-}
-window.checkIsAdmin = checkIsAdmin;
 const ADMIN_WHATSAPP="218928476784";
 const POST_DURATION_DAYS=30;
 const POST_DURATION_MS=POST_DURATION_DAYS*24*60*60*1000;
@@ -130,7 +109,6 @@ function normalizePhone(p){
   if (s.startsWith("00218")) s = s.slice(5);
   else if (s.startsWith("218")) s = s.slice(3);
   while (s.startsWith("0")) s = s.slice(1);
-  if (!s || s.length < 8) return "";
   return "218" + s;
 }
 window.normalizePhone = normalizePhone;
@@ -154,101 +132,6 @@ function validatePhone(p){
 }
 window.validatePhone = validatePhone;
 
-// نافذة تأكيد عصرية بديلة لـ window.confirm لمنع حجب المتصفح للرسائل المتتالية
-function showConfirmModal(message, options = {}){
-  return new Promise((resolve) => {
-    let overlay = document.getElementById('appConfirmModalOverlay');
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.id = 'appConfirmModalOverlay';
-      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      document.body.appendChild(overlay);
-    }
-    const title = options.title || 'تأكيد الإجراء';
-    const confirmText = options.confirmText || 'نعم، تأكيد';
-    const cancelText = options.cancelText || 'إلغاء';
-    const isDanger = options.danger !== false;
-
-    overlay.innerHTML = `
-      <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.25);font-family:'Cairo',sans-serif;animation:popIn .2s ease-out">
-        <div style="font-size:38px;margin-bottom:8px">${options.icon || (isDanger ? '⚠️' : '❓')}</div>
-        <div style="font-weight:900;font-size:16px;color:#0f172a;margin-bottom:8px">${title}</div>
-        <div style="font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:20px;white-space:pre-line">${escapeHtml(message)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <button id="appConfirmCancelBtn" style="padding:11px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${cancelText}</button>
-          <button id="appConfirmOkBtn" style="padding:11px;border:none;background:${isDanger ? '#e5484d' : '#0284c7'};color:#fff;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${confirmText}</button>
-        </div>
-      </div>
-    `;
-    overlay.style.display = 'flex';
-
-    function cleanUp(result){
-      overlay.style.display = 'none';
-      resolve(result);
-    }
-
-    const okBtn = overlay.querySelector('#appConfirmOkBtn');
-    const cancelBtn = overlay.querySelector('#appConfirmCancelBtn');
-    if(okBtn) okBtn.onclick = () => cleanUp(true);
-    if(cancelBtn) cancelBtn.onclick = () => cleanUp(false);
-  });
-}
-window.showConfirmModal = showConfirmModal;
-
-// نافذة إدخال عصرية بديلة لـ window.prompt لمنع تجميد الشاشة أو الحظر في PWA
-function showPromptModal(message, defaultValue = '', options = {}){
-  return new Promise((resolve) => {
-    let overlay = document.getElementById('appPromptModalOverlay');
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.id = 'appPromptModalOverlay';
-      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      document.body.appendChild(overlay);
-    }
-    const title = options.title || 'إدخال بيانات';
-    const confirmText = options.confirmText || 'تأكيد';
-    const cancelText = options.cancelText || 'إلغاء';
-    const placeholder = options.placeholder || '';
-    const inputType = options.inputType || 'text';
-
-    overlay.innerHTML = `
-      <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 12px 36px rgba(0,0,0,0.25);font-family:'Cairo',sans-serif;animation:popIn .2s ease-out">
-        <div style="font-size:38px;margin-bottom:8px">${options.icon || '✏️'}</div>
-        <div style="font-weight:900;font-size:16px;color:#0f172a;margin-bottom:8px">${title}</div>
-        <div style="font-size:13.5px;color:#475569;line-height:1.6;margin-bottom:14px;white-space:pre-line">${escapeHtml(message)}</div>
-        <input id="appPromptModalInput" type="${inputType}" value="${escapeHtml(defaultValue || '')}" placeholder="${escapeHtml(placeholder)}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:16px;outline:none" />
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <button id="appPromptCancelBtn" style="padding:11px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${cancelText}</button>
-          <button id="appPromptOkBtn" style="padding:11px;border:none;background:#0284c7;color:#fff;border-radius:10px;font-weight:800;font-family:inherit;font-size:13.5px;cursor:pointer">${confirmText}</button>
-        </div>
-      </div>
-    `;
-    overlay.style.display = 'flex';
-
-    const input = overlay.querySelector('#appPromptModalInput');
-    const okBtn = overlay.querySelector('#appPromptOkBtn');
-    const cancelBtn = overlay.querySelector('#appPromptCancelBtn');
-
-    function cleanUp(val){
-      overlay.style.display = 'none';
-      resolve(val);
-    }
-
-    if(input){
-      setTimeout(() => {
-        try { input.focus(); input.select(); } catch(e){}
-      }, 50);
-      input.onkeydown = (e) => {
-        if(e.key === 'Enter') cleanUp(input.value);
-        if(e.key === 'Escape') cleanUp(null);
-      };
-    }
-    if(okBtn) okBtn.onclick = () => cleanUp(input ? input.value : '');
-    if(cancelBtn) cancelBtn.onclick = () => cleanUp(null);
-  });
-}
-window.showPromptModal = showPromptModal;
-
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
 window.normalizePhoneInput=()=>{
   const i=document.getElementById("myPhone");
@@ -268,23 +151,7 @@ async function setUserLimit(uid,limit,extra={}){try{const data={limit:Number(lim
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 let currentSort="newest",currentPriceMin=null,currentPriceMax=null,currentAdTypeFilter="all";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
-function saveCachedProfile(prof){
-  if(!prof) return;
-  try {
-    localStorage.setItem("tasawuq_cached_profile", JSON.stringify(prof));
-  } catch(e){}
-}
-window.saveCachedProfile = saveCachedProfile;
-
-let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null;
-let myProfile = (() => {
-  try {
-    const cp = localStorage.getItem("tasawuq_cached_profile");
-    return cp ? JSON.parse(cp) : null;
-  } catch(e) { return null; }
-})();
-window.myProfile = myProfile;
-let myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
+let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
 let cart={storeId:null,storeName:"",storePhone:"",items:[]};
 let myFollowing=[];
 let unsubFollowing=null;
@@ -296,12 +163,6 @@ let editStoreLogoImage=null;
 let editStoreCurrentId=null;
 let _tempStoreData=null;
 let currentStoreHelpers=[];
-window._globalChatPollerTimer = null;
-window._globalOrdersPollerTimer = null;
-window._chatRealtimeChannel = null;
-window._globalLastChatCheckTs = Date.now() - (120 * 1000);
-window._globalSeenMsgIds = new Set();
-window._globalLastSeenOrderNo = 0;
 let compareList=[];
 try{compareList=JSON.parse(localStorage.getItem('compareList')||'[]');}catch(e){compareList=[];}
 function saveCompare(){try{localStorage.setItem('compareList',JSON.stringify(compareList));}catch(e){}}
@@ -309,7 +170,7 @@ function saveCompare(){try{localStorage.setItem('compareList',JSON.stringify(com
 function isRestaurantStore(store){return !!(store && isRestaurantCategory(store.category));}
 
 let _toastTimer=null;
-function showToast(text,type="info",duration=2200,onClick=null){
+function showToast(text,type="info",duration=2200){
   let t=document.getElementById("globalToast");
   if(!t){
     t=document.createElement("div");
@@ -319,17 +180,6 @@ function showToast(text,type="info",duration=2200,onClick=null){
   }
   t.textContent=text;
   t.className="toast "+type;
-  if(typeof onClick === "function"){
-    t.style.cursor = "pointer";
-    t.onclick = (e) => {
-      e.stopPropagation();
-      t.classList.remove("show");
-      onClick();
-    };
-  } else {
-    t.style.cursor = "default";
-    t.onclick = null;
-  }
   void t.offsetWidth;
   t.classList.add("show");
   if(_toastTimer)clearTimeout(_toastTimer);
@@ -593,11 +443,6 @@ async function addPoints(uid, amount, title, activity){
       updatedAt: Date.now()
     }, { merge: true });
     if(uid === (auth.currentUser && auth.currentUser.uid)){
-      myPoints = newPoints;
-      myHistory = history;
-      if(typeof updateTier === 'function') updateTier();
-      if(typeof renderPoints === 'function') renderPoints();
-      if(typeof updatePointsBadge === 'function') updatePointsBadge();
       showToast(`🏆 ${amount > 0 ? '+' : ''}${amount} نقطة — ${title}`, 'success', 2500);
     }
   } catch(e){
@@ -606,9 +451,7 @@ async function addPoints(uid, amount, title, activity){
 }
 window.addPoints = addPoints;
 
-let _isRedeemingReward = false;
 window.redeemReward = async function(rewardId){
-  if(_isRedeemingReward) return;
   if(!auth.currentUser){
     showToast('⚠️ سجّل دخولك أولاً', 'warn');
     return;
@@ -620,18 +463,8 @@ window.redeemReward = async function(rewardId){
     showToast(`⚠️ تحتاج ${discountedCost - myPoints} نقطة إضافية`, 'warn');
     return;
   }
-  const confirmed = await showConfirmModal(`استبدال ${discountedCost} نقطة بـ "${reward.title}"؟`, { confirmText: "نعم، استبدال" });
-  if(!confirmed) return;
-  _isRedeemingReward = true;
+  if(!confirm(`استبدال ${discountedCost} نقطة بـ "${reward.title}"؟`)) return;
   try{
-    // فحص رصيد النقاط الفعلي من قاعدة البيانات لمنع التكرار بالتزامن
-    const userRef = doc(db, 'userPoints', auth.currentUser.uid);
-    const snap = await getDoc(userRef);
-    const actualPoints = (snap.exists() && snap.data().points) || 0;
-    if(actualPoints < discountedCost){
-      showToast('⚠️ رصيدك الفعلي من النقاط غير كافٍ لإتمام الاستبدال', 'warn');
-      return;
-    }
     await addPoints(auth.currentUser.uid, -discountedCost, `استبدال: ${reward.title}`, 'redeem');
     await addDoc(collection(db, 'userRedemptions'), {
       uid: auth.currentUser.uid,
@@ -647,8 +480,6 @@ window.redeemReward = async function(rewardId){
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, '_blank');
   } catch(e){
     showToast('❌ خطأ: ' + e.message, 'error');
-  } finally {
-    _isRedeemingReward = false;
   }
 };
 
@@ -745,10 +576,6 @@ function getWheelStatus(){
   try{
     const data = JSON.parse(localStorage.getItem(WHEEL_STORAGE_KEY) || 'null');
     if(!data || !data.timestamp) return { canSpin: true, lastSpin: 0 };
-    if(data.timestamp > Date.now() + 60000){
-      localStorage.removeItem(WHEEL_STORAGE_KEY);
-      return { canSpin: true, lastSpin: 0 };
-    }
     const elapsed = Date.now() - data.timestamp;
     return {
       canSpin: elapsed >= WHEEL_COOLDOWN_MS,
@@ -829,11 +656,6 @@ function startWheelCooldown(){
 
 window.spinLuckyWheel = async function(){
   if(wheelSpinning) return;
-  if(!auth.currentUser){
-    showToast('⚠️ يرجى تسجيل الدخول أولاً لتدوير العجلة وحفظ جوائزك', 'warn');
-    if(typeof openAuthModal === 'function') openAuthModal();
-    return;
-  }
   const status = getWheelStatus();
   if(!status.canSpin){
     showToast('⏰ العجلة مغلقة، تعال بعد', 'warn');
@@ -1235,12 +1057,6 @@ const termsOverlay=document.getElementById("termsOverlay"),privacyOverlay=docume
 const editStoreOverlay=document.getElementById("editStoreOverlay");
 const feedbackOverlay=document.getElementById("feedbackOverlay");
 
-export function openAuthModal(){
-  const overlay = document.getElementById("authOverlay");
-  if(overlay) overlay.classList.remove("hidden");
-}
-window.openAuthModal = openAuthModal;
-
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
 
@@ -1277,9 +1093,8 @@ window.addStoreHelper=()=>{
   renderStoreHelpersList();
   showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات","success",3000);
 };
-window.removeStoreHelper=async(index)=>{
-  const ok = await showConfirmModal("هل تريد إزالة هذا المساعد من المتجر؟", { isDanger: true, confirmText: "إزالة" });
-  if(!ok) return;
+window.removeStoreHelper=(index)=>{
+  if(!confirm("حذف هذا المساعد؟"))return;
   currentStoreHelpers.splice(index,1);
   renderStoreHelpersList();
   showToast("✅ تم الحذف — لا تنسى حفظ التعديلات","success",3000);
@@ -1437,9 +1252,6 @@ function pushNavState(stateObj, hash) {
 window.pushNavState = pushNavState;
 
 function getActiveTopView() {
-  const sv = document.getElementById("storyViewerOverlay");
-  if (sv && !sv.classList.contains("hidden")) return { type: 'storyViewer' };
-
   const lb = document.getElementById("lightbox");
   if (lb && !lb.classList.contains("hidden")) return { type: 'lightbox' };
 
@@ -1449,22 +1261,10 @@ function getActiveTopView() {
   const tp = document.getElementById("transferPostsOverlay");
   if (tp) return { type: 'customOverlay', el: tp };
 
+  if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
+
   const openOverlay = document.querySelector(".overlay:not(.hidden)");
   if (openOverlay) return { type: 'overlay', el: openOverlay };
-
-  const cashSc = document.getElementById("restaurantCashierScreen");
-  if (cashSc && !cashSc.classList.contains("hidden")) return { type: 'cashier' };
-
-  const chatSc = document.getElementById("userChatOverlay");
-  if (chatSc && !chatSc.classList.contains("hidden")) return { type: 'chat' };
-
-  const inboxSc = document.getElementById("inboxScreen");
-  if (inboxSc && !inboxSc.classList.contains("hidden")) return { type: 'inbox' };
-
-  const accSc = document.getElementById("accountScreen");
-  if (accSc && !accSc.classList.contains("hidden")) return { type: 'account' };
-
-  if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
 
   const sc = document.getElementById("storeScreen");
   if (sc && !sc.classList.contains("hidden")) return { type: 'store' };
@@ -1489,31 +1289,18 @@ function performBackAction() {
   const top = getActiveTopView();
   if (!top) return false;
 
-  if (top.type === 'storyViewer') {
-    closeStoryViewerDirect();
-    return true;
-  }
   if (top.type === 'lightbox') {
     if (typeof closeLightboxDirect === 'function') closeLightboxDirect();
     else { const lb = document.getElementById("lightbox"); if (lb) lb.classList.add("hidden"); }
     return true;
   }
+  if (top.type === 'storyModal') {
+    if (typeof closeStoryModalDirect === 'function') closeStoryModalDirect();
+    else { const sm = document.getElementById("storyModalOverlay"); if (sm) sm.classList.add("hidden"); }
+    return true;
+  }
   if (top.type === 'customOverlay') {
     if (top.el && top.el.remove) top.el.remove();
-    return true;
-  }
-  if (top.type === 'overlay') {
-    closeOverlayDirect();
-    return true;
-  }
-  if (top.type === 'cashier') {
-    if (typeof closeRestaurantCashierDirect === 'function') closeRestaurantCashierDirect();
-    else closeRestaurantCashier();
-    return true;
-  }
-  if (top.type === 'account') {
-    if (typeof backFromAccountDirect === 'function') backFromAccountDirect();
-    else { const as = document.getElementById("accountScreen"); if (as) as.classList.add("hidden"); showCategoriesScreenDirect(); }
     return true;
   }
   if (top.type === 'post') {
@@ -1572,7 +1359,6 @@ function showCategoriesScreenDirect(){
   categoriesScreen.classList.remove("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
-  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("sticky");
   renderRecentlyViewed();updateCartUI();updateCompareUI();window.scrollTo(0,0);
   showFloatingButtons();
@@ -1593,13 +1379,9 @@ function openCategoryDirect(cat){
   categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");
   const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
-  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
-  const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   closeOverlayDirect();setActiveNav("home");setTopbarMode("scroll");
   const cr=document.getElementById("catsRow");
   if(cr) cr.classList.toggle("hidden", cat!=="الكل");
-  const carBar = document.getElementById("carBrandsQuickBar");
-  if(carBar) carBar.style.display = (cat === "سيارات ومركبات") ? "flex" : "none";
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
   renderSubCats();renderPosts();updateCartUI();window.scrollTo(0,0);
   hideFloatingButtons();
@@ -1608,37 +1390,6 @@ window.openCategoryDirect=openCategoryDirect;
 window.openCategory=(cat,skipHistory)=>{
   openCategoryDirect(cat);
   if(!skipHistory) pushNavState({ screen: 'category', cat: cat }, '#cat-' + encodeURIComponent(cat || 'all'));
-};
-
-window.pickCarBrandFilter = function(brand){
-  document.querySelectorAll(".carBrandPill").forEach(p => {
-    p.classList.toggle("active", p.textContent.includes(brand));
-  });
-  if(brand === "الكل"){
-    currentSubCategory = "الكل";
-  } else {
-    currentSubCategory = brand;
-  }
-  renderPosts();
-};
-
-window.submitCatSearch = function(){
-  const catInput = document.getElementById("searchInputCat");
-  const homeInput = document.getElementById("searchInput");
-  const query = (catInput ? catInput.value : "").trim();
-  if(homeInput) homeInput.value = query;
-  
-  const carBrandsLower = CAR_BRANDS.map(b => b.toLowerCase());
-  const isCarSearch = query && (query.includes("سيار") || carBrandsLower.some(b => query.toLowerCase().includes(b)));
-  
-  if(isCarSearch){
-    openCategory("سيارات ومركبات");
-  } else {
-    openCategory("الكل");
-  }
-  
-  if(query && typeof searchServerPosts === "function") searchServerPosts(query);
-  renderPosts();
 };
 
 function backFromFormDirect(){
@@ -1711,6 +1462,7 @@ async function searchServerPosts(term){
   if(!term || term.trim().length < 2) return;
   const cleanTerm = term.trim().toLowerCase();
   if(_serverSearchCache[cleanTerm]) return;
+  _serverSearchCache[cleanTerm] = true;
 
   try {
     const seenIds = new Set(allPosts.map(p => p.id));
@@ -1722,15 +1474,8 @@ async function searchServerPosts(term){
       .order('created_at', { ascending: false })
       .limit(30);
 
-    if (error) {
-      delete _serverSearchCache[cleanTerm];
-      console.warn("Supabase search error:", error);
-      return;
-    }
-
-    _serverSearchCache[cleanTerm] = true;
     let addedCount = 0;
-    if (data) {
+    if (!error && data) {
       data.forEach(item => {
         const p = objectFromDb(item);
         if(!seenIds.has(p.id)){
@@ -1746,7 +1491,6 @@ async function searchServerPosts(term){
       renderPosts();
     }
   } catch(err){
-    delete _serverSearchCache[cleanTerm];
     console.warn("Server search error:", err);
   }
 }
@@ -1762,7 +1506,7 @@ if(searchInputEl){
     _searchDebounceTimer=setTimeout(()=>{
       if(v.trim().length>=2){searchServerPosts(v.trim());}
       if(typeof renderPosts==='function')renderPosts();
-    },400);
+    },300);
   });
   searchInputEl.addEventListener('focus',function(){if(typeof showSearchDropdown==='function')showSearchDropdown();});
 }
@@ -1771,13 +1515,7 @@ if(clearSearchBtnEl){clearSearchBtnEl.addEventListener('click',function(e){e.pre
 function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
-async function clearSearchHistory(event){
-  if(event)event.stopPropagation();
-  const confirmed = await showConfirmModal("مسح كل سجل البحث السابق؟", { confirmText: "مسح السجل" });
-  if(!confirmed) return;
-  try{localStorage.removeItem('searchHistory');}catch(e){}
-  showSearchDropdown();
-}
+function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
 function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
 
 window.showSearchDropdown=function(){
@@ -1924,17 +1662,16 @@ window.openStoreRating=async(storeId)=>{
   if(!me){pendingAction={type:"storeRating",storeId};authOverlay.classList.remove("hidden");return;}
   const ratings=await loadStoreRatings(storeId);
   const mine=ratings.find(r=>r.raterUid===me.uid);
-  const stars = await showPromptModal(`⭐ قيّم المتجر (من 1 إلى 5 نجوم):\n${mine?"تقييمك الحالي: "+mine.stars:"لم تقيّم بعد"}`, mine ? String(mine.stars) : "5", { title: "تقييم المتجر", icon: "⭐", inputType: "number", confirmText: "التالي" });
+  const stars=prompt(`⭐ قيّم المتجر (1-5)\n${mine?"تقييمك الحالي: "+mine.stars:"لم تقيّم بعد"}`,mine?String(mine.stars):"5");
   if(stars===null) return;
   const s=parseInt(stars,10);
   if(isNaN(s)||s<1||s>5){showToast("⚠️ اختر من 1 إلى 5","warn");return;}
-  const comment = await showPromptModal("💬 أضف تعليقاً على تجربتك (اختياري):", mine ? (mine.comment || "") : "", { title: "تعليق على المتجر", icon: "💬", confirmText: "حفظ التقييم", placeholder: "أخبرنا عن جودة الخدمة والمنتجات..." });
-  if(comment===null) return;
+  const comment=prompt("💬 تعليق (اختياري):",mine?(mine.comment||""):"")||"";
   try{
     await setDoc(doc(db,"storeRatings",storeId+"_"+me.uid),{
       storeId,raterUid:me.uid,
       raterName:(myProfile&&myProfile.name)||me.displayName||"مستخدم",
-      stars:s,comment:(comment||"").trim().slice(0,300),createdAt:Date.now()
+      stars:s,comment:comment.trim().slice(0,300),createdAt:Date.now()
     });
     delete allStoreRatings[storeId];
     await loadStoreRatings(storeId);
@@ -2158,7 +1895,7 @@ function renderKshFoodItemHtml(p, canManage){
         ${actionsHtml}
       </div>
       <div class="kshPic">
-        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}" onerror="this.onerror=null;this.outerHTML='<div class=\\'kshPicEmoji\\'>🍔</div>'">` : '<div class="kshPicEmoji">🍔</div>'}
+        ${th ? `<img src="${escapeHtml(th)}" alt="${escapeHtml(p.title||'')}">` : '<div class="kshPicEmoji">🍔</div>'}
         ${addBtnHtml}
       </div>
     </div>
@@ -2276,7 +2013,7 @@ function renderStoreProducts(){
     }
     const cartRow=cartBtnHtml?`<div style="display:flex;gap:6px;margin-top:6px;align-items:center">${cartBtnHtml}</div>`:"";
     const viewsLine=canManage?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
-    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5\\'>🖼️</div>'"/>`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
+    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -2407,10 +2144,6 @@ function updateSEOMeta(post){
    ============================================ */
 window.toggleCompare=(postId,event)=>{
   if(event){event.stopPropagation();event.preventDefault();}
-  if(allPosts && allPosts.length > 0){
-    const validIds = new Set(allPosts.map(p => p.id));
-    compareList = compareList.filter(id => validIds.has(id));
-  }
   const idx=compareList.indexOf(postId);
   if(idx>=0){compareList.splice(idx,1);}
   else{
@@ -2422,10 +2155,6 @@ window.toggleCompare=(postId,event)=>{
 function updateCompareUI(){
   const fab=document.getElementById("compareFAB");
   if(!fab)return;
-  if(allPosts && allPosts.length > 0){
-    const validIds = new Set(allPosts.map(p => p.id));
-    compareList = compareList.filter(id => validIds.has(id));
-  }
   if(compareList.length>0){
     fab.classList.remove("fabOff");
     fab.innerHTML=`⚖️ قارن (${compareList.length})`;
@@ -2531,19 +2260,13 @@ async function loadPostsBatch(isInitial = false) {
   } catch (err) {
     console.warn("Error loading posts batch:", err);
     if (isInitial && allPosts.length === 0) {
-      postsBox.innerHTML = `<div class='empty' style='padding:30px 16px;text-align:center'>
-        <div style='font-size:32px;margin-bottom:8px'>📡</div>
-        <div style='font-weight:800;font-size:15px;margin-bottom:6px'>تعذر تحميل الإعلانات حالياً</div>
-        <div style='color:var(--muted);font-size:13px;margin-bottom:14px'>تأكد من اتصالك بالإنترنت واضغط زر إعادة المحاولة</div>
-        <button class='btnMain' onclick='window.loadPostsBatch && window.loadPostsBatch(true)' style='max-width:200px;margin:0 auto;padding:10px 18px;font-size:14px'>🔄 إعادة المحاولة</button>
-      </div>`;
+      postsBox.innerHTML = "<div class='empty'>تعذر تحميل الإعلانات. يرجى إعادة المحاولة.</div>";
     }
   } finally {
     isLoadingPostsBatch = false;
     if (btn) btn.disabled = false;
   }
 }
-window.loadPostsBatch = loadPostsBatch;
 
 function updateLoadMoreButton() {
   let btn = document.getElementById("loadMorePostsBtn");
@@ -2956,17 +2679,6 @@ const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCas
 const favs=getFavorites();
 const me=auth.currentUser;
 
-// خريطة سريعة للمتاجر وعدد إعلانات البائع لتسريع الرسم من O(n²) إلى O(n) الفوري
-const storesMap = new Map();
-(allStores || []).forEach(s => storesMap.set(s.id, s));
-
-const sellerApprovedCountMap = new Map();
-allPosts.forEach(x => {
-  if(!x.storeId && x.uid && getStatus(x) === "approved"){
-    sellerApprovedCountMap.set(x.uid, (sellerApprovedCountMap.get(x.uid) || 0) + 1);
-  }
-});
-
 // إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
 if(isRestaurantCategory(currentCategory)){
   const _hrb=document.getElementById("homeRestaurantsBox");if(_hrb){_hrb.innerHTML="";_hrb.classList.add("hidden");}
@@ -2993,12 +2705,12 @@ let list=allPosts.filter(p=>{
   const isOwner=me&&p.uid===me.uid;
   const isMyStorePost=myStore&&p.storeId===myStore.id;
   const expired=isExpired(p);
-  if(expired && !showOnlyMine)return false;
-  if(status!=="approved" && !showOnlyMine)return false;
+  if(expired && !isOwner && !isAdmin && !isMyStorePost)return false;
+  if(status!=="approved" && !isOwner && !isAdmin && !isMyStorePost)return false;
   if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;
 
   // استبعاد وجبات المطاعم الفردية من قسم الكل عشان ما تتبعثرش وسط الإعلانات
-  const postStore=p.storeId?storesMap.get(p.storeId):null;
+  const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
   const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
   if(!currentStoreFilter && isRestaurantPost && (currentCategory==="الكل" || !isRestaurantCategory(currentCategory))){
     return false;
@@ -3054,19 +2766,13 @@ if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && 
   if(currentCity!=="الكل"){
     approvedRests=approvedRests.filter(s=>s.city===currentCity);
   }
-  const storePostsMap = new Map();
-  allPosts.forEach(p => {
-    if(p.storeId && getStatus(p) === "approved"){
-      const pt = Number(p.createdAt) || 0;
-      const prev = storePostsMap.get(p.storeId) || 0;
-      if(pt > prev) storePostsMap.set(p.storeId, pt);
-    }
-  });
-
   approvedRests.forEach(s=>{
     let restTime=Number(s.createdAt)||Number(s.approvedAt)||0;
-    const latestPostTime = storePostsMap.get(s.id) || 0;
-    if(latestPostTime > restTime) restTime = latestPostTime;
+    const storePosts=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved");
+    storePosts.forEach(p=>{
+      const pt=Number(p.createdAt)||0;
+      if(pt>restTime) restTime=pt;
+    });
     list.push({
       isRestaurantStructure:true,
       storeData:s,
@@ -3105,7 +2811,7 @@ const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&p.uid===me
 const expired=isExpired(p);const days=daysLeft(p);const isSold=!!p.sold;
 const wanted=isWanted(p);
 const images=getImages(p);const dots=dotsHtml(images);
-const postStore=p.storeId?storesMap.get(p.storeId):null;
+const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
 const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
 const cleanPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const contactBtn=(p.phone && !isSold)
@@ -3118,7 +2824,6 @@ const edit=canDelete?`<button class="iconBtn2 editBtn" onclick="editPost('${p.id
 const del=canDelete?`<button class="iconBtn2 delBtn" onclick="deletePost('${p.id}')">🗑️</button>`:"";
 const renewBtn=canDelete && !isSold?`<button class="iconBtn2 renewBtn" onclick="renewPost('${p.id}',event)" title="تجديد 30 يوم">🔄</button>`:"";
 const soldToggle=canDelete?`<button class="iconBtn2 soldBtn" onclick="toggleSold('${p.id}',event)" title="${isSold?'إلغاء البيع':'تم البيع'}">${isSold?'↩️':'✅'}</button>`:"";
-const storyBtn="";
 const feat=isAdmin?`<button class="iconBtn2 featBtn ${isPostFeatured(p)?'on':''}" onclick="toggleFeatured('${p.id}',event)">${isPostFeatured(p)?'⭐':'☆'}</button>`:"";
 const fav=isFavorite(p.id);
 const inCompare=compareList.includes(p.id);
@@ -3135,7 +2840,7 @@ const brandTag=p.brand?`<span class="brandTag">${escapeHtml(p.brand)}</span>`:`<
 const memberTag=p.sellerMemberNo?`<span class="memberNoBadge" style="margin-left:6px">#${p.sellerMemberNo}</span>`:"";
 const userTag=p.sellerUsername?`<span class="usernameBadge" style="margin-left:6px">@${escapeHtml(p.sellerUsername)}</span>`:"";
 const storeTag=p.storeId?`<span class="storeBadge" style="margin-left:6px">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`:"";
-const sellerPostsCount=(!p.storeId && p.uid) ? (sellerApprovedCountMap.get(p.uid) || 0) : 0;
+const sellerPostsCount=!p.storeId && p.uid ? allPosts.filter(x=>x.uid===p.uid && getStatus(x)==="approved").length : 0;
 const tierTag=!p.storeId && sellerPostsCount>0 ? renderSellerTierBadge(p.uid,sellerPostsCount) : "";
 const sellerLineHtml=p.storeId?`<div class="sellerLine" onclick="event.stopPropagation();openStore('${p.storeId}',false,'home')">${storeTag} ›</div>`:(p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ${userTag}${tierTag} ›</div>`:"");
 let expiryLine="";
@@ -3155,7 +2860,7 @@ if(p.priceType==="contact"){
 }else{
   priceHTML=`<div class="price">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadge}</div>`;
 }
-return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${storyBtn}${edit}${del}${renewBtn}</div></div></div>`;
+return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 }).join("");
 }
 
@@ -3185,7 +2890,9 @@ const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
 const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
-const chatSellerBtn="";
+const chatSellerBtn=(!isSold && p.uid && !isOwner)
+  ? `<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}','${escapeHtml(p.id)}')">💬 دردشة فورية مع البائع</button>`
+  : "";
 
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
@@ -3198,7 +2905,7 @@ const contactBtn=(p.phone && !isSold)
   : "";
 
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
-const shareBtn=(status==="approved" && !expired)?`<div style="margin-bottom:8px"><button class="btnMain" style="width:100%;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة رابط الإعلان</button></div>`:"";
+const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`:"";
 const viewsBadge=(isOwner||isAdmin||isMyStorePost)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
 let statusBadge="";
 if(isOwner||isAdmin||isMyStorePost){if(status==="pending")statusBadge=`<span class="statusBadge pending">⏳ قيد المراجعة</span>`;else if(status==="rejected")statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
@@ -3217,7 +2924,6 @@ const renewBtnBig=(isOwner||isAdmin||isMyStorePost) && !isSold?`<button class="r
 const soldBtnBig=(isOwner||isAdmin||isMyStorePost)?(isSold?`<button class="unsoldBtnBig" onclick="toggleSold('${p.id}')">↩️ إلغاء (تم البيع)</button>`:`<button class="soldBtnBig" onclick="toggleSold('${p.id}')">✅ تم البيع</button>`):"";
 let upgradeBtn="";
 if(isOwner && status==="approved" && !expired && !isSold){if(isPostFeatured(p))upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;else upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;}
-const storyBtnBig="";
 let adminPanel="";
 if(isAdmin){
 if(status==="pending")adminPanel=`<div class="reviewBox"><div class="rbTitle">⏳ بانتظار المراجعة</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button><button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button></div></div>`;
@@ -3251,7 +2957,7 @@ if(p.priceType==="contact"){
   priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
 }
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${storyBtnBig}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
@@ -3295,30 +3001,10 @@ const wasEditing=!!editingPostId;
 const userPhone=(myProfile&&myProfile.phone)||"";
 const isStorePostFlag=!!window._isStorePost;
 const storeForPhone=isStorePostFlag && _tempStoreData ? _tempStoreData : myStore;
-const rawInputPhone = (document.getElementById("phone")?.value || "").trim();
-let phone = "";
-if(isStorePostFlag && storeForPhone && (storeForPhone.phone || storeForPhone.callPhone)){
-  phone = normalizePhone(storeForPhone.phone || storeForPhone.callPhone);
-} else {
-  phone = normalizePhone(rawInputPhone || userPhone);
-}
+const phone=(isStorePostFlag && storeForPhone && storeForPhone.phone) ? storeForPhone.phone : userPhone;
 const adType=document.querySelector('input[name="adType"]:checked')?.value||"offer";
 const originalPrice=parseFloat(document.getElementById("originalPrice")?.value)||0;
-if(!phone || phone === "218"){showToast("❌ يجب كتابة رقم الواتساب للتواصل في الإعلان.","error");return;}
-
-// حفظ وربط الرقم بالبروفايل تلقائياً إذا كان جديداً
-if(!isStorePostFlag && phone && auth.currentUser){
-  if(!userPhone || userPhone !== phone){
-    reservePhone(auth.currentUser, phone, userPhone).then(res=>{
-      if(res.ok){
-        if(!myProfile) myProfile={};
-        myProfile.phone = res.value;
-        saveCachedProfile(myProfile);
-        updateAccountScreenUI();
-      }
-    }).catch(()=>{});
-  }
-}
+if(!phone){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
 const sellerName=(myProfile&&myProfile.name)||defaultName(auth.currentUser);
 const sellerMemberNo=(myProfile&&myProfile.memberNo)||null;
 const sellerUsername=(myProfile&&myProfile.username)||"";
@@ -3364,32 +3050,16 @@ if(!subCategory){
 }
 const postKeywords=generateKeywords(title, description, brand, category, city, specs);
 if(wasEditing){
-  const oldPost=allPosts.find(p=>p.id===editingPostId);
-  if(!oldPost){
-    showToast("❌ هذا الإعلان غير موجود أو تم حذفه مسبقاً","error");
-    return;
-  }
-  const isMyStorePost = (myStore && oldPost.storeId === myStore.id) || (storeToUse && oldPost.storeId === storeToUse.id);
-  const isOwner = auth.currentUser && (auth.currentUser.uid === oldPost.uid || isMyStorePost);
-  if(!isOwner && !isAdmin){
-    showToast("❌ ليس لديك صلاحية تعديل هذا الإعلان","error");
-    return;
-  }
-  const originalData={title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone};
-  const newExpires=oldPost.expiresAt ? oldPost.expiresAt : (Date.now()+POST_DURATION_MS);
-  const newStatus = isAdmin ? "approved" : "pending";
-  const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:newStatus,approvedAt:newStatus==="approved"?(oldPost.approvedAt||Date.now()):null,rejectReason:null,wasEdited:true,originalData:{...originalData,specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
-  if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
-  await updateDoc(doc(db,"posts",editingPostId),upd);
-  Object.assign(oldPost, upd);
-  renderPosts();
-  showToast(isAdmin ? "✅ تم حفظ تعديلات الإعلان بنجاح" : "✅ تم حفظ التعديل، وبانتظار مراجعة الإدارة", "success");
+const oldPost=allPosts.find(p=>p.id===editingPostId);
+const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
+const newExpires=Date.now()+POST_DURATION_MS;
+const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
+await updateDoc(doc(db,"posts",editingPostId),upd);
 }
 else{
   const now=Date.now();
-  const isAutoApprove = isAdmin || isStore;
-  const postStatus = isAutoApprove ? "approved" : "pending";
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:postStatus,approvedAt:isAutoApprove?now:null,createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
   if(isStore){
     base.storeId=storeToUse.id;
     base.storeName=storeToUse.name;
@@ -3398,51 +3068,47 @@ else{
     base.phone=storeToUse.phone||"";
     base.callPhone=storeToUse.callPhone||storeToUse.phone||"";
     base.uid=storeToUse.ownerUid||auth.currentUser.uid;
+    // base.email=storeToUse.ownerEmail||auth.currentUser.email||""; // تم إيقافها لحماية خصوصية المستخدم ومنع تسريب الإيميل
     base.addedBy=auth.currentUser.uid;
+    if(isAdmin){
+      base.status="approved";
+      base.approvedAt=now;
+    }
   }
   else{
     base.uid=auth.currentUser.uid;
+    // base.email=auth.currentUser.email||""; // تم إيقافها لحماية خصوصية المستخدم ومنع تسريب الإيميل
     base.sellerName=sellerName;
     base.sellerMemberNo=sellerMemberNo;
     base.sellerUsername=sellerUsername;
   }
-  const newDocRef = await addDoc(collection(db,"posts"),base);
-  const newPostObj = { id: newDocRef.id, ...base };
-  if(isAutoApprove){
-    allPosts.unshift(newPostObj);
-    renderPosts();
-    showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم نشر إعلانك بنجاح وهو متاح للجميع الآن!","success");
-    addPoints(auth.currentUser.uid, 5, '📝 نشر وقبول إعلان جديد', 'post_create');
-    sendPostToTelegram(newPostObj);
-  } else {
-    allPendingPosts.unshift(newPostObj);
-    allPosts.unshift(newPostObj);
-    updateModBadge();
-    renderPosts();
-    showToast("✅ تم إرسال إعلانك بنجاح وهو قيد المراجعة لدى الإدارة لنشره واحتساب النقاط فور الموافقة!","success",5000);
-  }
+  await addDoc(collection(db,"posts"),base);
+  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
+  addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
   if(isStore && window._currentStoreId){
     setTimeout(()=>openStore(window._currentStoreId, true), 300);
   }
 }
-  document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
-  if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
-  if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
-  const _cCb2=document.getElementById("contactPrice");if(_cCb2)_cCb2.checked=false;
-  const _nCb2=document.getElementById("negotiablePrice");if(_nCb2)_nCb2.checked=false;
-  onPriceTypeChange();
-  selectedImages=[];renderImagePicker();
-  currentFormSpecsState={};
-  const _dynC=document.getElementById("dynamicSpecsContainer");
-  if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}
-  editingPostId=null;
-  _tempStoreData=null;
-  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
-  if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
+editingPostId=null;
+_tempStoreData=null;
+try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+document.getElementById("title").value="";document.getElementById("price").value="";document.getElementById("phone").value="";
+if(document.getElementById("originalPrice"))document.getElementById("originalPrice").value="";
+if(document.getElementById("discountPreview"))document.getElementById("discountPreview").textContent="";
+const _cCb2=document.getElementById("contactPrice");if(_cCb2)_cCb2.checked=false;
+const _nCb2=document.getElementById("negotiablePrice");if(_nCb2)_nCb2.checked=false;
+onPriceTypeChange();
+selectedImages=[];renderImagePicker();
+currentFormSpecsState={};
+const _dynC=document.getElementById("dynamicSpecsContainer");
+if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}
+if(showOnlyMine){showMyPosts();}else if(currentCategory && currentCategory!=="الكل"){openCategory(currentCategory);}else{showCategoriesScreen();}
 }catch(e){showToast("خطأ أثناء الحفظ: "+e.message,"error");}
 finally{
   saveBtn.disabled=false;
-  saveBtn.textContent=editingPostId ? "حفظ التعديلات" : (isStore ? "إضافة المنتج للمتجر" : "نشر الإعلان");
+  saveBtn.textContent=editingPostId?"حفظ التعديلات":"نشر الإعلان";
+  _tempStoreData=null;
+  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
 }
 };
 
@@ -3466,112 +3132,31 @@ window.renewPost=async(id,event)=>{
   const isOwner=me.uid===p.uid||isMyStorePost;
   if(!isOwner && !isAdmin){showToast("❌ هذا الإعلان ليس لك","error");return;}
   const expired=isExpired(p);
-  const msg=expired?"هذا الإعلان منتهي. هل تريد تجديده 30 يوماً إضافية؟":"هل تريد تمديد صلاحية الإعلان 30 يوماً إضافية؟";
-  if(!(await showConfirmModal(msg, { icon: "🔄", danger: false, confirmText: "تجديد الآن" }))) return;
+  const msg=expired?"⏰ هذا الإعلان منتهي. هل تريد تجديده 30 يوم إضافية؟":"🔄 هل تريد تمديد الإعلان 30 يوم إضافية؟";
+  if(!confirm(msg))return;
   try{
     const now=Date.now();
     const currentExpires=getExpiresAt(p)||now;
     const base=currentExpires>now?currentExpires:now;
     const newExpires=base+POST_DURATION_MS;
     await updateDoc(doc(db,"posts",id),{expiresAt:newExpires,status:"pending",rejectReason:null});
-    p.expiresAt = newExpires;
-    p.status = "pending";
-    p.rejectReason = null;
-    renderPosts();
     showToast("✅ تم التجديد 30 يوم إضافية","success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
 window.approvePost=async(id)=>{
   if(!isAdmin)return;
   try{
-    const post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id) || (window._allRejectedPosts && window._allRejectedPosts.find(p=>p.id===id));
+    const post=allPosts.find(p=>p.id===id);
     await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
-    if(post){
-      post.status = "approved";
-      post.approvedAt = Date.now();
-      post.rejectReason = null;
-      post.originalData = null;
-      post.wasEdited = false;
-      if(!allPosts.some(x => x.id === post.id)){
-        allPosts.unshift(post);
-      }
-      if(post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
-      sendPostToTelegram(post);
-    }
-    allPendingPosts = allPendingPosts.filter(p => p.id !== id);
-    if(window._allRejectedPosts) window._allRejectedPosts = window._allRejectedPosts.filter(p => p.id !== id);
-    renderPosts();
-    updateModBadge();
-    renderModeration();
-    showToast("✅ تم قبول الإعلان ونشره بنجاح واحتساب النقاط للمعلن","success");
+    if(post && post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
+    if(post) sendPostToTelegram(post);
+    showToast("✅ تم قبول الإعلان","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
-window.rejectPost=async(id)=>{
-  if(!isAdmin)return;
-  const reason = await showPromptModal("سبب الرفض:", "محتوى غير مناسب", { title: "رفض الإعلان", icon: "🚫", confirmText: "رفض الإعلان" });
-  if(reason===null)return;
-  try{
-    await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
-    let post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id);
-    if(post){
-      post.status = "rejected";
-      post.rejectReason = reason || "محتوى غير مناسب";
-      post.rejectedAt = Date.now();
-      if(!window._allRejectedPosts) window._allRejectedPosts = [];
-      if(!window._allRejectedPosts.some(x=>x.id===post.id)) window._allRejectedPosts.unshift(post);
-      if(!allPosts.some(x=>x.id===post.id)) allPosts.unshift(post);
-    }
-    allPendingPosts = allPendingPosts.filter(p => p.id !== id);
-    renderPosts();
-    updateModBadge();
-    renderModeration();
-    showToast("✅ تم رفض الإعلان ونقله للمرفوضات بنجاح","success");
-    closeOverlay();
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
-window.toggleFeatured=async(id,event)=>{
-  if(event)event.stopPropagation();
-  if(!isAdmin)return;
-  const p=allPosts.find(x=>x.id===id);
-  if(!p)return;
-  const isFeat=isPostFeatured(p);
-  const ok = await showConfirmModal(isFeat?"إلغاء تمييز هذا الإعلان؟":"تمييز هذا الإعلان لمدة 7 أيام مجاناً؟", { confirmText: isFeat ? "إلغاء التمييز" : "تمييز الإعلان" });
-  if(!ok) return;
-  try{
-    if(isFeat){
-      await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});
-      p.featured = false;
-      p.featuredUntil = 0;
-      p.featuredPlan = null;
-    }else{
-      const until = Date.now()+7*24*60*60*1000;
-      await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:"admin"});
-      p.featured = true;
-      p.featuredUntil = until;
-      p.featuredPlan = "admin";
-    }
-    renderPosts();
-    showToast("✅ تم","success");
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
-window.adminFeature=async(id,days)=>{
-  if(!isAdmin)return;
-  const p=allPosts.find(x=>x.id===id);
-  try{
-    if(days===0){
-      await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});
-      if(p){ p.featured = false; p.featuredUntil = 0; p.featuredPlan = null; }
-    }else{
-      const until = Date.now()+days*24*60*60*1000;
-      await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:until,featuredPlan:"admin",featuredBy:"admin"});
-      if(p){ p.featured = true; p.featuredUntil = until; p.featuredPlan = "admin"; p.featuredBy = "admin"; }
-    }
-    renderPosts();
-    showToast("✅ تم تفعيل التمييز","success");
-    closeOverlay();
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
+window.rejectPost=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","محتوى غير مناسب");if(reason===null)return;try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});showToast("✅ تم رفض الإعلان","success");closeOverlay();}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin)return;const p=allPosts.find(x=>x.id===id);if(!p)return;const isFeat=isPostFeatured(p);if(!confirm(isFeat?"إلغاء التمييز؟":"تمييز الإعلان 7 أيام مجاناً؟"))return;try{if(isFeat){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+7*24*60*60*1000,featuredPlan:"admin"});}showToast("✅ تم","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+days*24*60*60*1000,featuredPlan:"admin",featuredBy:"admin"});}showToast("✅ تم تفعيل التمييز","success");closeOverlay();}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
    الإدارة - المراجعة
@@ -3580,54 +3165,21 @@ let allPendingPosts = [];
 let pendingPostsListenerStarted = false;
 let unsubPendingPosts = null;
 
-async function refreshPendingPosts(){
-  try {
-    let list = [];
-    if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("posts")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-      if(!error && Array.isArray(data)){
-        list = data.map(item => typeof objectFromDb === 'function' ? objectFromDb(item) : item);
-      }
-    }
-    if(!list.length){
-      try {
-        const snap = await getDocs(query(collection(db, "posts"), where("status", "==", "pending")));
-        list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch(e){}
-    }
-    allPendingPosts = list;
-    allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-    updateModBadge();
-    return allPendingPosts;
-  } catch(e){
-    console.warn("refreshPendingPosts error:", e);
-    return [];
-  }
-}
-window.refreshPendingPosts = refreshPendingPosts;
-
 function startPendingPostsListener(){
   if(unsubPendingPosts) return;
   pendingPostsListenerStarted = true;
-  refreshPendingPosts();
-  try {
-    const q = query(collection(db, "posts"), where("status", "==", "pending"));
-    unsubPendingPosts = onSnapshot(q, snap => {
-      allPendingPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-      updateModBadge();
-      const modOverlay = document.getElementById("moderationOverlay");
-      if(modOverlay && !modOverlay.classList.contains("hidden")){
-        renderModeration();
-      }
-    }, err => {
-      console.warn("Pending posts listener error:", err);
-    });
-  } catch(e){}
+  const q = query(collection(db, "posts"), where("status", "==", "pending"));
+  unsubPendingPosts = onSnapshot(q, snap => {
+    allPendingPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allPendingPosts.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    updateModBadge();
+    const modOverlay = document.getElementById("moderationOverlay");
+    if(modOverlay && !modOverlay.classList.contains("hidden")){
+      renderModeration();
+    }
+  }, err => {
+    console.warn("Pending posts listener error:", err);
+  });
 }
 
 function stopPendingPostsListener(){
@@ -3636,171 +3188,49 @@ function stopPendingPostsListener(){
   allPendingPosts = [];
 }
 
-let moderationTab = "pending";
-window._allRejectedPosts = [];
-let rejectedPostsLoaded = false;
-
-async function refreshRejectedPosts(){
-  try {
-    if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("posts")
-        .select("*")
-        .eq("status", "rejected")
-        .order("created_at", { ascending: false });
-      if(!error && Array.isArray(data)){
-        window._allRejectedPosts = data.map(item => typeof objectFromDb === 'function' ? objectFromDb(item) : item);
-      }
-    }
-  } catch(e){}
-  rejectedPostsLoaded = true;
-  renderModeration();
-}
-window.refreshRejectedPosts = refreshRejectedPosts;
-
-window.setModerationTab = function(tab){
-  moderationTab = tab;
-  if(tab === "rejected" && !rejectedPostsLoaded){
-    refreshRejectedPosts();
-  }
-  renderModeration();
-};
-
 function renderModeration(){
   const list=document.getElementById("moderationList");if(!list)return;
-  
-  // تحديث أزرار التبويبات
-  const tabs = ["Pending", "Approved", "Rejected", "All"];
-  tabs.forEach(t => {
-    const btn = document.getElementById("modTab" + t);
-    if(btn){
-      const isSel = moderationTab === t.toLowerCase();
-      btn.style.background = isSel ? (t === "Pending" ? "#fef3c7" : t === "Approved" ? "#dcfce7" : t === "Rejected" ? "#fdeceb" : "#e0f2fe") : "var(--bg)";
-      btn.style.color = isSel ? (t === "Pending" ? "#92400e" : t === "Approved" ? "#166534" : t === "Rejected" ? "#b91c1c" : "#0369a1") : "var(--text)";
-      btn.style.borderColor = isSel ? "currentColor" : "var(--border)";
-    }
-  });
-
-  let itemsToShow = [];
-  if(moderationTab === "pending"){
-    itemsToShow = allPendingPosts;
-  } else if(moderationTab === "approved"){
-    itemsToShow = allPosts.filter(p => (p.status || "approved") === "approved");
-  } else if(moderationTab === "rejected"){
-    const rejMap = new Map();
-    (window._allRejectedPosts || []).forEach(p => rejMap.set(p.id, p));
-    allPosts.filter(p => p.status === "rejected").forEach(p => rejMap.set(p.id, p));
-    itemsToShow = Array.from(rejMap.values());
-  } else {
-    itemsToShow = allPosts;
-  }
-
-  if(moderationTab === "pending"){
-    if(itemsToShow.length === 0){
-      list.innerHTML = `<div class='reportsEmpty' style='padding:30px 16px;text-align:center'>
-        <div style='font-size:36px;margin-bottom:8px'>🎉</div>
-        <div style='font-weight:800;font-size:15px;color:var(--text)'>لا توجد إعلانات معلقة حالياً</div>
-        <div style='color:var(--muted);font-size:12.5px;margin-top:4px'>كافة الإعلانات منشورة ومقبولة. يمكنك استعراض الإعلانات المعتمدة من تبويب "المعتمدة" أعلاه.</div>
-      </div>`;
-      return;
-    }
-  } else if(itemsToShow.length === 0){
-    list.innerHTML = `<div class='reportsEmpty'>لا توجد إعلانات في هذا القسم حالياً</div>`;
-    return;
-  }
-
-  let toolbar = "";
-  if(moderationTab === "pending"){
-    toolbar = `<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
-      <div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${itemsToShow.length} إعلان بانتظار المراجعة</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button>
-        <button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button>
-      </div>
-    </div>`;
-  } else {
-    toolbar = `<div style="font-size:13px;font-weight:800;color:var(--muted);margin-bottom:10px;padding:4px 8px">إجمالي الإعلانات في هذا القسم: ${itemsToShow.length}</div>`;
-  }
-
-  const items = itemsToShow.map(p => {
-    const imgs = getImages(p);
-    const imgsHtml = imgs.length
-      ? `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u => `<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`
-      : `<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
-    const days = daysLeft(p);
-    const expiryInfo = days != null ? `<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days <= 0 ? '#b91c1c' : days <= 5 ? '#92400e' : '#166534'}">${days <= 0 ? '⏰ منتهي' : ('⏳ باقي ' + days + ' يوم')}</div>` : "";
-    const tags = (p.storeId ? ("🏪 " + escapeHtml(p.storeName || "متجر")) : ((p.sellerMemberNo ? "· #" + p.sellerMemberNo : "") + (p.sellerUsername ? " · @" + escapeHtml(p.sellerUsername) : "")));
-    const adTypeBadge = isWanted(p) ? `<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>` : `<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
-    const priceTxt = p.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
-    const curSt = p.status || "approved";
-    const statusLabel = curSt === "approved" ? `<span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">✅ معتمد</span>` : curSt === "rejected" ? `<span style="background:#fdeceb;color:#b91c1c;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">❌ مرفوض${p.rejectReason ? ': ' + escapeHtml(p.rejectReason) : ''}</span>` : `<span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">⏳ قيد المراجعة</span>`;
-
-    let actionBtns = "";
-    if(curSt === "pending"){
-      actionBtns = `
-        <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>
-        <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
-        <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
-      `;
-    } else if(curSt === "approved"){
-      actionBtns = `
-        <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ إلغاء / رفض</button>
-        <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض الإعلان</button>
-      `;
-    } else {
-      actionBtns = `
-        <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ إعادة قبول ونشر</button>
-        <button onclick="deletePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">🗑️ حذف نهائي</button>
-      `;
-    }
-
-    return `<div style="border:2px dashed ${curSt==='pending'?'#f59e0b':curSt==='approved'?'#16a34a':'#e5484d'};border-radius:14px;padding:12px;margin-bottom:14px;background:${curSt==='pending'?'#fffbf0':curSt==='approved'?'#f0fdf4':'#fdeceb'}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="display:flex;gap:6px;align-items:center">${adTypeBadge} ${statusLabel}</div>
-        <span style="font-size:11.5px;color:var(--muted)">${timeAgo(p.createdAt)}</span>
-      </div>
-      <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title || "بدون عنوان")}</div>
-      <div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
-      ${imgsHtml}
-      <div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description || "لا يوجد وصف")}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">📁 ${escapeHtml(p.category || "")} ${p.brand ? "· 🏷️ " + escapeHtml(p.brand) : ""}<br>📍 ${escapeHtml(p.city || "")}<br>${p.storeId ? "🏪" : ""} ${p.storeId ? escapeHtml(p.storeName || "متجر") : escapeHtml(p.sellerName || "البائع")} ${tags} · ☎️ ${escapeHtml(p.phone || "")}</div>
-      ${expiryInfo}
-      <div style="display:grid;grid-template-columns:${curSt==='pending'?'1fr 1fr 1fr':'1fr 1fr'};gap:6px;margin-top:12px">
-        ${actionBtns}
-      </div>
-    </div>`;
+  const pending=allPendingPosts;
+  if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة</div>";return;}
+  const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
+  const items=pending.map(p=>{
+    const imgs=getImages(p);
+    const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
+    const days=daysLeft(p);
+    const expiryInfo=days!=null?`<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days<=0?'#b91c1c':days<=5?'#92400e':'#166534'}">${days<=0?'⏰ منتهي':('⏳ باقي '+days+' يوم')}</div>`:"";
+    const tags=(p.storeId?("🏪 "+escapeHtml(p.storeName||"متجر")):((p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"")));
+    const adTypeBadge=isWanted(p)?`<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>`:`<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
+    const priceTxt=p.priceType==="contact"?"📞 تواصل لمعرفة السعر":(p.price!=null?formatPrice(p.price)+" د.ل":"");
+    return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${adTypeBadge}<span style="font-size:11.5px;color:var(--muted)">${timeAgo(p.createdAt)}</span></div>
+<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
+<div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
+${imgsHtml}
+<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
+<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>📍 ${escapeHtml(p.city||"")}<br>${p.storeId?"🏪":""} ${p.storeId?escapeHtml(p.storeName||"متجر"):escapeHtml(p.sellerName||"البائع")} ${tags} · ☎️ ${escapeHtml(p.phone||"")}</div>
+${expiryInfo}
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
+<button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>
+<button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
+<button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
+</div></div>`;
   }).join("");
-
-  list.innerHTML = toolbar + items;
+  list.innerHTML=toolbar+items;
 }
 
 window.approveAllPending=async()=>{
   if(!isAdmin)return;
   const pending=allPendingPosts.slice();
   if(pending.length===0){showToast("لا توجد إعلانات","info");return;}
-  const okConfirm = await showConfirmModal(`هل أنت متأكد من الموافقة على ${pending.length} إعلان قيد المراجعة؟`, { confirmText: "نعم، موافقة للكل" });
-  if(!okConfirm) return;
+  if(!confirm(`موافقة على ${pending.length} إعلان؟`))return;
   let ok=0,fail=0;
   for(const p of pending){
     try{
       await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
-      p.status = "approved";
-      p.approvedAt = Date.now();
-      p.rejectReason = null;
-      p.originalData = null;
-      p.wasEdited = false;
-      const inAll = allPosts.find(x => x.id === p.id);
-      if(inAll){ inAll.status = "approved"; inAll.approvedAt = Date.now(); }
-      else { allPosts.unshift(p); }
-      if(p.uid) addPoints(p.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved');
-      sendPostToTelegram(p);
       ok++;
     }catch(e){fail++;}
   }
-  allPendingPosts = [];
-  updateModBadge();
-  renderPosts();
-  showToast(`✅ تم قبول ونشر ${ok} إعلان`,"success");
+  showToast(`✅ تم قبول ${ok}`,"success");
   renderModeration();
 };
 
@@ -3808,20 +3238,16 @@ window.deleteAllPending=async()=>{
   if(!isAdmin)return;
   const pending=allPendingPosts.slice();
   if(pending.length===0){showToast("لا توجد","info");return;}
-  const okConfirm = await showConfirmModal(`هل أنت متأكد من رفض كافة الإعلانات المعلقة (${pending.length})؟`, { isDanger: true, confirmText: "رفض الكل" });
-  if(!okConfirm) return;
-  const reason = await showPromptModal("سبب الرفض للجميع:", "محتوى غير مناسب", { title: "سبب رفض كافة الإعلانات", icon: "🚫", confirmText: "رفض الكل" });
+  if(!confirm(`رفض ${pending.length} إعلان؟`))return;
+  const reason=prompt("سبب الرفض:","محتوى غير مناسب");
   if(reason===null)return;
   let ok=0;
   for(const p of pending){
     try{
       await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
-      const inAll = allPosts.find(x => x.id === p.id);
-      if(inAll){ inAll.status = "rejected"; }
       ok++;
     }catch(e){}
   }
-  renderPosts();
   showToast(`✅ تم رفض ${ok}`,"success");
   renderModeration();
 };
@@ -3829,22 +3255,13 @@ window.deleteAllPending=async()=>{
 function updateModBadge(){
   if(!isAdmin||!moderationBtn)return;
   const c=allPendingPosts.length;
-  moderationBtn.textContent=c>0?`⏳ مراجعة وسجل الإعلانات (${c})`:"⏳ مراجعة وسجل الإعلانات";
+  moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";
 }
 
 /* ============================================
    الإبلاغات
    ============================================ */
-window.reportPost=async(id)=>{
-  if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}
-  const reason = await showPromptModal("سبب الإبلاغ (اختياري):", "", { title: "إبلاغ عن إعلان مخالف", icon: "🚩", confirmText: "إرسال الإبلاغ", placeholder: "مثال: إعلان احتيالي، سلعة مخالفة..." });
-  if(reason===null)return;
-  try{
-    const post=allPosts.find(p=>p.id===id);
-    await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});
-    showToast("تم إرسال الإبلاغ، شكراً لك","success");
-  }catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}
-};
+window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});showToast("تم إرسال الإبلاغ، شكراً لك","success");}catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}};
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
 function renderReports(){
 const list=document.getElementById("reportsList");if(!list)return;
@@ -3861,25 +3278,11 @@ return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;mar
 }).join("");
 list.innerHTML=toolbar+items;
 }
-window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ok=await showConfirmModal(`تجاهل وحذف ${allReports.length} إبلاغ؟`,{confirmText:"تجاهل الكل"});if(!ok)return;let okC=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okC++;}catch(e){}}showToast(`✅ تم تجاهل ${okC}`,"success");renderReports();};
-window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];const ok=await showConfirmModal(`هل أنت متأكد من حذف ${ids.length} إعلان مبلغ عنه نهائياً؟`,{isDanger:true,confirmText:"نعم، حذف الكل"});if(!ok)return;let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));allPosts=allPosts.filter(x=>x.id!==pid);okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}renderPosts();showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
+window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}if(!confirm(`تجاهل ${allReports.length} إبلاغ؟`))return;let ok=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){}}showToast(`✅ تم تجاهل ${ok}`,"success");renderReports();};
+window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){showToast("تم الإلغاء","info");return;}let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.deleteReportedPost=async(pid,rid)=>{const ok=await showConfirmModal("حذف هذا الإعلان المبلغ عنه نهائياً؟",{isDanger:true,confirmText:"حذف الإعلان"});if(!ok)return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));allPosts=allPosts.filter(x=>x.id!==pid);renderPosts();renderReports();showToast("✅ تم الحذف بنجاح","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.deletePost=async(id)=>{
-  if(!(await showConfirmModal("هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً؟", { danger: true, confirmText: "نعم، حذف" }))) return;
-  try{
-    if(cart.items.some(i=>i.postId===id)){
-      cart.items=cart.items.filter(i=>i.postId!==id);
-      if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
-      saveCart();updateCartUI();
-    }
-    await deleteDoc(doc(db,"posts",id));
-    allPosts=allPosts.filter(x=>x.id!==id);
-    renderPosts();
-    closeOverlay();
-    showToast("✅ تم حذف الإعلان بنجاح","success");
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
+window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
    Admin: Limits
@@ -3894,15 +3297,7 @@ function renderLimits(){
   }).join("");
 }
 window.editLimit=(uid)=>{const l=allLimits.find(x=>x.uid===uid);if(!l)return;document.getElementById("limitSearch").value=l.username?l.username:(l.memberNo?String(l.memberNo):(l.email||""));document.getElementById("limitNumber").value=l.limit||3;document.getElementById("storeLimitNumber").value=l.storeLimit||20;};
-window.removeLimit=async(uid)=>{
-  const ok=await showConfirmModal("هل تريد إلغاء الحد المخصص لهذا المستخدم وإعادته للحد الافتراضي العام؟", { confirmText: "إلغاء الحد" });
-  if(!ok) return;
-  try{
-    await deleteDoc(doc(db,"userLimits",uid));
-    delete userLimitsCache[uid];
-    showToast("✅ تم الإلغاء بنجاح","success");
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
+window.removeLimit=async(uid)=>{if(!confirm("إلغاء الحد المخصص؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));delete userLimitsCache[uid];showToast("✅ تم الإلغاء","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
 async function findUserByAny(search){const s=String(search||"").trim();if(!s)return null;const clean=s.replace(/^@/,"").toLowerCase();try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}const num=parseInt(s,10);if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}return null;}
 window.applyUserLimit=async()=>{
   if(!isAdmin)return;
@@ -3923,7 +3318,7 @@ window.applyUserLimit=async()=>{
    Admin: Expired
    ============================================ */
 window.openExpired=()=>{if(!isAdmin)return;accountOverlay.classList.add("hidden");expiredOverlay.classList.remove("hidden");renderExpiredList();};
-async function autoDeleteOldExpired(){if(!isAdmin)return;try{const toDelete=allPosts.filter(p=>expiredGracePassed(p));if(toDelete.length===0)return;let ok=0;for(const p of toDelete){try{await deleteDoc(doc(db,"posts",p.id));allPosts=allPosts.filter(x=>x.id!==p.id);ok++;}catch(e){}}if(ok>0)renderPosts();}catch(e){}}
+async function autoDeleteOldExpired(){if(!isAdmin)return;try{const toDelete=allPosts.filter(p=>expiredGracePassed(p));if(toDelete.length===0)return;let ok=0;for(const p of toDelete){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}}catch(e){}}
 function renderExpiredList(){
   const list=document.getElementById("expiredList");if(!list)return;
   const expired=allPosts.filter(p=>isExpired(p));
@@ -3938,80 +3333,16 @@ function renderExpiredList(){
   }).join("");
   list.innerHTML=toolbar+items;
 }
-window.deleteExpiredPost=async(id)=>{
-  if(!isAdmin)return;
-  const ok=await showConfirmModal("حذف هذا الإعلان المنتهي نهائياً؟", { isDanger: true, confirmText: "نعم، حذف" });
-  if(!ok) return;
-  try{
-    await deleteDoc(doc(db,"posts",id));
-    allPosts=allPosts.filter(x=>x.id!==id);
-    renderPosts();
-    renderExpiredList();
-    showToast("✅ تم الحذف بنجاح","success");
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
-window.deleteAllExpired=async()=>{
-  if(!isAdmin)return;
-  const expired=allPosts.filter(p=>isExpired(p));
-  if(expired.length===0){showToast("لا توجد إعلانات منتهية","info");return;}
-  const ok=await showConfirmModal(`هل أنت متأكد من حذف كافة الإعلانات المنتهية (${expired.length}) نهائياً؟`, { isDanger: true, confirmText: "حذف الكل" });
-  if(!ok) return;
-  let okP=0;
-  for(const p of expired){
-    try{
-      await deleteDoc(doc(db,"posts",p.id));
-      allPosts=allPosts.filter(x=>x.id!==p.id);
-      okP++;
-    }catch(e){}
-  }
-  renderPosts();
-  showToast(`✅ تم حذف ${okP} إعلان منتهي`,"success");
-  renderExpiredList();
-};
-window.deleteAutoReadyExpired=async()=>{
-  if(!isAdmin)return;
-  const ready=allPosts.filter(p=>expiredGracePassed(p));
-  if(ready.length===0){showToast("لا توجد إعلانات مؤهلة للحذف التلقائي","info");return;}
-  const ok=await showConfirmModal(`حذف ${ready.length} إعلان منتهي تجاوزت فترة السماح (7+ أيام)؟`, { isDanger: true, confirmText: "حذف" });
-  if(!ok) return;
-  let okP=0;
-  for(const p of ready){
-    try{
-      await deleteDoc(doc(db,"posts",p.id));
-      allPosts=allPosts.filter(x=>x.id!==p.id);
-      okP++;
-    }catch(e){}
-  }
-  renderPosts();
-  showToast(`✅ تم حذف ${okP} إعلان`,"success");
-  renderExpiredList();
-};
+window.deleteExpiredPost=async(id)=>{if(!isAdmin)return;if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));renderExpiredList();}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deleteAllExpired=async()=>{if(!isAdmin)return;const expired=allPosts.filter(p=>isExpired(p));if(expired.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${expired.length}؟`))return;const c=prompt('اكتب "حذف":');if(c!=="حذف"){return;}let ok=0;for(const p of expired){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ تم حذف ${ok}`,"success");renderExpiredList();};
+window.deleteAutoReadyExpired=async()=>{if(!isAdmin)return;const ready=allPosts.filter(p=>expiredGracePassed(p));if(ready.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${ready.length}؟`))return;let ok=0;for(const p of ready){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ ${ok}`,"success");renderExpiredList();};
 
 /* ============================================
    Upgrade + Dashboard
    ============================================ */
 window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();showToast("✅ بعد الدفع، اضغط الرابط","info");},400);};
-function tryApplyPendingUpgrade(){
-  if(!pendingAutoUpgrade)return;
-  if(!isAdmin)return;
-  const d=pendingAutoUpgrade;
-  pendingAutoUpgrade=null;
-  setTimeout(async()=>{
-    const p=allPosts.find(x=>x.id===d.postId);
-    if(!p){
-      showToast("⚠️ الإعلان غير موجود","warn");
-      history.replaceState(null,'',window.location.pathname);
-      return;
-    }
-    const cm=`⭐ تفعيل ترقية الإعلان\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;
-    const ok = await showConfirmModal(cm, { confirmText: "نعم، تفعيل الترقية" });
-    if(ok){
-      adminFeature(d.postId,d.days);
-    }
-    history.replaceState(null,'',window.location.pathname);
-  },1200);
-}
+function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){showToast("⚠️ الإعلان غير موجود","warn");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
 
 window.openSendNotification=()=>{
   if(!isAdmin)return;
@@ -4176,21 +3507,14 @@ window.addToCart=async(postId,event)=>{
   const isRestaurant=isRestaurantStore(store)||isRestaurantCategory(p.category);
   const storeName=p.storeName||(store?store.name:(isRestaurant?"مطعم":"متجر"));
   if(cart.storeId && cart.storeId!==p.storeId && cart.items.length>0){
-    const confirmed = await showConfirmModal(`⚠️ سلتك تحتوي على أصناف من "${cart.storeName}".\n\nلإضافة صنف من متجر آخر، يجب إفراغ السلة أولاً. هل تريد إفراغها والبدء من جديد؟`, { isDanger: true, confirmText: "إفراغ والبدء" });
-    if(!confirmed) return;
+    if(!confirm(`⚠️ سلتك فيها أصناف من "${cart.storeName}"\n\nلإضافة صنف من مكان آخر، يجب إفراغ السلة أولاً.`))return;
     cart.items=[];
   }
   cart.storeId=p.storeId;
   cart.storeName=storeName;
   cart.storePhone=(store?(store.phone||store.storePhone):p.phone)||p.phone||"";
   const existing=cart.items.find(i=>i.postId===postId);
-  if(existing){
-    if((existing.qty || 1) >= 50){
-      showToast("⚠️ الحد الأقصى للطلب هو 50 قطعة","warn");
-      return;
-    }
-    existing.qty=(existing.qty||1)+1;
-  }
+  if(existing){existing.qty=(existing.qty||1)+1;}
   else{const imgs=getImages(p);cart.items.push({postId:p.id,title:p.title||"",price:Number(p.price)||0,image:imgs[0]||"",qty:1});}
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
@@ -4207,18 +3531,13 @@ window.changeQty=(postId,delta)=>{
   if(!item)return;
   const newQty=(item.qty||1)+delta;
   if(newQty<1)return;
-  if(newQty>50){
-    showToast("⚠️ الحد الأقصى للطلب هو 50 قطعة","warn");
-    return;
-  }
   item.qty=newQty;
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 };
-window.clearCart=async()=>{
+window.clearCart=()=>{
   if(cart.items.length===0)return;
-  const confirmed = await showConfirmModal("هل أنت متأكد من إفراغ السلة بالكامل؟", { isDanger: true, confirmText: "إفراغ السلة" });
-  if(!confirmed) return;
+  if(!confirm("إفراغ السلة بالكامل؟"))return;
   cart={storeId:null,storeName:"",storePhone:"",items:[]};
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
@@ -4257,27 +3576,10 @@ window.sendCartToCall=()=>{
    منظومة طلبات المطاعم الحية (لوحة الكاشير + تتبع الزبون بالعداد الآلي)
    ===================================================== */
 
-// نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي (Singleton Context لمنع استنزاف الموارد)
-let _sharedAudioCtx = null;
-function getSharedAudioCtx(){
-  try{
-    if(!_sharedAudioCtx){
-      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-      if(AudioCtxClass) _sharedAudioCtx = new AudioCtxClass();
-    }
-    if(_sharedAudioCtx && _sharedAudioCtx.state === 'suspended'){
-      _sharedAudioCtx.resume().catch(()=>{});
-    }
-    return _sharedAudioCtx;
-  }catch(e){
-    return null;
-  }
-}
-
+// نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي
 function playRestaurantBell(type='new_order'){
   try{
-    const ctx = getSharedAudioCtx();
-    if(!ctx) return;
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
     const now=ctx.currentTime;
     if(type==='new_order'){
       const osc1=ctx.createOscillator();const gain1=ctx.createGain();
@@ -4338,21 +3640,7 @@ window.submitRestaurantDirectOrder=async()=>{
   if(btn){btn.disabled=true;btn.textContent="⏳ جاري إرسال الطلبية للكاشير...";}
 
   try{
-    // التحقق من الأسعار ومطابقتها مع قاعدة بيانات المنتجات لمنع أي تلاعب محلي
-    let computedTotal = 0;
-    const sanitizedItems = cart.items.map(i => {
-      const realPost = allPosts.find(p => p.id === i.postId);
-      const realPrice = (realPost && typeof realPost.price === 'number') ? realPost.price : (Number(i.price) || 0);
-      const safeQty = Math.max(1, parseInt(i.qty, 10) || 1);
-      computedTotal += realPrice * safeQty;
-      return {
-        postId: i.postId,
-        title: realPost ? realPost.title : i.title,
-        price: realPrice,
-        qty: safeQty
-      };
-    });
-    const totalToPay = computedTotal > 0 ? computedTotal : cartTotalPrice();
+    const totalToPay = cartTotalPrice();
     let walletDebitRes = null;
 
     if(paymentMethod === "wallet"){
@@ -4396,7 +3684,7 @@ window.submitRestaurantDirectOrder=async()=>{
       deliveryType:deliveryType,
       deliveryAddress:address,
       notes:notes,
-      items:sanitizedItems,
+      items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1})),
       totalPrice:totalToPay,
       totalCount:cartTotalCount(),
       paymentMethod:paymentMethod,
@@ -4411,46 +3699,13 @@ window.submitRestaurantDirectOrder=async()=>{
       readyAt:null
     };
 
-    const nowTs = Date.now();
-    orderData.createdAt = nowTs;
-
-    let orderSaved = false;
-    if(window.supabase){
-      try {
-        const { error: sbErr } = await window.supabase.from("feedback").insert({
-          id: orderId,
-          type: "restaurant_order",
-          uid: cart.storeId,
-          user_name: orderData.customerName,
-          user_phone: orderData.customerPhone,
-          message: JSON.stringify(orderData),
-          created_at: nowTs
-        });
-        if(!sbErr) orderSaved = true;
-      } catch(e){
-        console.warn("Supabase insert restaurant order error:", e);
-      }
-    }
-
-    try {
-      await setDoc(doc(db, "feedback", orderId), {
-        id: orderId,
-        type: "restaurant_order",
-        uid: cart.storeId,
-        user_name: orderData.customerName,
-        user_phone: orderData.customerPhone,
-        message: JSON.stringify(orderData),
-        createdAt: nowTs
-      });
-      orderSaved = true;
-    } catch(e){}
-
-    if(!orderSaved && paymentMethod === "wallet" && auth.currentUser){
-      await creditUserWallet(auth.currentUser.uid, totalToPay, "استرجاع تلقائي - تعذر إرسال الطلب");
-      showToast("❌ تعذر إرسال الطلب للنظام، تم استرجاع الرصيد لمحفظتك فوراً", "error", 6000);
-      if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
-      return;
-    }
+    await addDoc(collection(db,"feedback"),{
+      id:orderId,
+      type:"restaurant_order",
+      uid:cart.storeId,
+      message:JSON.stringify(orderData),
+      createdAt:Date.now()
+    });
 
     try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
 
@@ -4476,17 +3731,6 @@ window.submitRestaurantDirectOrder=async()=>{
     showToast("🎉 تم إرسال طلبيتك إلى كاشير المطعم بنجاح!","success",4000);
     openOrderTracker(orderId);
   }catch(e){
-    // التراجع عن خصم المحفظة إذا فشل إنشاء الطلب في قاعدة البيانات لضمان عدم ضياع الأموال
-    if(walletDebitRes && walletDebitRes.ok && auth.currentUser){
-      try{
-        await creditUserWallet(
-          auth.currentUser.uid,
-          totalToPay,
-          `استرجاع تلقائي: تعذر إرسال الطلبية للكاشير`,
-          { txType: "order_create_failed_refund" }
-        );
-      }catch(rollErr){ console.error("Wallet refund rollback error:", rollErr); }
-    }
     showToast("خطأ أثناء إرسال الطلب: "+e.message,"error");
   }finally{
     if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
@@ -4526,7 +3770,7 @@ if(typeof document !== 'undefined'){
   document.addEventListener("visibilitychange", () => {
     if(!document.hidden){
       if(_rloStoreId){
-        const overlay = document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
+        const overlay = document.getElementById("restaurantLiveOrdersOverlay");
         if(overlay && !overlay.classList.contains("hidden")) refreshCashierOrders(false);
       }
       if(_currentTrackingOrderId){
@@ -4536,7 +3780,7 @@ if(typeof document !== 'undefined'){
   });
   window.addEventListener("focus", () => {
     if(_rloStoreId){
-      const overlay = document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
+      const overlay = document.getElementById("restaurantLiveOrdersOverlay");
       if(overlay && !overlay.classList.contains("hidden")) refreshCashierOrders(false);
     }
     if(_currentTrackingOrderId){
@@ -4779,17 +4023,9 @@ function renderOrderTrackerUI(order,errorMsg){
       ${order.notes ? `<div style="font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:8px;margin-top:8px">📝 ملاحظاتك: ${escapeHtml(order.notes)}</div>` : ''}
     </div>
     ${callBtn}
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-      ${(order.status==='pending'||order.status==='accepted') ? `
-        <button type="button" class="btnMain" onclick="customerCancelOrder('${escapeHtml(order.orderId || _currentTrackingOrderId || '')}')" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;padding:11px;font-size:13.5px;font-weight:900;border-radius:12px;cursor:pointer;margin:0">
-          ❌ إلغاء الطلبية وتصكيرها ${order.paymentMethod==='wallet' ? '(واسترجاع الرصيد للمحفظة فوراً)' : ''}
-        </button>
-      ` : ''}
-      <button type="button" class="btnMain" onclick="customerForceDismissOrder()" style="background:#dc2626;color:#fff;border-radius:12px;padding:11px;font-size:13.5px;font-weight:900;cursor:pointer;margin:0">
-        🚪 تصكير الطلبية والخروج نهائياً
-      </button>
-      <button type="button" class="btnGhost" onclick="closeOrderTracker()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);padding:10px;font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">
-        🔽 تصغير الشاشة للأسفل
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btnGhost" onclick="${(order.status==='completed'||order.status==='rejected') ? 'finishAndDismissActiveOrder(false)' : 'closeOrderTracker()'}" style="flex:1;background:transparent;color:var(--muted)">
+        ${(order.status==='completed'||order.status==='rejected') ? 'إغلاق الشاشة' : 'تصغير الشاشة ومتابعة التصفح'}
       </button>
     </div>
   `;
@@ -4837,11 +4073,13 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
 
   if(markInDb && orderId){
     try{
-      const ord = await getRestaurantOrderFromDb(orderId);
-      if(ord){
+      const snap=await getDoc(doc(db,"feedback",orderId));
+      if(snap.exists()){
+        const data=snap.data();
+        let ord=JSON.parse(data.message||"{}");
         ord.status='completed';
         ord.completedAt=Date.now();
-        await updateRestaurantOrderInDb(orderId, ord);
+        await updateDoc(doc(db,"feedback",orderId),{message:JSON.stringify(ord)});
         if(restBroadcast){
           try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: orderId, status: 'completed' }); }catch(e){}
         }
@@ -4849,82 +4087,6 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
     }catch(e){}
   }
   showToast("تم إنهاء التتبع بنجاح ✅","info",2000);
-};
-
-window.customerForceDismissOrder = async () => {
-  const orderId = _currentTrackingOrderId || (function(){try{return localStorage.getItem('tasawuq_active_order_id');}catch(e){return null;}})();
-  const ok = await showConfirmModal("هل تريد تصكير هذه الطلبية وإنهاء المتابعة فوراً؟", {
-    icon: "⚠️",
-    confirmText: "نعم، تصكير الطلبية",
-    cancelText: "تراجع",
-    danger: true
-  });
-  if(!ok) return;
-
-  if(orderId){
-    try {
-      const ord = await getRestaurantOrderFromDb(orderId);
-      if(ord && (ord.status === 'pending' || ord.status === 'accepted')){
-        await customerCancelOrder(orderId);
-        return;
-      } else {
-        await finishAndDismissActiveOrder(true);
-        return;
-      }
-    } catch(e){}
-  }
-  await finishAndDismissActiveOrder(false);
-};
-
-window.customerCancelOrder = async (orderId) => {
-  if(!orderId) orderId = _currentTrackingOrderId || (function(){try{return localStorage.getItem('tasawuq_active_order_id');}catch(e){return null;}})();
-  if(!orderId) return;
-
-  const ok = await showConfirmModal("هل أنت متأكد من رغبتك في إلغاء وتصكير هذه الطلبية؟", {
-    icon: "⚠️",
-    danger: true,
-    confirmText: "نعم، إلغاء الطلبية",
-    cancelText: "تراجع"
-  });
-  if(!ok) return;
-
-  try {
-    const order = await getRestaurantOrderFromDb(orderId);
-    if(!order || order.status === 'completed'){
-      showToast("⚠️ هذه الطلبية مكتملة بالفعل ولا يمكن إلغاؤها", "warn");
-      return;
-    }
-
-    order.status = 'rejected';
-    order.cancelReason = 'تم الإلغاء بواسطة الزبون';
-    order.cancelledAt = Date.now();
-
-    let refunded = false;
-    if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && auth.currentUser){
-      try{
-        if(typeof refundOrderToWallet === 'function'){
-          const refRes = await refundOrderToWallet(auth.currentUser.uid, order.totalPrice, order.orderNo, order.storeName);
-          if(refRes && refRes.ok){
-            order.isRefunded = true;
-            order.refundedAt = Date.now();
-            refunded = true;
-          }
-        }
-      }catch(err){ console.error("Refund on cancel error:", err); }
-    }
-
-    const docId = order._docId || orderId;
-    await updateRestaurantOrderInDb(docId, order);
-
-    if(restBroadcast){
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'rejected' }); }catch(e){}
-    }
-
-    await finishAndDismissActiveOrder(false);
-    showToast(`✅ تم إلغاء وتصكير الطلبية بنجاح${refunded ? ' وتم استرجاع المبلغ لمحفظتك' : ''}`, "success", 4000);
-  } catch(e){
-    showToast("خطأ أثناء إلغاء الطلبية: " + e.message, "error");
-  }
 };
 
 window.checkActiveOrderSilently=async(orderId)=>{
@@ -4985,14 +4147,7 @@ window.closeOrderTracker=()=>{
 function updateActiveOrderFloatingPill(order, statusText){
   const pill=document.getElementById("activeOrderFloatingPill");
   if(!pill)return;
-  pill.innerHTML=`
-    <div style="display:flex;align-items:center;gap:6px;flex:1" onclick="openActiveOrderTracker()">
-      <span>🍽️</span>
-      <span>طلب #${order.orderNo}: ${statusText}</span>
-      <span style="font-size:15px">›</span>
-    </div>
-    <span onclick="event.stopPropagation();customerForceDismissOrder()" title="تصكير الطلب" style="padding:2px 8px;font-size:14px;font-weight:900;opacity:0.8;cursor:pointer">✕</span>
-  `;
+  pill.innerHTML=`<span>🍽️</span><span>طلب #${order.orderNo}: ${statusText}</span><span style="font-size:15px">›</span>`;
   pill.classList.remove("hidden");
 }
 
@@ -5020,14 +4175,12 @@ window.toggleCashierSound=()=>{
   if(_cashierSoundEnabled) playRestaurantBell('new_order');
 };
 
-let _cashierPreviousScreen = 'home';
-
-window.openRestaurantLiveOrders=(storeId, skipHistory)=>{
-  if(!storeId) storeId = 'doc_1792952590082_5d3t8gw';
-  const store=allStores.find(s=>s.id===storeId) || { id: storeId, name: 'مطعم KSH' };
+window.openRestaurantLiveOrders=(storeId)=>{
+  if(!storeId){showToast("⚠️ رقم المطعم غير محدد","error");return;}
+  const store=allStores.find(s=>s.id===storeId);
   const me=auth.currentUser;
+  const isOwnerStore=me && store && me.uid===store.ownerUid;
   const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
-  const isOwnerStore=me && store && (me.uid===store.ownerUid || (isAdminUser && store.ownerUid?.startsWith('admin_client_')));
   const isHelper=me && isStoreHelper(storeId, me.email);
 
   if(!isOwnerStore && !isAdminUser && !isHelper){
@@ -5035,84 +4188,26 @@ window.openRestaurantLiveOrders=(storeId, skipHistory)=>{
     return;
   }
 
-  // تسجيل الشاشة السابقة للرجوع إليها بسلاسة
-  const accSc = document.getElementById("accountScreen");
-  const stSc = document.getElementById("storeScreen");
-  const stsSc = document.getElementById("storesScreen");
-  if(accSc && !accSc.classList.contains("hidden")) _cashierPreviousScreen = 'account';
-  else if(stSc && !stSc.classList.contains("hidden")) _cashierPreviousScreen = 'store';
-  else if(stsSc && !stsSc.classList.contains("hidden")) _cashierPreviousScreen = 'stores';
-  else _cashierPreviousScreen = 'home';
-
   _rloStoreId=storeId;
   _lastPendingCount=0;
   _seenOrderIds.clear();
-
-  // إغلاق أي نوافذ منبثقة
   closeOverlayDirect();
-
-  // إخفاء كافة الشاشات الأخرى لفتح صفحة الكاشير كاملة
-  if(typeof categoriesScreen !== 'undefined' && categoriesScreen) categoriesScreen.classList.add("hidden");
-  if(typeof home !== 'undefined' && home) home.classList.add("hidden");
-  if(typeof form !== 'undefined' && form) form.classList.add("hidden");
-  if(stsSc) stsSc.classList.add("hidden");
-  if(stSc) stSc.classList.add("hidden");
-  if(accSc) accSc.classList.add("hidden");
-  const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
-
-  const screenEl=document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
-  if(screenEl) screenEl.classList.remove("hidden");
+  const overlay=document.getElementById("restaurantLiveOrdersOverlay");
+  if(overlay) overlay.classList.remove("hidden");
 
   const titleEl=document.getElementById("rloStoreTitle");
-  if(titleEl) titleEl.textContent = "طلبات: " + (store?.name || "المطعم");
-
-  if(typeof hideFloatingButtons === 'function') hideFloatingButtons();
-  window.scrollTo(0, 0);
-
-  if(!skipHistory) pushNavState({ screen: 'cashier', storeId }, '#cashier-' + storeId);
+  if(titleEl) titleEl.textContent = "🍽️ طلبات: " + (store?.name || "المطعم");
 
   startRestaurantOrdersListener(storeId);
   switchRloTab('pending');
 };
 
-function closeRestaurantCashierDirect(){
-  const screenEl=document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
-  if(screenEl) screenEl.classList.add("hidden");
+window.closeRestaurantLiveOrders=()=>{
+  const overlay=document.getElementById("restaurantLiveOrdersOverlay");
+  if(overlay) overlay.classList.add("hidden");
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
   if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
-  if(typeof showFloatingButtons === 'function') showFloatingButtons();
-
-  // العودة التلقائية للشاشة السابقة التي فُتح منها الكاشير
-  if(_cashierPreviousScreen === 'account'){
-    openAccount(true);
-  } else if(_cashierPreviousScreen === 'store' && window._currentStoreId){
-    openStore(window._currentStoreId, null, true);
-  } else if(_cashierPreviousScreen === 'stores'){
-    openStores(window._storesFilterMode || 'all', true);
-  } else {
-    showCategoriesScreenDirect();
-  }
-}
-window.closeRestaurantCashierDirect = closeRestaurantCashierDirect;
-
-window.cashierGoHome = () => {
-  const screenEl=document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
-  if(screenEl) screenEl.classList.add("hidden");
-  if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
-  if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
-  if(typeof showFloatingButtons === 'function') showFloatingButtons();
-  showCategoriesScreenDirect();
 };
-
-window.closeRestaurantCashier = () => {
-  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'cashier'){
-    window.history.back();
-    return;
-  }
-  closeRestaurantCashierDirect();
-};
-window.closeRestaurantLiveOrders = window.closeRestaurantCashier;
-window.backFromCashier = window.closeRestaurantCashier;
 
 window.switchRloTab=(tab)=>{
   _rloActiveTab=tab;
@@ -5135,28 +4230,13 @@ window.refreshCashierOrders=async(manual=false)=>{
   try{
     let rawList=[];
     if(window.supabase){
-      try {
-        const { data: dStore, error: eStore } = await window.supabase
-          .from("feedback")
-          .select("*")
-          .eq("type", "restaurant_order")
-          .eq("uid", _rloStoreId)
-          .order("created_at", { ascending: false })
-          .limit(100);
-        if(!eStore && Array.isArray(dStore) && dStore.length > 0){
-          rawList = dStore;
-        } else {
-          const { data: dAll, error: eAll } = await window.supabase
-            .from("feedback")
-            .select("*")
-            .eq("type", "restaurant_order")
-            .order("created_at", { ascending: false })
-            .limit(200);
-          if(!eAll && Array.isArray(dAll)) rawList = dAll;
-        }
-      } catch(sbErr){
-        console.warn("Supabase cashier order query error:", sbErr);
-      }
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "restaurant_order")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if(!error && data) rawList = data;
     }
     if(!rawList.length){
       try{
@@ -5167,11 +4247,10 @@ window.refreshCashierOrders=async(manual=false)=>{
 
     const matched=[];
     rawList.forEach(row=>{
-      if(row.type === "restaurant_order"){
+      if(row.type === "restaurant_order" && (row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`)))){
         let ord=null;
-        try{ ord = typeof row.message === "object" ? row.message : JSON.parse(row.message || "{}"); }catch(e){}
-        const matchesStore = (row.uid === _rloStoreId) || (ord && ord.storeId === _rloStoreId) || (typeof row.message === "string" && row.message.includes(`"storeId":"${_rloStoreId}"`));
-        if(matchesStore && ord){
+        try{ord=JSON.parse(row.message||"{}");}catch(e){}
+        if(ord){
           ord._docId=row.id;
           matched.push(ord);
         }
@@ -5227,7 +4306,7 @@ function startRestaurantOrdersListener(storeId){
 
   // تحديث دوري مستمر فائق السرعة كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
   _rloPollTimer = setInterval(() => {
-    const overlay = document.getElementById("restaurantCashierScreen") || document.getElementById("restaurantLiveOrdersOverlay");
+    const overlay = document.getElementById("restaurantLiveOrdersOverlay");
     if(overlay && !overlay.classList.contains("hidden")){
       refreshCashierOrders(false);
     } else {
@@ -5273,14 +4352,8 @@ function renderCashierOrdersList(){
   else filtered=_rloOrders.filter(o=>o.status==='ready'||o.status==='completed'||o.status==='rejected');
 
   if(filtered.length===0){
-    const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة أو ملغية بعد ✅");
-    listEl.innerHTML=`
-      <div class="reportsEmpty" style="padding:28px 14px;text-align:center">
-        <div style="font-size:32px;margin-bottom:8px">${_rloActiveTab==='pending'?'🔔':(_rloActiveTab==='active'?'🍳':'✅')}</div>
-        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:12px">${msg}</div>
-        ${_rloActiveTab==='pending' ? `<button type="button" class="btnMain" style="display:inline-block;max-width:240px;margin:0 auto;padding:10px 16px;font-size:13px;border-radius:10px" onclick="cashierCreateTestOrder()">➕ إنشاء طلب تجريبي للتجربة</button>` : ''}
-      </div>
-    `;
+    const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة بعد ✅");
+    listEl.innerHTML=`<div class="reportsEmpty">${msg}</div>`;
     return;
   }
 
@@ -5309,53 +4382,24 @@ function renderCashierOrdersList(){
             <button class="rloBtnTime" style="background:#0284c7" onclick="cashierCustomTimeOrder('${order._docId}')">⏱️ مخصص</button>
             <button class="rloBtnReject" onclick="cashierRejectOrder('${order._docId}')">❌ اعتذار</button>
           </div>
-          <div style="margin-top:8px;text-align:left">
-            <button type="button" class="btnGhost" style="font-size:11px;padding:4px 8px;color:#dc2626;border-color:#fca5a5;border-radius:8px" onclick="cashierDeleteOrder('${order._docId}')">🗑️ حذف الطلب</button>
-          </div>
         </div>
       `;
     }else if(order.status==='accepted'){
       const minsLeft = Math.max(0, Math.ceil(((order.readyAt||0) - Date.now()) / 60000));
       actionsHtml=`
-        <div style="margin-top:12px;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div>
-              <div style="font-size:12px;color:#15803d;font-weight:700">قيد التحضير (متبقي ~${minsLeft} دقيقة)</div>
-              <div style="font-size:11px;color:var(--muted)">تتحول تلقائياً إلى جاهزة عند انتهاء الوقت</div>
-            </div>
-            <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
+          <div>
+            <div style="font-size:12px;color:#15803d;font-weight:700">قيد التحضير (متبقي ~${minsLeft} دقيقة)</div>
+            <div style="font-size:11px;color:var(--muted)">تتحول تلقائياً إلى جاهزة عند انتهاء الوقت</div>
           </div>
-          <div style="display:flex;gap:6px;margin-top:6px;border-top:1px dashed #bbf7d0;padding-top:6px">
-            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#b91c1c;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierRejectOrder('${order._docId}')">❌ اعتذار / إلغاء</button>
-            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')">↩️ إعادة كطلب جديد</button>
-          </div>
+          <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
         </div>
       `;
     }else if(order.status==='ready'){
       actionsHtml=`
-        <div style="margin-top:10px;background:#fefce8;padding:10px 12px;border-radius:12px;border:1px solid #fef08a">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span style="color:#16a34a;font-weight:800;font-size:13px">🎉 الوجبة جاهزة وتم إشعار الزبون</span>
-            <button class="btnGhost" style="padding:6px 12px;font-size:12px;color:#15803d;border:1px solid #86efac;background:#fff;font-weight:800;border-radius:8px" onclick="cashierCompleteOrder('${order._docId}')">تسليم وإغلاق الطلب ✔️</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:6px;border-top:1px dashed #fde047;padding-top:6px">
-            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#b91c1c;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierRejectOrder('${order._docId}')">❌ إلغاء الطلب</button>
-            <button type="button" class="btnGhost" style="flex:1;font-size:11.5px;padding:6px 8px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')">↩️ إعادة كطلب جديد</button>
-          </div>
-        </div>
-      `;
-    }else if(order.status==='completed' || order.status==='rejected'){
-      const isRej = order.status==='rejected';
-      actionsHtml=`
-        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;background:${isRej?'#fef2f2':'#f8fafc'};padding:8px 12px;border-radius:10px;border:1px solid ${isRej?'#fecaca':'var(--border)'}">
-          <span style="font-size:12px;font-weight:800;color:${isRej?'#dc2626':'#16a34a'}">
-            ${isRej ? '❌ تم الاعتذار / ملغي' : '✅ تم التسليم بنجاح'}
-            ${order.isRefunded ? ' (مسترجع للمحفظة)' : ''}
-          </span>
-          <div style="display:flex;gap:6px">
-            <button type="button" class="btnGhost" style="font-size:11.5px;padding:5px 9px;color:#0284c7;border:1px solid #bae6fd;background:#fff;border-radius:8px;font-weight:700" onclick="cashierReopenOrder('${order._docId}')" title="إعادة فتح الطلب للتجربة">↩️ إعادة كطلب جديد</button>
-            <button type="button" class="btnGhost" style="font-size:11.5px;padding:5px 9px;color:#dc2626;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-weight:700" onclick="cashierDeleteOrder('${order._docId}')" title="حذف من السجل">🗑️ حذف</button>
-          </div>
+        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#16a34a;font-weight:800;font-size:13px">🎉 الوجبة جاهزة وتم إشعار الزبون</span>
+          <button class="btnGhost" style="padding:6px 10px;font-size:12px;color:var(--text);border:1px solid var(--border)" onclick="cashierCompleteOrder('${order._docId}')">تسليم وإغلاق الطلب ✔️</button>
         </div>
       `;
     }
@@ -5391,65 +4435,20 @@ function renderCashierOrdersList(){
   }).join("");
 }
 
-async function getRestaurantOrderFromDb(docId){
-  const cached = _rloOrders.find(o => o._docId === docId || o.orderId === docId);
-  if(cached) return { ...cached };
-
-  if(window.supabase){
-    try {
-      const { data } = await window.supabase.from("feedback").select("*").eq("id", docId).maybeSingle();
-      if(data && data.message) {
-        const ord = JSON.parse(data.message);
-        ord._docId = data.id;
-        return ord;
-      }
-    } catch(e){}
-  }
-  try {
-    const snap = await getDoc(doc(db,"feedback",docId));
-    if(snap.exists()){
-      const ord = JSON.parse(snap.data().message || "{}");
-      ord._docId = snap.id;
-      return ord;
-    }
-  } catch(e){}
-  return null;
-}
-
-async function updateRestaurantOrderInDb(docId, updatedOrder){
-  const msgStr = JSON.stringify(updatedOrder);
-  if(window.supabase){
-    try {
-      await window.supabase.from("feedback").update({ message: msgStr }).eq("id", docId);
-    } catch(e){
-      console.warn("Supabase order update err:", e);
-    }
-  }
-  try {
-    await setDoc(doc(db, "feedback", docId), {
-      message: msgStr
-    }, { merge: true });
-  } catch(e){}
-}
-
 window.cashierAcceptOrder=async(docId, minutes)=>{
   try{
-    const order = await getRestaurantOrderFromDb(docId);
-    if(!order) return;
-    if(_rloStoreId && order.storeId && order.storeId !== _rloStoreId && !isAdmin){
-      showToast("❌ هذا الطلب يتبع متجراً آخر","error");
-      return;
-    }
-    if(order.status === 'completed' || order.status === 'rejected'){
-      showToast("⚠️ هذا الطلب مغلق بالفعل ولا يمكن قبوله مجدداً","warn");
-      return;
-    }
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
     const now=Date.now();
     order.status='accepted';
     order.prepMinutes=minutes;
     order.acceptedAt=now;
     order.readyAt=now + (minutes * 60 * 1000);
-    await updateRestaurantOrderInDb(docId, order);
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
 
     // تحديث محلي فوري
     const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
@@ -5467,7 +4466,7 @@ window.cashierAcceptOrder=async(docId, minutes)=>{
 };
 
 window.cashierCustomTimeOrder=async(docId)=>{
-  const m = await showPromptModal("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):", "20", { title: "تحديد وقت التحضير", icon: "⏱️", inputType: "number", confirmText: "تأكيد الوقت" });
+  const m=prompt("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):","20");
   if(!m)return;
   const mins=parseInt(m,10);
   if(isNaN(mins)||mins<=0){showToast("⚠️ وقت غير صحيح","warn");return;}
@@ -5475,39 +4474,31 @@ window.cashierCustomTimeOrder=async(docId)=>{
 };
 
 window.cashierRejectOrder=async(docId)=>{
-  const ok = await showConfirmModal("هل أنت متأكد من الاعتذار عن قبول / إلغاء هذا الطلب؟", { isDanger: true, confirmText: "نعم، اعتذار" });
-  if(!ok) return;
+  if(!confirm("هل أنت متأكد من الاعتذار عن هذا الطلب؟"))return;
   try{
-    const order = await getRestaurantOrderFromDb(docId);
-    if(!order) return;
-    if(_rloStoreId && order.storeId && order.storeId !== _rloStoreId && !isAdmin){
-      showToast("❌ هذا الطلب يتبع متجراً آخر","error");
-      return;
-    }
-    if(order.status === 'completed' || order.status === 'rejected'){
-      showToast("⚠️ هذا الطلب مغلق بالفعل. يمكنك حذفه أو إعادة فتحه كطلب جديد","warn");
-      return;
-    }
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
     order.status='rejected';
-    order.rejectedAt = Date.now();
 
     let didRefund = false;
     if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
       try{
         if(typeof refundOrderToWallet === 'function'){
-          const refRes = await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
-          if(refRes && refRes.ok){
-            order.isRefunded = true;
-            order.refundedAt = Date.now();
-            didRefund = true;
-          }
+          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
+          order.isRefunded = true;
+          order.refundedAt = Date.now();
+          didRefund = true;
         }
       }catch(err){
         console.error("Auto refund error:", err);
       }
     }
 
-    await updateRestaurantOrderInDb(docId, order);
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
     const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
     if(ordIdx!==-1){
       _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
@@ -5523,10 +4514,14 @@ window.cashierRejectOrder=async(docId)=>{
 
 window.cashierMarkReady=async(docId)=>{
   try{
-    const order = await getRestaurantOrderFromDb(docId);
-    if(!order) return;
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
     order.status='ready';
-    await updateRestaurantOrderInDb(docId, order);
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
     const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
     if(ordIdx!==-1){
       _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
@@ -5542,11 +4537,15 @@ window.cashierMarkReady=async(docId)=>{
 
 window.cashierCompleteOrder=async(docId)=>{
   try{
-    const order = await getRestaurantOrderFromDb(docId);
-    if(!order) return;
+    const snap=await getDoc(doc(db,"feedback",docId));
+    if(!snap.exists())return;
+    const data=snap.data();
+    let order=JSON.parse(data.message||"{}");
     order.status='completed';
     order.completedAt=Date.now();
-    await updateRestaurantOrderInDb(docId, order);
+    await updateDoc(doc(db,"feedback",docId),{
+      message:JSON.stringify(order)
+    });
     const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
     if(ordIdx!==-1){
       _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
@@ -5560,186 +4559,6 @@ window.cashierCompleteOrder=async(docId)=>{
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
 
-window.cashierReopenOrder=async(docId)=>{
-  const ok = await showConfirmModal("هل تريد إعادة فتح هذا الطلب ونقله إلى قائمة (بانتظار القبول) لتجربة قبوله أو رفضه مجدداً؟", {
-    icon: "↩️",
-    confirmText: "نعم، إعادة فتح الطلب"
-  });
-  if(!ok) return;
-
-  try {
-    const order = await getRestaurantOrderFromDb(docId);
-    if(!order) {
-      showToast("❌ لم يتم العثور على الطلب", "error");
-      return;
-    }
-    order.status = 'pending';
-    order.prepMinutes = null;
-    order.acceptedAt = null;
-    order.readyAt = null;
-    order.completedAt = null;
-    order.rejectedAt = null;
-    order.createdAt = Date.now();
-
-    await updateRestaurantOrderInDb(docId, order);
-
-    const ordIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId);
-    if(ordIdx !== -1){
-      _rloOrders[ordIdx] = { ..._rloOrders[ordIdx], ...order };
-    } else {
-      _rloOrders.unshift(order);
-    }
-
-    updateCashierBadges();
-    switchRloTab('pending');
-    playRestaurantBell('new_order');
-    showToast(`↩️ تم إعادة الطلب #${order.orderNo} كطلب جديد بانتظار القبول!`, "success");
-    if(restBroadcast){
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
-    }
-  } catch(e) {
-    showToast("خطأ أثناء إعادة الطلب: " + e.message, "error");
-  }
-};
-
-window.cashierDeleteOrder=async(docId)=>{
-  const ok = await showConfirmModal("هل أنت متأكد من رغبتك في حذف هذا الطلب نهائياً من السجلات؟", {
-    isDanger: true,
-    confirmText: "نعم، حذف نهائي"
-  });
-  if(!ok) return;
-
-  try {
-    if(window.supabase){
-      try {
-        await window.supabase.from("feedback").delete().eq("id", docId);
-      } catch(err){
-        console.warn("Supabase delete order err:", err);
-      }
-    }
-    try {
-      await deleteDoc(doc(db, "feedback", docId));
-    } catch(err){}
-
-    _rloOrders = _rloOrders.filter(o => o._docId !== docId && o.orderId !== docId);
-    _seenOrderIds.delete(docId);
-    updateCashierBadges();
-    renderCashierOrdersList();
-    showToast("🗑️ تم حذف الطلب بنجاح من السجلات", "success");
-  } catch(e) {
-    showToast("خطأ أثناء الحذف: " + e.message, "error");
-  }
-};
-
-window.cashierClearOldOrders=async()=>{
-  const oldOrders = _rloOrders.filter(o => o.status === 'completed' || o.status === 'rejected');
-  if(oldOrders.length === 0){
-    showToast("ℹ️ لا توجد طلبات مكتملة أو ملغية قديمة لتنظيفها", "info");
-    return;
-  }
-
-  const ok = await showConfirmModal(`هل أنت متأكد من حذف جميع الطلبات القديمة المكتملة والملغية (${oldOrders.length} طلب) لتنظيف لوحة الكاشير؟`, {
-    isDanger: true,
-    icon: "🗑️",
-    confirmText: "نعم، تنظيف السجلات"
-  });
-  if(!ok) return;
-
-  try {
-    for(const ord of oldOrders){
-      const docId = ord._docId || ord.orderId;
-      if(window.supabase){
-        try { await window.supabase.from("feedback").delete().eq("id", docId); } catch(e){}
-      }
-      try { await deleteDoc(doc(db, "feedback", docId)); } catch(e){}
-      _seenOrderIds.delete(docId);
-    }
-
-    _rloOrders = _rloOrders.filter(o => o.status !== 'completed' && o.status !== 'rejected');
-    updateCashierBadges();
-    renderCashierOrdersList();
-    showToast("🗑️ تم تنظيف السجلات القديمة بنجاح!", "success");
-  } catch(e) {
-    showToast("خطأ أثناء تنظيف السجلات: " + e.message, "error");
-  }
-};
-
-window.cashierCreateTestOrder=async()=>{
-  const storeId = _rloStoreId || 'doc_1792952590082_5d3t8gw';
-  const store = allStores.find(s => s.id === storeId) || myStore || { id: storeId, name: "مطعم KSH", phone: "0944325093" };
-  const randomNo = Math.floor(100 + Math.random() * 900);
-  const nowTs = Date.now();
-  const orderId = `order_${nowTs}_${randomNo}`;
-
-  const testOrderData = {
-    orderId: orderId,
-    orderNo: randomNo,
-    storeId: storeId,
-    storeName: store.name || "المطعم",
-    storePhone: store.phone || "0944325093",
-    customerUid: (auth.currentUser ? auth.currentUser.uid : ("guest_" + nowTs)),
-    customerName: (auth.currentUser?.displayName || "زبون تجريبي"),
-    customerPhone: (currentUserPhone || "0912345678"),
-    deliveryType: "pickup",
-    deliveryAddress: "",
-    notes: "طلب تجريبي لاختبار لوحة الكاشير وأزرار القبول والرفض",
-    items: [
-      { postId: "test_item_1", title: "وجبة شاورما دجاج عائلي", price: 28, qty: 1 },
-      { postId: "test_item_2", title: "بطاطا مقلية مقرمشة", price: 8, qty: 1 },
-      { postId: "test_item_3", title: "مشروب غازي بارد", price: 4, qty: 2 }
-    ],
-    totalPrice: 44,
-    totalCount: 4,
-    paymentMethod: "cash",
-    isPaid: false,
-    status: "pending",
-    prepMinutes: null,
-    createdAt: nowTs,
-    acceptedAt: null,
-    readyAt: null
-  };
-
-  try {
-    if(window.supabase){
-      try {
-        await window.supabase.from("feedback").insert({
-          id: orderId,
-          type: "restaurant_order",
-          uid: storeId,
-          user_name: testOrderData.customerName,
-          user_phone: testOrderData.customerPhone,
-          message: JSON.stringify(testOrderData),
-          created_at: nowTs
-        });
-      } catch(err){
-        console.warn("Supabase test order err:", err);
-      }
-    }
-
-    try {
-      await setDoc(doc(db, "feedback", orderId), {
-        id: orderId,
-        type: "restaurant_order",
-        uid: storeId,
-        user_name: testOrderData.customerName,
-        user_phone: testOrderData.customerPhone,
-        message: JSON.stringify(testOrderData),
-        createdAt: nowTs
-      });
-    } catch(e){}
-
-    testOrderData._docId = orderId;
-    _rloOrders.unshift(testOrderData);
-    _seenOrderIds.add(orderId);
-    updateCashierBadges();
-    switchRloTab('pending');
-    playRestaurantBell('new_order');
-    showToast(`🔔 تم إنشاء طلب تجريبي جديد (#${randomNo}) بنجاح! يمكنك الآن تجربة قبوله أو رفضه`, "success", 4000);
-  } catch(e) {
-    showToast("خطأ أثناء إنشاء الطلب: " + e.message, "error");
-  }
-};
-
 
 window.toggleSold=async(id,event)=>{
   if(event)event.stopPropagation();
@@ -5751,22 +4570,14 @@ window.toggleSold=async(id,event)=>{
   const isOwner=me.uid===p.uid||isMyStorePost;
   if(!isOwner && !isAdmin){showToast("❌ هذا الإعلان ليس لك","error");return;}
   const newSold=!p.sold;
-  const msg=newSold?"هل تم بيع هذا المنتج وتريد وضع علامة (تم البيع)؟":"هل تريد إلغاء حالة (تم البيع) وإعادة إتاحة الإعلان؟";
-  if(!(await showConfirmModal(msg, { icon: newSold ? "✅" : "↩️", danger: false, confirmText: newSold ? "نعم، تم البيع" : "إلغاء البيع" }))) return;
+  const msg=newSold?"✅ تم بيع المنتج؟":"↩️ إلغاء حالة (تم البيع)؟";
+  if(!confirm(msg))return;
   try{
-    const soldAt = newSold ? Date.now() : null;
-    await updateDoc(doc(db,"posts",id),{sold:newSold,soldAt:soldAt});
-    p.sold = newSold;
-    p.soldAt = soldAt;
+    await updateDoc(doc(db,"posts",id),{sold:newSold,soldAt:newSold?Date.now():null});
     if(newSold && cart.items.some(i=>i.postId===id)){
       cart.items=cart.items.filter(i=>i.postId!==id);
       if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
       saveCart();updateCartUI();
-    }
-    renderPosts();
-    const ov=document.getElementById("postOverlay");
-    if(ov && !ov.classList.contains("hidden")){
-      openPost(id);
     }
     showToast(newSold?"✅ تم وضع علامة (تم البيع)":"✅ تم إلغاء العلامة","success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
@@ -5784,48 +4595,11 @@ function dotsHtml(images){if(images.length<=1)return"";return `<div class="dots"
 document.addEventListener("scroll",e=>{const el=e.target;if(!el||!el.classList||!el.classList.contains("carousel"))return;const d=el.parentElement&&el.parentElement.querySelector(".dots");if(!d)return;const i=Math.round(el.scrollLeft/(el.clientWidth||1));Array.from(d.children).forEach((x,idx)=>x.classList.toggle("active",idx===i));},true);
 window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 
-async function compressImage(file,maxSize=1200,quality=0.82){
-  try{
-    if(file && (file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name || ''))){
-      showToast("⚠️ صور آيفون بصيغة HEIC غير مدعومة مباشرة، يرجى اختيار صور JPG أو PNG", "warn", 6000);
-      return file;
-    }
-    const bmp=await createImageBitmap(file);
-    const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));
-    const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);
-    const c=document.createElement("canvas");c.width=w;c.height=h;
-    const ctx=c.getContext("2d");
-    ctx.imageSmoothingEnabled=true;
-    ctx.imageSmoothingQuality="high";
-    ctx.drawImage(bmp,0,0,w,h);
-    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));
-    return b||file;
-  }catch(e){
-    return file;
-  }
-}
+async function compressImage(file,maxSize=1200,quality=0.82){try{const bmp=await createImageBitmap(file);const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(bmp,0,0,w,h);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));return b||file;}catch(e){return file;}}
 async function uploadToImgBB(file){const fd=new FormData();const toSend=await compressImage(file);fd.append("image",toSend,"photo.jpg");const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:fd});const data=await res.json();if(!data.success)throw new Error("فشل رفع الصورة");return data.data.url;}
 function renderImagePicker(){const box=document.getElementById("imgThumbs");box.innerHTML=selectedImages.map((item,i)=>{const src=item.type==="existing"?item.url:item.previewUrl;return `<div class="imgThumb"><img src="${escapeHtml(src)}"><button class="rm" onclick="removeImage(${i})">×</button></div>`;}).join("");document.getElementById("imgAddTile").classList.toggle("hidden",selectedImages.length>=10);}
 window.removeImage=(i)=>{selectedImages.splice(i,1);renderImagePicker();};
-window.handleFilesSelected=()=>{
-  const input=document.getElementById("imageFile");
-  const files=Array.from(input.files);
-  const remaining=10-selectedImages.length;
-  let hasHeic = false;
-  files.slice(0,remaining).forEach(file=>{
-    const isHeic = file && (file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name || ''));
-    if(isHeic){
-      hasHeic = true;
-      return;
-    }
-    selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});
-  });
-  if(hasHeic){
-    showToast("⚠️ تم تجاهل بعض صور الآيفون (HEIC). يرجى تحويل كاميرا الآيفون لـ (الأكثر توافقاً) من الإعدادات أو اختيار صور JPG/PNG", "warn", 7000);
-  }
-  input.value="";
-  renderImagePicker();
-};
+window.handleFilesSelected=()=>{const input=document.getElementById("imageFile");const files=Array.from(input.files);const remaining=10-selectedImages.length;files.slice(0,remaining).forEach(file=>{selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});});input.value="";renderImagePicker();};
 
 /* ============================================
    المتاجر — القائمة + الصفحة
@@ -5854,8 +4628,6 @@ window.openStores=(mode='stores',skipHistory)=>{
   document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
   categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
-  const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
-  const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
   const ss=document.getElementById("storesScreen");
   if(ss)ss.classList.remove("hidden");
   const titleEl=document.getElementById("storesScreenTitle");
@@ -5954,14 +4726,11 @@ window.refreshOpenStore=async(storeId)=>{
   await openStore(storeId,true);
 };
 window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
-  const savedScrollY = keepScroll ? (window.scrollY || document.documentElement.scrollTop || 0) : 0;
   try{
     if(!keepScroll){window._currentStoreId=storeId;}
     window._storeBackTo=backTo||"categories";
     closeOverlayDirect();
     const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
-    const as=document.getElementById("accountScreen");if(as)as.classList.add("hidden");
-    const inSc=document.getElementById("inboxScreen");if(inSc)inSc.classList.add("hidden");
     categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
     const sc=document.getElementById("storeScreen");if(sc)sc.classList.remove("hidden");
     const box=document.getElementById("storeContent");
@@ -5974,7 +4743,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       try{
         const snap=await Promise.race([
           getDoc(doc(db,"stores",storeId)),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error("مهلة التحميل انتهت")),20000))
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error("مهلة التحميل انتهت")),8000))
         ]);
         if(snap && snap.exists()) store={id:snap.id,...snap.data()};
       }catch(e){
@@ -5982,7 +4751,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       }
     }
     if(!store){
-      box.innerHTML=`<div class='reportsEmpty'>❌ تعذر تحميل المتجر حالياً (قد يكون هناك بطء في الشبكة أو المتجر غير متاح)<br><br><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class='btnMain' style='max-width:180px' onclick="openStore('${escapeHtml(storeId)}')">🔄 إعادة المحاولة</button><button class='btnGhost' style='max-width:180px' onclick='openStores()'>العودة لدليل المتاجر</button></div></div>`;
+      box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود أو تم حذفه<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
       return;
     }
     window._currentStoreId=storeId;
@@ -6016,7 +4785,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             </div>`)
       : "";
 
-    const chatStoreBtn="";
+    const chatStoreBtn=(!isOwnerStore && store.ownerUid) ? `
+      <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
+        💬 دردشة فورية مع المتجر
+      </button>
+    ` : '';
 
     const bi=store.bankInfo || {};
     const hasIban=bi.iban && bi.iban.trim();
@@ -6099,6 +4872,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             <div><small>التوصيل</small><b>${deliveryFormatted}</b></div>
           </div>
           <div style="margin-top:12px">
+            ${(!isOwnerStore && store.ownerUid) ? `
+              <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
+                💬 دردشة فورية مع إدارة المطعم
+              </button>
+            ` : ''}
             ${storeCallNumber ? `
               <a href="tel:${formatCallPhone(storeCallNumber)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:14px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
                 📞 اتصال هاتفي مباشر لطلب الأوردر (${escapeHtml(storeCallNumber)})
@@ -6116,9 +4894,9 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
             ${transferBtn}
             <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ تقييم</button>
             <button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#0284c7">📱 QR</button>
-            ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ ${isRestaurantStore(store) ? "تعديل المطعم" : "تعديل المتجر"}</button>`:""}
-            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ ${isRestaurantStore(store) ? "إضافة وجبة" : "إضافة منتج"}</button>`:""}
-            ${isRestaurantStore(store)&&(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="openRestaurantLiveOrders('${store.id}')" style="background:#dc2626;color:#fff;font-weight:800">🔔 لوحة كاشير المطعم</button>`:""}
+            ${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المطعم</button>`:""}
+            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة وجبة</button>`:""}
+            ${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="openRestaurantLiveOrders('${store.id}')" style="background:#dc2626;color:#fff;font-weight:800">🔔 طلبات المطعم الحية</button>`:""}
           </div>
           <div class="storeQRBox" id="storeQRBox" style="display:none"></div>
           <div class="storeRatingSection" id="storeRatingSection"></div>
@@ -6166,9 +4944,6 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       const avg=ratings.reduce((s,r)=>s+(r.stars||0),0)/ratings.length;
       sec.innerHTML=`<h4>⭐ التقييمات (${ratings.length}) — متوسط ${avg.toFixed(1)}/5</h4>`+ratings.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${escapeHtml(r.raterName||"مستخدم")}</b><span style="color:#f5a623">${"★".repeat(r.stars||0)}${"☆".repeat(5-(r.stars||0))}</span></div>${r.comment?`<div style="font-size:13px;margin-top:4px">${escapeHtml(r.comment)}</div>`:""}</div>`).join("");
     }).catch(e=>console.warn("Ratings error:",e));
-    if(keepScroll && savedScrollY > 0){
-      requestAnimationFrame(()=>{ window.scrollTo({ top: savedScrollY, behavior: 'instant' }); });
-    }
     hideFloatingButtons();
   }catch(err){
     console.error("Critical error in openStore:",err);
@@ -6213,22 +4988,7 @@ window.goAddStorePost=(storeId)=>{
   setTimeout(()=>showForm(true),200);
 };
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
-window.deleteStoreProduct=async(id)=>{
-  const confirmed = await showConfirmModal("هل أنت متأكد من حذف هذا المنتج من المتجر؟", { isDanger: true, confirmText: "نعم، حذف" });
-  if(!confirmed) return;
-  try{
-    if(cart.items.some(i=>i.postId===id)){
-      cart.items=cart.items.filter(i=>i.postId!==id);
-      if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
-      saveCart();updateCartUI();
-    }
-    await deleteDoc(doc(db,"posts",id));
-    allPosts=allPosts.filter(x=>x.id!==id);
-    renderPosts();
-    showToast("✅ تم حذف المنتج بنجاح","success");
-    setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
+window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ✅ دالة نقل الإعلانات الفردية للمتجر (يدوياً بضغطة زر) */
 window.transferMyPostsToStore=async(storeId)=>{
@@ -6316,38 +5076,22 @@ window.transferMyPostsToStore=async(storeId)=>{
     if(checked.length===0){showToast('⚠️ اختر إعلان واحد على الأقل','warn');return;}
     const ids=Array.from(checked).map(c=>c.getAttribute('data-post-id'));
     const btn=overlay.querySelector('#transferConfirmBtn');
-    
-    // فحص حد المتجر قبل إتمام النقل لمنع تجاوزه بصمت
-    const currentStorePostsCount = allPosts.filter(p => p.storeId === store.id).length;
-    const storeLimit = await getUserStoreLimit(store.ownerUid);
-    if (!isAdmin && (currentStorePostsCount + ids.length) > storeLimit) {
-      const allowed = Math.max(0, storeLimit - currentStorePostsCount);
-      showToast(`⚠️ لا يمكن النقل: يتجاوز الحد الأقصى للمتجر (${storeLimit} منتج). المتبقي المتاح: ${allowed}`, "warn", 6000);
-      return;
-    }
-
     btn.disabled=true;
     btn.textContent='⏳ جاري النقل...';
     let ok=0,fail=0;
     for(const pid of ids){
       try{
         const p=myPosts.find(x=>x.id===pid);
-        const upd = {
+        await updateDoc(doc(db,'posts',pid),{
           storeId:store.id,
           storeName:store.name,
           storeCategory:store.category,
           storePhone:store.phone||'',
           phone:store.phone||(p&&p.phone)||''
-        };
-        await updateDoc(doc(db,'posts',pid), upd);
-        const inMem = allPosts.find(x => x.id === pid);
-        if(inMem){
-          Object.assign(inMem, upd);
-        }
+        });
         ok++;
       }catch(e){fail++;}
     }
-    renderPosts();
     overlay.remove();
     showToast('✅ تم نقل '+ok+' إعلان للمتجر'+(fail>0?' (فشل '+fail+')':''),'success',3500);
     if(window._currentStoreId===store.id){setTimeout(()=>openStore(store.id,true),500);}
@@ -6542,33 +5286,12 @@ window.saveStoreEdits=async()=>{
     }
     btn.textContent="⏳ جاري الحفظ...";
     await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
-    Object.assign(store, updates);
-    if(store.name!==newName || updates.category || updates.phone){
-      try{
-        const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);
-        for(const p of storePosts){
-          try{await updateDoc(doc(db,"posts",p.id),{storeName:newName,storeCategory:newCategory,storePhone:updates.phone||store.phone});}catch(e){}
-        }
-      }catch(e){}
+    if(store.name!==newName){
+      try{const storePosts=allPosts.filter(p=>p.storeId===editStoreCurrentId);for(const p of storePosts){try{await updateDoc(doc(db,"posts",p.id),{storeName:newName});}catch(e){}}}catch(e){}
     }
-    // تحديث الإعلانات والمتجر في الذاكرة الحية فورياً
-    allPosts.filter(p => p.storeId === editStoreCurrentId).forEach(p => {
-      p.storeName = newName;
-      if(updates.category) p.storeCategory = updates.category;
-      if(updates.phone) p.storePhone = updates.phone;
-    });
-    if(myStore && myStore.id === editStoreCurrentId){
-      Object.assign(myStore, updates);
-    }
-    renderPosts();
-    renderStoresList();
     showToast("✅ تم حفظ التعديلات والشعار بنجاح","success");
-    const savedId = editStoreCurrentId;
     closeOverlay();
-    editStoreCurrentId = null;
-    editStoreLogoImage = null;
-    editStoreCoverImage = null;
-    if(window._currentStoreId===savedId){setTimeout(()=>openStore(savedId,true),300);}
+    if(window._currentStoreId===editStoreCurrentId){setTimeout(()=>openStore(editStoreCurrentId,true),300);}
   }catch(e){showToast("❌ خطأ: "+e.message,"error");}
   finally{btn.disabled=false;btn.textContent="💾 حفظ التعديلات";}
 };
@@ -6736,9 +5459,8 @@ window.toggleStoreVerify=async(id)=>{
   const store=allStores.find(s=>s.id===id);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
   const isVerified=!!store.verified;
-  const msg=isVerified ? `هل أنت متأكد من إلغاء توثيق المتجر: "${store.name}"؟` : `هل ترغب في توثيق المتجر: "${store.name}"؟\n\nستظهر شارة التوثيق الزرقاء (✓) على المتجر وإعلاناته.`;
-  const ok = await showConfirmModal(msg, { icon: isVerified ? "❌" : "🛡️", isDanger: isVerified, confirmText: isVerified ? "نعم، إلغاء التوثيق" : "نعم، توثيق المتجر" });
-  if(!ok) return;
+  const msg=isVerified ? `إلغاء توثيق المتجر: ${store.name}؟` : `توثيق المتجر: ${store.name}؟\n\nراح تظهر العلامة الزرقاء ✓ على المتجر.`;
+  if(!confirm(msg))return;
   try{
     await updateDoc(doc(db,"stores",id),{
       verified:!isVerified,
@@ -6773,73 +5495,24 @@ function renderStoresModeration(){
   }).join("");
 }
 window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});showToast("✅ تم قبول المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
-window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=await showPromptModal("سبب رفض المتجر:","معلومات غير كافية",{title:"رفض المتجر",icon:"🚫",confirmText:"رفض المتجر"});if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});showToast("✅ تم رفض المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","معلومات غير كافية");if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});showToast("✅","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
 window.deleteStore=async(id)=>{
   if(!isAdmin)return;
   const store=allStores.find(s=>s.id===id);
   if(!store)return;
   const count=allPosts.filter(p=>p.storeId===id).length;
-  const confirmed = await showConfirmModal(`⚠️ تأكيد الحذف النهائي لمتجر "${store.name}" وكافة المنتجات التابعة له؟`, {
-    isDanger: true,
-    confirmText: "نعم، حذف نهائي"
-  });
-  if(!confirmed) return;
+  if(!confirm(`⚠️ حذف نهائي\n\n🏪 ${store.name}\n📦 ${count} منتج`))return;
+  const c=prompt('اكتب "حذف" للتأكيد:');
+  if(c!=="حذف"){showToast("تم الإلغاء","info");return;}
   try{
     let okP=0;
-    // جلب وحذف كافة منتجات المتجر من قاعدة البيانات حتى لو لم تكن محملة في الذاكرة
-    let storePostDocs = [];
-    try {
-      const qSnap = await getDocs(query(collection(db, "posts"), where("storeId", "==", id)));
-      qSnap.forEach(d => storePostDocs.push({ id: d.id }));
-    } catch(e) {
-      storePostDocs = allPosts.filter(p => p.storeId === id);
-    }
-    for(const p of storePostDocs){
-      try{
-        await deleteDoc(doc(db,"posts",p.id));
-        okP++;
-      }catch(e){}
-    }
+    for(const p of allPosts.filter(p=>p.storeId===id)){try{await deleteDoc(doc(db,"posts",p.id));okP++;}catch(e){}}
     await deleteDoc(doc(db,"stores",id));
-    if(store.ownerUid){
-      try{
-        await setDoc(doc(db,"profiles",store.ownerUid),{storeId:null},{merge:true});
-      }catch(e){}
-    }
-    allPosts = allPosts.filter(p => p.storeId !== id);
-    allStores = allStores.filter(s => s.id !== id);
-    if(cart.storeId===id){
-      cart={storeId:null,storeName:"",storePhone:"",items:[]};
-      saveCart();
-      updateCartUI();
-    }
-    renderPosts();
-    renderStoresList();
-    showToast(`✅ تم حذف المتجر مع ${okP} منتج بنجاح`,"success");
+    if(store.ownerUid){try{await updateDoc(doc(db,"profiles",store.ownerUid),{storeId:null});}catch(e){}}
+    if(cart.storeId===id){cart={storeId:null,storeName:"",storePhone:"",items:[]};saveCart();updateCartUI();}
+    showToast(`✅ تم الحذف + ${okP} منتج`,"success");
     renderStoresModeration();
   }catch(e){showToast("خطأ: "+e.message,"error");}
-};
-
-window.transferStoreOwnership = async(storeId, newOwnerUid) => {
-  if(!isAdmin){ showToast("صلاحية للأدمن فقط", "warn"); return; }
-  if(!storeId || !newOwnerUid){ showToast("يرجى إدخال معرف المتجر ومعرف المالك الجديد", "warn"); return; }
-  try {
-    const store = allStores.find(s => s.id === storeId);
-    if(!store){ showToast("المتجر غير موجود", "error"); return; }
-    await updateDoc(doc(db, "stores", storeId), {
-      ownerUid: newOwnerUid,
-      createdByAdmin: false
-    });
-    try {
-      await setDoc(doc(db, "profiles", newOwnerUid), { storeId: storeId }, { merge: true });
-    } catch(e){}
-    store.ownerUid = newOwnerUid;
-    store.createdByAdmin = false;
-    showToast(`✅ تم نقل ملكية متجر "${store.name}" بنجاح للمستخدم الجديد`, "success");
-    renderStoresModeration();
-  } catch(e) {
-    showToast("خطأ أثناء نقل الملكية: " + e.message, "error");
-  }
 };
   /* ============================================
    تعديل الإعلان (editPost) — مع خيارات السعر
@@ -6914,23 +5587,11 @@ if(isStore && (!storeForPost || storeForPost.status!=="approved")){showToast("�
 if(!isStore && !isAdmin){
   const myCount=allPosts.filter(p=>p.uid===auth.currentUser.uid && !p.storeId).length;
   const limit=await getUserLimit(auth.currentUser.uid);
-  if(myCount>=limit){
-    const msg=`🛒 طلب إعلانات إضافية\n\n👤 ${(myProfile&&myProfile.name)||'مستخدم'}\n📊 ${myCount}\n⚙️ ${limit}`;
-    const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-    const ok = await showConfirmModal(`⚠️ وصلت للحد الأقصى للإعلانات المسموح بها (${limit}).\n\nهل ترغب في التواصل مع الإدارة لطلب زيادة الحد؟`, { title: "الحد الأقصى للإعلانات", icon: "⚠️", danger: false, confirmText: "📱 مراسلة عبر واتساب", cancelText: "إلغاء" });
-    if(ok) window.open(waUrl,'_blank');
-    return;
-  }
+  if(myCount>=limit){const msg=`🛒 طلب إعلانات إضافية\n\n👤 ${(myProfile&&myProfile.name)||'مستخدم'}\n📊 ${myCount}\n⚙️ ${limit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${limit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
 }else if(isStore && !isAdmin){
   const stCount=allPosts.filter(p=>p.storeId===storeForPost.id).length;
   const storeLimit=await getUserStoreLimit(auth.currentUser.uid);
-  if(stCount>=storeLimit){
-    const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;
-    const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-    const ok = await showConfirmModal(`⚠️ وصلت للحد الأقصى لمنتجات المتجر (${storeLimit}).\n\nهل ترغب في التواصل مع الإدارة لطلب زيادة حد المتجر؟`, { title: "حد منتجات المتجر", icon: "🏪", danger: false, confirmText: "📱 مراسلة عبر واتساب", cancelText: "إلغاء" });
-    if(ok) window.open(waUrl,'_blank');
-    return;
-  }
+  if(stCount>=storeLimit){const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${storeLimit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
 }
 editingPostId=null;
 window._isStorePost=isStore;
@@ -6943,15 +5604,8 @@ document.getElementById("discountPreview").textContent="";
 document.getElementById("discountField").style.display="block";
 const userPhone=(myProfile&&myProfile.phone)||"";
 const displayPhone = (isStore && activeStore && (activeStore.phone || activeStore.callPhone)) ? (activeStore.phone || activeStore.callPhone) : userPhone;
-const phoneEl = document.getElementById("phone");
-if(phoneEl){
-  phoneEl.value = displayPhone ? formatCallPhone(displayPhone) : "";
-  if(isStore && activeStore && (activeStore.phone || activeStore.callPhone)){
-    phoneEl.setAttribute("readonly","readonly");
-  } else {
-    phoneEl.removeAttribute("readonly");
-  }
-}
+document.getElementById("phone").value=displayPhone?formatCallPhone(displayPhone):"⚠️ لم تسجل رقمك بعد";
+document.getElementById("phone").setAttribute("readonly","readonly");
 document.getElementById("city").value=(isStore?activeStore.city:"");
 document.getElementById("description").value="";
 document.getElementById("category").value=(isStore?activeStore.category:"سيارات ومركبات");document.getElementById("brand").value="";
@@ -7000,13 +5654,7 @@ function showFavoritesDirect(){if(showOnlyFavorites && !showOnlyMine){showCatego
 window.showFavoritesDirect=showFavoritesDirect;
 window.showFavorites=(skipHistory)=>{showFavoritesDirect();if(!skipHistory)pushNavState({screen:'fav'},'#favorites');};
 
-function setActiveNav(w){
-  if(navHome) navHome.classList.toggle("active",w==="home");
-  if(navMine) navMine.classList.toggle("active",w==="mine");
-  if(navFav) navFav.classList.toggle("active",w==="fav");
-  const na = document.getElementById("navAccount");
-  if(na) na.classList.toggle("active",w==="account");
-}
+function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
 window.showHome=()=>{showCategoriesScreen();};
 
 window.showFollowingPosts=()=>{
@@ -7050,10 +5698,11 @@ window.startAddPost=async()=>{
   postTypeOverlay.classList.remove("hidden");
 };
 window.chooseOpenStoreFromPlus=()=>{closeOverlay();setTimeout(()=>startOpenStore(),300);};
-window.chooseIndividualPost=async()=>{
+window.chooseIndividualPost=()=>{
   if(myStore && myStore.status==="approved"){
-    const ok = await showConfirmModal("⚠️ لديك متجر معتمد في المنصة.\n\nعند النشر كإعلان فردي:\n• لن يظهر في صفحة متجرك\n• سيُحسب من حدك الشخصي للإعلانات الفردية\n\nهل ترغب في المتابعة ونشره كإعلان فردي؟", { confirmText: "نعم، إعلان فردي", cancelText: "الرجوع" });
-    if(!ok) return;
+    if(!confirm("⚠️ عندك متجر معتمد.\n\nلو كملت كإعلان فردي:\n• مش هيظهر في صفحة المتجر\n• هيتحسب من الحد الشخصي (3 إعلانات)\n\nلو عايز إعلان داخل متجرك، اختر (إعلان متجر).\n\nهل تريد المتابعة كإعلان فردي؟")){
+      return;
+    }
   }
   closeOverlay();
   _tempStoreData=null;
@@ -7145,254 +5794,84 @@ function renderSubCats(){
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 
 /* ============================================
-   حسابي (صفحة كاملة Full Screen)
+   حسابي + Overlay
    ============================================ */
-async function syncFullUserProfile(uid){
-  if(!uid) return;
-  try {
-    // 1. جلب مباشر لسجل البروفايل من قاعدة البيانات
-    const profSnap = await getDoc(doc(db, "profiles", uid));
-    let profData = (profSnap && profSnap.exists()) ? (profSnap.data() || {}) : {};
-
-    // 2. إذا كان رقم الهاتف مفقوداً أو فارغاً في profiles، اطلبه فوراً من جدول phones بأحدث تاريخ
-    if(!profData.phone){
-      try {
-        const { data: pList, error: pErr } = await supabase.from("phones").select("*").eq("uid", uid).order("linked_at", { ascending: false }).limit(1);
-        if (pErr) console.error("phones select error:", pErr.message);
-        if(pList && pList.length > 0 && pList[0].phone){
-          profData.phone = pList[0].phone;
-          const { error: e1 } = await supabase.from("profiles").upsert({ id: uid, phone: pList[0].phone }, { onConflict: "id" });
-          if (e1) console.error("profiles upsert phone error:", e1.message);
-        }
-      } catch(e){
-        console.error("phones sync catch error:", e.message);
-      }
-    }
-
-    // 3. إذا كان اسم المستخدم مفقوداً في profiles، اطلبه فوراً من جدول usernames بأحدث تاريخ
-    if(!profData.username){
-      try {
-        const { data: uList, error: uErr } = await supabase.from("usernames").select("*").eq("uid", uid).order("created_at", { ascending: false }).limit(1);
-        if (uErr) console.error("usernames select error:", uErr.message);
-        if(uList && uList.length > 0 && uList[0].username){
-          profData.username = uList[0].username;
-          const { error: e2 } = await supabase.from("profiles").upsert({ id: uid, username: uList[0].username }, { onConflict: "id" });
-          if (e2) console.error("profiles upsert username error:", e2.message);
-        }
-      } catch(e){
-        console.error("usernames sync catch error:", e.message);
-      }
-    }
-
-    if(!myProfile) myProfile = {};
-    if(profData.name) myProfile.name = profData.name;
-    if(profData.username) myProfile.username = profData.username;
-    if(profData.phone) myProfile.phone = profData.phone;
-    if(profData.memberNo != null) myProfile.memberNo = profData.memberNo;
-    if(profData.storeId !== undefined) myProfile.storeId = profData.storeId;
-    if(profData.email && !myProfile.email) myProfile.email = profData.email;
-
-    window.myProfile = myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
-  } catch(e){
-    console.warn("syncFullUserProfile error:", e);
-  }
-}
-window.syncFullUserProfile = syncFullUserProfile;
-
-window.openAccount = (skipHistory) => {
+window.openAccount=(skipHistory)=>{
   if(auth.currentUser){
-    const as = document.getElementById("accountScreen");
-    if(!as) return;
-
-    // إغلاق أي نوافذ منبثقة أولاً
-    closeOverlayDirect();
-
-    // إخفاء كافة الشاشات الأخرى لفتح صفحة حسابي كاملة
-    if(typeof categoriesScreen !== 'undefined' && categoriesScreen) categoriesScreen.classList.add("hidden");
-    if(typeof home !== 'undefined' && home) home.classList.add("hidden");
-    if(typeof form !== 'undefined' && form) form.classList.add("hidden");
-    const ss = document.getElementById("storesScreen"); if(ss) ss.classList.add("hidden");
-    const sc = document.getElementById("storeScreen"); if(sc) sc.classList.add("hidden");
-    const inSc = document.getElementById("inboxScreen"); if(inSc) inSc.classList.add("hidden");
-
-    as.classList.remove("hidden");
-    setActiveNav("account");
-    if(typeof hideFloatingButtons === 'function') hideFloatingButtons();
-    window.scrollTo(0, 0);
-
-    if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
-
-    // أولاً: عرض فوري لكافة البيانات من الكاش أو الذاكرة لمنع أي تفريغ للخانات
-    updateAccountScreenUI();
-
-    // ثانياً: مزامنة موثوقة وشاملة من قاعدة البيانات عبر كافة الجداول
-    syncFullUserProfile(auth.currentUser.uid);
-  } else {
-    pendingAction = null;
-    authOverlay.classList.remove("hidden");
-  }
-};
-
-function updateAccountScreenUI(){
-  const me = auth.currentUser;
-  if(!me && !myProfile) return;
-  const rawName = (myProfile && myProfile.name) || (me && me.displayName) || "مستخدم";
-  const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
-  
-  const accNameEl = document.getElementById("accountName");
-  if(accNameEl) accNameEl.textContent = dn;
-
-  const heroAvatar = document.getElementById("accHeroAvatar");
-  if(heroAvatar) heroAvatar.textContent = dn ? dn[0].toUpperCase() : '👤';
-
-  const myNameInput = document.getElementById("myName");
-  if(myNameInput && document.activeElement !== myNameInput) myNameInput.value = dn;
-
-  const mnEl = document.getElementById("accountMemberNo");
-  if(mnEl){
-    if(myProfile && myProfile.memberNo != null){
-      mnEl.textContent = "🔢 رقم العضوية: #" + myProfile.memberNo;
-      mnEl.style.display = "inline-block";
-    } else {
-      mnEl.textContent = "⏳ جاري تعيين رقم العضوية...";
-      mnEl.style.display = "inline-block";
-    }
-  }
-
-  const unEl = document.getElementById("accountUsername");
-  if(unEl){
-    if(myProfile && myProfile.username){
-      unEl.textContent = "🏷️ @" + myProfile.username;
-      unEl.style.display = "inline-block";
-    } else {
-      unEl.textContent = "⚠️ لم تختر اسم مستخدم بعد";
-      unEl.style.display = "inline-block";
-    }
-  }
-
-  const pbEl = document.getElementById("accountPhoneBadge");
-  if(pbEl){
-    const curP = (myProfile && myProfile.phone) || "";
-    if(curP){
-      pbEl.textContent = "📱 " + formatCallPhone(curP);
-      pbEl.style.display = "inline-block";
-    } else {
-      pbEl.textContent = "📱 بدون هاتف";
-      pbEl.style.display = "inline-block";
-    }
-  }
-
-  const myUserInput = document.getElementById("myUsername");
-  if(myUserInput && document.activeElement !== myUserInput) {
-    const uVal = (myProfile && myProfile.username) || "";
-    if (uVal) myUserInput.value = uVal;
-    else if (!myUserInput.value) myUserInput.value = "";
-  }
-
-  const myPhoneInput = document.getElementById("myPhone");
-  if(myPhoneInput && document.activeElement !== myPhoneInput) {
-    const pVal = (myProfile && myProfile.phone) || "";
-    if (pVal) myPhoneInput.value = formatCallPhone(pVal);
-    else if (!myPhoneInput.value) myPhoneInput.value = "";
-  }
-
-  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (me ? me.uid : "");
-  const refDisplay = document.getElementById("myRefLinkDisplay");
-  if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
-
-  const stEl = document.getElementById("accountStore");
-  if(stEl){
-    if(myStore){
-      const st = myStore.status === "approved" ? "✅ متجر: " : myStore.status === "pending" ? "⏳ متجر (قيد المراجعة): " : "❌ متجر (مرفوض): ";
-      stEl.textContent = st + myStore.name;
-      stEl.style.display = "block";
-    } else {
-      stEl.style.display = "none";
-    }
-  }
-
-  const openBtn = document.getElementById("openStoreBtn");
-  const myBtn = document.getElementById("myStoreBtn");
-  if(myStore){
-    if(openBtn) openBtn.style.display = "none";
-    if(myBtn){
-      myBtn.style.display = "block";
-      myBtn.textContent = myStore.status === "approved" ? "🏪 الدخول لمتجري" : myStore.status === "pending" ? "⏳ متجري (قيد المراجعة)" : "❌ متجري (مرفوض)";
-    }
-  } else {
-    if(openBtn) openBtn.style.display = "block";
-    if(myBtn) myBtn.style.display = "none";
-  }
-
-  // أزرار الأدمن
-  const adminSec = document.getElementById("accAdminSection");
-  if(adminSec) adminSec.style.display = isAdmin ? "block" : "none";
-
-  const adminIds = ["moderationBtn", "storesModerationBtn", "reportsBtn", "expiredBtn", "limitsBtn", "dashboardBtn", "sendNotifBtn", "adminWalletBtn", "adminCreateStoreBtn", "adminPanelBtn"];
-  adminIds.forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.classList.toggle("hidden", !isAdmin);
-  });
-
-  const targetWalletUid = (me && me.uid) || (myProfile && (myProfile.id || myProfile.uid)) || null;
-  if(typeof getUserWallet === 'function' && targetWalletUid){
-    getUserWallet(targetWalletUid).then(wal => {
-      if(typeof updateWalletUI === 'function' && wal) updateWalletUI(wal.balance);
+    // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان ظهور اليوزر نيم ورقم الهاتف فوراً
+    getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
+      if(snap.exists()){
+        myProfile=snap.data();
+        const unEl=document.getElementById("accountUsername");
+        if(unEl){
+          if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}
+          else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}
+        }
+        const myUserInput=document.getElementById("myUsername");
+        if(myUserInput && myProfile.username && document.activeElement!==myUserInput) myUserInput.value=myProfile.username;
+        const myPhoneInput=document.getElementById("myPhone");
+        if(myPhoneInput && myProfile.phone && document.activeElement!==myPhoneInput) myPhoneInput.value=formatCallPhone(myProfile.phone);
+        const mnEl=document.getElementById("accountMemberNo");
+        if(mnEl && myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}
+      }
     }).catch(()=>{});
-  }
-}
-window.updateAccountScreenUI = updateAccountScreenUI;
 
-window.toggleEditProfileSection = () => {
-  const box = document.getElementById("editProfileSectionBox");
-  const arrow = document.getElementById("editProfileToggleArrow");
-  if(!box) return;
-  const isHidden = box.style.display === "none";
-  box.style.display = isHidden ? "block" : "none";
-  if(arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-  if(isHidden) updateAccountScreenUI();
+    document.getElementById("accountEmail").textContent="";
+    const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";
+    document.getElementById("accountName").textContent="👤 "+dn;
+    document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
+    const mnEl=document.getElementById("accountMemberNo");
+    if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}
+    const unEl=document.getElementById("accountUsername");
+    const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+    const refDisplay = document.getElementById("myRefLinkDisplay");
+    if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
+    if(unEl){if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}}
+    const stEl=document.getElementById("accountStore");
+    if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
+    const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
+    const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";
+    const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
+    if(myStore){
+      if(openBtn)openBtn.style.display="none";
+      if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}
+      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn){
+        const isRest=isRestaurantStore(myStore);
+        myRestBtn.style.display=(isRest && myStore.status==="approved")?"block":"none";
+        myRestBtn.onclick=()=>openRestaurantLiveOrders(myStore.id);
+      }
+    }else{
+      if(openBtn)openBtn.style.display="block";
+      if(myBtn)myBtn.style.display="none";
+      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn)myRestBtn.style.display="none";
+    }
+    reportsBtn.classList.toggle("hidden",!isAdmin);
+    if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
+    const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
+    const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
+    const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
+    const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
+    const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
+    const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
+    const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
+    const awb=document.getElementById("adminWalletBtn");if(awb)awb.classList.toggle("hidden",!isAdmin);
+    if(typeof getUserWallet === 'function'){
+      getUserWallet(auth.currentUser.uid).then(wal=>{
+        if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
+      }).catch(()=>{});
+    }
+    accountOverlay.classList.remove("hidden");
+    if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
+  }else{pendingAction=null;authOverlay.classList.remove("hidden");}
 };
-
-window.toggleAdminSection = () => {
-  const box = document.getElementById("adminButtonsGridBox");
-  const arrow = document.getElementById("adminToggleArrow");
-  if(!box) return;
-  const isHidden = box.style.display === "none";
-  box.style.display = isHidden ? "block" : "none";
-  if(arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-};
-
-function backFromAccountDirect(){
-  const as = document.getElementById("accountScreen");
-  if(as) as.classList.add("hidden");
-  showCategoriesScreenDirect();
-}
-window.backFromAccountDirect = backFromAccountDirect;
-window.backFromAccount = () => {
-  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'account'){
-    window.history.back();
-    return;
-  }
-  backFromAccountDirect();
-};
-
-window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");};
-window.openModeration=async()=>{
-  if(!isAdmin){showToast("❌ خاص بالإدارة فقط","error");return;}
-  moderationOverlay.classList.remove("hidden");
-  renderModeration();
-  await Promise.all([refreshPendingPosts(), refreshRejectedPosts()]);
-  renderModeration();
-  if(!pendingPostsListenerStarted) startPendingPostsListener();
-};
-window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");};
+window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
 function closeOverlayDirect(){
-  authOverlay.classList.add("hidden");
-  if(typeof accountOverlay !== 'undefined' && accountOverlay && accountOverlay.id === "accountOverlay") accountOverlay.classList.add("hidden");
-  reportsOverlay.classList.add("hidden");
+  authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
   warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");
   postTypeOverlay.classList.add("hidden");
@@ -7407,12 +5886,7 @@ function closeOverlayDirect(){
   const dsh=document.getElementById("dashboardOverlay");if(dsh)dsh.classList.add("hidden");
   const sno=document.getElementById("sendNotifOverlay");if(sno)sno.classList.add("hidden");
   const eso=document.getElementById("editStoreOverlay");
-  if(eso){
-    eso.classList.add("hidden");
-    editStoreCurrentId=null;
-    editStoreLogoImage=null;
-    editStoreCoverImage=null;
-  }
+  if(eso)eso.classList.add("hidden");
   const oto=document.getElementById("orderTrackerOverlay");if(oto)oto.classList.add("hidden");
   const rlo=document.getElementById("restaurantLiveOrdersOverlay");if(rlo)rlo.classList.add("hidden");
   const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
@@ -7422,27 +5896,6 @@ function closeOverlayDirect(){
   pendingAction=null;
   document.body.style.overflow="";
   updateCartUI();
-
-  // 🛡️ حماية تامة لمنع أي شاشة بيضاء: التأكد من بقاء شاشة رئيسية ظاهرة دائماً
-  const as = document.getElementById("accountScreen");
-  const anyScreenVisible = [
-    document.getElementById("home"),
-    document.getElementById("categoriesScreen"),
-    document.getElementById("form"),
-    as,
-    document.getElementById("storesScreen"),
-    document.getElementById("storeScreen"),
-    document.getElementById("inboxScreen"),
-    document.getElementById("restaurantCashierScreen")
-  ].some(el => el && !el.classList.contains("hidden") && el.style.display !== "none");
-
-  if(!anyScreenVisible){
-    if(auth.currentUser && as){
-      as.classList.remove("hidden");
-    } else if(typeof showCategoriesScreenDirect === 'function') {
-      showCategoriesScreenDirect();
-    }
-  }
 }
 window.closeOverlayDirect=closeOverlayDirect;
 window.closeOverlay=()=>{
@@ -7450,6 +5903,7 @@ window.closeOverlay=()=>{
     window.history.state.screen === 'post' ||
     window.history.state.screen === 'cart' ||
     window.history.state.screen === 'seller' ||
+    window.history.state.screen === 'account' ||
     window.history.state.screen === 'overlay'
   )){
     window.history.back();
@@ -7467,18 +5921,13 @@ window.saveMyName=async()=>{
   const name=(document.getElementById("myName")?.value||"").trim();
   if(name.length<2||name.length>30){showToast("الاسم بين 2 و30 حرفاً","warn");return;}
   try{
-    const now = Date.now();
-    const { error } = await supabase.from("profiles").update({ name, updated_at: now }).eq("id", me.uid);
-    if(error){
-      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, name, updated_at: now }, { onConflict: "id" });
-    }
+    await setDoc(doc(db,"profiles",me.uid),{name},{merge:true});
     if(!myProfile) myProfile={};
     myProfile.name=name;
-    window.myProfile=myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
+    const anEl=document.getElementById("accountName");
+    if(anEl) anEl.textContent="👤 "+name;
     const mine=allPosts.filter(p=>p.uid===me.uid);
-    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
+    await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
     if(myStore){
       try{ await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""}); }catch(e){}
     }
@@ -7490,52 +5939,23 @@ window.saveMyUsername=async()=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
   const input=document.getElementById("myUsername");
-  const raw=(input?.value||"").trim().toLowerCase().replace(/^@/,'');
+  const raw=(input.value||"").trim().toLowerCase();
+  const oldUsername=(myProfile&&myProfile.username)||"";
   if(!raw){showToast("اكتب اسم المستخدم أولاً","warn");return;}
-  const v=validateUsername(raw);
-  if(!v.ok){showToast("❌ "+v.msg,"error");return;}
-
-  const ok = await showConfirmModal(`هل تريد حفظ اسم المستخدم: @${v.value}؟`, { confirmText: "نعم، حفظ" });
-  if(!ok) return;
-
+  if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
+  if(!confirm(`هل تريد حفظ اسم المستخدم: @${raw}؟`))return;
   showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
-  try{
-    // فحص الفرادة أولاً في قاعدة البيانات لمنع أي تصادم
-    const { data: uExist } = await supabase.from("profiles").select("id").eq("username", v.value).neq("id", me.uid).limit(1).maybeSingle();
-    if(uExist && uExist.id){
-      showToast("❌ هذا الاسم محجوز لحساب آخر، اختر اسماً ثانياً","error");
-      return;
-    }
-
-    const now = Date.now();
-    const { error } = await supabase.from("profiles").update({ username: v.value, updated_at: now }).eq("id", me.uid);
-    if(error){
-      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, username: v.value, updated_at: now }, { onConflict: "id" });
-    }
-    await setDoc(doc(db,"usernames",v.value),{uid:me.uid,createdAt:now},{merge:true}).catch(()=>{});
-
-    try{
-      const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
-      if(allU && allU.length > 0){
-        for(const item of allU){
-          if(item.username !== v.value) await supabase.from("usernames").delete().eq("username", item.username).catch(()=>{});
-        }
-      }
-    }catch(e){}
-
+  const res=await reserveUsername(me,raw,oldUsername);
+  if(res.ok){
     if(!myProfile) myProfile={};
-    myProfile.username=v.value;
-    window.myProfile=myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
-
-    const mine=allPosts.filter(p=>p.uid===me.uid);
-    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:v.value}).catch(()=>{})));
-
-    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:v.value});}catch(e){}}
-    showToast("✅ تم حفظ اسم المستخدم: @"+v.value,"success");
-  }catch(e){
-    showToast("❌ تعذر حفظ اسم المستخدم: "+e.message,"error");
+    myProfile.username=res.value;
+    if(input) input.value=res.value;
+    const unEl=document.getElementById("accountUsername");
+    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="block";}
+    showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
+    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
+  }else{
+    showToast("❌ "+res.msg,"error");
   }
 };
 
@@ -7549,151 +5969,29 @@ window.saveMyPhone=async()=>{
   const v=validatePhone(raw);
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
   const cleanNew=v.value;
+  const oldPhone=(myProfile&&myProfile.phone)||"";
+  const cleanOld=oldPhone?normalizePhone(oldPhone):"";
+  if(cleanOld && cleanOld===cleanNew){showToast("هذا رقمك الحالي بالفعل","info");return;}
 
-  showToast("⏳ جاري التحقق وحفظ الرقم...","info",1500);
-  try{
-    // فحص الفرادة أولاً في قاعدة البيانات لمنع أي تضارب
-    const { data: pExist } = await supabase.from("profiles").select("id").eq("phone", cleanNew).neq("id", me.uid).limit(1).maybeSingle();
-    if(pExist && pExist.id){
-      showToast("❌ هذا الرقم مربوط بحساب شخص آخر بالفعل ولا يمكن استخدامه","error",5000);
-      return;
-    }
+  const displayNew=formatCallPhone(cleanNew);
+  const displayOld=cleanOld?formatCallPhone(cleanOld):"";
+  let confirmMsg="";
+  if(!cleanOld){
+    confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: ${displayNew} بحسابك؟\n\n⚠️ سيتم قفل هذا الرقم لحسابك فقط ولن يتمكن أي شخص آخر من استخدامه.`;
+  }else{
+    confirmMsg=`هل تريد تغيير رقمك من (${displayOld}) إلى (${displayNew})؟\n\n⚠️ سيتم فك ارتباط رقمك السابق وإتاحته، وتثبيت الرقم الجديد بحسابك فقط.`;
+  }
+  if(!confirm(confirmMsg))return;
 
-    const now = Date.now();
-    const { error } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: now }).eq("id", me.uid);
-    if(error){
-      await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, phone: cleanNew, updated_at: now }, { onConflict: "id" });
-    }
-    await setDoc(doc(db,"phones",cleanNew),{uid:me.uid,email:me.email||"",phone:cleanNew,localPhone:formatCallPhone(cleanNew),linkedAt:now},{merge:true}).catch(()=>{});
-
-    try{
-      const { data: allP } = await supabase.from("phones").select("phone").eq("uid", me.uid);
-      if(allP && allP.length > 0){
-        for(const item of allP){
-          if(item.phone !== cleanNew) await supabase.from("phones").delete().eq("phone", item.phone).catch(()=>{});
-        }
-      }
-    }catch(e){}
-
+  showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
+  const res=await reservePhone(me,cleanNew,cleanOld);
+  if(res.ok){
     if(!myProfile) myProfile={};
-    myProfile.phone=cleanNew;
-    window.myProfile=myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
-
-    const mine=allPosts.filter(p=>p.uid===me.uid);
-    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{})));
-
-    showToast("✅ تم حفظ وتأكيد رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
-  }catch(e){
-    showToast("❌ تعذر حفظ رقم الهاتف: "+e.message,"error",5000);
-  }
-};
-
-window.saveAllProfileData=async()=>{
-  const me=auth.currentUser;
-  if(!me){authOverlay.classList.remove("hidden");return;}
-  const nameInput=document.getElementById("myName");
-  const userInput=document.getElementById("myUsername");
-  const phoneInput=document.getElementById("myPhone");
-
-  const nameVal=(nameInput?.value||"").trim();
-  const userVal=(userInput?.value||"").trim().toLowerCase().replace(/^@/,'');
-  const phoneVal=(phoneInput?.value||"").trim();
-
-  if(nameVal && (nameVal.length<2||nameVal.length>30)){
-    showToast("الاسم بين 2 و30 حرفاً","warn");
-    return;
-  }
-  let cleanPhone="";
-  if(phoneVal){
-    const v=validatePhone(phoneVal);
-    if(!v.ok){showToast("❌ "+v.msg,"error");return;}
-    cleanPhone=v.value;
-  }
-
-  showToast("⏳ جاري حفظ وتثبيت بيانات حسابك...","info",2000);
-  try{
-    const updates={ updated_at: Date.now() };
-    if(nameVal) updates.name=nameVal;
-
-    if(cleanPhone){
-      const { data: pExist } = await supabase.from("profiles").select("id").eq("phone", cleanPhone).neq("id", me.uid).limit(1).maybeSingle();
-      if(pExist && pExist.id){
-        showToast("❌ رقم الهاتف مربوط بحساب شخص آخر","error");
-        return;
-      }
-      updates.phone=cleanPhone;
-    }
-
-    if(userVal){
-      const v=validateUsername(userVal);
-      if(!v.ok){showToast("❌ "+v.msg,"error");return;}
-      const { data: uExist } = await supabase.from("profiles").select("id").eq("username", v.value).neq("id", me.uid).limit(1).maybeSingle();
-      if(uExist && uExist.id){
-        showToast("❌ اسم المستخدم @" + v.value + " محجوز لحساب آخر","error");
-        return;
-      }
-      updates.username=v.value;
-    }
-
-    // 1. تحديث مباشر وقاطع في جدول profiles
-    const { error: profErr } = await supabase.from("profiles").update(updates).eq("id", me.uid);
-    if(profErr){
-      const { error: insErr } = await supabase.from("profiles").upsert({ id: me.uid, email: me.email||null, ...updates }, { onConflict: "id" });
-      if(insErr) throw insErr;
-    }
-
-    // 2. تحديث جداول المساعدة
-    const now = Date.now();
-    if(cleanPhone){
-      await setDoc(doc(db,"phones",cleanPhone),{uid:me.uid,email:me.email||"",phone:cleanPhone,localPhone:formatCallPhone(cleanPhone),linkedAt:now},{merge:true}).catch(()=>{});
-      try{
-        const { data: allP } = await supabase.from("phones").select("phone").eq("uid", me.uid);
-        if(allP){
-          for(const it of allP){
-            if(it.phone !== cleanPhone) await supabase.from("phones").delete().eq("phone", it.phone).catch(()=>{});
-          }
-        }
-      }catch(e){}
-    }
-
-    if(userVal){
-      await setDoc(doc(db,"usernames",userVal),{uid:me.uid,createdAt:now},{merge:true}).catch(()=>{});
-      try{
-        const { data: allU } = await supabase.from("usernames").select("username").eq("uid", me.uid);
-        if(allU){
-          for(const it of allU){
-            if(it.username !== userVal) await supabase.from("usernames").delete().eq("username", it.username).catch(()=>{});
-          }
-        }
-      }catch(e){}
-    }
-
-    // 3. تثبيت كامل في الذاكرة والكاش وشاشة الحساب
-    if(!myProfile) myProfile={};
-    if(updates.name) myProfile.name = updates.name;
-    if(updates.phone) myProfile.phone = updates.phone;
-    if(updates.username) myProfile.username = updates.username;
-
-    window.myProfile=myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
-
-    // تحديث الإعلانات
-    const mine=allPosts.filter(p=>p.uid===me.uid);
-    const postUpd={};
-    if(updates.name) postUpd.sellerName = updates.name;
-    if(updates.phone) postUpd.phone = updates.phone;
-    if(updates.username) postUpd.sellerUsername = updates.username;
-    if(Object.keys(postUpd).length > 0){
-      Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),postUpd).catch(()=>{})));
-    }
-
-    showToast("✅ تم حفظ وتأكيد جميع بيانات حسابك بنجاح","success");
-  }catch(e){
-    console.error("saveAllProfileData error:", e);
-    showToast("❌ "+(e.message||"تعذر حفظ البيانات"),"error");
+    myProfile.phone=res.value;
+    if(input) input.value=formatCallPhone(res.value);
+    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
+  }else{
+    showToast("❌ "+res.msg,"error",5000);
   }
 };
 
@@ -7778,11 +6076,13 @@ if(uname)badges+=`<span class="usernameBadge" style="margin:4px 4px 0 0;font-siz
 if(memberNo)badges+=`<span class="memberNoBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">#${memberNo}</span>`;
 if(ph)badges+=`<span class="phoneBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">📱 ${escapeHtml(normalizePhone(ph))}</span>`;
 let followHtml="";
+let chatSellerProfileBtn="";
 if(!isMe){
   if(following){followHtml=`<button class="followBtn following" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`;}
   else{followHtml=`<button class="followBtn" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;}
+  chatSellerProfileBtn=`<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-top:8px;margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:800;padding:10px 14px;border-radius:10px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="openChatWithSeller('${escapeHtml(uid)}',null,null,'${escapeHtml(name)}')">💬 إرسال رسالة مباشرة للبائع</button>`;
 }
-box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}${tierBadge}</div><div>${badges}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div><div style="margin-top:10px">${followHtml}</div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>إعلانات</span></div><div class="sStat"><b>${followersCount}</b><span>متابع</span></div><div class="sStat"><b>${count}</b><span>تقييمات</span></div></div>${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
+box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}${tierBadge}</div><div>${badges}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div><div style="margin-top:10px">${followHtml}${chatSellerProfileBtn}</div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>إعلانات</span></div><div class="sStat"><b>${followersCount}</b><span>متابع</span></div><div class="sStat"><b>${count}</b><span>تقييمات</span></div></div>${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
 }
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
 window.submitRating=async()=>{
@@ -7799,24 +6099,7 @@ window.submitRating=async()=>{
     await openSeller(uid);
   }catch(e){showToast("تعذر إرسال التقييم: "+e.message,"error");}
 };
-window.deleteRating=async(id)=>{
-  const ok = await showConfirmModal("هل أنت متأكد من حذف هذا التقييم؟", { isDanger: true, confirmText: "نعم، حذف" });
-  if(!ok) return;
-  const me=auth.currentUser;
-  if(!me){showToast("⚠️ سجّل دخولك أولاً","warn");return;}
-  try{
-    const snap = await getDoc(doc(db,"ratings",id));
-    if(!snap.exists()){showToast("التقييم غير موجود أو محذوف","info");return;}
-    const r = snap.data();
-    if(r.raterUid !== me.uid && !isAdmin){
-      showToast("❌ لا تملك صلاحية حذف هذا التقييم","error");
-      return;
-    }
-    await deleteDoc(doc(db,"ratings",id));
-    showToast("✅ تم حذف التقييم","success");
-    if(sellerPanelUid) await openSeller(sellerPanelUid);
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-};
+window.deleteRating=async(id)=>{if(!confirm("حذف هذا التقييم؟"))return;try{await deleteDoc(doc(db,"ratings",id));await openSeller(sellerPanelUid);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
    البروفايل + الترقيم + اسم المستخدم
@@ -7830,33 +6113,8 @@ async function assignMemberNumber(user,customName){
   const profileRef=doc(db,"profiles",user.uid);
   try{
     const profileSnap=await getDoc(profileRef);
-    const existing = (profileSnap && profileSnap.exists()) ? (profileSnap.data() || {}) : {};
-    if(existing.memberNo!=null){
-      if(!myProfile) myProfile={};
-      if(existing.name) myProfile.name = existing.name;
-      if(existing.username) myProfile.username = existing.username;
-      if(existing.phone) myProfile.phone = existing.phone;
-      myProfile.memberNo = existing.memberNo;
-      if(existing.storeId !== undefined) myProfile.storeId = existing.storeId;
-      window.myProfile = myProfile;
-      saveCachedProfile(myProfile);
-      if(!isAdmin && checkIsAdmin(user, myProfile)){
-        isAdmin = true;
-        adminChip.classList.remove("hidden");
-        if(moderationBtn)moderationBtn.classList.remove("hidden");
-        const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.remove("hidden");
-        const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.remove("hidden");
-        const eb=document.getElementById("expiredBtn");if(eb)eb.classList.remove("hidden");
-        const limitsBtn=document.getElementById("limitsBtn");if(limitsBtn)limitsBtn.classList.remove("hidden");
-        const dashBtn=document.getElementById("dashboardBtn");if(dashBtn)dashBtn.classList.remove("hidden");
-        const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display="block";
-        const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display="block";
-        const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.remove("hidden");
-        updateModBadge();
-        if(!pendingPostsListenerStarted) startPendingPostsListener();
-      }
-      updateAccountScreenUI();
-      return existing.memberNo;
+    if(profileSnap.exists() && profileSnap.data().memberNo!=null){
+      return profileSnap.data().memberNo;
     }
     const counterSnap=await getDoc(counterRef);
     let currentNumber=1000;
@@ -7868,22 +6126,16 @@ async function assignMemberNumber(user,customName){
 
     const updates={
       memberNo:newNumber,
-      name:existing.name || (myProfile && myProfile.name) || customName || defaultName(user),
-      createdAt:existing.createdAt || profileCreatedAt(user),
-      storeId:existing.storeId || (myProfile && myProfile.storeId) || null,
-      phoneEditsCount:existing.phoneEditsCount || 0
+      name:customName || defaultName(user),
+      createdAt:profileCreatedAt(user),
+      username:(myProfile&&myProfile.username)||"",
+      storeId:(myProfile&&myProfile.storeId)||null,
+      phone:(myProfile&&myProfile.phone)||"",
+      phoneEditsCount:0
     };
-    const p = (existing.phone || (myProfile && myProfile.phone) || "").trim();
-    if (p) updates.phone = p;
-    const un = (existing.username || (myProfile && myProfile.username) || "").trim();
-    if (un) updates.username = un;
-
     await setDoc(profileRef,updates,{merge:true});
     if(!myProfile) myProfile={};
     Object.assign(myProfile, updates);
-    window.myProfile = myProfile;
-    saveCachedProfile(myProfile);
-    updateAccountScreenUI();
     return newNumber;
   }catch(e){
     console.warn("assignMemberNumber error:", e);
@@ -7899,19 +6151,6 @@ async function reserveUsername(user,newUsername,oldUsername){
   const usernameRef=doc(db,"usernames",u);
   const profileRef=doc(db,"profiles",user.uid);
   try{
-    // فحص الفرادة في جدول profiles
-    if(window.supabase){
-      const { data: uExist } = await window.supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", u)
-        .neq("id", user.uid)
-        .limit(1)
-        .maybeSingle();
-      if(uExist && uExist.id){
-        return{ok:false,msg:"هذا الاسم محجوز لحساب آخر، اختر اسماً ثانياً"};
-      }
-    }
     const uSnap=await getDoc(usernameRef);
     if(uSnap.exists()){
       const uData=uSnap.data()||{};
@@ -7921,21 +6160,17 @@ async function reserveUsername(user,newUsername,oldUsername){
     }
     const now=Date.now();
     await setDoc(usernameRef,{uid:user.uid,createdAt:now},{merge:true});
-    const { error: pErr } = await supabase.from("profiles").update({ username: u, updated_at: now }).eq("id", user.uid);
-    if(pErr){
-      await supabase.from("profiles").upsert({ id: user.uid, username: u, updated_at: now }, { onConflict: "id" });
-    }
+    await setDoc(profileRef,{username:u},{merge:true});
 
-    try{
-      const { data: allUserUsernames } = await supabase.from("usernames").select("username").eq("uid", user.uid);
-      if(allUserUsernames && allUserUsernames.length > 0){
-        for(const item of allUserUsernames){
-          if(item.username !== u){
-            await supabase.from("usernames").delete().eq("username", item.username).catch(()=>{});
-          }
+    if(oldUsername && oldUsername!==u){
+      try{
+        const oldRef=doc(db,"usernames",oldUsername);
+        const oldSnap=await getDoc(oldRef);
+        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
+          await deleteDoc(oldRef);
         }
-      }
-    }catch(e){}
+      }catch(e){}
+    }
 
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
@@ -7957,25 +6192,13 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   if(!v.ok)return{ok:false,msg:v.msg};
   const cleanNew=v.value;
   const cleanOld=oldPhoneRaw?normalizePhone(oldPhoneRaw):"";
+  if(cleanOld && cleanOld===cleanNew){return{ok:true,value:cleanNew,unchanged:true};}
 
   const phoneRef=doc(db,"phones",cleanNew);
   const profileRef=doc(db,"profiles",user.uid);
 
   try{
-    // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر في جدول profiles
-    if(window.supabase){
-      const { data: pExist } = await window.supabase
-        .from("profiles")
-        .select("id")
-        .eq("phone", cleanNew)
-        .neq("id", user.uid)
-        .limit(1)
-        .maybeSingle();
-      if(pExist && pExist.id){
-        return{ok:false,msg:"هذا الرقم مربوط بحساب شخص آخر بالفعل ولا يمكن استخدامه"};
-      }
-    }
-
+    // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر
     const phoneSnap=await getDoc(phoneRef);
     if(phoneSnap.exists()){
       const pData=phoneSnap.data()||{};
@@ -7994,23 +6217,32 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       linkedAt:now
     },{merge:true});
 
-    // حفظ في جدول profiles
-    const { error: pErr } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: now }).eq("id", user.uid);
-    if(pErr){
-      await supabase.from("profiles").upsert({ id: user.uid, phone: cleanNew, updated_at: now }, { onConflict: "id" });
-    }
+    // حفظ في جدول profiles عبر upsert
+    await setDoc(profileRef,{
+      phone:cleanNew
+    },{merge:true});
 
-    // تحرير الرقم القديم وحذف أي أرقام أخرى لنفس المستخدم ليبقى رقم واحد فقط
-    try{
-      const { data: allUserPhones } = await supabase.from("phones").select("phone").eq("uid", user.uid);
-      if(allUserPhones && allUserPhones.length > 0){
-        for(const item of allUserPhones){
-          if(item.phone !== cleanNew){
-            await supabase.from("phones").delete().eq("phone", item.phone).catch(()=>{});
-          }
+    // تحرير الرقم القديم ليصبح متاحاً عند تغييره
+    if(cleanOld && cleanOld!==cleanNew){
+      try{
+        const oldPhoneRef=doc(db,"phones",cleanOld);
+        const oldSnap=await getDoc(oldPhoneRef);
+        if(oldSnap.exists() && oldSnap.data()?.uid===user.uid){
+          await deleteDoc(oldPhoneRef);
         }
+      }catch(e){}
+
+      const oldLocal=formatCallPhone(cleanOld);
+      if(oldLocal && oldLocal!==cleanOld){
+        try{
+          const oldLocalRef=doc(db,"phones",oldLocal);
+          const oldLocalSnap=await getDoc(oldLocalRef);
+          if(oldLocalSnap.exists() && oldLocalSnap.data()?.uid===user.uid){
+            await deleteDoc(oldLocalRef);
+          }
+        }catch(e){}
       }
-    }catch(e){}
+    }
 
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
@@ -8027,11 +6259,9 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
     myProfile.phone=cleanNew;
     return{ok:true,value:cleanNew};
   }catch(e){
+    // في حال تعذر جدول phones، يتم الحفظ بالبروفايل مباشرة
     try{
-      const { error: pErr2 } = await supabase.from("profiles").update({ phone: cleanNew, updated_at: Date.now() }).eq("id", user.uid);
-      if(pErr2){
-        await supabase.from("profiles").upsert({ id: user.uid, phone: cleanNew, updated_at: Date.now() }, { onConflict: "id" });
-      }
+      await setDoc(profileRef,{phone:cleanNew},{merge:true});
       if(!myProfile) myProfile={};
       myProfile.phone=cleanNew;
       return{ok:true,value:cleanNew};
@@ -8042,45 +6272,16 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
 }
 
 function startProfileListener(user){
-  stopProfileListener(false);
+  stopProfileListener();
   profileCreateTried=false;
   let assignAttempted=false;
   unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
     if(snap.exists()){
-      const freshData = snap.data() || {};
-      if(!myProfile) myProfile = {};
-      if(freshData.name) myProfile.name = freshData.name;
-      if(freshData.username) myProfile.username = freshData.username;
-      if(freshData.phone) myProfile.phone = freshData.phone;
-      if(freshData.memberNo != null) myProfile.memberNo = freshData.memberNo;
-      if(freshData.storeId !== undefined) myProfile.storeId = freshData.storeId;
-      if(freshData.email && !myProfile.email) myProfile.email = freshData.email;
-
-      window.myProfile = myProfile;
-      saveCachedProfile(myProfile);
-      if(!isAdmin && checkIsAdmin(user, myProfile)){
-        isAdmin = true;
-        adminChip.classList.remove("hidden");
-        if(moderationBtn)moderationBtn.classList.remove("hidden");
-        const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.remove("hidden");
-        const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.remove("hidden");
-        const eb=document.getElementById("expiredBtn");if(eb)eb.classList.remove("hidden");
-        const limitsBtn=document.getElementById("limitsBtn");if(limitsBtn)limitsBtn.classList.remove("hidden");
-        const dashBtn=document.getElementById("dashboardBtn");if(dashBtn)dashBtn.classList.remove("hidden");
-        const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display="block";
-        const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display="block";
-        const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.remove("hidden");
-        updateModBadge();
-        if(!pendingPostsListenerStarted) startPendingPostsListener();
-      }
-      updateAccountScreenUI();
-      if(!myProfile.phone || !myProfile.username){
-        syncFullUserProfile(user.uid);
-      }
-      if(myProfile.memberNo==null && !assignAttempted){
-        assignAttempted=true;
-        assignMemberNumber(user).catch(e=>{ assignAttempted=false; });
-      }
+      myProfile=snap.data();
+      const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
+      const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
+      const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
+      if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}
       if(myProfile.phone){
         const cleanPh=normalizePhone(myProfile.phone);
         if(cleanPh){
@@ -8094,32 +6295,13 @@ function startProfileListener(user){
       if(!unsubStore){startStoreListener(user.uid);}
     }else if(!profileCreateTried){
       profileCreateTried=true;
-      assignMemberNumber(user).catch(e=>{ profileCreateTried=false; });
+      assignMemberNumber(user).catch(e=>{});
     }
   },err=>{});
 }
-function stopProfileListener(isLogout = false){
-  if(unsubProfile){unsubProfile();unsubProfile=null;}
-  if(isLogout){
-    myProfile=null;
-    window.myProfile=null;
-    try{ localStorage.removeItem("tasawuq_cached_profile"); }catch(e){}
-  }
-}
+function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
-function startStoreListener(uid){
-  stopStoreListener();
-  unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{
-    if(!snap.empty){
-      const targetDoc = (myProfile && myProfile.storeId)
-        ? (snap.docs.find(d => d.id === myProfile.storeId) || snap.docs[0])
-        : snap.docs[0];
-      myStore={id:targetDoc.id,...targetDoc.data()};
-    }else{
-      myStore=null;
-    }
-  },err=>{});
-}
+function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
 function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
 
 /* ============================================
@@ -8202,8 +6384,8 @@ function startBannerAuto(){
 /* ============================================
    GPS + إشعارات
    ============================================ */
-window.detectCity=async(evt)=>{
-  const btn=(evt && evt.target) || (typeof event !== 'undefined' && event?.target) || document.querySelector('.detectCityBtn') || document.getElementById('detectCityBtn');
+window.detectCity=async()=>{
+  const btn=event?.target;
   if(!btn)return;
   const oldText=btn.textContent;
   if(!navigator.geolocation){showToast("❌ المتصفح لا يدعم تحديد الموقع","error");return;}
@@ -8215,13 +6397,21 @@ window.detectCity=async(evt)=>{
       const data=await res.json();
       const cityName=data.address?.city||data.address?.town||data.address?.village||data.address?.state||"";
       const allCities=Object.values(LIBYA_CITIES).flat();
-      let match=allCities.find(c=>cityName && (cityName.includes(c)||c.includes(cityName)));
+      let match=allCities.find(c=>cityName.includes(c)||c.includes(cityName));
+      if(!match){
+        let minDist=Infinity;
+        allCities.forEach(c=>{
+          if(typeof c==="string"){
+            const dist=Math.abs(c.length-cityName.length);
+            if(dist<minDist && cityName.length>2){minDist=dist;match=c;}
+          }
+        });
+      }
       if(match){
-        const citySelect = document.getElementById("city");
-        if(citySelect) citySelect.value = match;
-        showToast(`✅ تم تحديد موقعك: ${match}`,"success");
+        document.getElementById("city").value=match;
+        showToast(`✅ تم تحديد: ${match}`,"success");
       }else{
-        showToast("⚠️ لم نتعرف على المدينة بدقة — يرجى اختيارها من القائمة","info");
+        showToast("⚠️ لم نتعرف على مدينتك — اخترها يدوياً","warn");
       }
     }catch(e){showToast("⚠️ فشل تحديد الموقع","error");}
     finally{btn.disabled=false;btn.textContent=oldText;}
@@ -8254,16 +6444,15 @@ window.enableNotifications=async()=>{
    ============================================ */
 onAuthStateChanged(auth,user=>{
 if(user){
-isAdmin=checkIsAdmin(user, myProfile || getCachedProfile());
+isAdmin=user.email===ADMIN_EMAIL;
 adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
-syncFullUserProfile(user.uid);
 startFollowingListener(user);
 giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
-if(typeof startGlobalRestaurantOrdersPoller === 'function') startGlobalRestaurantOrdersPoller();
+if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
@@ -8275,9 +6464,6 @@ const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
-const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display=isAdmin?"block":"none";
-const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display=isAdmin?"block":"none";
-const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){
@@ -8296,18 +6482,13 @@ else if(pendingAction==="following"){pendingAction=null;showFollowingPosts();}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="report"){const pid=pendingAction.postId;pendingAction=null;setTimeout(()=>{reportPost(pid);},500);}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="follow"){const suid=pendingAction.sellerUid;pendingAction=null;setTimeout(()=>{toggleFollow(suid);},500);}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="storeRating"){const sid=pendingAction.storeId;pendingAction=null;setTimeout(()=>{openStoreRating(sid);},500);}
-else if(window.location.hash === '#account'){
-  setTimeout(()=>openAccount(true), 150);
-}else{renderPosts();}
-updateAccountScreenUI();
+else{renderPosts();}
 updateCartUI();
 }else{
 isAdmin=false;
-if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer); window._globalChatPollerTimer = null; }
-if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
 adminChip.classList.add("hidden");
 navAccountLabel.textContent="دخول";
-stopProfileListener(false);
+stopProfileListener();
 stopStoreListener();
 stopFollowingListener();
 stopPendingPostsListener();
@@ -8321,21 +6502,8 @@ renderPosts();
 });
 
 window.logout=async()=>{
-  if(window._globalChatPollerTimer){ clearInterval(window._globalChatPollerTimer); window._globalChatPollerTimer = null; }
-  if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
-  try{localStorage.removeItem('tasawuq_cached_profile');}catch(e){}
-  allReports = [];
-  allLimits = [];
-  allPendingPosts = [];
-  myProfile = null;
-  window.myProfile = null;
-  myStore = null;
-  compareList = [];
-  saveCompare();
-  cart = {storeId:null, storeName:"", storePhone:"", items:[]};
-  saveCart();
   await signOut(auth);
 };
 
@@ -8376,22 +6544,15 @@ window.loginWithEmail=async()=>{
 /* ============================================
    📢 إشعارات داخل التطبيق (In-App)
    ============================================ */
-let _appNotificationsCache = [];
-
 function listenToAppNotifications(){
   onSnapshot(collection(db,"app_notifications"), snap => {
     if(snap.empty) return;
-    _appNotificationsCache = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    checkAndShowNextInAppBanner();
+    const notifs = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>b.createdAt-a.createdAt);
+    const latest = notifs[0];
+    const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
+    if(seen.includes(latest.id)) return;
+    showInAppBanner(latest);
   });
-}
-
-function checkAndShowNextInAppBanner(){
-  if(!_appNotificationsCache || _appNotificationsCache.length === 0) return;
-  const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
-  const nextUnseen = _appNotificationsCache.find(n => !seen.includes(n.id));
-  if(!nextUnseen) return;
-  showInAppBanner(nextUnseen);
 }
 
 function showInAppBanner(notif){
@@ -8427,11 +6588,10 @@ window.dismissInAppBanner = (id) => {
     const seen = JSON.parse(localStorage.getItem("seenAppNotifs") || "[]");
     if(!seen.includes(id)){
       seen.push(id);
-      if(seen.length > 30) seen.shift();
+      if(seen.length > 20) seen.shift();
       localStorage.setItem("seenAppNotifs", JSON.stringify(seen));
     }
   }catch(e){}
-  setTimeout(checkAndShowNextInAppBanner, 1500);
 };
 
 /* ============================================
@@ -8450,19 +6610,20 @@ setTimeout(()=>{
   }
 }, 800);
 
-function handleHashRouting(hash){
-  if(!hash) return;
-  if(hash.startsWith('#store-')){
+window.addEventListener('load',()=>{
+  const hash=window.location.hash;
+  if(hash&&hash.startsWith('#store-')){
     const sid=hash.substring(7);
     let t=0;
     const iv=setInterval(()=>{
       t++;
-      if(allStores.find(s=>s.id===sid) || t>25){
+      if(allStores.find(s=>s.id===sid) || t>20){
         clearInterval(iv);
         if(allStores.find(s=>s.id===sid)) openStore(sid,false,'categories');
       }
-    },400);
-  } else if(hash.startsWith('#post-')){
+    },500);
+  }
+  if(hash&&hash.startsWith('#post-')){
     const [pp,qp]=hash.split('?');
     const id=pp.substring(6);
     const params=new URLSearchParams(qp||'');
@@ -8473,44 +6634,9 @@ function handleHashRouting(hash){
     const iv=setInterval(()=>{
       t++;
       if(allPosts.find(p=>p.id===id)){clearInterval(iv);openPost(id);setTimeout(tryApplyPendingUpgrade,1500);}
-      else if(t>25){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}
-    },400);
-  } else if(hash.startsWith('#cat-')){
-    const cat = decodeURIComponent(hash.substring(5));
-    setTimeout(()=>{ if(typeof openCategory === 'function') openCategory(cat); }, 400);
-  } else if(hash === '#cart'){
-    setTimeout(()=>{ if(typeof openCart === 'function') openCart(); }, 400);
-  } else if(hash === '#form'){
-    setTimeout(()=>{ if(typeof openFormScreen === 'function') openFormScreen(); }, 400);
-  } else if(hash === '#account'){
-    let t = 0;
-    const iv = setInterval(() => {
-      t++;
-      if (auth.currentUser || t > 12) {
-        clearInterval(iv);
-        if (typeof openAccount === 'function') openAccount(true);
-      }
-    }, 150);
-  } else if(hash.startsWith('#seller-')){
-    const sellerUid = hash.substring(8);
-    setTimeout(()=>{ if(typeof openSeller === 'function') openSeller(sellerUid); }, 400);
-  } else if(hash === '#stores'){
-    setTimeout(()=>{ if(typeof openStores === 'function') openStores('stores'); }, 400);
-  } else if(hash === '#restaurants'){
-    setTimeout(()=>{ if(typeof openStores === 'function') openStores('restaurants'); }, 400);
-  } else if(hash.startsWith('#restaurant-orders')){
-    const parts = hash.split('-');
-    const sid = parts.length >= 3 ? parts[2] : (myStore ? myStore.id : '');
-    if(sid){
-      setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
-    }
+      else if(t>20){clearInterval(iv);setTimeout(tryApplyPendingUpgrade,500);}
+    },500);
   }
-}
-window.handleHashRouting = handleHashRouting;
-
-window.addEventListener('load',()=>{
-  if(myProfile) updateAccountScreenUI();
-  handleHashRouting(window.location.hash);
   try {
     const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
     if(activeOrdId){
@@ -8519,11 +6645,12 @@ window.addEventListener('load',()=>{
       }, 1500);
     }
   }catch(e){}
-});
-
-window.addEventListener('hashchange', ()=>{
-  if(typeof _isHistoryNavigating !== 'undefined' && !_isHistoryNavigating){
-    handleHashRouting(window.location.hash);
+  if(hash && hash.startsWith('#restaurant-orders')){
+    const parts = hash.split('-');
+    const sid = parts.length >= 3 ? parts[2] : (myStore ? myStore.id : '');
+    if(sid){
+      setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
+    }
   }
 });
 
@@ -8576,6 +6703,294 @@ async function sendPostToTelegram(post){
 window.sendPostToTelegram = sendPostToTelegram;
 
 // ============================================
+// أداة توليد صورة الستوري (Story Card Generator)
+// ============================================
+let currentStoryDataUrl = null;
+let currentStoryPost = null;
+
+async function generateStoryImage(post) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+
+  // خلفية تدرج لوني فخم
+  const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+  grad.addColorStop(0, "#0b1329");
+  grad.addColorStop(0.5, "#111827");
+  grad.addColorStop(1, "#0f172a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1080, 1920);
+
+  // دوائر زخرفية
+  ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
+  ctx.beginPath();
+  ctx.arc(100, 200, 320, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(236, 72, 153, 0.07)";
+  ctx.beginPath();
+  ctx.arc(980, 1680, 420, 0, Math.PI * 2);
+  ctx.fill();
+
+  // رأس البطاقة - اسم الموقع
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 46px 'Cairo', sans-serif";
+  ctx.fillText("🛒 تـسـوق الآن | TasawuqNow.com", 540, 140);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+  ctx.font = "26px 'Cairo', sans-serif";
+  ctx.fillText("منصة الإعلانات المبوبة في ليبيا", 540, 195);
+
+  // خط فاصل
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(140, 240);
+  ctx.lineTo(940, 240);
+  ctx.stroke();
+
+  // صورة السلعة الرئيسية
+  const imgX = 100, imgY = 280, imgW = 880, imgH = 880, radius = 36;
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
+  else ctx.rect(imgX, imgY, imgW, imgH);
+  ctx.clip();
+
+  const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
+  let imageLoaded = false;
+
+  if (images.length > 0) {
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((resolve) => {
+        img.onload = () => { imageLoaded = true; resolve(); };
+        img.onerror = () => { resolve(); };
+        setTimeout(resolve, 3500);
+        img.src = images[0];
+      });
+      if (imageLoaded) {
+        const hRatio = imgW / img.width;
+        const vRatio = imgH / img.height;
+        const ratio = Math.max(hRatio, vRatio);
+        const shiftX = (imgW - img.width * ratio) / 2;
+        const shiftY = (imgH - img.height * ratio) / 2;
+        ctx.drawImage(img, 0, 0, img.width, img.height, imgX + shiftX, imgY + shiftY, img.width * ratio, img.height * ratio);
+      }
+    } catch(e) {}
+  }
+
+  if (!imageLoaded) {
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(imgX, imgY, imgW, imgH);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 80px 'Cairo', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("📸 تسوق الآن", imgX + imgW / 2, imgY + imgH / 2);
+  }
+  ctx.restore();
+
+  // إطار الصورة
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
+  else ctx.rect(imgX, imgY, imgW, imgH);
+  ctx.stroke();
+
+  // وسم التصنيف فوق الصورة
+  if (post.category) {
+    ctx.fillStyle = "rgba(2, 132, 199, 0.92)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(140, 320, 240, 60, 16);
+    else ctx.fillRect(140, 320, 240, 60);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 26px 'Cairo', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(post.category, 260, 360);
+  }
+
+  // عنوان الإعلان
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 50px 'Cairo', sans-serif";
+  const title = post.title || "إعلان مميز";
+  if (title.length > 32) {
+    ctx.fillText(title.slice(0, 32), 980, 1240);
+    ctx.fillText(title.slice(32, 64) + "...", 980, 1300);
+  } else {
+    ctx.fillText(title, 980, 1260);
+  }
+
+  // شريط السعر والمدينة
+  const priceY = 1360;
+  ctx.fillStyle = "#f59e0b";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(100, priceY, 460, 110, 24);
+  else ctx.fillRect(100, priceY, 460, 110);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.font = "bold 44px 'Cairo', sans-serif";
+  const priceStr = post.priceType === "contact" ? "📞 عند الاتصال" : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
+  ctx.fillText(priceStr, 330, priceY + 70);
+
+  // شارة المدينة
+  if (post.city) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(590, priceY, 390, 110, 24);
+    else ctx.fillRect(590, priceY, 390, 110);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.font = "bold 36px 'Cairo', sans-serif";
+    ctx.fillText("📍 " + post.city, 785, priceY + 70);
+  }
+
+  // بطاقة أسفل الإعلان (دعوة للتواصل)
+  const ctaY = 1520;
+  ctx.fillStyle = "rgba(2, 132, 199, 0.2)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(100, ctaY, 880, 260, 28);
+  else ctx.fillRect(100, ctaY, 880, 260);
+  ctx.fill();
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 38px 'Cairo', sans-serif";
+  ctx.fillText("💬 تواصل مباشرة مع المعلن عبر واتساب", 540, ctaY + 75);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 34px 'Cairo', sans-serif";
+  ctx.fillText("ابحث عن الإعلان في موقعنا الآن:", 540, ctaY + 140);
+
+  ctx.fillStyle = "#fde047";
+  ctx.font = "bold 42px 'Cairo', sans-serif";
+  ctx.fillText("tasawuqnow.com", 540, ctaY + 215);
+
+  try {
+    return canvas.toDataURL("image/jpeg", 0.92);
+  } catch(err) {
+    console.warn("Story canvas export fallback:", err);
+    const cleanCanvas = document.createElement("canvas");
+    cleanCanvas.width = 1080;
+    cleanCanvas.height = 1920;
+    const cctx = cleanCanvas.getContext("2d");
+    const g = cctx.createLinearGradient(0, 0, 0, 1920);
+    g.addColorStop(0, "#0b1329");
+    g.addColorStop(0.5, "#111827");
+    g.addColorStop(1, "#0f172a");
+    cctx.fillStyle = g;
+    cctx.fillRect(0, 0, 1080, 1920);
+    cctx.textAlign = "center";
+    cctx.fillStyle = "#38bdf8";
+    cctx.font = "bold 52px 'Cairo', sans-serif";
+    cctx.fillText("🛒 تـسـوق الآن | TasawuqNow.com", 540, 200);
+    cctx.fillStyle = "#ffffff";
+    cctx.font = "bold 54px 'Cairo', sans-serif";
+    cctx.fillText(post.title || "إعلان مميز", 540, 680);
+    cctx.fillStyle = "#f59e0b";
+    cctx.font = "bold 64px 'Cairo', sans-serif";
+    const pText = post.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (post.price != null ? post.price + " د.ل" : "");
+    cctx.fillText(pText, 540, 820);
+    if(post.city){
+      cctx.fillStyle = "#94a3b8";
+      cctx.font = "bold 44px 'Cairo', sans-serif";
+      cctx.fillText("📍 " + post.city, 540, 940);
+    }
+    cctx.fillStyle = "#38bdf8";
+    cctx.font = "bold 44px 'Cairo', sans-serif";
+    cctx.fillText("شاهد الإعلان وتواصل مع البائع:", 540, 1500);
+    cctx.fillStyle = "#fde047";
+    cctx.font = "bold 52px 'Cairo', sans-serif";
+    cctx.fillText("tasawuqnow.com", 540, 1600);
+    return cleanCanvas.toDataURL("image/jpeg", 0.9);
+  }
+}
+
+window.openStoryModal = async function(id, skipHistory) {
+  const p = allPosts.find(x => x.id === id);
+  if (!p) return;
+  currentStoryPost = p;
+  const overlay = document.getElementById("storyModalOverlay");
+  const loader = document.getElementById("storyLoading");
+  const img = document.getElementById("storyPreviewImg");
+  const actions = document.getElementById("storyActionsBox");
+  if (!overlay) return;
+
+  overlay.classList.remove("hidden");
+  if(!skipHistory) pushNavState({ screen: 'storyModal', id: id });
+  loader.style.display = "block";
+  img.style.display = "none";
+  actions.style.display = "none";
+
+  try {
+    currentStoryDataUrl = await generateStoryImage(p);
+    img.src = currentStoryDataUrl;
+    loader.style.display = "none";
+    img.style.display = "block";
+    actions.style.display = "flex";
+  } catch (err) {
+    loader.textContent = "تعذر توليد الصورة: " + err.message;
+  }
+};
+
+function closeStoryModalDirect(){
+  const overlay = document.getElementById("storyModalOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+window.closeStoryModalDirect = closeStoryModalDirect;
+window.closeStoryModal = function() {
+  if (!_isHistoryNavigating && window.history.state && window.history.state.screen === 'storyModal') {
+    window.history.back();
+    return;
+  }
+  closeStoryModalDirect();
+};
+
+window.downloadStoryImage = function() {
+  if (!currentStoryDataUrl) return;
+  const a = document.createElement("a");
+  a.href = currentStoryDataUrl;
+  const title = (currentStoryPost && currentStoryPost.title) ? currentStoryPost.title.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_').slice(0, 20) : "story";
+  a.download = "tasawuq-" + title + ".png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast("📥 تم حفظ صورة الستوري بجهازك!", "success");
+};
+
+window.shareStoryDirectly = async function() {
+  if (!currentStoryDataUrl) return;
+  try {
+    const res = await fetch(currentStoryDataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], "tasawuq-story.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: currentStoryPost ? currentStoryPost.title : "إعلان على تسوق الآن",
+        text: "شاهد هذا الإعلان على تسوق الآن: https://tasawuqnow.com/#post-" + (currentStoryPost ? currentStoryPost.id : "")
+      });
+      return;
+    }
+  } catch(e) {}
+  downloadStoryImage();
+  setTimeout(() => {
+    showToast("تم تنزيل الصورة، يمكنك نشرها الآن في ستوري واتساب أو فيسبوك!", "info", 4000);
+  }, 1000);
+};
 
 // ============================================
 // دوال برنامج الإحالة والمكافآت (Referrals)
@@ -8753,123 +7168,59 @@ try {
 let _userWalletBalance = 0;
 let _walletUnsub = null;
 const WALLET_THROTTLE_KEY = "tasawuq_wallet_throttle";
-let _cachedWalletsMap = new Map();
 
-// 1. استرجاع بيانات محفظة المستخدم مع كاش خفيف لمدة 5 ثوانٍ لمنع تكرار طلبات DB
-export async function getUserWallet(uid, forceRefresh = false){
+// 1. استرجاع بيانات محفظة المستخدم
+export async function getUserWallet(uid){
   if(!uid) return { balance: 0.00, updatedAt: Date.now() };
-  const now = Date.now();
-  if(!forceRefresh && _cachedWalletsMap.has(uid)){
-    const cached = _cachedWalletsMap.get(uid);
-    if(now - cached.cachedAt < 5000){
-      return cached.data;
-    }
-  }
   try{
     const snap = await getDoc(doc(db, "feedback", "wallet_" + uid));
     if(snap && snap.exists()){
       const raw = snap.data();
       const parsed = raw.message ? JSON.parse(raw.message) : {};
       const bal = Math.max(0, Number(parsed.balance || 0));
-      const result = { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
-      _cachedWalletsMap.set(uid, { cachedAt: now, data: result });
-      try{
-        localStorage.setItem("tasawuq_wallet_balance_" + uid, String(result.balance));
-        localStorage.setItem("tasawuq_wallet_balance", String(result.balance));
-      }catch(e){}
-      return result;
+      return { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
     }
   }catch(e){
     console.warn("getUserWallet error:", e);
   }
-  const localCached = localStorage.getItem("tasawuq_wallet_balance_" + uid) || localStorage.getItem("tasawuq_wallet_balance");
-  if(localCached !== null && !isNaN(Number(localCached))){
-    const bal = Number(localCached);
-    const result = { balance: bal, updatedAt: Date.now() };
-    _cachedWalletsMap.set(uid, { cachedAt: now, data: result });
-    return result;
-  }
-  const fallback = { balance: 0.00, updatedAt: Date.now() };
-  _cachedWalletsMap.set(uid, { cachedAt: now, data: fallback });
-  return fallback;
+  return { balance: 0.00, updatedAt: Date.now() };
 }
 window.getUserWallet = getUserWallet;
 
-// 2. تسجيل حركة في السجل المالي العام (Audit Ledger) — حفظ ثنائي Supabase + Firebase + LocalStorage
+// 2. تسجيل حركة في السجل المالي العام (Audit Ledger)
 export async function recordWalletTx(uid, txType, amount, balanceBefore, balanceAfter, reason, meta = {}){
-  const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
-  const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-  const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
-  const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-  const amountVal = Math.round(Number(amount) * 100) / 100;
-  const beforeVal = Math.round(Number(balanceBefore) * 100) / 100;
-  const afterVal = Math.round(Number(balanceAfter) * 100) / 100;
-  
-  const txData = {
-    txId,
-    uid,
-    userName: uName,
-    userPhone: uPhone,
-    txType,
-    amount: amountVal,
-    balanceBefore: beforeVal,
-    balanceAfter: afterVal,
-    reason: String(reason || ""),
-    meta: meta || {},
-    timestamp: Date.now()
-  };
-  
-  let saved = false;
-  
-  // المحاولة 1: Supabase
-  if(window.supabase){
-    try {
-      const { error } = await window.supabase.from("feedback").insert({
-        id: txDocId,
-        type: "wallet_transaction",
-        uid: uid,
-        user_name: uName,
-        user_phone: uPhone,
-        message: JSON.stringify(txData),
-        created_at: Date.now()
-      });
-      if(error) throw error;
-      saved = true;
-      console.log("✅ Wallet tx saved to Supabase:", txId);
-    } catch(e){
-      console.warn("⚠️ Supabase wallet tx failed, trying Firebase:", e);
-    }
+  try{
+    const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
+    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
+    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+    const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+    const txData = {
+      txId,
+      uid,
+      userName: uName,
+      userPhone: uPhone,
+      txType, // 'card_recharge' | 'order_payment' | 'order_refund' | 'admin_credit' | 'admin_debit'
+      amount: Math.round(Number(amount) * 100) / 100,
+      balanceBefore: Math.round(Number(balanceBefore) * 100) / 100,
+      balanceAfter: Math.round(Number(balanceAfter) * 100) / 100,
+      reason: String(reason || ""),
+      meta: meta || {},
+      timestamp: Date.now()
+    };
+    await addDoc(collection(db, "feedback"), {
+      id: txDocId,
+      type: "wallet_transaction",
+      uid: uid,
+      userName: uName,
+      userPhone: uPhone,
+      message: JSON.stringify(txData),
+      createdAt: Date.now()
+    });
+    return txId;
+  }catch(e){
+    console.error("recordWalletTx error:", e);
+    return null;
   }
-  
-  // المحاولة 2: Firebase (في حال فشل Supabase)
-  if(!saved){
-    try {
-      await setDoc(doc(db, "feedback", txDocId), {
-        id: txDocId,
-        type: "wallet_transaction",
-        uid: uid,
-        userName: uName,
-        userPhone: uPhone,
-        message: JSON.stringify(txData),
-        createdAt: Date.now()
-      });
-      saved = true;
-      console.log("✅ Wallet tx saved to Firebase:", txId);
-    } catch(e){
-      console.error("🚨 CRITICAL: Wallet tx FAILED to save to both:", txData, e);
-    }
-  }
-  
-  if(!saved){
-    // على الأقل حفظ محلي مؤقت للعرض لاحقاً
-    try {
-      const pending = JSON.parse(localStorage.getItem("pendingWalletTxs") || "[]");
-      pending.unshift(txData);
-      localStorage.setItem("pendingWalletTxs", JSON.stringify(pending.slice(0, 50)));
-    } catch(e){}
-  }
-  
-  return saved ? txId : null;
 }
 window.recordWalletTx = recordWalletTx;
 
@@ -8890,19 +7241,11 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       uid: uid,
       userName: uName,
       userPhone: uPhone,
-      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() })
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
+      updatedAt: Date.now()
     }, { merge: true });
 
-    _cachedWalletsMap.delete(uid);
-    try{
-      localStorage.setItem("tasawuq_wallet_balance_" + uid, String(newBalance));
-      localStorage.setItem("tasawuq_wallet_balance", String(newBalance));
-    }catch(e){}
-
     const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
-    if(!txId){
-      console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
-    }
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
     }
@@ -8934,19 +7277,11 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       uid: uid,
       userName: uName,
       userPhone: uPhone,
-      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() })
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
+      updatedAt: Date.now()
     }, { merge: true });
 
-    _cachedWalletsMap.delete(uid);
-    try{
-      localStorage.setItem("tasawuq_wallet_balance_" + uid, String(newBalance));
-      localStorage.setItem("tasawuq_wallet_balance", String(newBalance));
-    }catch(e){}
-
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
-    if(!txId){
-      console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
-    }
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
     }
@@ -9013,12 +7348,6 @@ function resetWalletThrottle(){
 function updateWalletUI(balance){
   _userWalletBalance = Math.max(0, Number(balance) || 0);
   const balText = _userWalletBalance.toFixed(2);
-  try{
-    localStorage.setItem("tasawuq_wallet_balance", String(_userWalletBalance));
-    if(auth.currentUser && auth.currentUser.uid){
-      localStorage.setItem("tasawuq_wallet_balance_" + auth.currentUser.uid, String(_userWalletBalance));
-    }
-  }catch(e){}
   const headerBadge = document.getElementById("walletHeaderBadge");
   if(headerBadge) headerBadge.textContent = balText + " د.ل";
   const cardBal = document.getElementById("userWalletBalanceText");
@@ -9038,13 +7367,6 @@ export function setupUserWalletListener(uid){
   }
   if(!uid) return;
   try{
-    const cached = localStorage.getItem("tasawuq_wallet_balance_" + uid) || localStorage.getItem("tasawuq_wallet_balance");
-    if(cached !== null && !isNaN(Number(cached))){
-      updateWalletUI(Number(cached));
-    }
-  }catch(e){}
-
-  try{
     _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + uid), snap=>{
       if(snap && snap.exists()){
         const data = snap.data();
@@ -9052,18 +7374,7 @@ export function setupUserWalletListener(uid){
         try{ bal = JSON.parse(data.message || "{}").balance || 0; }catch(e){}
         updateWalletUI(bal);
       }else{
-        const local = localStorage.getItem("tasawuq_wallet_balance_" + uid);
-        if(local !== null && !isNaN(Number(local)) && Number(local) > 0){
-          updateWalletUI(Number(local));
-          setDoc(doc(db, "feedback", "wallet_" + uid), {
-            id: "wallet_" + uid,
-            type: "user_wallet",
-            uid: uid,
-            message: JSON.stringify({ balance: Number(local), updatedAt: Date.now() })
-          }, { merge: true }).catch(()=>{});
-        }else{
-          updateWalletUI(0);
-        }
+        updateWalletUI(0);
       }
     });
   }catch(e){
@@ -9218,7 +7529,7 @@ window.submitCardRecharge = async()=>{
 
     resetWalletThrottle();
 
-    // حرق الكارت مع آلية التراجع التلقائي لمنع ضياع الكارت
+    // حرق الكارت
     cardData.isUsed = true;
     cardData.usedByUid = auth.currentUser.uid;
     cardData.usedByName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
@@ -9228,33 +7539,17 @@ window.submitCardRecharge = async()=>{
     await updateDoc(doc(db, "feedback", cardDocId), {
       message: JSON.stringify(cardData),
       userName: cardData.usedByName,
-      userPhone: cardData.usedByPhone
+      userPhone: cardData.usedByPhone,
+      updatedAt: Date.now()
     });
 
     // إضافة الرصيد لحساب الزبون
-    let creditRes;
-    try {
-      creditRes = await creditUserWallet(
-        auth.currentUser.uid,
-        cardAmount,
-        `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
-        { txType: "card_recharge", cardCode: cleanCode }
-      );
-      if(!creditRes || !creditRes.ok){
-        throw new Error(creditRes?.error || "فشل تسجيل الرصيد");
-      }
-    } catch(creditErr){
-      // التراجع عن حرق الكارت عند فشل شحن الرصيد
-      cardData.isUsed = false;
-      delete cardData.usedByUid;
-      delete cardData.usedByName;
-      delete cardData.usedByPhone;
-      delete cardData.usedAt;
-      await updateDoc(doc(db, "feedback", cardDocId), {
-        message: JSON.stringify(cardData)
-      }).catch(()=>{});
-      throw creditErr;
-    }
+    const creditRes = await creditUserWallet(
+      auth.currentUser.uid,
+      cardAmount,
+      `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
+      { txType: "card_recharge", cardCode: cleanCode }
+    );
 
     if(inputEl) inputEl.value = "";
     if(statusBox){
@@ -9279,8 +7574,8 @@ window.submitCardRecharge = async()=>{
   }
 };
 
-// 12. كشف حساب المستخدم وسجل عملياته الشخصية (استعلام مرن + فلترة محلية + LocalStorage Pending)
-window.openMyWalletHistory = async () => {
+// 12. كشف حساب المستخدم وسجل عملياته الشخصية
+window.openMyWalletHistory = async()=>{
   if(!auth.currentUser){
     showToast("⚠️ يرجى تسجيل الدخول أولاً", "warn");
     return;
@@ -9289,135 +7584,63 @@ window.openMyWalletHistory = async () => {
   const listEl = document.getElementById("myWalletTxList");
   if(ov) ov.classList.remove("hidden");
   if(listEl) listEl.innerHTML = `<div class="reportsEmpty">⏳ جاري جلب سجل المعاملات...</div>`;
-  
-  const myUid = auth.currentUser.uid;
-  const cur = await getUserWallet(myUid);
+
+  const cur = await getUserWallet(auth.currentUser.uid);
   updateWalletUI(cur.balance);
-  
-  try {
-    let rows = [];
-    
-    // المحاولة 1: جلب كل الحركات من Supabase بدون فلتر uid (ثم نفلتر محلياً)
+
+  try{
+    let txs = [];
     if(window.supabase){
-      try {
-        const { data, error } = await window.supabase
-          .from("feedback")
-          .select("*")
-          .eq("type", "wallet_transaction")
-          .order("created_at", { ascending: false })
-          .limit(300);
-        if(!error && Array.isArray(data)) rows = data;
-      } catch(e){ console.warn("Supabase history fetch err:", e); }
+      const { data, error } = await window.supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "wallet_transaction")
+        .eq("uid", auth.currentUser.uid)
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if(!error && data) txs = data;
     }
-    
-    // المحاولة 2: Firebase
-    if(rows.length === 0){
-      try {
-        const snap = await getDocs(query(
-          collection(db, "feedback"),
-          where("type", "==", "wallet_transaction")
-        ));
-        rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      } catch(e){ console.warn("Firebase history fetch err:", e); }
-    }
-    
-    // فلترة العمليات الخاصة بالمستخدم فقط (client-side — يغطي كل الحالات)
-    const txs = [];
-    rows.forEach(row => {
-      try {
-        let parsed = {};
-        try { parsed = JSON.parse(row.message || "{}"); } catch(e){}
-        
-        const belongsToMe = (parsed.uid === myUid) || (row.uid === myUid);
-        if(!belongsToMe) return;
-        
-        txs.push({
-          ...parsed,
-          _rowId: row.id,
-          _ts: parsed.timestamp || new Date(row.created_at || row.createdAt || 0).getTime()
-        });
-      } catch(e){}
-    });
-    
-    // دمج أي حركات معلقة في localStorage (لم تُحفظ في DB)
-    try {
-      const pending = JSON.parse(localStorage.getItem("pendingWalletTxs") || "[]");
-      pending.forEach(p => {
-        if(p.uid === myUid && !txs.some(t => t.txId === p.txId)){
-          txs.push({ ...p, _ts: p.timestamp, _isPendingLocal: true });
-        }
-      });
-    } catch(e){}
-    
-    // ترتيب حسب الأحدث
-    txs.sort((a, b) => (b._ts || 0) - (a._ts || 0));
-    
-    // حالة فارغة
+
     if(txs.length === 0){
       if(listEl) listEl.innerHTML = `
-        <div class="cartEmptyBox" style="padding:30px 20px">
+        <div class="cartEmptyBox" style="padding:20px 0">
           <div class="icon">💳</div>
-          <div style="font-weight:800;font-size:15px;margin-bottom:6px">لا توجد حركات مالية بعد</div>
-          <div style="font-size:12.5px;line-height:1.6;color:var(--muted)">اشحن محفظتك بكارت الشحن أو اطلب من المطاعم<br>وستظهر جميع عملياتك هنا بشكل مفصل وواضح</div>
+          <div style="font-weight:700;font-size:14px">لا توجد حركات مالية بعد</div>
+          <div style="font-size:12px;margin-top:4px">اشحن محفظتك أو اطلب من المطاعم وستظهر جميع عملياتك هنا</div>
         </div>
       `;
       return;
     }
-    
-    // عرض الحركات
-    const typeLabels = {
-      'card_recharge': { icon: '💳', label: 'شحن كارت', color: '#16a34a' },
-      'order_payment': { icon: '🍽️', label: 'دفع طلب', color: '#dc2626' },
-      'order_refund': { icon: '🔄', label: 'استرجاع طلب', color: '#0284c7' },
-      'admin_credit': { icon: '➕', label: 'إيداع إداري', color: '#16a34a' },
-      'admin_debit': { icon: '➖', label: 'خصم إداري', color: '#dc2626' },
-      'order_create_failed_refund': { icon: '🔄', label: 'استرجاع (فشل طلب)', color: '#0284c7' }
-    };
-    
-    if(listEl) listEl.innerHTML = txs.map(tx => {
-      const amount = Number(tx.amount) || 0;
-      const isIncome = amount >= 0;
-      const sign = isIncome ? '+' : '';
-      const cls = isIncome ? 'in' : 'out';
-      const typeInfo = typeLabels[tx.txType] || { icon: '💱', label: 'حركة مالية', color: '#6b7280' };
-      
-      const txDate = tx._ts ? new Date(tx._ts).toLocaleString('ar-LY', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : '—';
-      
-      const pendingBadge = tx._isPendingLocal
-        ? '<span style="font-size:9.5px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:5px;font-weight:800;margin-right:4px">⏳ لم تُزامن بعد</span>'
-        : '';
-      
-      const reasonText = tx.reason || typeInfo.label;
-      
-      return `
-        <div class="walletTxCard" style="border-right:3px solid ${typeInfo.color}">
-          <div class="txLeft">
-            <div class="txIcon ${cls}" style="background:${isIncome ? '#f0fdf4' : '#fef2f2'};border-color:${isIncome ? '#bbf7d0' : '#fecaca'}">${typeInfo.icon}</div>
-            <div class="txDetails">
-              <div class="txTitle">${escapeHtml(reasonText)} ${pendingBadge}</div>
-              <div class="txTime" style="font-size:10.5px">
-                <span style="color:${typeInfo.color};font-weight:800">${typeInfo.label}</span>
-                <span style="color:var(--muted)"> • 🕒 ${txDate}</span>
+
+    if(listEl){
+      listEl.innerHTML = txs.map(row=>{
+        let parsed = {};
+        try{ parsed = JSON.parse(row.message || "{}"); }catch(e){}
+        const isIncome = (parsed.amount || 0) >= 0;
+        const icon = isIncome ? '➕' : '🛒';
+        const sign = isIncome ? '+' : '';
+        const cls = isIncome ? 'in' : 'out';
+        const txDate = row.created_at ? new Date(row.created_at).toLocaleString('ar-LY', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <div class="walletTxCard">
+            <div class="txLeft">
+              <div class="txIcon ${cls}">${icon}</div>
+              <div class="txDetails">
+                <div class="txTitle">${escapeHtml(parsed.reason || "حركة مالية")}</div>
+                <div class="txTime">🕒 ${txDate} — رقم: #${escapeHtml(parsed.txId || row.id)}</div>
               </div>
             </div>
+            <div class="txRight">
+              <div class="txAmount ${cls}">${sign}${parsed.amount} د.ل</div>
+              <div class="txBalanceAfter">الرصيد: ${parsed.balanceAfter != null ? parsed.balanceAfter + ' د.ل' : ''}</div>
+            </div>
           </div>
-          <div class="txRight">
-            <div class="txAmount ${cls}" style="font-size:15px">${sign}${Math.abs(amount).toFixed(2)} د.ل</div>
-            <div class="txBalanceAfter">${tx.balanceAfter != null ? `الرصيد: ${Number(tx.balanceAfter).toFixed(2)} د.ل` : ''}</div>
-          </div>
-        </div>
-      `;
-    }).join("");
-    
-  } catch(e){
+        `;
+      }).join("");
+    }
+  }catch(e){
     console.error("openMyWalletHistory error:", e);
-    if(listEl) listEl.innerHTML = `<div class="reportsEmpty">❌ خطأ في جلب البيانات: ${escapeHtml(e.message)}</div>`;
+    if(listEl) listEl.innerHTML = `<div class="reportsEmpty">خطأ في جلب البيانات: ${e.message}</div>`;
   }
 };
 window.closeMyWalletHistory = ()=>{
@@ -9444,8 +7667,6 @@ window.openAdminWallet = ()=>{
 window.closeAdminWallet = ()=>{
   const ov = document.getElementById("adminWalletOverlay");
   if(ov) ov.classList.add("hidden");
-  const as = document.getElementById("accountScreen");
-  if(as && auth.currentUser) as.classList.remove("hidden");
 };
 
 window.switchAdmWalTab = (tab)=>{
@@ -9498,8 +7719,7 @@ window.adminGenerateCardsBatch = async()=>{
   const outBox = document.getElementById("admGeneratedCardsOutput");
   const outText = document.getElementById("admGeneratedCardsText");
 
-  const okConfirm = await showConfirmModal(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`, { confirmText: "نعم، توليد الكروت" });
-  if(!okConfirm) return;
+  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`)) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري توليد وحفظ الكروت..."; }
 
@@ -9996,11 +8216,7 @@ window.adminExecuteDeposit = async()=>{
   }
 
   const opLabel = type === 'credit' ? `إيداع مبلغ +${amt} د.ل` : `خصم مبلغ -${amt} د.ل`;
-  const okConfirm = await showConfirmModal(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`, {
-    isDanger: type === 'debit',
-    confirmText: type === 'credit' ? "نعم، إيداع" : "نعم، خصم"
-  });
-  if(!okConfirm) return;
+  if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
 
@@ -10227,23 +8443,456 @@ export async function updateCartWalletBalance(){
 window.updateCartWalletBalance = updateCartWalletBalance;
 
 /* ============================================
-   Fallback Compatibility Stubs
+   💬 15. نظام الدردشة المباشرة وصندوق المحادثات بين الشاري والبائع
    ============================================ */
-window.openInbox = () => {};
-window.backFromInbox = () => {};
-window.closeUserChat = () => {};
-window.openChatWithSeller = () => {};
-window.openStoryModal = () => {};
-window.closeStoryModal = () => {};
-window.renderHomeStoriesBar = () => {};
-window.loadCustomUserStories = () => {};
-window.startGlobalChatPoller = () => {};
-window.updateGlobalUnreadChatCount = () => {};
-window.publishPostToStory = () => {};
-window.closePublishStoryModal = () => {};
-window.closeStoryViewer = () => {};
-window.toggleStoryLike = () => {};
-window.toggleStoryMute = () => {};
-window.shareCurrentStory = () => {};
-window.reportCurrentStory = () => {};
-window.viewAdFromStory = () => {};
+window._activeChat = null;
+
+export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
+    if(typeof openAuthModal === "function") openAuthModal();
+    return;
+  }
+  const myUid = auth.currentUser.uid;
+  if(myUid === sellerUid){
+    showToast("هذا إعلانك أو متجرك، لا يمكنك مراسلة نفسك!", "info");
+    return;
+  }
+
+  // تحديد اسم البائع
+  let targetName = targetCustomName || "";
+  if(!targetName && postId){
+    const p = allPosts.find(x => x.id === postId);
+    if(p) targetName = p.storeName || p.sellerName || "";
+  }
+  if(!targetName && storeId){
+    const s = allStores.find(x => x.id === storeId);
+    if(s) targetName = s.name || "";
+  }
+  if(!targetName){
+    const sOwner = allStores.find(x => x.ownerUid === sellerUid);
+    if(sOwner) targetName = sOwner.name || "";
+    else {
+      const pOwner = allPosts.find(x => x.uid === sellerUid);
+      if(pOwner) targetName = pOwner.storeName || pOwner.sellerName || "";
+    }
+  }
+  if(!targetName) targetName = "البائع";
+
+  const convId = [myUid, sellerUid].sort().join("_");
+
+  window._activeChat = {
+    convId,
+    targetUid: sellerUid,
+    targetName,
+    postId: postId || null,
+    storeId: storeId || null,
+    pollTimer: null,
+    lastMsgCount: 0
+  };
+
+  const elName = document.getElementById("chatTargetName");
+  const elAvatar = document.getElementById("chatTargetAvatar");
+  if(elName) elName.textContent = targetName;
+  if(elAvatar) elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
+
+  // إعداد كرت السياق (Context Banner)
+  const ctxBar = document.getElementById("chatPostContextBar");
+  const ctxImg = document.getElementById("chatContextImg");
+  const ctxTitle = document.getElementById("chatContextTitle");
+  const ctxPrice = document.getElementById("chatContextPrice");
+  const ctxBtn = document.getElementById("chatContextViewBtn");
+
+  if(ctxBar){
+    if(postId){
+      const p = allPosts.find(x => x.id === postId);
+      if(p){
+        ctxBar.style.display = "flex";
+        const imgs = getImages(p);
+        if(ctxImg) ctxImg.src = imgs[0] || "icon-192.png";
+        if(ctxTitle) ctxTitle.textContent = p.title || "إعلان";
+        if(ctxPrice) ctxPrice.textContent = p.priceType === "contact" ? "تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+        if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openPost(p.id); };
+      }else{
+        ctxBar.style.display = "none";
+      }
+    }else if(storeId){
+      const s = allStores.find(x => x.id === storeId);
+      if(s){
+        ctxBar.style.display = "flex";
+        if(ctxImg) ctxImg.src = s.logo || "icon-192.png";
+        if(ctxTitle) ctxTitle.textContent = s.name || "متجر";
+        if(ctxPrice) ctxPrice.textContent = s.category || "";
+        if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openStore(s.id); };
+      }else{
+        ctxBar.style.display = "none";
+      }
+    }else{
+      ctxBar.style.display = "none";
+    }
+  }
+
+  // عرض نافذة الدردشة وإغلاق الصندوق لو كان مفتوحاً
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) chatOverlay.classList.remove("hidden");
+  closeInbox();
+
+  // تركيز حقل الكتابة
+  setTimeout(() => {
+    const input = document.getElementById("chatMessageInput");
+    if(input) input.focus();
+  }, 100);
+
+  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
+  await loadChatMessages(convId, false);
+
+  if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
+  window._activeChat.pollTimer = setInterval(() => {
+    if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
+      if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
+      return;
+    }
+    loadChatMessages(window._activeChat.convId, true);
+  }, 3000);
+}
+window.openChatWithSeller = openChatWithSeller;
+
+export function closeUserChat(){
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) chatOverlay.classList.add("hidden");
+  if(window._activeChat && window._activeChat.pollTimer){
+    clearInterval(window._activeChat.pollTimer);
+  }
+  window._activeChat = null;
+}
+window.closeUserChat = closeUserChat;
+
+export async function sendUserChatMessage(){
+  if(!window._activeChat) return;
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لإرسال الرسالة", "warn");
+    return;
+  }
+  const input = document.getElementById("chatMessageInput");
+  if(!input) return;
+  const text = (input.value || "").trim();
+  if(!text) return;
+
+  const me = auth.currentUser;
+  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const activeChat = window._activeChat;
+
+  // تنظيف الحقل فوراً لاستجابة سريعة
+  input.value = "";
+  input.focus();
+
+  // إظهار الرسالة مباشرة في الشاشة (Optimistic UI)
+  const box = document.getElementById("chatMessagesBox");
+  if(box){
+    const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
+    if(emptyNotice) box.innerHTML = "";
+    
+    const tempDiv = document.createElement("div");
+    tempDiv.className = "chatBubble outgoing";
+    tempDiv.innerHTML = `${escapeHtml(text)}<div class="chatTime">الآن ⏳</div>`;
+    box.appendChild(tempDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  const msgPayload = {
+    convId: activeChat.convId,
+    senderUid: me.uid,
+    senderName: senderName,
+    receiverUid: activeChat.targetUid,
+    text: text,
+    postId: activeChat.postId,
+    storeId: activeChat.storeId,
+    createdAt: Date.now()
+  };
+
+  try {
+    // 1. تسجيل الرسالة في feedback
+    await addDoc(collection(db, "feedback"), {
+      type: "chat_message",
+      message: JSON.stringify(msgPayload),
+      uid: me.uid,
+      user_name: senderName,
+      user_phone: me.phoneNumber || "",
+      created_at: Date.now()
+    });
+
+    // 2. تحديث وثيقة ملخص المحادثة لصندوق الرسائل
+    const convDocId = "conv_" + activeChat.convId;
+    const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
+    const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
+    const postImage = document.getElementById("chatContextImg")?.src || "";
+
+    const convSummary = {
+      convId: activeChat.convId,
+      participants: [me.uid, activeChat.targetUid],
+      lastMessage: text,
+      lastSenderUid: me.uid,
+      lastSenderName: senderName,
+      updatedAt: Date.now(),
+      postContext: activeChat.postId ? {
+        id: activeChat.postId,
+        title: postTitle,
+        price: postPrice,
+        image: postImage
+      } : null,
+      storeContext: activeChat.storeId ? {
+        id: activeChat.storeId,
+        name: postTitle
+      } : null
+    };
+
+    await setDoc(doc(db, "feedback", convDocId), {
+      type: "chat_conversation",
+      message: JSON.stringify(convSummary),
+      uid: me.uid,
+      user_name: senderName,
+      created_at: Date.now()
+    }, { merge: true });
+
+    loadChatMessages(activeChat.convId, true);
+  } catch(err) {
+    console.error("Error sending chat message:", err);
+    showToast("تعذر إرسال الرسالة: " + (err.message || err), "error");
+  }
+}
+window.sendUserChatMessage = sendUserChatMessage;
+
+export async function loadChatMessages(convId, isPoll){
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  if(!isPoll && box.children.length === 0){
+    box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>`;
+  }
+
+  try {
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_message"),
+      limit(100)
+    ));
+
+    const myUid = auth.currentUser ? auth.currentUser.uid : null;
+    const messages = [];
+
+    qSnap.docs.forEach(d => {
+      const data = d.data();
+      try {
+        const parsed = JSON.parse(data.message || "{}");
+        if(parsed.convId === convId){
+          messages.push({
+            id: d.id,
+            ...parsed,
+            createdAt: parsed.createdAt || data.created_at || Date.now()
+          });
+        }
+      } catch(e){}
+    });
+
+    messages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+    if(isPoll && window._activeChat && window._activeChat.lastMsgCount === messages.length){
+      return;
+    }
+
+    if(window._activeChat){
+      window._activeChat.lastMsgCount = messages.length;
+    }
+
+    if(messages.length === 0){
+      box.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:8px">💬</div>
+          <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+        </div>
+      `;
+      return;
+    }
+
+    box.innerHTML = messages.map(m => {
+      const isMe = m.senderUid === myUid;
+      const d = new Date(m.createdAt);
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
+          ${escapeHtml(m.text || '')}
+          <div class="chatTime">${timeStr}</div>
+        </div>
+      `;
+    }).join("");
+
+    box.scrollTop = box.scrollHeight;
+  } catch(err) {
+    console.error("Error loading chat messages:", err);
+    if(!isPoll && box) {
+      box.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل الرسائل</div>`;
+    }
+  }
+}
+window.loadChatMessages = loadChatMessages;
+
+export async function openInbox(){
+  if(!auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
+    if(typeof openAuthModal === "function") openAuthModal();
+    return;
+  }
+  const overlay = document.getElementById("userInboxOverlay");
+  const list = document.getElementById("userInboxList");
+  if(!overlay || !list) return;
+
+  overlay.classList.remove("hidden");
+  list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
+
+  try {
+    localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
+    updateGlobalUnreadChatCount();
+
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_conversation"),
+      limit(80)
+    ));
+
+    const myUid = auth.currentUser.uid;
+    const convs = [];
+
+    qSnap.docs.forEach(d => {
+      const data = d.data();
+      try {
+        const c = JSON.parse(data.message || "{}");
+        if(c.convId && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
+          convs.push({
+            id: d.id,
+            ...c,
+            updatedAt: c.updatedAt || data.created_at || Date.now()
+          });
+        }
+      } catch(e){}
+    });
+
+    convs.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    if(convs.length === 0){
+      list.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:42px;margin-bottom:8px">📭</div>
+          <div style="font-weight:800;font-size:15px;color:var(--text);margin-bottom:6px">صندوق الرسائل فارغ</div>
+          <div style="font-size:12px;margin-bottom:14px">لم تبدأ أي محادثة مع أي بائع أو مشترٍ بعد.</div>
+          <button class="btnMain" style="margin:auto;max-width:200px;font-size:13px;padding:10px" onclick="closeInbox()">تصفح الإعلانات الآن</button>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = convs.map(c => {
+      const otherUid = Array.isArray(c.participants) 
+        ? c.participants.find(u => u !== myUid) 
+        : c.convId.split('_').find(u => u !== myUid);
+
+      let otherName = "البائع";
+      if(c.lastSenderUid !== myUid && c.lastSenderName){
+        otherName = c.lastSenderName;
+      }else if(c.postContext?.title){
+        otherName = c.postContext.title;
+      }else if(c.storeContext?.name){
+        otherName = c.storeContext.name;
+      }
+
+      if(otherName === "البائع" && otherUid){
+        const s = allStores.find(x => x.ownerUid === otherUid);
+        if(s) otherName = s.name;
+        else {
+          const p = allPosts.find(x => x.uid === otherUid);
+          if(p) otherName = p.storeName || p.sellerName || "البائع";
+        }
+      }
+
+      const initial = otherName ? otherName.trim()[0].toUpperCase() : '👤';
+      const postTag = c.postContext?.title ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.postContext.title)}</span>` : '';
+      const storeTag = c.storeContext?.name ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.storeContext.name)}</span>` : '';
+      const tagHtml = postTag || storeTag;
+
+      return `
+        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
+          <div class="inboxAvatar">${initial}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-weight:800;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(otherName)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updatedAt)}</div>
+            </div>
+            ${tagHtml ? `<div style="margin-bottom:3px">${tagHtml}</div>` : ''}
+            <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${c.lastSenderUid === myUid ? 'أنت: ' : ''}${escapeHtml(c.lastMessage || '')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch(err) {
+    console.error("Error loading inbox:", err);
+    list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
+  }
+}
+window.openInbox = openInbox;
+
+export function closeInbox(){
+  const overlay = document.getElementById("userInboxOverlay");
+  if(overlay) overlay.classList.add("hidden");
+}
+window.closeInbox = closeInbox;
+
+export async function updateGlobalUnreadChatCount(){
+  if(!auth.currentUser) return;
+  const hBadge = document.getElementById("chatHeaderBadge");
+  const aBadge = document.getElementById("accountChatBadge");
+
+  try {
+    const qSnap = await getDocs(query(
+      collection(db, "feedback"),
+      where("type", "==", "chat_conversation"),
+      limit(40)
+    ));
+    const myUid = auth.currentUser.uid;
+    let unreadCount = 0;
+    const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
+
+    qSnap.docs.forEach(d => {
+      try {
+        const c = JSON.parse(d.data().message || "{}");
+        if(c.convId && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
+          unreadCount++;
+        }
+      } catch(e){}
+    });
+
+    if(hBadge){
+      if(unreadCount > 0){
+        hBadge.style.display = "flex";
+        hBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+      } else {
+        hBadge.style.display = "none";
+      }
+    }
+    if(aBadge){
+      if(unreadCount > 0){
+        aBadge.style.display = "inline-flex";
+        aBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+      } else {
+        aBadge.style.display = "none";
+      }
+    }
+  } catch(e){}
+}
+window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
+
+// فحص دوري للرسائل غير المقروءة كل دقيقة
+setInterval(() => {
+  if(auth.currentUser) updateGlobalUnreadChatCount();
+}, 60000);

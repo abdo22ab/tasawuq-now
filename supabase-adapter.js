@@ -5,20 +5,9 @@ export const SUPABASE_ANON_KEY = "sb_publishable_6N_kXZ3e5fB4XM7xKKfT-g_7AHN25Tp
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-    storage: {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {}
-    }
-  },
-  global: {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-    }
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
   }
 });
 window.supabase = supabase;
@@ -216,12 +205,8 @@ export function objectFromDb(obj) {
   if (res.soldAt != null) res.soldAt = Number(res.soldAt);
   if (res.memberNo != null) res.memberNo = Number(res.memberNo);
   if (res.lastNumber != null) res.lastNumber = Number(res.lastNumber);
-  if (res.history && typeof res.history === "string") {
-    try { res.history = JSON.parse(res.history); } catch(e){ res.history = []; }
-  }
   return res;
 }
-window.objectFromDb = objectFromDb;
 
 function makeDocSnap(id, data) {
   const exists = !!data;
@@ -355,11 +340,9 @@ export async function getDoc(docRef) {
     else req = req.eq("id", docRef.id);
 
     const { data, error } = await req.maybeSingle();
-    if (error) console.error("getDoc فشل:", table, docRef.id, error.message);
     if (error || !data) return makeDocSnap(docRef.id, null);
     return makeDocSnap(docRef.id, objectFromDb(data));
   } catch (err) {
-    console.error("getDoc استثناء:", table, docRef.id, err.message);
     return makeDocSnap(docRef.id, null);
   }
 }
@@ -388,19 +371,17 @@ export async function getDocs(target) {
     let req = supabase.from(table).select("*");
 
     for (const f of filters) {
-      const col = toSnake(f.field);
-      if (f.op === "==") req = req.eq(col, f.value);
-      else if (f.op === "!=") req = req.neq(col, f.value);
-      else if (f.op === ">") req = req.gt(col, f.value);
-      else if (f.op === ">=") req = req.gte(col, f.value);
-      else if (f.op === "<") req = req.lt(col, f.value);
-      else if (f.op === "<=") req = req.lte(col, f.value);
-      else if (f.op === "array-contains") req = req.contains(col, [f.value]);
+      if (f.op === "==") req = req.eq(f.field, f.value);
+      else if (f.op === "!=") req = req.neq(f.field, f.value);
+      else if (f.op === ">") req = req.gt(f.field, f.value);
+      else if (f.op === ">=") req = req.gte(f.field, f.value);
+      else if (f.op === "<") req = req.lt(f.field, f.value);
+      else if (f.op === "<=") req = req.lte(f.field, f.value);
+      else if (f.op === "array-contains") req = req.contains(f.field, [f.value]);
     }
 
     for (const o of orderBys) {
-      const col = toSnake(o.field);
-      req = req.order(col, { ascending: o.ascending });
+      req = req.order(o.field, { ascending: o.ascending });
     }
 
     if (limitVal) {
@@ -408,7 +389,6 @@ export async function getDocs(target) {
     }
 
     const { data, error } = await req;
-    if (error) console.error("getDocs فشل:", table, error.message);
     if (error || !data) return makeQuerySnap([]);
 
     const docs = data.map(item => {
@@ -425,75 +405,21 @@ export async function setDoc(docRef, data, options = {}) {
   const row = objectToDb(data);
   const table = docRef.table;
 
-  let onConflictKey = "id";
-  if (table === "phones") {
-    row.phone = docRef.id;
-    onConflictKey = "phone";
-  } else if (table === "usernames") {
-    row.username = docRef.id;
-    onConflictKey = "username";
-  } else if (table === "user_limits") {
-    row.uid = docRef.id;
-    onConflictKey = "uid";
-  } else {
-    row.id = docRef.id;
-  }
+  if (table === "phones") row.phone = docRef.id;
+  else if (table === "usernames") row.username = docRef.id;
+  else if (table === "user_limits") row.uid = docRef.id;
+  else row.id = docRef.id;
 
   if (docRef.customFields) {
     Object.assign(row, docRef.customFields);
   }
 
   let payload = { ...row };
-  if (table === "feedback" || table === "phones" || table === "usernames") {
-    delete payload.updated_at;
-  }
-  if (table === "usernames") {
-    try {
-      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
-      if (existing && existing.username) {
-        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
-        if (!updateErr) return true;
-      } else {
-        const { error: insertErr } = await supabase.from("usernames").insert(payload);
-        if (!insertErr) return true;
-      }
-    } catch(e) {}
-  }
-
-  if (table === "profiles") {
-    if (payload.username !== undefined) {
-      const uStr = String(payload.username || "").trim().toLowerCase();
-      payload.username = uStr || null;
-    }
-    if (payload.phone !== undefined) {
-      const pStr = String(payload.phone || "").trim();
-      payload.phone = pStr || null;
-    }
-    if (payload.email !== undefined) {
-      const eStr = String(payload.email || "").trim();
-      payload.email = eStr || null;
-    }
-    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
-      delete payload.member_no;
-    }
-  }
-
   for (let attempt = 0; attempt < 6; attempt++) {
-    const { error } = await supabase.from(table).upsert(payload, { onConflict: onConflictKey });
+    const { error } = await supabase.from(table).upsert(payload);
     if (!error) return true;
-    if (error.code === "42501" || error.code === "23505" || (error.message && (error.message.includes("USING expression") || error.message.includes("duplicate key") || error.message.includes("violates unique constraint")))) {
-      const { error: updateErr } = await supabase.from(table).update(payload).eq(onConflictKey, payload[onConflictKey]);
-      if (!updateErr) return true;
-    }
-    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
-      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
-    }
-    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
-      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
-    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
-      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
@@ -509,52 +435,11 @@ export async function addDoc(colRef, data) {
   row.id = newId;
 
   let payload = { ...row };
-  if (table === "feedback" || table === "phones" || table === "usernames") {
-    delete payload.updated_at;
-  }
-  if (table === "usernames") {
-    try {
-      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
-      if (existing && existing.username) {
-        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
-        if (!updateErr) return true;
-      } else {
-        const { error: insertErr } = await supabase.from("usernames").insert(payload);
-        if (!insertErr) return true;
-      }
-    } catch(e) {}
-  }
-
-  if (table === "profiles") {
-    if (payload.username !== undefined) {
-      const uStr = String(payload.username || "").trim().toLowerCase();
-      payload.username = uStr || null;
-    }
-    if (payload.phone !== undefined) {
-      const pStr = String(payload.phone || "").trim();
-      payload.phone = pStr || null;
-    }
-    if (payload.email !== undefined) {
-      const eStr = String(payload.email || "").trim();
-      payload.email = eStr || null;
-    }
-    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
-      delete payload.member_no;
-    }
-  }
-
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
-    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
-      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
-    }
-    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
-      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
-    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
-      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
@@ -570,53 +455,13 @@ export async function updateDoc(docRef, data) {
   // Handle increment fields:
   for (const [k, v] of Object.entries(row)) {
     if (v && v.__type === "increment") {
-      let req = supabase.from(table).select(k);
-      if (table === "phones") req = req.eq("phone", docRef.id);
-      else if (table === "usernames") req = req.eq("username", docRef.id);
-      else if (table === "user_limits") req = req.eq("uid", docRef.id);
-      else req = req.eq("id", docRef.id);
-
-      const { data: cur } = await req.maybeSingle();
+      const { data: cur } = await supabase.from(table).select(k).eq("id", docRef.id).maybeSingle();
       const curVal = cur && cur[k] != null ? Number(cur[k]) : 0;
       row[k] = curVal + v.value;
     }
   }
 
   let payload = { ...row };
-  if (table === "feedback" || table === "phones" || table === "usernames") {
-    delete payload.updated_at;
-  }
-  if (table === "usernames") {
-    try {
-      const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
-      if (existing && existing.username) {
-        const { error: updateErr } = await supabase.from("usernames").update(payload).eq("username", payload.username);
-        if (!updateErr) return true;
-      } else {
-        const { error: insertErr } = await supabase.from("usernames").insert(payload);
-        if (!insertErr) return true;
-      }
-    } catch(e) {}
-  }
-
-  if (table === "profiles") {
-    if (payload.username !== undefined) {
-      const uStr = String(payload.username || "").trim().toLowerCase();
-      payload.username = uStr || null;
-    }
-    if (payload.phone !== undefined) {
-      const pStr = String(payload.phone || "").trim();
-      payload.phone = pStr || null;
-    }
-    if (payload.email !== undefined) {
-      const eStr = String(payload.email || "").trim();
-      payload.email = eStr || null;
-    }
-    if (payload.member_no === undefined || payload.member_no == null || payload.member_no === 0) {
-      delete payload.member_no;
-    }
-  }
-
   for (let attempt = 0; attempt < 6; attempt++) {
     let req = supabase.from(table).update(payload);
     if (table === "phones") req = req.eq("phone", docRef.id);
@@ -624,23 +469,11 @@ export async function updateDoc(docRef, data) {
     else if (table === "user_limits") req = req.eq("uid", docRef.id);
     else req = req.eq("id", docRef.id);
 
-    const { data: resData, error } = await req.select();
-    if (!error) {
-      if (!resData || resData.length === 0) {
-        return await setDoc(docRef, payload, { merge: true });
-      }
-      return true;
-    }
+    const { error } = await req;
+    if (!error) return true;
 
-    if (error.message && (error.message.includes("profiles_username_key") || error.details?.includes("profiles_username_key"))) {
-      throw new Error("اسم المستخدم محجوز بالفعل لحساب آخر");
-    }
-    if (error.message && (error.message.includes("profiles_phone_key") || error.details?.includes("profiles_phone_key"))) {
-      throw new Error("رقم الهاتف مربوط بحساب آخر بالفعل");
-    }
     const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
     if (match && match[1] && match[1] in payload) {
-      console.error("❌ عمود غير موجود في Supabase:", table, match[1]);
       delete payload[match[1]];
       continue;
     }
@@ -700,30 +533,13 @@ export function increment(n) {
 }
 
 export async function runTransaction(dbInstance, updateFunction) {
-  const pending = [];
   const transaction = {
     get: async (ref) => await getDoc(ref),
-    set: (ref, data, opts) => {
-      const p = setDoc(ref, data, opts);
-      pending.push(p);
-      return p;
-    },
-    update: (ref, data) => {
-      const p = updateDoc(ref, data);
-      pending.push(p);
-      return p;
-    },
-    delete: (ref) => {
-      const p = deleteDoc(ref);
-      pending.push(p);
-      return p;
-    }
+    set: async (ref, data) => await setDoc(ref, data),
+    update: async (ref, data) => await updateDoc(ref, data),
+    delete: async (ref) => await deleteDoc(ref)
   };
-  const result = await updateFunction(transaction);
-  if (pending.length > 0) {
-    await Promise.all(pending);
-  }
-  return result;
+  return await updateFunction(transaction);
 }
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
