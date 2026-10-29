@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=12";
+} from "./supabase-adapter.js?v=13";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -572,6 +572,10 @@ async function addPoints(uid, amount, title, activity){
       updatedAt: Date.now()
     }, { merge: true });
     if(uid === (auth.currentUser && auth.currentUser.uid)){
+      myPoints = newPoints;
+      myHistory = history;
+      if(typeof updateTier === 'function') updateTier();
+      if(typeof renderPoints === 'function') renderPoints();
       showToast(`🏆 ${amount > 0 ? '+' : ''}${amount} نقطة — ${title}`, 'success', 2500);
     }
   } catch(e){
@@ -3402,6 +3406,10 @@ else{
     base.sellerName=sellerName;
     base.sellerMemberNo=sellerMemberNo;
     base.sellerUsername=sellerUsername;
+    if(isAdmin){
+      base.status="approved";
+      base.approvedAt=now;
+    }
   }
   const newDocRef = await addDoc(collection(db,"posts"),base);
   const newPostObj = { id: newDocRef.id, ...base };
@@ -3412,7 +3420,7 @@ else{
     updateModBadge();
   }
   renderPosts();
-  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
+  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":(base.status==="approved"?"✅ تم نشر إعلانك بنجاح وهو متاح للجميع الآن!":"✅ تم إرسال إعلانك بنجاح وبانتظار المراجعة"),"success");
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
   if(isStore && window._currentStoreId){
     setTimeout(()=>openStore(window._currentStoreId, true), 300);
@@ -3477,7 +3485,7 @@ window.renewPost=async(id,event)=>{
 window.approvePost=async(id)=>{
   if(!isAdmin)return;
   try{
-    const post=allPosts.find(p=>p.id===id);
+    const post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id);
     await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
     if(post){
       post.status = "approved";
@@ -3485,6 +3493,9 @@ window.approvePost=async(id)=>{
       post.rejectReason = null;
       post.originalData = null;
       post.wasEdited = false;
+      if(!allPosts.some(x => x.id === post.id)){
+        allPosts.unshift(post);
+      }
       if(post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
       sendPostToTelegram(post);
     }
@@ -3492,7 +3503,7 @@ window.approvePost=async(id)=>{
     allPendingPosts = allPendingPosts.filter(p => p.id !== id);
     updateModBadge();
     renderModeration();
-    showToast("✅ تم قبول الإعلان","success");
+    showToast("✅ تم قبول الإعلان ونشره بنجاح","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -3662,13 +3673,23 @@ window.approveAllPending=async()=>{
   for(const p of pending){
     try{
       await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
+      p.status = "approved";
+      p.approvedAt = Date.now();
+      p.rejectReason = null;
+      p.originalData = null;
+      p.wasEdited = false;
       const inAll = allPosts.find(x => x.id === p.id);
       if(inAll){ inAll.status = "approved"; inAll.approvedAt = Date.now(); }
+      else { allPosts.unshift(p); }
+      if(p.uid) addPoints(p.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved');
+      sendPostToTelegram(p);
       ok++;
     }catch(e){fail++;}
   }
+  allPendingPosts = [];
+  updateModBadge();
   renderPosts();
-  showToast(`✅ تم قبول ${ok}`,"success");
+  showToast(`✅ تم قبول ونشر ${ok} إعلان`,"success");
   renderModeration();
 };
 

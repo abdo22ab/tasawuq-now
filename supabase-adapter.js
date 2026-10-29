@@ -216,8 +216,12 @@ export function objectFromDb(obj) {
   if (res.soldAt != null) res.soldAt = Number(res.soldAt);
   if (res.memberNo != null) res.memberNo = Number(res.memberNo);
   if (res.lastNumber != null) res.lastNumber = Number(res.lastNumber);
+  if (res.history && typeof res.history === "string") {
+    try { res.history = JSON.parse(res.history); } catch(e){ res.history = []; }
+  }
   return res;
 }
+window.objectFromDb = objectFromDb;
 
 function makeDocSnap(id, data) {
   const exists = !!data;
@@ -384,17 +388,19 @@ export async function getDocs(target) {
     let req = supabase.from(table).select("*");
 
     for (const f of filters) {
-      if (f.op === "==") req = req.eq(f.field, f.value);
-      else if (f.op === "!=") req = req.neq(f.field, f.value);
-      else if (f.op === ">") req = req.gt(f.field, f.value);
-      else if (f.op === ">=") req = req.gte(f.field, f.value);
-      else if (f.op === "<") req = req.lt(f.field, f.value);
-      else if (f.op === "<=") req = req.lte(f.field, f.value);
-      else if (f.op === "array-contains") req = req.contains(f.field, [f.value]);
+      const col = toSnake(f.field);
+      if (f.op === "==") req = req.eq(col, f.value);
+      else if (f.op === "!=") req = req.neq(col, f.value);
+      else if (f.op === ">") req = req.gt(col, f.value);
+      else if (f.op === ">=") req = req.gte(col, f.value);
+      else if (f.op === "<") req = req.lt(col, f.value);
+      else if (f.op === "<=") req = req.lte(col, f.value);
+      else if (f.op === "array-contains") req = req.contains(col, [f.value]);
     }
 
     for (const o of orderBys) {
-      req = req.order(o.field, { ascending: o.ascending });
+      const col = toSnake(o.field);
+      req = req.order(col, { ascending: o.ascending });
     }
 
     if (limitVal) {

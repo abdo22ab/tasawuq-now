@@ -347,7 +347,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js?v=12";
+} from "./supabase-adapter.js?v=13";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
@@ -743,7 +743,44 @@ async function sendPostToTelegram(post){
     console.warn("Telegram broadcast error:", err);
   }
 }
-window.approveOnePost=async(id)=>{try{const p=allPostsCache.find(x=>x.id===id);await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});if(p)sendPostToTelegram(p);alert("✅ تمت الموافقة ونشر الإعلان في التليجرام!");}catch(e){alert("خطأ: "+e.message);}};
+async function addPoints(uid, amount, title, activity){
+  if(!uid || !amount) return;
+  try{
+    const userRef = doc(db, 'userPoints', uid);
+    const snap = await getDoc(userRef);
+    let currentData = snap.exists() ? snap.data() : { points: 0, history: [] };
+    const newPoints = Math.max(0, (currentData.points || 0) + amount);
+    const history = Array.isArray(currentData.history) ? currentData.history : [];
+    history.unshift({
+      value: amount,
+      title: title,
+      activity: activity || 'general',
+      timestamp: Date.now()
+    });
+    if(history.length > 100) history.splice(100);
+    await setDoc(userRef, {
+      points: newPoints,
+      history: history,
+      updatedAt: Date.now()
+    }, { merge: true });
+  } catch(e){}
+}
+
+window.approveOnePost=async(id)=>{
+  try{
+    const p=allPostsCache.find(x=>x.id===id);
+    await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
+    if(p){
+      p.status = "approved";
+      p.approvedAt = Date.now();
+      if(p.uid) await addPoints(p.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved');
+      sendPostToTelegram(p);
+    }
+    renderModerationList();
+    updateStats();
+    alert("✅ تمت الموافقة ونشر الإعلان واحتساب النقاط للمعلن!");
+  }catch(e){alert("خطأ: "+e.message);}
+};
 window.rejectOnePost=async(id)=>{
   const reason=prompt("سبب الرفض:","محتوى غير مناسب");
   if(reason===null)return;
@@ -754,8 +791,19 @@ window.approveAllPending=async()=>{
   if(pending.length===0){alert("لا توجد");return;}
   if(!confirm(`موافقة على ${pending.length}؟`))return;
   let ok=0,fail=0;
-  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});if(p)await sendPostToTelegram(p);ok++;}catch(e){fail++;}}
-  alert(`✅ ${ok}${fail?`\n❌ ${fail}`:''}`);
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
+      p.status = "approved";
+      p.approvedAt = Date.now();
+      if(p.uid) await addPoints(p.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved');
+      if(p) await sendPostToTelegram(p);
+      ok++;
+    }catch(e){fail++;}
+  }
+  renderModerationList();
+  updateStats();
+  alert(`✅ تم قبول ${ok} إعلان واحتساب النقاط${fail?`\n❌ ${fail}`:''}`);
 };
 window.rejectAllPending=async()=>{
   const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending");
