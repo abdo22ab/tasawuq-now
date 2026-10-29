@@ -347,7 +347,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js?v=14";
+} from "./supabase-adapter.js?v=15";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
@@ -847,7 +847,18 @@ window.approveOnePost=async(id)=>{
 window.rejectOnePost=async(id)=>{
   const reason=prompt("سبب الرفض:","محتوى غير مناسب");
   if(reason===null)return;
-  try{await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});alert("✅");}catch(e){alert("خطأ: "+e.message);}
+  try{
+    await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
+    const p=allPostsCache.find(x=>x.id===id);
+    if(p){
+      p.status = "rejected";
+      p.rejectReason = reason || "محتوى غير مناسب";
+      p.rejectedAt = Date.now();
+    }
+    renderModerationList();
+    updateStats();
+    alert("✅ تم رفض الإعلان ونقله لقسم المرفوضات");
+  }catch(e){alert("خطأ: "+e.message);}
 };
 window.approveAllPending=async()=>{
   const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending");
@@ -875,8 +886,18 @@ window.rejectAllPending=async()=>{
   const reason=prompt("السبب:","محتوى غير مناسب");
   if(reason===null)return;
   let ok=0,fail=0;
-  for(const p of pending){try{await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});ok++;}catch(e){fail++;}}
-  alert(`✅ ${ok}${fail?`\n❌ ${fail}`:''}`);
+  for(const p of pending){
+    try{
+      await updateDoc(doc(db,"posts",p.id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});
+      p.status = "rejected";
+      p.rejectReason = reason || "مرفوض";
+      p.rejectedAt = Date.now();
+      ok++;
+    }catch(e){fail++;}
+  }
+  renderModerationList();
+  updateStats();
+  alert(`✅ تم رفض ${ok} إعلان${fail?`\n❌ ${fail}`:''}`);
 };
 
 /* ===== Stores ===== */

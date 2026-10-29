@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=14";
+} from "./supabase-adapter.js?v=15";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -2993,8 +2993,8 @@ let list=allPosts.filter(p=>{
   const isOwner=me&&p.uid===me.uid;
   const isMyStorePost=myStore&&p.storeId===myStore.id;
   const expired=isExpired(p);
-  if(expired && !isOwner && !isAdmin && !isMyStorePost)return false;
-  if(status!=="approved" && !isOwner && !isAdmin && !isMyStorePost)return false;
+  if(expired && !showOnlyMine)return false;
+  if(status!=="approved" && !showOnlyMine)return false;
   if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;
 
   // استبعاد وجبات المطاعم الفردية من قسم الكل عشان ما تتبعثرش وسط الإعلانات
@@ -3387,7 +3387,9 @@ if(wasEditing){
 }
 else{
   const now=Date.now();
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"approved",approvedAt:now,createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const isAutoApprove = isAdmin || isStore;
+  const postStatus = isAutoApprove ? "approved" : "pending";
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:postStatus,approvedAt:isAutoApprove?now:null,createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
   if(isStore){
     base.storeId=storeToUse.id;
     base.storeName=storeToUse.name;
@@ -3406,10 +3408,19 @@ else{
   }
   const newDocRef = await addDoc(collection(db,"posts"),base);
   const newPostObj = { id: newDocRef.id, ...base };
-  allPosts.unshift(newPostObj);
-  renderPosts();
-  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم نشر إعلانك بنجاح وهو متاح للجميع الآن!","success");
-  addPoints(auth.currentUser.uid, 15, '📝 نشر وقبول إعلان جديد', 'post_create');
+  if(isAutoApprove){
+    allPosts.unshift(newPostObj);
+    renderPosts();
+    showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم نشر إعلانك بنجاح وهو متاح للجميع الآن!","success");
+    addPoints(auth.currentUser.uid, 5, '📝 نشر وقبول إعلان جديد', 'post_create');
+    sendPostToTelegram(newPostObj);
+  } else {
+    allPendingPosts.unshift(newPostObj);
+    allPosts.unshift(newPostObj);
+    updateModBadge();
+    renderPosts();
+    showToast("✅ تم إرسال إعلانك بنجاح وهو قيد المراجعة لدى الإدارة لنشره واحتساب النقاط فور الموافقة!","success",5000);
+  }
   if(isStore && window._currentStoreId){
     setTimeout(()=>openStore(window._currentStoreId, true), 300);
   }
@@ -3473,7 +3484,7 @@ window.renewPost=async(id,event)=>{
 window.approvePost=async(id)=>{
   if(!isAdmin)return;
   try{
-    const post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id);
+    const post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id) || (window._allRejectedPosts && window._allRejectedPosts.find(p=>p.id===id));
     await updateDoc(doc(db,"posts",id),{status:"approved",approvedAt:Date.now(),rejectReason:null,originalData:null,wasEdited:false});
     if(post){
       post.status = "approved";
@@ -3487,11 +3498,12 @@ window.approvePost=async(id)=>{
       if(post.uid){ addPoints(post.uid, 5, '✅ تمت الموافقة على إعلانك', 'post_approved'); }
       sendPostToTelegram(post);
     }
-    renderPosts();
     allPendingPosts = allPendingPosts.filter(p => p.id !== id);
+    if(window._allRejectedPosts) window._allRejectedPosts = window._allRejectedPosts.filter(p => p.id !== id);
+    renderPosts();
     updateModBadge();
     renderModeration();
-    showToast("✅ تم قبول الإعلان ونشره بنجاح","success");
+    showToast("✅ تم قبول الإعلان ونشره بنجاح واحتساب النقاط للمعلن","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -3501,17 +3513,20 @@ window.rejectPost=async(id)=>{
   if(reason===null)return;
   try{
     await updateDoc(doc(db,"posts",id),{status:"rejected",rejectReason:reason||"محتوى غير مناسب",rejectedAt:Date.now()});
-    const post=allPosts.find(p=>p.id===id);
+    let post = allPosts.find(p=>p.id===id) || allPendingPosts.find(p=>p.id===id);
     if(post){
       post.status = "rejected";
       post.rejectReason = reason || "محتوى غير مناسب";
       post.rejectedAt = Date.now();
+      if(!window._allRejectedPosts) window._allRejectedPosts = [];
+      if(!window._allRejectedPosts.some(x=>x.id===post.id)) window._allRejectedPosts.unshift(post);
+      if(!allPosts.some(x=>x.id===post.id)) allPosts.unshift(post);
     }
-    renderPosts();
     allPendingPosts = allPendingPosts.filter(p => p.id !== id);
+    renderPosts();
     updateModBadge();
     renderModeration();
-    showToast("✅ تم رفض الإعلان","success");
+    showToast("✅ تم رفض الإعلان ونقله للمرفوضات بنجاح","success");
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
@@ -3622,8 +3637,32 @@ function stopPendingPostsListener(){
 }
 
 let moderationTab = "pending";
+window._allRejectedPosts = [];
+let rejectedPostsLoaded = false;
+
+async function refreshRejectedPosts(){
+  try {
+    if(window.supabase){
+      const { data, error } = await window.supabase
+        .from("posts")
+        .select("*")
+        .eq("status", "rejected")
+        .order("created_at", { ascending: false });
+      if(!error && Array.isArray(data)){
+        window._allRejectedPosts = data.map(item => typeof objectFromDb === 'function' ? objectFromDb(item) : item);
+      }
+    }
+  } catch(e){}
+  rejectedPostsLoaded = true;
+  renderModeration();
+}
+window.refreshRejectedPosts = refreshRejectedPosts;
+
 window.setModerationTab = function(tab){
   moderationTab = tab;
+  if(tab === "rejected" && !rejectedPostsLoaded){
+    refreshRejectedPosts();
+  }
   renderModeration();
 };
 
@@ -3648,7 +3687,10 @@ function renderModeration(){
   } else if(moderationTab === "approved"){
     itemsToShow = allPosts.filter(p => (p.status || "approved") === "approved");
   } else if(moderationTab === "rejected"){
-    itemsToShow = allPosts.filter(p => p.status === "rejected");
+    const rejMap = new Map();
+    (window._allRejectedPosts || []).forEach(p => rejMap.set(p.id, p));
+    allPosts.filter(p => p.status === "rejected").forEach(p => rejMap.set(p.id, p));
+    itemsToShow = Array.from(rejMap.values());
   } else {
     itemsToShow = allPosts;
   }
@@ -7114,13 +7156,8 @@ window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden"
 window.openModeration=async()=>{
   if(!isAdmin){showToast("❌ خاص بالإدارة فقط","error");return;}
   moderationOverlay.classList.remove("hidden");
-  const list = document.getElementById("moderationList");
-  if(allPendingPosts.length === 0 && list){
-    list.innerHTML = `<div class="reportsEmpty">⏳ جاري فحص وجلب الإعلانات قيد المراجعة...</div>`;
-  } else {
-    renderModeration();
-  }
-  await refreshPendingPosts();
+  renderModeration();
+  await Promise.all([refreshPendingPosts(), refreshRejectedPosts()]);
   renderModeration();
   if(!pendingPostsListenerStarted) startPendingPostsListener();
 };
@@ -7287,12 +7324,7 @@ window.saveMyPhone=async()=>{
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
   const cleanNew=v.value;
 
-  const displayNew=formatCallPhone(cleanNew);
-  const confirmMsg=`هل تريد ربط وحفظ رقم الواتساب: (${displayNew}) بحسابك؟\n\n⚠️ سيتم تثبيت الرقم الجديد بحسابك فقط وإتاحته في إعلاناتك.`;
-  const ok = await showConfirmModal(confirmMsg, { confirmText: "نعم، ربط الرقم" });
-  if(!ok) return;
-
-  showToast("⏳ جاري التحقق وحفظ الرقم...","info",2000);
+  showToast("⏳ جاري التحقق وحفظ الرقم...","info",1500);
   try{
     // فحص الفرادة أولاً في قاعدة البيانات لمنع أي تضارب
     const { data: pExist } = await supabase.from("profiles").select("id").eq("phone", cleanNew).neq("id", me.uid).limit(1).maybeSingle();
@@ -7326,7 +7358,7 @@ window.saveMyPhone=async()=>{
     const mine=allPosts.filter(p=>p.uid===me.uid);
     Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{})));
 
-    showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
+    showToast("✅ تم حفظ وتأكيد رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
   }catch(e){
     showToast("❌ تعذر حفظ رقم الهاتف: "+e.message,"error",5000);
   }
@@ -8515,10 +8547,21 @@ export async function getUserWallet(uid, forceRefresh = false){
       const bal = Math.max(0, Number(parsed.balance || 0));
       const result = { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
       _cachedWalletsMap.set(uid, { cachedAt: now, data: result });
+      try{
+        localStorage.setItem("tasawuq_wallet_balance_" + uid, String(result.balance));
+        localStorage.setItem("tasawuq_wallet_balance", String(result.balance));
+      }catch(e){}
       return result;
     }
   }catch(e){
     console.warn("getUserWallet error:", e);
+  }
+  const localCached = localStorage.getItem("tasawuq_wallet_balance_" + uid) || localStorage.getItem("tasawuq_wallet_balance");
+  if(localCached !== null && !isNaN(Number(localCached))){
+    const bal = Number(localCached);
+    const result = { balance: bal, updatedAt: Date.now() };
+    _cachedWalletsMap.set(uid, { cachedAt: now, data: result });
+    return result;
   }
   const fallback = { balance: 0.00, updatedAt: Date.now() };
   _cachedWalletsMap.set(uid, { cachedAt: now, data: fallback });
@@ -8621,11 +8664,15 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       uid: uid,
       userName: uName,
       userPhone: uPhone,
-      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
-      updatedAt: Date.now()
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() })
     }, { merge: true });
 
     _cachedWalletsMap.delete(uid);
+    try{
+      localStorage.setItem("tasawuq_wallet_balance_" + uid, String(newBalance));
+      localStorage.setItem("tasawuq_wallet_balance", String(newBalance));
+    }catch(e){}
+
     const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
     if(!txId){
       console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
@@ -8661,11 +8708,15 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       uid: uid,
       userName: uName,
       userPhone: uPhone,
-      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
-      updatedAt: Date.now()
+      message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() })
     }, { merge: true });
 
     _cachedWalletsMap.delete(uid);
+    try{
+      localStorage.setItem("tasawuq_wallet_balance_" + uid, String(newBalance));
+      localStorage.setItem("tasawuq_wallet_balance", String(newBalance));
+    }catch(e){}
+
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
     if(!txId){
       console.warn("⚠️ تحذير: الرصيد تم تحديثه لكن السجل لم يُحفظ في الخادم مباشرة. تم تسجيله محلياً في pending.");
@@ -8736,6 +8787,12 @@ function resetWalletThrottle(){
 function updateWalletUI(balance){
   _userWalletBalance = Math.max(0, Number(balance) || 0);
   const balText = _userWalletBalance.toFixed(2);
+  try{
+    localStorage.setItem("tasawuq_wallet_balance", String(_userWalletBalance));
+    if(auth.currentUser && auth.currentUser.uid){
+      localStorage.setItem("tasawuq_wallet_balance_" + auth.currentUser.uid, String(_userWalletBalance));
+    }
+  }catch(e){}
   const headerBadge = document.getElementById("walletHeaderBadge");
   if(headerBadge) headerBadge.textContent = balText + " د.ل";
   const cardBal = document.getElementById("userWalletBalanceText");
@@ -8755,6 +8812,13 @@ export function setupUserWalletListener(uid){
   }
   if(!uid) return;
   try{
+    const cached = localStorage.getItem("tasawuq_wallet_balance_" + uid) || localStorage.getItem("tasawuq_wallet_balance");
+    if(cached !== null && !isNaN(Number(cached))){
+      updateWalletUI(Number(cached));
+    }
+  }catch(e){}
+
+  try{
     _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + uid), snap=>{
       if(snap && snap.exists()){
         const data = snap.data();
@@ -8762,7 +8826,18 @@ export function setupUserWalletListener(uid){
         try{ bal = JSON.parse(data.message || "{}").balance || 0; }catch(e){}
         updateWalletUI(bal);
       }else{
-        updateWalletUI(0);
+        const local = localStorage.getItem("tasawuq_wallet_balance_" + uid);
+        if(local !== null && !isNaN(Number(local)) && Number(local) > 0){
+          updateWalletUI(Number(local));
+          setDoc(doc(db, "feedback", "wallet_" + uid), {
+            id: "wallet_" + uid,
+            type: "user_wallet",
+            uid: uid,
+            message: JSON.stringify({ balance: Number(local), updatedAt: Date.now() })
+          }, { merge: true }).catch(()=>{});
+        }else{
+          updateWalletUI(0);
+        }
       }
     });
   }catch(e){
@@ -8927,8 +9002,7 @@ window.submitCardRecharge = async()=>{
     await updateDoc(doc(db, "feedback", cardDocId), {
       message: JSON.stringify(cardData),
       userName: cardData.usedByName,
-      userPhone: cardData.usedByPhone,
-      updatedAt: Date.now()
+      userPhone: cardData.usedByPhone
     });
 
     // إضافة الرصيد لحساب الزبون
@@ -8951,8 +9025,7 @@ window.submitCardRecharge = async()=>{
       delete cardData.usedByPhone;
       delete cardData.usedAt;
       await updateDoc(doc(db, "feedback", cardDocId), {
-        message: JSON.stringify(cardData),
-        updatedAt: Date.now()
+        message: JSON.stringify(cardData)
       }).catch(()=>{});
       throw creditErr;
     }

@@ -390,19 +390,19 @@ OneSignalDeferred.push(async function(OneSignal){
       <div id="editProfileSectionBox" style="display:block;padding:14px 16px 16px;border-top:1px solid var(--border)">
         <div class="field" style="margin-bottom:8px">
           <label>اسمك الظاهر</label>
-          <input id="myName" maxlength="30" placeholder="اسمك الكامل" style="font-size:16px">
+          <input id="myName" maxlength="30" placeholder="اسمك الكامل" style="font-size:16px" onkeydown="if(event.key==='Enter')saveMyName()">
         </div>
         <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:12px" onclick="saveMyName()">💾 حفظ الاسم</button>
 
         <div class="field" style="margin-bottom:8px">
           <label>اسم المستخدم (@username)</label>
-          <input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()" style="font-size:16px">
+          <input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()" style="font-size:16px" onkeydown="if(event.key==='Enter')saveMyUsername()">
         </div>
         <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:12px" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 
         <div class="field" style="margin-bottom:8px">
           <label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label>
-          <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()" style="font-size:16px">
+          <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()" style="font-size:16px" onkeydown="if(event.key==='Enter')saveMyPhone()">
           <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div>
         </div>
         <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:10px" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
@@ -1377,7 +1377,7 @@ OneSignalDeferred.push(async function(OneSignal){
 
 
 
-<script type="module" src="app.js?v=70"></script>
+<script type="module" src="app.js?v=71"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>

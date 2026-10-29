@@ -444,6 +444,9 @@ export async function setDoc(docRef, data, options = {}) {
   }
 
   let payload = { ...row };
+  if (table === "feedback" || table === "phones" || table === "usernames") {
+    delete payload.updated_at;
+  }
   if (table === "usernames") {
     try {
       const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
@@ -506,6 +509,9 @@ export async function addDoc(colRef, data) {
   row.id = newId;
 
   let payload = { ...row };
+  if (table === "feedback" || table === "phones" || table === "usernames") {
+    delete payload.updated_at;
+  }
   if (table === "usernames") {
     try {
       const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
@@ -577,6 +583,9 @@ export async function updateDoc(docRef, data) {
   }
 
   let payload = { ...row };
+  if (table === "feedback" || table === "phones" || table === "usernames") {
+    delete payload.updated_at;
+  }
   if (table === "usernames") {
     try {
       const { data: existing } = await supabase.from("usernames").select("username").eq("username", payload.username).maybeSingle();
