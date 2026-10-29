@@ -247,7 +247,23 @@ async function setUserLimit(uid,limit,extra={}){try{const data={limit:Number(lim
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 let currentSort="newest",currentPriceMin=null,currentPriceMax=null,currentAdTypeFilter="all";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
-let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null,myProfile=null,myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
+function saveCachedProfile(prof){
+  if(!prof) return;
+  try {
+    localStorage.setItem("tasawuq_cached_profile", JSON.stringify(prof));
+  } catch(e){}
+}
+window.saveCachedProfile = saveCachedProfile;
+
+let currentCity="الكل",allPosts=[],allStores=[],currentStoreFilter=null,pendingAction=null,editingPostId=null;
+let myProfile = (() => {
+  try {
+    const cp = localStorage.getItem("tasawuq_cached_profile");
+    return cp ? JSON.parse(cp) : null;
+  } catch(e) { return null; }
+})();
+window.myProfile = myProfile;
+let myStore=null,unsubProfile=null,unsubStore=null,profileCreateTried=false,sellerPanelUid=null,selectedStars=0,selectedImages=[],storeLogoImage=null,storeCoverImage=null,pendingAutoUpgrade=null,allReports=[],reportsListenerStarted=false,allLimits=[],limitsListenerStarted=false,storesListenerStarted=false,unsubStores=null,storesModTab="all";
 let cart={storeId:null,storeName:"",storePhone:"",items:[]};
 let myFollowing=[];
 let unsubFollowing=null;
@@ -6760,16 +6776,20 @@ window.openAccount = (skipHistory) => {
 
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
 
-    // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان ظهور اليوزر نيم ورقم الهاتف فوراً
+    // أولاً: عرض فوري لكافة البيانات من الكاش أو الذاكرة لمنع أي تفريغ للخانات
+    updateAccountScreenUI();
+
+    // ثانياً: جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان دقة وتطابق البيانات فوراً
     getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
       if(snap.exists()){
-        myProfile = snap.data();
+        const fresh = snap.data() || {};
+        if(!myProfile) myProfile = {};
+        Object.assign(myProfile, fresh);
         window.myProfile = myProfile;
+        saveCachedProfile(myProfile);
         updateAccountScreenUI();
       }
     }).catch(()=>{});
-
-    updateAccountScreenUI();
   } else {
     pendingAction = null;
     authOverlay.classList.remove("hidden");
@@ -6777,8 +6797,9 @@ window.openAccount = (skipHistory) => {
 };
 
 function updateAccountScreenUI(){
-  if(!auth.currentUser) return;
-  const rawName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
+  const me = auth.currentUser;
+  if(!me && !myProfile) return;
+  const rawName = (myProfile && myProfile.name) || (me && me.displayName) || "مستخدم";
   const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
   
   const accNameEl = document.getElementById("accountName");
@@ -6813,12 +6834,24 @@ function updateAccountScreenUI(){
   }
 
   const myUserInput = document.getElementById("myUsername");
-  if(myUserInput && document.activeElement !== myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
+  if(myUserInput && document.activeElement !== myUserInput) {
+    if (myProfile && myProfile.username) {
+      myUserInput.value = myProfile.username;
+    } else if (myProfile && myProfile.username === "") {
+      myUserInput.value = "";
+    }
+  }
 
   const myPhoneInput = document.getElementById("myPhone");
-  if(myPhoneInput && document.activeElement !== myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? formatCallPhone(myProfile.phone) : "";
+  if(myPhoneInput && document.activeElement !== myPhoneInput) {
+    if (myProfile && myProfile.phone) {
+      myPhoneInput.value = formatCallPhone(myProfile.phone);
+    } else if (myProfile && myProfile.phone === "") {
+      myPhoneInput.value = "";
+    }
+  }
 
-  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
+  const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (me ? me.uid : "");
   const refDisplay = document.getElementById("myRefLinkDisplay");
   if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
 
@@ -6871,6 +6904,7 @@ window.toggleEditProfileSection = () => {
   const isHidden = box.style.display === "none";
   box.style.display = isHidden ? "block" : "none";
   if(arrow) arrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  if(isHidden) updateAccountScreenUI();
 };
 
 window.toggleAdminSection = () => {
@@ -6993,10 +7027,9 @@ window.saveMyName=async()=>{
     await setDoc(doc(db,"profiles",me.uid),{name},{merge:true});
     if(!myProfile) myProfile={};
     myProfile.name=name;
-    const anEl=document.getElementById("accountName");
-    if(anEl) anEl.textContent=name;
-    const heroAvatar = document.getElementById("accHeroAvatar");
-    if(heroAvatar) heroAvatar.textContent = name ? name[0].toUpperCase() : '👤';
+    window.myProfile=myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
     const mine=allPosts.filter(p=>p.uid===me.uid);
     await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{})));
     if(myStore){
@@ -7021,9 +7054,9 @@ window.saveMyUsername=async()=>{
   if(res.ok){
     if(!myProfile) myProfile={};
     myProfile.username=res.value;
-    if(input) input.value=res.value;
-    const unEl=document.getElementById("accountUsername");
-    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="inline-block";}
+    window.myProfile=myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
     showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
     if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
   }else{
@@ -7061,7 +7094,9 @@ window.saveMyPhone=async()=>{
   if(res.ok){
     if(!myProfile) myProfile={};
     myProfile.phone=res.value;
-    if(input) input.value=formatCallPhone(res.value);
+    window.myProfile=myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
     showToast("✅ تم حفظ وربط رقم الهاتف بنجاح: "+formatCallPhone(res.value),"success");
   }else{
     showToast("❌ "+res.msg,"error",5000);
@@ -7203,8 +7238,14 @@ async function assignMemberNumber(user,customName){
   const profileRef=doc(db,"profiles",user.uid);
   try{
     const profileSnap=await getDoc(profileRef);
-    if(profileSnap.exists() && profileSnap.data().memberNo!=null){
-      return profileSnap.data().memberNo;
+    const existing = (profileSnap && profileSnap.exists()) ? (profileSnap.data() || {}) : {};
+    if(existing.memberNo!=null){
+      if(!myProfile) myProfile={};
+      Object.assign(myProfile, existing);
+      window.myProfile = myProfile;
+      saveCachedProfile(myProfile);
+      updateAccountScreenUI();
+      return existing.memberNo;
     }
     const counterSnap=await getDoc(counterRef);
     let currentNumber=1000;
@@ -7216,18 +7257,22 @@ async function assignMemberNumber(user,customName){
 
     const updates={
       memberNo:newNumber,
-      name:customName || defaultName(user),
-      createdAt:profileCreatedAt(user),
-      storeId:(myProfile&&myProfile.storeId)||null,
-      phone:(myProfile&&myProfile.phone)||"",
-      phoneEditsCount:0
+      name:existing.name || (myProfile && myProfile.name) || customName || defaultName(user),
+      createdAt:existing.createdAt || profileCreatedAt(user),
+      storeId:existing.storeId || (myProfile && myProfile.storeId) || null,
+      phone:existing.phone || (myProfile && myProfile.phone) || "",
+      phoneEditsCount:existing.phoneEditsCount || 0
     };
-    if (myProfile && myProfile.username && myProfile.username.trim()) {
-      updates.username = myProfile.username.trim();
+    const un = (existing.username || (myProfile && myProfile.username) || "").trim();
+    if (un) {
+      updates.username = un;
     }
     await setDoc(profileRef,updates,{merge:true});
     if(!myProfile) myProfile={};
     Object.assign(myProfile, updates);
+    window.myProfile = myProfile;
+    saveCachedProfile(myProfile);
+    updateAccountScreenUI();
     return newNumber;
   }catch(e){
     console.warn("assignMemberNumber error:", e);
@@ -7369,11 +7414,12 @@ function startProfileListener(user){
   let assignAttempted=false;
   unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
     if(snap.exists()){
-      myProfile=snap.data();
-      window.myProfile=myProfile;
-      const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
-      const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
-      const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
+      const freshData = snap.data() || {};
+      if(!myProfile) myProfile = {};
+      Object.assign(myProfile, freshData);
+      window.myProfile = myProfile;
+      saveCachedProfile(myProfile);
+      updateAccountScreenUI();
       if(myProfile.memberNo==null && !assignAttempted){
         assignAttempted=true;
         assignMemberNumber(user).catch(e=>{ assignAttempted=false; });
@@ -7584,7 +7630,10 @@ else if(pendingAction==="following"){pendingAction=null;showFollowingPosts();}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="report"){const pid=pendingAction.postId;pendingAction=null;setTimeout(()=>{reportPost(pid);},500);}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="follow"){const suid=pendingAction.sellerUid;pendingAction=null;setTimeout(()=>{toggleFollow(suid);},500);}
 else if(pendingAction && typeof pendingAction==="object" && pendingAction.type==="storeRating"){const sid=pendingAction.storeId;pendingAction=null;setTimeout(()=>{openStoreRating(sid);},500);}
-else{renderPosts();}
+else if(window.location.hash === '#account'){
+  setTimeout(()=>openAccount(true), 150);
+}else{renderPosts();}
+updateAccountScreenUI();
 updateCartUI();
 }else{
 isAdmin=false;
@@ -7610,6 +7659,7 @@ window.logout=async()=>{
   if(window._globalOrdersPollerTimer){ clearInterval(window._globalOrdersPollerTimer); window._globalOrdersPollerTimer = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
+  try{localStorage.removeItem('tasawuq_cached_profile');}catch(e){}
   allReports = [];
   allLimits = [];
   allPendingPosts = [];
@@ -7767,7 +7817,14 @@ function handleHashRouting(hash){
   } else if(hash === '#form'){
     setTimeout(()=>{ if(typeof openFormScreen === 'function') openFormScreen(); }, 400);
   } else if(hash === '#account'){
-    setTimeout(()=>{ if(typeof openAccount === 'function') openAccount(); }, 400);
+    let t = 0;
+    const iv = setInterval(() => {
+      t++;
+      if (auth.currentUser || t > 12) {
+        clearInterval(iv);
+        if (typeof openAccount === 'function') openAccount(true);
+      }
+    }, 150);
   } else if(hash === '#inbox'){
     setTimeout(()=>{ if(typeof openInbox === 'function') openInbox(); }, 500);
   } else if(hash.startsWith('#seller-')){
@@ -7788,6 +7845,7 @@ function handleHashRouting(hash){
 window.handleHashRouting = handleHashRouting;
 
 window.addEventListener('load',()=>{
+  if(myProfile) updateAccountScreenUI();
   handleHashRouting(window.location.hash);
   try {
     const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
