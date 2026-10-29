@@ -726,8 +726,14 @@ OneSignalDeferred.push(async function(OneSignal){
 
 <div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">
-    <h3 style="margin:0">⏳ الإعلانات قيد المراجعة</h3>
+    <h3 style="margin:0">⏳ مراجعة وسجل الإعلانات</h3>
     <button type="button" onclick="refreshPendingPosts().then(renderModeration)" style="border:1px solid var(--border);background:var(--card);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer">🔄 تحديث</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px">
+    <button id="modTabPending" class="btnGhost" style="margin:0;padding:8px 4px;font-size:12px;background:#fef3c7;color:#92400e;border:1.5px solid #f59e0b;font-weight:800" onclick="setModerationTab('pending')">قيد المراجعة</button>
+    <button id="modTabApproved" class="btnGhost" style="margin:0;padding:8px 4px;font-size:12px;font-weight:800" onclick="setModerationTab('approved')">المعتمدة</button>
+    <button id="modTabRejected" class="btnGhost" style="margin:0;padding:8px 4px;font-size:12px;font-weight:800" onclick="setModerationTab('rejected')">المرفوضة</button>
+    <button id="modTabAll" class="btnGhost" style="margin:0;padding:8px 4px;font-size:12px;font-weight:800" onclick="setModerationTab('all')">الكل</button>
   </div>
   <div id="moderationList"></div>
   <button class="btnGhost" style="background:transparent;color:var(--muted);margin-top:10px" onclick="closeOverlay()">إغلاق</button>
@@ -1629,7 +1635,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=64"></script>
+<script type="module" src="app.js?v=65"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>

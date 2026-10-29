@@ -347,7 +347,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js?v=13";
+} from "./supabase-adapter.js?v=14";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
@@ -394,9 +394,20 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById("mainScreen").style.display="none";
     return;
   }
-  const email=user.email.toLowerCase();
-  let isAdmin=email===MAIN_ADMIN.toLowerCase();
+  const email=(user.email||"").toLowerCase();
+  let isAdmin=email===MAIN_ADMIN.toLowerCase() || user.uid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
   if(!isAdmin){
+    try{
+      const profSnap=await getDoc(doc(db,"profiles",user.uid));
+      if(profSnap.exists()){
+        const pData=profSnap.data();
+        if(pData.username==="abd" || (pData.phone && (String(pData.phone).includes("928476784") || String(pData.phone).includes("0928476784")))){
+          isAdmin=true;
+        }
+      }
+    }catch(e){}
+  }
+  if(!isAdmin && email){
     try{const s=await getDoc(doc(db,"admins",email));if(s.exists())isAdmin=true;}catch(e){}
   }
   if(!isAdmin){
@@ -674,31 +685,83 @@ window.dismissOneReport=async(rid)=>{
 };
 
 /* ===== Moderation ===== */
+let adminModTab = "pending";
+window.setAdminModTab = function(tab){
+  adminModTab = tab;
+  renderModerationList();
+};
+
 function renderModerationList(){
   const box=document.getElementById("moderationList");
   if(!box)return;
   const pending=allPostsCache.filter(p=>(p.status||"approved")==="pending").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-  if(pending.length===0){box.innerHTML='<div class="listEmpty">🎉 لا توجد إعلانات قيد المراجعة</div>';return;}
-  const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12.5px;font-weight:800;color:#1e40af;text-align:center">📊 يوجد ${pending.length} إعلان</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
-    <button class="btn btn-success" style="margin:0;padding:10px;font-size:13px" onclick="approveAllPending()">✅ موافقة على الكل</button>
-    <button class="btn btn-danger" style="margin:0;padding:10px;font-size:13px" onclick="rejectAllPending()">❌ رفض الكل</button>
+  const approved=allPostsCache.filter(p=>(p.status||"approved")==="approved").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const rejected=allPostsCache.filter(p=>p.status==="rejected").sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  const tabsHtml=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px">
+    <button class="btn ${adminModTab==='pending'?'btn-primary':'btn-warning'}" style="margin:0;padding:8px 4px;font-size:11.5px" onclick="setAdminModTab('pending')">قيد (${pending.length})</button>
+    <button class="btn ${adminModTab==='approved'?'btn-primary':'btn-success'}" style="margin:0;padding:8px 4px;font-size:11.5px" onclick="setAdminModTab('approved')">معتمد (${approved.length})</button>
+    <button class="btn ${adminModTab==='rejected'?'btn-primary':'btn-danger'}" style="margin:0;padding:8px 4px;font-size:11.5px" onclick="setAdminModTab('rejected')">مرفوض (${rejected.length})</button>
+    <button class="btn ${adminModTab==='all'?'btn-primary':'btn-blue'}" style="margin:0;padding:8px 4px;font-size:11.5px" onclick="setAdminModTab('all')">الكل (${allPostsCache.length})</button>
   </div>`;
-  const items=pending.map(p=>{
+
+  let filtered = pending;
+  if(adminModTab === "approved") filtered = approved;
+  else if(adminModTab === "rejected") filtered = rejected;
+  else if(adminModTab === "all") filtered = allPostsCache.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  if(filtered.length===0){
+    box.innerHTML=tabsHtml+`<div class="listEmpty">${adminModTab==='pending'?'🎉 لا توجد إعلانات قيد المراجعة حالياً':'لا توجد إعلانات في هذا القسم'}</div>`;
+    return;
+  }
+
+  let toolbar = tabsHtml;
+  if(adminModTab === "pending"){
+    toolbar += `<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12.5px;font-weight:800;color:#1e40af;text-align:center">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+      <button class="btn btn-success" style="margin:0;padding:10px;font-size:13px" onclick="approveAllPending()">✅ موافقة على الكل</button>
+      <button class="btn btn-danger" style="margin:0;padding:10px;font-size:13px" onclick="rejectAllPending()">❌ رفض الكل</button>
+    </div>`;
+  }
+
+  const items=filtered.map(p=>{
+    const curSt = p.status || "approved";
     const imgs=p.images&&p.images.length?p.images:(p.imageUrl?[p.imageUrl]:[]);
     const imgsHtml=imgs.length?`<div class="imgs">${imgs.map(u=>`<img src="${esc(u)}">`).join("")}</div>`:`<div class="listEmpty" style="padding:12px">🖼️ لا توجد صور</div>`;
     const adTypeBadge=p.adType==="wanted"?`<span class="miniStat" style="background:#fff7ed;color:#9a3412">🎯 مطلوب</span>`:`<span class="miniStat" style="background:#e6f6fe;color:#0284c7">🛒 معروض</span>`;
     const storeTag=p.storeId?`<span class="miniStat" style="background:#fff7e6;color:#92400e">🏪 ${esc(p.storeName||"متجر")}</span>`:"";
+    const statusTag = curSt === "approved" ? `<span class="miniStat" style="background:#dcfce7;color:#166534">✅ معتمد</span>` : curSt === "rejected" ? `<span class="miniStat" style="background:#fdeceb;color:#b91c1c">❌ مرفوض</span>` : `<span class="miniStat" style="background:#fef3c7;color:#92400e">⏳ قيد</span>`;
+
+    let actionsHtml = "";
+    if(curSt === "pending"){
+      actionsHtml = `
+        <button class="approve" onclick="approveOnePost('${p.id}')">✅ موافقة</button>
+        <button class="reject" onclick="rejectOnePost('${p.id}')">❌ رفض</button>
+      `;
+    } else if(curSt === "approved"){
+      actionsHtml = `
+        <button class="reject" onclick="rejectOnePost('${p.id}')">❌ إلغاء / رفض</button>
+        <button class="view" onclick="window.open('https://tasawuqnow.com/#post-${p.id}','_blank')">👁️ عرض</button>
+      `;
+    } else {
+      actionsHtml = `
+        <button class="approve" onclick="approveOnePost('${p.id}')">✅ قبول ونشر</button>
+        <button class="delete" onclick="deleteOnePost('${p.id}')">🗑️ حذف</button>
+      `;
+    }
+
     return `<div class="item">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${adTypeBadge}${storeTag}<span style="font-size:11px;color:var(--muted)">${timeAgo(p.createdAt)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div>${adTypeBadge} ${storeTag} ${statusTag}</div>
+        <span style="font-size:11px;color:var(--muted)">${timeAgo(p.createdAt)}</span>
+      </div>
       <div class="itTitle">${esc(p.title||"بدون عنوان")}</div>
       <div style="font-weight:800;font-size:16px;color:var(--teal-dark);margin-bottom:8px">${p.price!=null?p.price+" د.ل":""}</div>
       ${imgsHtml}
       <div class="itMeta">📁 ${esc(p.category||"")}<br>📍 ${esc(p.city||"")}<br>👤 ${esc(p.storeId?p.storeName||"متجر":p.sellerName||"البائع")} · ☎️ ${esc(p.phone||"")}</div>
       <div style="background:#fff;padding:10px;border-radius:8px;font-size:13px;line-height:1.8;border:1px solid var(--border);margin-bottom:10px;white-space:pre-wrap;word-break:break-word">${esc(p.description||"لا يوجد وصف")}</div>
       <div class="itActions">
-        <button class="approve" onclick="approveOnePost('${p.id}')">✅ موافقة</button>
-        <button class="reject" onclick="rejectOnePost('${p.id}')">❌ رفض</button>
+        ${actionsHtml}
       </div>
     </div>`;
   }).join("");

@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=13";
+} from "./supabase-adapter.js?v=14";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -40,6 +40,27 @@ console.log('🚀 تسوق الآن يعمل بالكامل عبر Supabase');
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
+const ADMIN_EMAILS=["abdoalk73@gmail.com"];
+const ADMIN_UIDS=["zoSxkP0PGPWx37J6GMQiOjVgiMC3"];
+const ADMIN_PHONES=["218928476784","0928476784","928476784"];
+const ADMIN_USERNAMES=["abd"];
+
+function checkIsAdmin(user, profile){
+  if(!user && !profile) return false;
+  if(user){
+    if(user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) return true;
+    if(user.uid && ADMIN_UIDS.includes(user.uid)) return true;
+    if(user.phoneNumber && ADMIN_PHONES.some(p => user.phoneNumber.includes(p))) return true;
+  }
+  if(profile){
+    if(profile.email && ADMIN_EMAILS.includes(profile.email.toLowerCase())) return true;
+    if(profile.id && ADMIN_UIDS.includes(profile.id)) return true;
+    if(profile.username && ADMIN_USERNAMES.includes(profile.username.toLowerCase())) return true;
+    if(profile.phone && ADMIN_PHONES.some(p => String(profile.phone).includes(p))) return true;
+  }
+  return false;
+}
+window.checkIsAdmin = checkIsAdmin;
 const ADMIN_WHATSAPP="218928476784";
 const POST_DURATION_DAYS=30;
 const POST_DURATION_MS=POST_DURATION_DAYS*24*60*60*1000;
@@ -3633,34 +3654,115 @@ function stopPendingPostsListener(){
   allPendingPosts = [];
 }
 
+let moderationTab = "pending";
+window.setModerationTab = function(tab){
+  moderationTab = tab;
+  renderModeration();
+};
+
 function renderModeration(){
   const list=document.getElementById("moderationList");if(!list)return;
-  const pending=allPendingPosts;
-  if(pending.length===0){list.innerHTML="<div class='reportsEmpty'>🎉 لا توجد إعلانات قيد المراجعة</div>";return;}
-  const toolbar=`<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${pending.length} إعلان بانتظار المراجعة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button><button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button></div></div>`;
-  const items=pending.map(p=>{
-    const imgs=getImages(p);
-    const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
-    const days=daysLeft(p);
-    const expiryInfo=days!=null?`<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days<=0?'#b91c1c':days<=5?'#92400e':'#166534'}">${days<=0?'⏰ منتهي':('⏳ باقي '+days+' يوم')}</div>`:"";
-    const tags=(p.storeId?("🏪 "+escapeHtml(p.storeName||"متجر")):((p.sellerMemberNo?"· #"+p.sellerMemberNo:"")+(p.sellerUsername?" · @"+escapeHtml(p.sellerUsername):"")));
-    const adTypeBadge=isWanted(p)?`<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>`:`<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
-    const priceTxt=p.priceType==="contact"?"📞 تواصل لمعرفة السعر":(p.price!=null?formatPrice(p.price)+" د.ل":"");
-    return `<div style="border:2px dashed #f59e0b;border-radius:14px;padding:12px;margin-bottom:14px;background:#fffbf0">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">${adTypeBadge}<span style="font-size:11.5px;color:var(--muted)">${timeAgo(p.createdAt)}</span></div>
-<div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title||"بدون عنوان")}</div>
-<div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
-${imgsHtml}
-<div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
-<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">📁 ${escapeHtml(p.category||"")} ${p.brand?"· 🏷️ "+escapeHtml(p.brand):""}<br>📍 ${escapeHtml(p.city||"")}<br>${p.storeId?"🏪":""} ${p.storeId?escapeHtml(p.storeName||"متجر"):escapeHtml(p.sellerName||"البائع")} ${tags} · ☎️ ${escapeHtml(p.phone||"")}</div>
-${expiryInfo}
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">
-<button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>
-<button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
-<button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
-</div></div>`;
+  
+  // تحديث أزرار التبويبات
+  const tabs = ["Pending", "Approved", "Rejected", "All"];
+  tabs.forEach(t => {
+    const btn = document.getElementById("modTab" + t);
+    if(btn){
+      const isSel = moderationTab === t.toLowerCase();
+      btn.style.background = isSel ? (t === "Pending" ? "#fef3c7" : t === "Approved" ? "#dcfce7" : t === "Rejected" ? "#fdeceb" : "#e0f2fe") : "var(--bg)";
+      btn.style.color = isSel ? (t === "Pending" ? "#92400e" : t === "Approved" ? "#166534" : t === "Rejected" ? "#b91c1c" : "#0369a1") : "var(--text)";
+      btn.style.borderColor = isSel ? "currentColor" : "var(--border)";
+    }
+  });
+
+  let itemsToShow = [];
+  if(moderationTab === "pending"){
+    itemsToShow = allPendingPosts;
+  } else if(moderationTab === "approved"){
+    itemsToShow = allPosts.filter(p => (p.status || "approved") === "approved");
+  } else if(moderationTab === "rejected"){
+    itemsToShow = allPosts.filter(p => p.status === "rejected");
+  } else {
+    itemsToShow = allPosts;
+  }
+
+  if(moderationTab === "pending"){
+    if(itemsToShow.length === 0){
+      list.innerHTML = `<div class='reportsEmpty' style='padding:30px 16px;text-align:center'>
+        <div style='font-size:36px;margin-bottom:8px'>🎉</div>
+        <div style='font-weight:800;font-size:15px;color:var(--text)'>لا توجد إعلانات معلقة حالياً</div>
+        <div style='color:var(--muted);font-size:12.5px;margin-top:4px'>كافة الإعلانات منشورة ومقبولة. يمكنك استعراض الإعلانات المعتمدة من تبويب "المعتمدة" أعلاه.</div>
+      </div>`;
+      return;
+    }
+  } else if(itemsToShow.length === 0){
+    list.innerHTML = `<div class='reportsEmpty'>لا توجد إعلانات في هذا القسم حالياً</div>`;
+    return;
+  }
+
+  let toolbar = "";
+  if(moderationTab === "pending"){
+    toolbar = `<div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-weight:800;color:#1e40af;margin-bottom:10px;font-size:14px">📊 يوجد ${itemsToShow.length} إعلان بانتظار المراجعة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="approveAllPending()" style="padding:11px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">✅ موافقة على الكل</button>
+        <button onclick="deleteAllPending()" style="padding:11px;border:none;border-radius:10px;background:#e5484d;color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer">❌ رفض الكل</button>
+      </div>
+    </div>`;
+  } else {
+    toolbar = `<div style="font-size:13px;font-weight:800;color:var(--muted);margin-bottom:10px;padding:4px 8px">إجمالي الإعلانات في هذا القسم: ${itemsToShow.length}</div>`;
+  }
+
+  const items = itemsToShow.map(p => {
+    const imgs = getImages(p);
+    const imgsHtml = imgs.length
+      ? `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u => `<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`
+      : `<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
+    const days = daysLeft(p);
+    const expiryInfo = days != null ? `<div style="font-size:11.5px;font-weight:800;margin-top:8px;color:${days <= 0 ? '#b91c1c' : days <= 5 ? '#92400e' : '#166534'}">${days <= 0 ? '⏰ منتهي' : ('⏳ باقي ' + days + ' يوم')}</div>` : "";
+    const tags = (p.storeId ? ("🏪 " + escapeHtml(p.storeName || "متجر")) : ((p.sellerMemberNo ? "· #" + p.sellerMemberNo : "") + (p.sellerUsername ? " · @" + escapeHtml(p.sellerUsername) : "")));
+    const adTypeBadge = isWanted(p) ? `<span style="background:#fff7ed;color:#9a3412;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🎯 مطلوب</span>` : `<span style="background:#e6f6fe;color:#0284c7;font-weight:800;padding:3px 9px;border-radius:7px;font-size:11.5px">🛒 معروض</span>`;
+    const priceTxt = p.priceType === "contact" ? "📞 تواصل لمعرفة السعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+    const curSt = p.status || "approved";
+    const statusLabel = curSt === "approved" ? `<span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">✅ معتمد</span>` : curSt === "rejected" ? `<span style="background:#fdeceb;color:#b91c1c;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">❌ مرفوض${p.rejectReason ? ': ' + escapeHtml(p.rejectReason) : ''}</span>` : `<span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px">⏳ قيد المراجعة</span>`;
+
+    let actionBtns = "";
+    if(curSt === "pending"){
+      actionBtns = `
+        <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>
+        <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:12px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">❌ رفض</button>
+        <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:12px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض</button>
+      `;
+    } else if(curSt === "approved"){
+      actionBtns = `
+        <button onclick="rejectPost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">❌ إلغاء / رفض</button>
+        <button onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),300)" style="padding:10px 4px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">👁️ عرض الإعلان</button>
+      `;
+    } else {
+      actionBtns = `
+        <button onclick="approvePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">✅ إعادة قبول ونشر</button>
+        <button onclick="deletePost('${p.id}');setTimeout(renderModeration,400)" style="padding:10px 4px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer">🗑️ حذف نهائي</button>
+      `;
+    }
+
+    return `<div style="border:2px dashed ${curSt==='pending'?'#f59e0b':curSt==='approved'?'#16a34a':'#e5484d'};border-radius:14px;padding:12px;margin-bottom:14px;background:${curSt==='pending'?'#fffbf0':curSt==='approved'?'#f0fdf4':'#fdeceb'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;gap:6px;align-items:center">${adTypeBadge} ${statusLabel}</div>
+        <span style="font-size:11.5px;color:var(--muted)">${timeAgo(p.createdAt)}</span>
+      </div>
+      <div style="font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4">${escapeHtml(p.title || "بدون عنوان")}</div>
+      <div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
+      ${imgsHtml}
+      <div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description || "لا يوجد وصف")}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;background:#fff;padding:8px 10px;border-radius:8px;border:1px solid var(--border)">📁 ${escapeHtml(p.category || "")} ${p.brand ? "· 🏷️ " + escapeHtml(p.brand) : ""}<br>📍 ${escapeHtml(p.city || "")}<br>${p.storeId ? "🏪" : ""} ${p.storeId ? escapeHtml(p.storeName || "متجر") : escapeHtml(p.sellerName || "البائع")} ${tags} · ☎️ ${escapeHtml(p.phone || "")}</div>
+      ${expiryInfo}
+      <div style="display:grid;grid-template-columns:${curSt==='pending'?'1fr 1fr 1fr':'1fr 1fr'};gap:6px;margin-top:12px">
+        ${actionBtns}
+      </div>
+    </div>`;
   }).join("");
-  list.innerHTML=toolbar+items;
+
+  list.innerHTML = toolbar + items;
 }
 
 window.approveAllPending=async()=>{
@@ -3718,7 +3820,7 @@ window.deleteAllPending=async()=>{
 function updateModBadge(){
   if(!isAdmin||!moderationBtn)return;
   const c=allPendingPosts.length;
-  moderationBtn.textContent=c>0?`⏳ الإعلانات قيد المراجعة (${c})`:"⏳ الإعلانات قيد المراجعة";
+  moderationBtn.textContent=c>0?`⏳ مراجعة وسجل الإعلانات (${c})`:"⏳ مراجعة وسجل الإعلانات";
 }
 
 /* ============================================
@@ -7533,6 +7635,21 @@ async function assignMemberNumber(user,customName){
       if(existing.storeId !== undefined) myProfile.storeId = existing.storeId;
       window.myProfile = myProfile;
       saveCachedProfile(myProfile);
+      if(!isAdmin && checkIsAdmin(user, myProfile)){
+        isAdmin = true;
+        adminChip.classList.remove("hidden");
+        if(moderationBtn)moderationBtn.classList.remove("hidden");
+        const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.remove("hidden");
+        const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.remove("hidden");
+        const eb=document.getElementById("expiredBtn");if(eb)eb.classList.remove("hidden");
+        const limitsBtn=document.getElementById("limitsBtn");if(limitsBtn)limitsBtn.classList.remove("hidden");
+        const dashBtn=document.getElementById("dashboardBtn");if(dashBtn)dashBtn.classList.remove("hidden");
+        const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display="block";
+        const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display="block";
+        const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.remove("hidden");
+        updateModBadge();
+        if(!pendingPostsListenerStarted) startPendingPostsListener();
+      }
       updateAccountScreenUI();
       return existing.memberNo;
     }
@@ -7736,6 +7853,21 @@ function startProfileListener(user){
 
       window.myProfile = myProfile;
       saveCachedProfile(myProfile);
+      if(!isAdmin && checkIsAdmin(user, myProfile)){
+        isAdmin = true;
+        adminChip.classList.remove("hidden");
+        if(moderationBtn)moderationBtn.classList.remove("hidden");
+        const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.remove("hidden");
+        const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.remove("hidden");
+        const eb=document.getElementById("expiredBtn");if(eb)eb.classList.remove("hidden");
+        const limitsBtn=document.getElementById("limitsBtn");if(limitsBtn)limitsBtn.classList.remove("hidden");
+        const dashBtn=document.getElementById("dashboardBtn");if(dashBtn)dashBtn.classList.remove("hidden");
+        const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display="block";
+        const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display="block";
+        const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.remove("hidden");
+        updateModBadge();
+        if(!pendingPostsListenerStarted) startPendingPostsListener();
+      }
       updateAccountScreenUI();
       if(!myProfile.phone || !myProfile.username){
         syncFullUserProfile(user.uid);
@@ -7917,7 +8049,7 @@ window.enableNotifications=async()=>{
    ============================================ */
 onAuthStateChanged(auth,user=>{
 if(user){
-isAdmin=user.email===ADMIN_EMAIL;
+isAdmin=checkIsAdmin(user, myProfile || getCachedProfile());
 adminChip.classList.toggle("hidden",!isAdmin);
 navAccountLabel.textContent="حسابي";
 startProfileListener(user);
@@ -7940,6 +8072,9 @@ const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
+const accAdm=document.getElementById("accAdminSection");if(accAdm)accAdm.style.display=isAdmin?"block":"none";
+const admGrid=document.getElementById("adminButtonsGridBox");if(admGrid)admGrid.style.display=isAdmin?"block":"none";
+const admPnl=document.getElementById("adminPanelBtn");if(admPnl)admPnl.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){

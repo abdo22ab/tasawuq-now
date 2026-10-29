@@ -478,7 +478,7 @@ export async function setDoc(docRef, data, options = {}) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload, { onConflict: onConflictKey });
     if (!error) return true;
-    if (error.code === "42501" || (error.message && error.message.includes("USING expression"))) {
+    if (error.code === "42501" || error.code === "23505" || (error.message && (error.message.includes("USING expression") || error.message.includes("duplicate key") || error.message.includes("violates unique constraint")))) {
       const { error: updateErr } = await supabase.from(table).update(payload).eq(onConflictKey, payload[onConflictKey]);
       if (!updateErr) return true;
     }
