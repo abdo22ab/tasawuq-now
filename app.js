@@ -6388,6 +6388,8 @@ function closeOverlayDirect(){
   const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
   const mwho=document.getElementById("myWalletHistoryOverlay");if(mwho)mwho.classList.add("hidden");
   const awo=document.getElementById("adminWalletOverlay");if(awo)awo.classList.add("hidden");
+  const uio=document.getElementById("userInboxOverlay");if(uio)uio.classList.add("hidden");
+  const uco=document.getElementById("userChatOverlay");if(uco){uco.classList.add("hidden");if(window._activeChat?.pollTimer)clearInterval(window._activeChat.pollTimer);window._activeChat=null;}
   updateSEOMeta(null);
   pendingAction=null;
   document.body.style.overflow="";
@@ -6945,19 +6947,52 @@ window.detectCity=async()=>{
 
 window.enableNotifications=async()=>{
   try{
-    let tries=0;
-    while(!window.OneSignal && tries<25){await new Promise(r=>setTimeout(r,200));tries++;}
-    if(!window.OneSignal){showToast("⚠️ خدمة الإشعارات لم تُحمّل بعد.","warn");return;}
+    if(window.Notification && Notification.permission === "granted"){
+      if(window.OneSignal && window.OneSignal.login && auth.currentUser){
+        try {
+          await window.OneSignal.login(auth.currentUser.uid);
+          await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
+        } catch(e){}
+      }
+      showToast("🔔 الإشعارات مفعّلة بالفعل على هاتفك", "success");
+      return;
+    }
+
     const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone=window.matchMedia('(display-mode:standalone)').matches || window.navigator.standalone===true;
     if(isIOS && !isStandalone){
-      alert("📱 على iPhone:\n\n1. افتح Safari\n2. اضغط زر المشاركة\n3. اختر: إضافة إلى الشاشة الرئيسية\n4. افتح من الأيقونة الجديدة\n5. اضغط 🔔 مرة ثانية");
+      alert("📱 على iPhone:\n\n1. افتح Safari\n2. اضغط زر المشاركة (Share)\n3. اختر: إضافة إلى الشاشة الرئيسية\n4. افتح التطبيق من الأيقونة الجديدة بالشاشة الرئيسية\n5. اضغط 🔔 لتفعيل الإشعارات");
       return;
     }
-    await window.OneSignal.Notifications.requestPermission();
-    if(window.OneSignal.Notifications.permission){showToast("✅ تم تفعيل الإشعارات بنجاح","success");}
-    else{showToast("⚠️ لم يتم منح إذن الإشعارات","warn");}
-  }catch(e){showToast("تعذر تفعيل الإشعارات: "+e.message,"error");}
+
+    let tries=0;
+    while(!window.OneSignal && tries<20){await new Promise(r=>setTimeout(r,200));tries++;}
+
+    let granted = false;
+    if(window.OneSignal && window.OneSignal.Notifications && window.OneSignal.Notifications.requestPermission){
+      await window.OneSignal.Notifications.requestPermission();
+      granted = Boolean(window.OneSignal.Notifications.permission);
+    } else if(window.Notification && Notification.requestPermission){
+      const res = await Notification.requestPermission();
+      granted = (res === "granted");
+    }
+
+    if(granted){
+      if(auth.currentUser && window.OneSignal && window.OneSignal.login){
+        try{
+          await window.OneSignal.login(auth.currentUser.uid);
+          await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
+          if(auth.currentUser.displayName) await window.OneSignal.User.addTag("user_name", auth.currentUser.displayName);
+        }catch(e){}
+      }
+      showToast("✅ تم تفعيل الإشعارات بنجاح! ستصلك التنبيهات حتى خارج الموقع", "success");
+    } else {
+      showToast("⚠️ لم يتم منح إذن الإشعارات من إعدادات المتصفح", "warn");
+    }
+  }catch(e){
+    console.warn("Error enabling notifications:", e);
+    showToast("تعذر تفعيل الإشعارات: " + e.message, "error");
+  }
 };
 
 /* ============================================
@@ -9129,11 +9164,22 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
       }
     };
 
+    const headers = { "Content-Type": "application/json" };
+    const restKey = localStorage.getItem("tasawuq_onesignal_rest_key") || window._onesignalRestKey || "";
+    if (restKey) {
+      headers["Authorization"] = "Key " + restKey;
+    }
+
     fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload)
-    }).catch(()=>{});
+    }).then(async res => {
+      const data = await res.json().catch(()=>({}));
+      console.log("OneSignal push response:", data);
+    }).catch(err => {
+      console.warn("OneSignal push fetch error:", err);
+    });
   } catch(err){}
 }
 window.dispatchChatPushNotification = dispatchChatPushNotification;
@@ -9339,6 +9385,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.remove("hidden");
   closeInbox();
+  pushNavState({ screen: 'overlay' });
 
   // تركيز حقل الكتابة
   setTimeout(() => {
@@ -9855,7 +9902,7 @@ export async function loadChatMessages(convId, isPoll){
 window.loadChatMessages = loadChatMessages;
 
 // فتح صندوق الرسائل لجميع المحادثات
-export async function openInbox(){
+export async function openInbox(skipHistory){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
     if(typeof openAuthModal === "function") openAuthModal();
@@ -9866,6 +9913,7 @@ export async function openInbox(){
   if(!overlay || !list) return;
 
   overlay.classList.remove("hidden");
+  if(!skipHistory) pushNavState({ screen: 'overlay' });
   list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
 
   try {
@@ -10041,3 +10089,15 @@ window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 setInterval(() => {
   if(auth.currentUser) updateGlobalUnreadChatCount();
 }, 60000);
+
+
+window.setOneSignalRestKey = (key) => {
+  if(!key) {
+    key = prompt("أدخل مفتاح OneSignal REST API Key لتفعيل الإشعارات والهاتف مقفل:");
+  }
+  if(key && key.trim()){
+    localStorage.setItem("tasawuq_onesignal_rest_key", key.trim());
+    window._onesignalRestKey = key.trim();
+    showToast("✅ تم حفظ مفتاح إشعارات OneSignal بنجاح", "success");
+  }
+};
