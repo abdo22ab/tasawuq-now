@@ -9835,7 +9835,7 @@ export async function loadChatMessages(convId, isPoll){
       collection(db, "feedback"),
       where("type", "==", "chat_message"),
       orderBy("createdAt", "desc"),
-      limit(100)
+      limit(300)
     ));
 
     const myUid = auth.currentUser ? auth.currentUser.uid : null;
