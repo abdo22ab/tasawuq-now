@@ -2045,4 +2045,231 @@ html.dark-mode .chatBubble.incoming {
   color: #f1f5f9;
 }
 
+/* ============================================
+   💬 Modern Chat Enhancements: Actions, Media & Quick Replies
+   ============================================ */
+.chatHeaderIconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 0 0 auto;
+}
+.chatHeaderIconBtn:active {
+  transform: scale(0.92);
+}
+.chatHeaderIconBtn.wa {
+  background: #25d366;
+  color: #fff;
+  border-color: #22c55e;
+}
+.chatHeaderIconBtn.warn {
+  color: #e11d48;
+}
+
+/* كبسولات الردود السريعة */
+.chatQuickRepliesBar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chatQuickRepliesBar::-webkit-scrollbar {
+  display: none;
+}
+.chatQuickReplyChip {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.chatQuickReplyChip:hover {
+  background: var(--teal-light, #e0f2fe);
+  border-color: #0284c7;
+  color: #0369a1;
+}
+.chatQuickReplyChip:active {
+  transform: scale(0.95);
+}
+
+/* أزرار المرفقات بجانب حقل الإدخال */
+.chatAttachBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: all 0.15s ease;
+}
+.chatAttachBtn:hover {
+  border-color: #0284c7;
+}
+.chatAttachBtn:active {
+  transform: scale(0.92);
+  background: var(--border);
+}
+
+/* فقاعة وعرض الصور في الشات */
+.chatPhotoBubble {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #0f172a;
+  max-width: 240px;
+  display: block;
+  margin-bottom: 4px;
+}
+.chatPhotoBubble img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+}
+.chatPhotoBubble:hover img {
+  transform: scale(1.03);
+}
+.chatPhotoHint {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* كرت مشاركة رقم الهاتف داخل فقاعة الشات */
+.chatPhoneCard {
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  min-width: 210px;
+}
+.chatBubble.incoming .chatPhoneCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.chatPhoneCard .phoneTitle {
+  font-size: 11.5px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+.chatPhoneCard .phoneNumber {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  direction: ltr;
+  text-align: right;
+  margin-bottom: 8px;
+}
+.chatPhoneCard .phoneActions {
+  display: flex;
+  gap: 8px;
+}
+.chatCardActionBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.chatCardActionBtn.call {
+  background: #0284c7;
+  color: #fff;
+}
+.chatCardActionBtn.wa {
+  background: #22c55e;
+  color: #fff;
+}
+.chatCardActionBtn:active {
+  transform: scale(0.95);
+}
+
+/* علامات القراءة والتسليم ✓ / ✓✓ */
+.chatReceipt {
+  font-size: 11px;
+  margin-right: 4px;
+  display: inline-block;
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+.chatReceipt.seen {
+  color: #38bdf8;
+}
+
+/* زر حذف المحادثة من الصندوق */
+.inboxDeleteBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 0 0 auto;
+}
+.inboxDeleteBtn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+html.dark-mode .chatHeaderIconBtn {
+  background: #1e293b;
+  border-color: #334155;
+}
+html.dark-mode .chatQuickReplyChip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+html.dark-mode .chatAttachBtn {
+  background: #1e293b;
+  border-color: #334155;
+}
+
 
