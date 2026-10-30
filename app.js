@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=5";
+} from "./supabase-adapter.js?v=6";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -3006,6 +3006,8 @@ if(p.priceType==="contact"){
 updateSEOMeta(p);
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}<span style="position:absolute;bottom:10px;left:10px;z-index:4;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;padding:3px 9px;border-radius:8px;pointer-events:none;backdrop-filter:blur(4px);font-weight:700">🔍 انقر للتكبير الكامل</span></div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
+const postSheet = postOverlay.querySelector(".sheet");
+if(postSheet) postSheet.scrollTop = 0;
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
 if(!skipHistory) pushNavState({ screen: 'post', id: id }, '#post-' + id);
@@ -6228,6 +6230,7 @@ function updateAccountScreenUI(){
   const smb = document.getElementById("storesModerationBtn"); if(smb) smb.classList.toggle("hidden", !isAdmin);
   const eb = document.getElementById("expiredBtn"); if(eb) eb.classList.toggle("hidden", !isAdmin);
   const notifBtn = document.getElementById("sendNotifBtn"); if(notifBtn) notifBtn.classList.toggle("hidden", !isAdmin);
+  const aosb = document.getElementById("adminOneSignalBtn"); if(aosb) aosb.classList.toggle("hidden", !isAdmin);
   const dash = document.getElementById("dashboardBtn"); if(dash) dash.classList.toggle("hidden", !isAdmin);
   const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.toggle("hidden", !isAdmin);
   const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.toggle("hidden", !isAdmin);
@@ -6954,7 +6957,17 @@ window.enableNotifications=async()=>{
           await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
         } catch(e){}
       }
-      showToast("🔔 الإشعارات مفعّلة بالفعل على هاتفك", "success");
+      playChatNotificationSound();
+      if(navigator.serviceWorker && navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification("🔔 إشعار تجريبي من تسوق الآن", {
+            body: "الإشعارات مفعّلة بنجاح وتعمل على هاتفك بشكل سليم!",
+            icon: "icon-192.png",
+            badge: "icon-192.png"
+          }).catch(()=>{});
+        }).catch(()=>{});
+      }
+      showToast("🔔 الإشعارات مفعّلة بالفعل على هاتفك وتعمل بنجاح", "success");
       return;
     }
 
@@ -6984,6 +6997,16 @@ window.enableNotifications=async()=>{
           await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
           if(auth.currentUser.displayName) await window.OneSignal.User.addTag("user_name", auth.currentUser.displayName);
         }catch(e){}
+      }
+      playChatNotificationSound();
+      if(navigator.serviceWorker && navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification("🔔 مرحباً بك في تسوق الآن!", {
+            body: "تم تفعيل الإشعارات بنجاح وستصلك رسائل المشترين فوراً",
+            icon: "icon-192.png",
+            badge: "icon-192.png"
+          }).catch(()=>{});
+        }).catch(()=>{});
       }
       showToast("✅ تم تفعيل الإشعارات بنجاح! ستصلك التنبيهات حتى خارج الموقع", "success");
     } else {
@@ -7023,6 +7046,8 @@ const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
+const aosb=document.getElementById("adminOneSignalBtn");
+if(aosb)aosb.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){
@@ -9144,42 +9169,45 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
 
   // 2. إرسال Push Notification حقيقي عبر OneSignal REST API لإيقاظ الهاتف حتى لو كان مقفلاً
   try {
-    const payload = {
-      app_id: "7030f4d7-c06e-41a9-a601-8d42965023b3",
-      include_aliases: { external_id: [receiverUid] },
-      target_channel: "push",
-      headings: {
-        ar: `💬 رسالة من ${myName}`,
-        en: `💬 Message from ${myName}`
-      },
-      contents: {
-        ar: cleanSnippet,
-        en: cleanSnippet
-      },
-      url: window.location.origin + "?openChat=" + encodeURIComponent(convId),
-      data: {
-        convId: convId,
-        type: "chat_message",
-        senderUid: auth.currentUser.uid
-      }
-    };
-
-    const headers = { "Content-Type": "application/json" };
-    const restKey = localStorage.getItem("tasawuq_onesignal_rest_key") || window._onesignalRestKey || "";
+    const restKey = window._onesignalRestKey || localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY || "";
     if (restKey) {
-      headers["Authorization"] = "Key " + restKey;
-    }
+      const payload = {
+        app_id: "7030f4d7-c06e-41a9-a601-8d42965023b3",
+        include_aliases: { external_id: [receiverUid] },
+        include_external_user_ids: [receiverUid],
+        target_channel: "push",
+        headings: {
+          ar: `💬 رسالة من ${myName}`,
+          en: `💬 Message from ${myName}`
+        },
+        contents: {
+          ar: cleanSnippet,
+          en: cleanSnippet
+        },
+        url: window.location.origin + "?openChat=" + encodeURIComponent(convId),
+        data: {
+          convId: convId,
+          type: "chat_message",
+          senderUid: auth.currentUser.uid
+        }
+      };
 
-    fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload)
-    }).then(async res => {
-      const data = await res.json().catch(()=>({}));
-      console.log("OneSignal push response:", data);
-    }).catch(err => {
-      console.warn("OneSignal push fetch error:", err);
-    });
+      const headers = { 
+        "Content-Type": "application/json",
+        "Authorization": "Key " + restKey
+      };
+
+      fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload)
+      }).then(async res => {
+        const data = await res.json().catch(()=>({}));
+        console.log("OneSignal push response:", data);
+      }).catch(err => {
+        console.warn("OneSignal push fetch error:", err);
+      });
+    }
   } catch(err){}
 }
 window.dispatchChatPushNotification = dispatchChatPushNotification;
@@ -9189,48 +9217,52 @@ export function startChatPushRealtimeListener(myUid){
   if(!myUid || _chatPushUnsub) return;
 
   const startTimestamp = Date.now();
+  const processedEventIds = new Set();
   try {
     _chatPushUnsub = onSnapshot(query(
       collection(db, "feedback"),
       where("type", "==", "chat_push_event"),
       limit(25)
     ), snap => {
-      snap.docChanges().forEach(change => {
-        if(change.type === "added"){
-          const data = change.doc.data();
-          if(data.receiver_uid === myUid && (data.created_at || 0) >= startTimestamp - 5000){
-            // إذا كان المستخدم لا يفتح نفس المحادثة حالياً أو الشاشة بالخلفية
-            const isActiveHere = window._activeChat && window._activeChat.convId === data.conv_id && !document.hidden;
-            if(!isActiveHere){
-              // تشغيل التنبيه الصوتي
-              playChatNotificationSound();
-              // تحديث العداد
-              updateGlobalUnreadChatCount();
+      if(!snap || !snap.docs) return;
+      snap.docs.forEach(docSnap => {
+        const id = docSnap.id;
+        const data = docSnap.data();
+        if(!data || processedEventIds.has(id)) return;
+        processedEventIds.add(id);
 
-              // عرض إشعار النظام (Service Worker / Notification API)
-              if(navigator.serviceWorker && navigator.serviceWorker.ready){
-                navigator.serviceWorker.ready.then(reg => {
-                  reg.showNotification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
-                    body: data.text || "وصلتك رسالة جديدة في تسوق الآن",
-                    icon: "icon-192.png",
-                    badge: "icon-192.png",
-                    vibrate: [200, 100, 200],
-                    tag: "chat_" + data.conv_id,
-                    data: { url: window.location.origin + "?openChat=" + encodeURIComponent(data.conv_id) }
-                  }).catch(()=>{});
+        if(data.receiver_uid === myUid && (data.created_at || 0) >= startTimestamp - 5000){
+          // إذا كان المستخدم لا يفتح نفس المحادثة حالياً أو الشاشة بالخلفية
+          const isActiveHere = window._activeChat && window._activeChat.convId === data.conv_id && !document.hidden;
+          if(!isActiveHere){
+            // تشغيل التنبيه الصوتي
+            playChatNotificationSound();
+            // تحديث العداد
+            updateGlobalUnreadChatCount();
+
+            // عرض إشعار النظام (Service Worker / Notification API)
+            if(navigator.serviceWorker && navigator.serviceWorker.ready){
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
+                  body: data.text || "وصلتك رسالة جديدة في تسوق الآن",
+                  icon: "icon-192.png",
+                  badge: "icon-192.png",
+                  vibrate: [200, 100, 200],
+                  tag: "chat_" + data.conv_id,
+                  data: { url: window.location.origin + "?openChat=" + encodeURIComponent(data.conv_id) }
                 }).catch(()=>{});
-              } else if(window.Notification && Notification.permission === "granted"){
-                try {
-                  new Notification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
-                    body: data.text || "وصلتك رسالة جديدة",
-                    icon: "icon-192.png"
-                  });
-                } catch(e){}
-              }
-
-              // توست داخلي أنيق
-              showToast(`💬 ${data.sender_name}: ${data.text.slice(0, 35)}...`, "info");
+              }).catch(()=>{});
+            } else if(window.Notification && Notification.permission === "granted"){
+              try {
+                new Notification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
+                  body: data.text || "وصلتك رسالة جديدة",
+                  icon: "icon-192.png"
+                });
+              } catch(e){}
             }
+
+            // توست داخلي أنيق
+            showToast(`💬 ${data.sender_name}: ${(data.text || '').slice(0, 35)}...`, "info");
           }
         }
       });
@@ -9254,7 +9286,7 @@ export async function openChatFromNotification(convId){
 window.openChatFromNotification = openChatFromNotification;
 
 // فتح نافذة الدردشة مع البائع أو الشاري
-export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
+export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName, fromInbox = false){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
     if(typeof openAuthModal === "function") openAuthModal();
@@ -9265,6 +9297,8 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     showToast("هذا إعلانك أو متجرك، لا يمكنك مراسلة نفسك!", "info");
     return;
   }
+
+  window._activeChatOpenedFromInbox = Boolean(fromInbox);
 
   // تحديد اسم البائع ورقم هاتفه
   let targetName = targetCustomName || "";
@@ -9501,7 +9535,12 @@ export function closeUserChat(){
   if(window._activeChat && window._activeChat.pollTimer){
     clearInterval(window._activeChat.pollTimer);
   }
+  const reopenInbox = window._activeChatOpenedFromInbox;
   window._activeChat = null;
+  window._activeChatOpenedFromInbox = false;
+  if(reopenInbox){
+    openInbox(true);
+  }
 }
 window.closeUserChat = closeUserChat;
 
@@ -9795,6 +9834,7 @@ export async function loadChatMessages(convId, isPoll){
     const qSnap = await getDocs(query(
       collection(db, "feedback"),
       where("type", "==", "chat_message"),
+      orderBy("createdAt", "desc"),
       limit(100)
     ));
 
@@ -9987,7 +10027,7 @@ export async function openInbox(skipHistory){
       const tagHtml = postTag || storeTag;
 
       return `
-        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
+        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}', true)">
           <div class="inboxAvatar">${initial}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
@@ -10091,13 +10131,50 @@ setInterval(() => {
 }, 60000);
 
 
-window.setOneSignalRestKey = (key) => {
+// تهيئة وحفظ مفتاح OneSignal REST API للـ Push Notifications حتى لو كان الهاتف مقفلاً
+export const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_oaypjv6anza2tjqbrvbjmubdwpvxh6svcgkenzngim3kq4ddjazv3lso5f3aynddjakwakbul77jznflu4bu5u4xpvtc5hdusuetaaa";
+let _onesignalRestKey = localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
+window._onesignalRestKey = _onesignalRestKey;
+
+export async function initOneSignalRestKey(){
+  try {
+    const qSnap = await getDocs(query(collection(db, "feedback"), where("type", "==", "config_onesignal"), limit(1)));
+    if(!qSnap.empty){
+      const data = qSnap.docs[0].data();
+      let k = data.rest_key;
+      if(!k && data.message){
+        try { k = JSON.parse(data.message).rest_key; } catch(e){}
+      }
+      if(k){
+        _onesignalRestKey = String(k).trim();
+        window._onesignalRestKey = _onesignalRestKey;
+        localStorage.setItem("tasawuq_onesignal_rest_key", _onesignalRestKey);
+      }
+    }
+  } catch(e){}
+  return _onesignalRestKey;
+}
+initOneSignalRestKey();
+
+window.setOneSignalRestKey = async (key) => {
   if(!key) {
     key = prompt("أدخل مفتاح OneSignal REST API Key لتفعيل الإشعارات والهاتف مقفل:");
   }
   if(key && key.trim()){
-    localStorage.setItem("tasawuq_onesignal_rest_key", key.trim());
-    window._onesignalRestKey = key.trim();
-    showToast("✅ تم حفظ مفتاح إشعارات OneSignal بنجاح", "success");
+    const cleanKey = key.trim();
+    localStorage.setItem("tasawuq_onesignal_rest_key", cleanKey);
+    window._onesignalRestKey = cleanKey;
+    _onesignalRestKey = cleanKey;
+
+    try {
+      await setDoc(doc(db, "feedback", "config_onesignal"), {
+        type: "config_onesignal",
+        rest_key: cleanKey,
+        updated_at: Date.now()
+      }, { merge: true });
+      showToast("✅ تم حفظ وتعميم مفتاح OneSignal بنجاح لكافة المستخدمين", "success");
+    } catch(err){
+      showToast("تم الحفظ محلياً (تعذر الحفظ العام: " + err.message + ")", "warn");
+    }
   }
 };
