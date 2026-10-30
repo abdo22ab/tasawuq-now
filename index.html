@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=84">
+<link rel="stylesheet" href="style.css?v=85">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -1403,6 +1403,12 @@ OneSignalDeferred.push(async function(OneSignal){
           <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a"></span> محادثة مباشرة
         </div>
       </div>
+      <!-- أزرار الإجراءات السريعة برأس المحادثة -->
+      <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+        <button type="button" id="chatHeaderCallBtn" class="chatHeaderIconBtn" title="اتصال مباشر" style="display:none" onclick="chatActionCall()">📞</button>
+        <button type="button" id="chatHeaderWaBtn" class="chatHeaderIconBtn wa" title="محادثة واتساب" style="display:none" onclick="chatActionWa()">💬</button>
+        <button type="button" id="chatHeaderReportBtn" class="chatHeaderIconBtn warn" title="إبلاغ عن محادثة" onclick="chatActionReport()">🚩</button>
+      </div>
     </div>
 
     <!-- كرت الإعلان أو المتجر محل التفاوض (Context Banner) -->
@@ -1420,12 +1426,19 @@ OneSignalDeferred.push(async function(OneSignal){
       <div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>
     </div>
 
-    <!-- شريط إرسال الرسائل السريع -->
+    <!-- كبسولات الردود السريعة -->
+    <div id="chatQuickRepliesBar" class="chatQuickRepliesBar"></div>
+
+    <!-- شريط إرسال الرسائل والأزرار التفاعلية -->
     <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center">
+      <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="handleChatPhotoSelected(event)">
+      <button type="button" class="chatAttachBtn" onclick="document.getElementById('chatPhotoInput').click()" title="إرسال صورة 📷">📷</button>
+      <button type="button" class="chatAttachBtn" onclick="shareMyPhoneInChat()" title="مشاركة رقم هاتفي 📱">📱</button>
+
       <input 
         type="text" 
         id="chatMessageInput" 
-        placeholder="اكتب رسالتك للبائع هنا..." 
+        placeholder="اكتب رسالتك هنا..." 
         dir="auto" 
         autocomplete="off"
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
@@ -1443,7 +1456,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=87"></script>
+<script type="module" src="app.js?v=88"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
