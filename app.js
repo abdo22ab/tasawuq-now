@@ -25,7 +25,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=6";
+} from "./supabase-adapter.js?v=7";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
@@ -3006,8 +3006,6 @@ if(p.priceType==="contact"){
 updateSEOMeta(p);
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}<span style="position:absolute;bottom:10px;left:10px;z-index:4;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;padding:3px 9px;border-radius:8px;pointer-events:none;backdrop-filter:blur(4px);font-weight:700">🔍 انقر للتكبير الكامل</span></div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
-const postSheet = postOverlay.querySelector(".sheet");
-if(postSheet) postSheet.scrollTop = 0;
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
 if(!skipHistory) pushNavState({ screen: 'post', id: id }, '#post-' + id);
@@ -6230,7 +6228,6 @@ function updateAccountScreenUI(){
   const smb = document.getElementById("storesModerationBtn"); if(smb) smb.classList.toggle("hidden", !isAdmin);
   const eb = document.getElementById("expiredBtn"); if(eb) eb.classList.toggle("hidden", !isAdmin);
   const notifBtn = document.getElementById("sendNotifBtn"); if(notifBtn) notifBtn.classList.toggle("hidden", !isAdmin);
-  const aosb = document.getElementById("adminOneSignalBtn"); if(aosb) aosb.classList.toggle("hidden", !isAdmin);
   const dash = document.getElementById("dashboardBtn"); if(dash) dash.classList.toggle("hidden", !isAdmin);
   const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.toggle("hidden", !isAdmin);
   const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.toggle("hidden", !isAdmin);
@@ -6391,8 +6388,6 @@ function closeOverlayDirect(){
   const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
   const mwho=document.getElementById("myWalletHistoryOverlay");if(mwho)mwho.classList.add("hidden");
   const awo=document.getElementById("adminWalletOverlay");if(awo)awo.classList.add("hidden");
-  const uio=document.getElementById("userInboxOverlay");if(uio)uio.classList.add("hidden");
-  const uco=document.getElementById("userChatOverlay");if(uco){uco.classList.add("hidden");if(window._activeChat?.pollTimer)clearInterval(window._activeChat.pollTimer);window._activeChat=null;}
   updateSEOMeta(null);
   pendingAction=null;
   document.body.style.overflow="";
@@ -6950,72 +6945,19 @@ window.detectCity=async()=>{
 
 window.enableNotifications=async()=>{
   try{
-    if(window.Notification && Notification.permission === "granted"){
-      if(window.OneSignal && window.OneSignal.login && auth.currentUser){
-        try {
-          await window.OneSignal.login(auth.currentUser.uid);
-          await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
-        } catch(e){}
-      }
-      playChatNotificationSound();
-      if(navigator.serviceWorker && navigator.serviceWorker.ready){
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification("🔔 إشعار تجريبي من تسوق الآن", {
-            body: "الإشعارات مفعّلة بنجاح وتعمل على هاتفك بشكل سليم!",
-            icon: "icon-192.png",
-            badge: "icon-192.png"
-          }).catch(()=>{});
-        }).catch(()=>{});
-      }
-      showToast("🔔 الإشعارات مفعّلة بالفعل على هاتفك وتعمل بنجاح", "success");
-      return;
-    }
-
+    let tries=0;
+    while(!window.OneSignal && tries<25){await new Promise(r=>setTimeout(r,200));tries++;}
+    if(!window.OneSignal){showToast("⚠️ خدمة الإشعارات لم تُحمّل بعد.","warn");return;}
     const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone=window.matchMedia('(display-mode:standalone)').matches || window.navigator.standalone===true;
     if(isIOS && !isStandalone){
-      alert("📱 على iPhone:\n\n1. افتح Safari\n2. اضغط زر المشاركة (Share)\n3. اختر: إضافة إلى الشاشة الرئيسية\n4. افتح التطبيق من الأيقونة الجديدة بالشاشة الرئيسية\n5. اضغط 🔔 لتفعيل الإشعارات");
+      alert("📱 على iPhone:\n\n1. افتح Safari\n2. اضغط زر المشاركة\n3. اختر: إضافة إلى الشاشة الرئيسية\n4. افتح من الأيقونة الجديدة\n5. اضغط 🔔 مرة ثانية");
       return;
     }
-
-    let tries=0;
-    while(!window.OneSignal && tries<20){await new Promise(r=>setTimeout(r,200));tries++;}
-
-    let granted = false;
-    if(window.OneSignal && window.OneSignal.Notifications && window.OneSignal.Notifications.requestPermission){
-      await window.OneSignal.Notifications.requestPermission();
-      granted = Boolean(window.OneSignal.Notifications.permission);
-    } else if(window.Notification && Notification.requestPermission){
-      const res = await Notification.requestPermission();
-      granted = (res === "granted");
-    }
-
-    if(granted){
-      if(auth.currentUser && window.OneSignal && window.OneSignal.login){
-        try{
-          await window.OneSignal.login(auth.currentUser.uid);
-          await window.OneSignal.User.addTag("user_uid", auth.currentUser.uid);
-          if(auth.currentUser.displayName) await window.OneSignal.User.addTag("user_name", auth.currentUser.displayName);
-        }catch(e){}
-      }
-      playChatNotificationSound();
-      if(navigator.serviceWorker && navigator.serviceWorker.ready){
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification("🔔 مرحباً بك في تسوق الآن!", {
-            body: "تم تفعيل الإشعارات بنجاح وستصلك رسائل المشترين فوراً",
-            icon: "icon-192.png",
-            badge: "icon-192.png"
-          }).catch(()=>{});
-        }).catch(()=>{});
-      }
-      showToast("✅ تم تفعيل الإشعارات بنجاح! ستصلك التنبيهات حتى خارج الموقع", "success");
-    } else {
-      showToast("⚠️ لم يتم منح إذن الإشعارات من إعدادات المتصفح", "warn");
-    }
-  }catch(e){
-    console.warn("Error enabling notifications:", e);
-    showToast("تعذر تفعيل الإشعارات: " + e.message, "error");
-  }
+    await window.OneSignal.Notifications.requestPermission();
+    if(window.OneSignal.Notifications.permission){showToast("✅ تم تفعيل الإشعارات بنجاح","success");}
+    else{showToast("⚠️ لم يتم منح إذن الإشعارات","warn");}
+  }catch(e){showToast("تعذر تفعيل الإشعارات: "+e.message,"error");}
 };
 
 /* ============================================
@@ -7033,8 +6975,6 @@ giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
 if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
-if(typeof bindOneSignalUser === 'function') bindOneSignalUser(user);
-if(typeof startChatPushRealtimeListener === 'function') startChatPushRealtimeListener(user.uid);
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
@@ -7046,8 +6986,6 @@ const limitsBtn=document.getElementById("limitsBtn");
 if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
-const aosb=document.getElementById("adminOneSignalBtn");
-if(aosb)aosb.classList.toggle("hidden",!isAdmin);
 updateModBadge();
 closeOverlay();
 if(isAdmin && pendingAutoUpgrade){
@@ -7224,18 +7162,7 @@ window.addEventListener('load',()=>{
     },500);
   }
   try {
-    // فتح محادثة مباشرة إذا كان الرابط قادماً من إشعار
-try {
-  const chatPrms = new URLSearchParams(window.location.search);
-  const openChatId = chatPrms.get('openChat');
-  if(openChatId){
-    setTimeout(() => {
-      if(typeof openChatFromNotification === 'function') openChatFromNotification(openChatId);
-    }, 1500);
-  }
-} catch(e){}
-
-const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
+    const activeOrdId = localStorage.getItem('tasawuq_active_order_id');
     if(activeOrdId){
       setTimeout(()=>{
         if(typeof checkActiveOrderSilently === 'function') checkActiveOrderSilently(activeOrdId);
@@ -9061,232 +8988,11 @@ export async function updateCartWalletBalance(){
 window.updateCartWalletBalance = updateCartWalletBalance;
 
 /* ============================================
-   💬 15. نظام الدردشة المباشرة المتطور وصندوق الرسائل
+   💬 15. نظام الدردشة المباشرة وصندوق المحادثات بين الشاري والبائع
    ============================================ */
 window._activeChat = null;
-let _chatPushUnsub = null;
 
-// دالة نغمة التنبيه الصوتي (Web Audio API - Chime)
-export function playChatNotificationSound(){
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if(!AudioContext) return;
-    const ctx = new AudioContext();
-    if(ctx.state === 'suspended') ctx.resume();
-
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    // نغمة مزدوجة ناعمة (A5 -> E6)
-    osc.frequency.setValueAtTime(880, now);
-    osc.frequency.exponentialRampToValueAtTime(1318.5, now + 0.12);
-
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.28);
-  } catch(e){}
-}
-window.playChatNotificationSound = playChatNotificationSound;
-
-// ربط مستخدم OneSignal لتلقي الإشعارات حتى والشاشة مقفلة
-export function bindOneSignalUser(user){
-  if(!user) return;
-  const setupOneSignal = async (OneSignal) => {
-    try {
-      if(OneSignal.login){
-        await OneSignal.login(user.uid);
-      } else if(OneSignal.setExternalUserId){
-        await OneSignal.setExternalUserId(user.uid);
-      }
-      if(OneSignal.User && OneSignal.User.addTag){
-        await OneSignal.User.addTag("user_uid", user.uid);
-        if(user.displayName) await OneSignal.User.addTag("user_name", user.displayName);
-      }
-      // طلب الإذن بلطف إذا لم يكن ممنوحاً بعد
-      if(OneSignal.Notifications && OneSignal.Notifications.permission === false){
-        // تم رفضه سابقاً
-      } else if(window.Notification && Notification.permission === "default"){
-        setTimeout(() => {
-          try {
-            if(OneSignal.Notifications && OneSignal.Notifications.requestPermission){
-              OneSignal.Notifications.requestPermission();
-            }
-          } catch(e){}
-        }, 5000);
-      }
-    } catch(err){
-      console.warn("OneSignal binding:", err);
-    }
-  };
-
-  if(window.OneSignal){
-    setupOneSignal(window.OneSignal);
-  } else {
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(setupOneSignal);
-  }
-}
-window.bindOneSignalUser = bindOneSignalUser;
-
-export function unbindOneSignalUser(){
-  try {
-    if(window.OneSignal && window.OneSignal.logout){
-      window.OneSignal.logout();
-    }
-  } catch(e){}
-  if(_chatPushUnsub) {
-    try { _chatPushUnsub(); } catch(e){}
-    _chatPushUnsub = null;
-  }
-}
-window.unbindOneSignalUser = unbindOneSignalUser;
-
-// إرسال إشعار فوري للشاري / البائع (Web Push عبر OneSignal وسحابة الإشعارات)
-export async function dispatchChatPushNotification(receiverUid, senderName, textPreview, convId){
-  if(!receiverUid || !auth.currentUser) return;
-  const cleanSnippet = (textPreview || "أرسل لك رسالة جديدة").slice(0, 140);
-  const myName = senderName || auth.currentUser.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
-
-  // 1. تسجيل حدث الإشعار في قاعدة البيانات ليراه الطرف الآخر فور اتصاله
-  try {
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_push_event",
-      receiver_uid: receiverUid,
-      sender_uid: auth.currentUser.uid,
-      sender_name: myName,
-      text: cleanSnippet,
-      conv_id: convId,
-      created_at: Date.now()
-    });
-  } catch(e){}
-
-  // 2. إرسال Push Notification حقيقي عبر OneSignal REST API لإيقاظ الهاتف حتى لو كان مقفلاً
-  try {
-    const restKey = window._onesignalRestKey || localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY || "";
-    if (restKey) {
-      const payload = {
-        app_id: "7030f4d7-c06e-41a9-a601-8d42965023b3",
-        include_aliases: { external_id: [receiverUid] },
-        include_external_user_ids: [receiverUid],
-        target_channel: "push",
-        headings: {
-          ar: `💬 رسالة من ${myName}`,
-          en: `💬 Message from ${myName}`
-        },
-        contents: {
-          ar: cleanSnippet,
-          en: cleanSnippet
-        },
-        url: window.location.origin + "?openChat=" + encodeURIComponent(convId),
-        data: {
-          convId: convId,
-          type: "chat_message",
-          senderUid: auth.currentUser.uid
-        }
-      };
-
-      const headers = { 
-        "Content-Type": "application/json",
-        "Authorization": "Key " + restKey
-      };
-
-      fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload)
-      }).then(async res => {
-        const data = await res.json().catch(()=>({}));
-        console.log("OneSignal push response:", data);
-      }).catch(err => {
-        console.warn("OneSignal push fetch error:", err);
-      });
-    }
-  } catch(err){}
-}
-window.dispatchChatPushNotification = dispatchChatPushNotification;
-
-// استماع خلفي للرسائل الفورية الواردة لتشغيل الصوت وعرض الإشعار
-export function startChatPushRealtimeListener(myUid){
-  if(!myUid || _chatPushUnsub) return;
-
-  const startTimestamp = Date.now();
-  const processedEventIds = new Set();
-  try {
-    _chatPushUnsub = onSnapshot(query(
-      collection(db, "feedback"),
-      where("type", "==", "chat_push_event"),
-      limit(25)
-    ), snap => {
-      if(!snap || !snap.docs) return;
-      snap.docs.forEach(docSnap => {
-        const id = docSnap.id;
-        const data = docSnap.data();
-        if(!data || processedEventIds.has(id)) return;
-        processedEventIds.add(id);
-
-        if(data.receiver_uid === myUid && (data.created_at || 0) >= startTimestamp - 5000){
-          // إذا كان المستخدم لا يفتح نفس المحادثة حالياً أو الشاشة بالخلفية
-          const isActiveHere = window._activeChat && window._activeChat.convId === data.conv_id && !document.hidden;
-          if(!isActiveHere){
-            // تشغيل التنبيه الصوتي
-            playChatNotificationSound();
-            // تحديث العداد
-            updateGlobalUnreadChatCount();
-
-            // عرض إشعار النظام (Service Worker / Notification API)
-            if(navigator.serviceWorker && navigator.serviceWorker.ready){
-              navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
-                  body: data.text || "وصلتك رسالة جديدة في تسوق الآن",
-                  icon: "icon-192.png",
-                  badge: "icon-192.png",
-                  vibrate: [200, 100, 200],
-                  tag: "chat_" + data.conv_id,
-                  data: { url: window.location.origin + "?openChat=" + encodeURIComponent(data.conv_id) }
-                }).catch(()=>{});
-              }).catch(()=>{});
-            } else if(window.Notification && Notification.permission === "granted"){
-              try {
-                new Notification(`💬 ${data.sender_name || 'رسالة جديدة'}`, {
-                  body: data.text || "وصلتك رسالة جديدة",
-                  icon: "icon-192.png"
-                });
-              } catch(e){}
-            }
-
-            // توست داخلي أنيق
-            showToast(`💬 ${data.sender_name}: ${(data.text || '').slice(0, 35)}...`, "info");
-          }
-        }
-      });
-    });
-  } catch(e){
-    console.warn("Realtime push listener error:", e);
-  }
-}
-window.startChatPushRealtimeListener = startChatPushRealtimeListener;
-
-// فتح محادثة مباشرة بناء على معرف المحادثة (من الإشعار)
-export async function openChatFromNotification(convId){
-  if(!convId || !auth.currentUser) return;
-  const myUid = auth.currentUser.uid;
-  const parts = convId.split("_");
-  const otherUid = parts.find(u => u !== myUid);
-  if(otherUid){
-    openChatWithSeller(otherUid, null, null, "المستخدم");
-  }
-}
-window.openChatFromNotification = openChatFromNotification;
-
-// فتح نافذة الدردشة مع البائع أو الشاري
-export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName, fromInbox = false){
+export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
     if(typeof openAuthModal === "function") openAuthModal();
@@ -9298,33 +9004,15 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     return;
   }
 
-  window._activeChatOpenedFromInbox = Boolean(fromInbox);
-
-  // تحديد اسم البائع ورقم هاتفه
+  // تحديد اسم البائع
   let targetName = targetCustomName || "";
-  let targetPhone = "";
-
-  if(postId){
+  if(!targetName && postId){
     const p = allPosts.find(x => x.id === postId);
-    if(p){
-      if(!targetName) targetName = p.storeName || p.sellerName || "";
-      if(p.phone) targetPhone = p.phone;
-    }
+    if(p) targetName = p.storeName || p.sellerName || "";
   }
-  if(storeId){
+  if(!targetName && storeId){
     const s = allStores.find(x => x.id === storeId);
-    if(s){
-      if(!targetName) targetName = s.name || "";
-      if(s.phone) targetPhone = s.phone;
-    }
-  }
-  if(!targetPhone){
-    const pOwner = allPosts.find(x => x.uid === sellerUid && x.phone);
-    if(pOwner) targetPhone = pOwner.phone;
-    else {
-      const sOwner = allStores.find(x => (x.ownerUid === sellerUid || x.owner_uid === sellerUid) && x.phone);
-      if(sOwner) targetPhone = sOwner.phone;
-    }
+    if(s) targetName = s.name || "";
   }
   if(!targetName){
     const sOwner = allStores.find(x => x.ownerUid === sellerUid);
@@ -9338,25 +9026,12 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   const convId = [myUid, sellerUid].sort().join("_");
 
-  // تحديد هل المستخدم الحالي هو البائع أم الشاري لتخصيص كبسولات الردود
-  let isCurrentUserSeller = false;
-  if(postId){
-    const p = allPosts.find(x => x.id === postId);
-    if(p && p.uid === myUid) isCurrentUserSeller = true;
-  }
-  if(storeId){
-    const s = allStores.find(x => x.id === storeId);
-    if(s && (s.ownerUid === myUid || s.owner_uid === myUid)) isCurrentUserSeller = true;
-  }
-
   window._activeChat = {
     convId,
     targetUid: sellerUid,
     targetName,
-    targetPhone,
     postId: postId || null,
     storeId: storeId || null,
-    isSeller: isCurrentUserSeller,
     pollTimer: null,
     lastMsgCount: 0
   };
@@ -9365,16 +9040,6 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   const elAvatar = document.getElementById("chatTargetAvatar");
   if(elName) elName.textContent = targetName;
   if(elAvatar) elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
-
-  // تهيئة أزرار الاتصال والواتساب برأس الشاشة
-  const callBtn = document.getElementById("chatHeaderCallBtn");
-  const waBtn = document.getElementById("chatHeaderWaBtn");
-  if(callBtn){
-    callBtn.style.display = targetPhone ? "inline-flex" : "none";
-  }
-  if(waBtn){
-    waBtn.style.display = targetPhone ? "inline-flex" : "none";
-  }
 
   // إعداد كرت السياق (Context Banner)
   const ctxBar = document.getElementById("chatPostContextBar");
@@ -9412,14 +9077,10 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     }
   }
 
-  // توليد كبسولات الردود السريعة (Quick Replies)
-  renderChatQuickReplies(isCurrentUserSeller);
-
   // عرض نافذة الدردشة وإغلاق الصندوق لو كان مفتوحاً
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.remove("hidden");
   closeInbox();
-  pushNavState({ screen: 'overlay' });
 
   // تركيز حقل الكتابة
   setTimeout(() => {
@@ -9427,7 +9088,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     if(input) input.focus();
   }, 100);
 
-  // تحميل الرسائل المتبادلة وبدء التحديث الدوري
+  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
   await loadChatMessages(convId, false);
 
   if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
@@ -9441,289 +9102,16 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 }
 window.openChatWithSeller = openChatWithSeller;
 
-// توليد كبسولات الردود السريعة
-export function renderChatQuickReplies(isSeller){
-  const bar = document.getElementById("chatQuickRepliesBar");
-  if(!bar) return;
-
-  const buyerChips = [
-    "هل متاح حالياً؟ 📦",
-    "كم السعر النهائي؟ 💰",
-    "وين موقعك بالتحديد؟ 📍",
-    "هل في مجال للتخفيض؟ 🏷️",
-    "ممكن صور أوضح؟ 📷",
-    "أنا جاد وجاهز للشراء اليوم 🤝"
-  ];
-
-  const sellerChips = [
-    "نعم متوفر تفضل 🤝",
-    "السعر نهائي يا غالي 🏷️",
-    "الموقع طرابلس 📍",
-    "تواصل معي واتساب أو اتصال 📞",
-    "تم البيع والحمد لله 🔒"
-  ];
-
-  const chips = isSeller ? sellerChips : buyerChips;
-  bar.innerHTML = chips.map(c => `
-    <button type="button" class="chatQuickReplyChip" onclick="sendQuickReply('${escapeHtml(c)}')">${escapeHtml(c)}</button>
-  `).join("");
-}
-window.renderChatQuickReplies = renderChatQuickReplies;
-
-// إرسال رد سريع بنقرة واحدة
-export function sendQuickReply(text){
-  const input = document.getElementById("chatMessageInput");
-  if(input) input.value = text;
-  sendUserChatMessage();
-}
-window.sendQuickReply = sendQuickReply;
-
-// إجراءات رأس المحادثة: اتصال - واتساب - إبلاغ
-export function chatActionCall(){
-  if(!window._activeChat) return;
-  const phone = window._activeChat.targetPhone;
-  if(phone){
-    window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
-  } else {
-    showToast("رقم الهاتف غير مسجل لدى الطرف الآخر، يمكنك سؤاله داخل الشات", "info");
-  }
-}
-window.chatActionCall = chatActionCall;
-
-export function chatActionWa(){
-  if(!window._activeChat) return;
-  const phone = window._activeChat.targetPhone;
-  if(phone){
-    let clean = phone.replace(/[^0-9]/g, "");
-    if(!clean.startsWith("218") && clean.startsWith("0")) clean = "218" + clean.slice(1);
-    else if(!clean.startsWith("218")) clean = "218" + clean;
-    window.open(`https://wa.me/${clean}`, "_blank");
-  } else {
-    showToast("رقم الهاتف غير مسجل لدى الطرف الآخر", "info");
-  }
-}
-window.chatActionWa = chatActionWa;
-
-export async function chatActionReport(){
-  if(!window._activeChat || !auth.currentUser) return;
-  const targetName = window._activeChat.targetName || "المستخدم";
-  const reason = prompt(`يرجى كتابة سبب الإبلاغ عن المحادثة مع (${targetName}) لحمايتك وحماية مستخدمي التطبيق:`);
-  if(!reason || !reason.trim()) return;
-
-  try {
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_report",
-      reported_uid: window._activeChat.targetUid,
-      reported_name: targetName,
-      reporter_uid: auth.currentUser.uid,
-      reporter_name: auth.currentUser.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم",
-      reason: reason.trim(),
-      conv_id: window._activeChat.convId,
-      created_at: Date.now()
-    });
-    showToast("✅ تم استلام بلاغك وسيقوم فريق الإدارة بمراجعته فوراً", "success");
-  } catch(err){
-    showToast("تعذر إرسال البلاغ: " + err.message, "error");
-  }
-}
-window.chatActionReport = chatActionReport;
-
-// إغلاق نافذة المحادثة
 export function closeUserChat(){
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.add("hidden");
   if(window._activeChat && window._activeChat.pollTimer){
     clearInterval(window._activeChat.pollTimer);
   }
-  const reopenInbox = window._activeChatOpenedFromInbox;
   window._activeChat = null;
-  window._activeChatOpenedFromInbox = false;
-  if(reopenInbox){
-    openInbox(true);
-  }
 }
 window.closeUserChat = closeUserChat;
 
-// إرسال صورة داخل الشات
-export async function handleChatPhotoSelected(event){
-  const file = event.target?.files?.[0];
-  if(!file) return;
-  event.target.value = "";
-
-  if(!window._activeChat || !auth.currentUser){
-    showToast("يرجى تسجيل الدخول أولاً لإرسال الصور", "warn");
-    return;
-  }
-
-  const me = auth.currentUser;
-  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
-  const activeChat = window._activeChat;
-
-  // إظهار فقاعة مؤقتة "جاري رفع الصورة..."
-  const box = document.getElementById("chatMessagesBox");
-  let tempDiv = null;
-  if(box){
-    const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
-    if(emptyNotice) box.innerHTML = "";
-    tempDiv = document.createElement("div");
-    tempDiv.className = "chatBubble outgoing";
-    tempDiv.innerHTML = `📷 جاري رفع الصورة... <div class="chatTime">الآن ⏳</div>`;
-    box.appendChild(tempDiv);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  try {
-    showToast("⏳ جاري ضغط ورفع الصورة...", "info");
-    const photoUrl = await uploadToImgBB(file);
-
-    const msgPayload = {
-      convId: activeChat.convId,
-      senderUid: me.uid,
-      senderName: senderName,
-      receiverUid: activeChat.targetUid,
-      text: "📷 أرسل صورة",
-      photoUrl: photoUrl,
-      postId: activeChat.postId,
-      storeId: activeChat.storeId,
-      createdAt: Date.now()
-    };
-
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_message",
-      message: JSON.stringify(msgPayload),
-      uid: me.uid,
-      user_name: senderName,
-      user_phone: me.phoneNumber || "",
-      created_at: Date.now()
-    });
-
-    // تحديث ملخص المحادثة
-    const convDocId = "conv_" + activeChat.convId;
-    const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
-    const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
-    const postImage = document.getElementById("chatContextImg")?.src || "";
-
-    const convSummary = {
-      convId: activeChat.convId,
-      participants: [me.uid, activeChat.targetUid],
-      lastMessage: "📷 صورة",
-      lastSenderUid: me.uid,
-      lastSenderName: senderName,
-      updatedAt: Date.now(),
-      postContext: activeChat.postId ? {
-        id: activeChat.postId,
-        title: postTitle,
-        price: postPrice,
-        image: postImage
-      } : null,
-      storeContext: activeChat.storeId ? {
-        id: activeChat.storeId,
-        name: postTitle
-      } : null
-    };
-
-    await setDoc(doc(db, "feedback", convDocId), {
-      type: "chat_conversation",
-      message: JSON.stringify(convSummary),
-      uid: me.uid,
-      user_name: senderName,
-      created_at: Date.now()
-    }, { merge: true });
-
-    // إرسال Web Push للطرف الآخر
-    dispatchChatPushNotification(activeChat.targetUid, senderName, "📷 أرسل لك صورة جديدة", activeChat.convId);
-
-    loadChatMessages(activeChat.convId, true);
-  } catch(err){
-    console.error("Error uploading chat photo:", err);
-    if(tempDiv) tempDiv.remove();
-    showToast("فشل رفع الصورة: " + (err.message || err), "error");
-  }
-}
-window.handleChatPhotoSelected = handleChatPhotoSelected;
-
-// مشاركة رقم الهاتف في المحادثة بنقرة واحدة
-export async function shareMyPhoneInChat(){
-  if(!window._activeChat || !auth.currentUser){
-    showToast("يرجى تسجيل الدخول أولاً لمشاركة رقمك", "warn");
-    return;
-  }
-
-  let myPhone = (window.currentProfile && (window.currentProfile.phone || window.currentProfile.phoneNumber)) || (auth.currentUser && auth.currentUser.phoneNumber) || "";
-  if(!myPhone){
-    myPhone = prompt("أدخل رقم هاتفك لمشاركته في المحادثة:");
-    if(!myPhone || !myPhone.trim()) return;
-    myPhone = myPhone.trim();
-  }
-
-  const me = auth.currentUser;
-  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
-  const activeChat = window._activeChat;
-
-  const msgPayload = {
-    convId: activeChat.convId,
-    senderUid: me.uid,
-    senderName: senderName,
-    receiverUid: activeChat.targetUid,
-    text: "📱 مشاركة رقم الهاتف: " + myPhone,
-    phoneShared: myPhone,
-    postId: activeChat.postId,
-    storeId: activeChat.storeId,
-    createdAt: Date.now()
-  };
-
-  try {
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_message",
-      message: JSON.stringify(msgPayload),
-      uid: me.uid,
-      user_name: senderName,
-      user_phone: myPhone,
-      created_at: Date.now()
-    });
-
-    const convDocId = "conv_" + activeChat.convId;
-    const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
-    const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
-    const postImage = document.getElementById("chatContextImg")?.src || "";
-
-    const convSummary = {
-      convId: activeChat.convId,
-      participants: [me.uid, activeChat.targetUid],
-      lastMessage: "📱 شارك رقم هاتفه: " + myPhone,
-      lastSenderUid: me.uid,
-      lastSenderName: senderName,
-      updatedAt: Date.now(),
-      postContext: activeChat.postId ? {
-        id: activeChat.postId,
-        title: postTitle,
-        price: postPrice,
-        image: postImage
-      } : null,
-      storeContext: activeChat.storeId ? {
-        id: activeChat.storeId,
-        name: postTitle
-      } : null
-    };
-
-    await setDoc(doc(db, "feedback", convDocId), {
-      type: "chat_conversation",
-      message: JSON.stringify(convSummary),
-      uid: me.uid,
-      user_name: senderName,
-      created_at: Date.now()
-    }, { merge: true });
-
-    dispatchChatPushNotification(activeChat.targetUid, senderName, "📱 شارك معك رقم هاتفه: " + myPhone, activeChat.convId);
-    loadChatMessages(activeChat.convId, true);
-  } catch(err){
-    console.error("Error sharing phone:", err);
-    showToast("تعذر مشاركة رقم الهاتف: " + err.message, "error");
-  }
-}
-window.shareMyPhoneInChat = shareMyPhoneInChat;
-
-// إرسال رسالة نصية عادية
 export async function sendUserChatMessage(){
   if(!window._activeChat) return;
   if(!auth.currentUser){
@@ -9811,9 +9199,6 @@ export async function sendUserChatMessage(){
       created_at: Date.now()
     }, { merge: true });
 
-    // 3. إرسال Push Notification فوري للمستلم
-    dispatchChatPushNotification(activeChat.targetUid, senderName, text, activeChat.convId);
-
     loadChatMessages(activeChat.convId, true);
   } catch(err) {
     console.error("Error sending chat message:", err);
@@ -9822,7 +9207,6 @@ export async function sendUserChatMessage(){
 }
 window.sendUserChatMessage = sendUserChatMessage;
 
-// تحميل الرسائل المتبادلة
 export async function loadChatMessages(convId, isPoll){
   const box = document.getElementById("chatMessagesBox");
   if(!box) return;
@@ -9834,7 +9218,6 @@ export async function loadChatMessages(convId, isPoll){
     const qSnap = await getDocs(query(
       collection(db, "feedback"),
       where("type", "==", "chat_message"),
-      orderBy("createdAt", "desc"),
       limit(100)
     ));
 
@@ -9857,17 +9240,8 @@ export async function loadChatMessages(convId, isPoll){
 
     messages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-    // إذا كانت دورية وعدد الرسائل لم يتغير، لا نعد تحميل الشاشة لتجنب الوميض
     if(isPoll && window._activeChat && window._activeChat.lastMsgCount === messages.length){
       return;
-    }
-
-    // إذا كان هناك رسائل جديدة واردة أثناء الفحص الدوري، نقوم بتشغيل التنبيه الصوتي
-    if(isPoll && window._activeChat && messages.length > window._activeChat.lastMsgCount){
-      const latest = messages[messages.length - 1];
-      if(latest && latest.senderUid !== myUid){
-        playChatNotificationSound();
-      }
     }
 
     if(window._activeChat){
@@ -9879,7 +9253,7 @@ export async function loadChatMessages(convId, isPoll){
         <div style="text-align:center;padding:40px 20px;color:var(--muted)">
           <div style="font-size:36px;margin-bottom:8px">💬</div>
           <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
-          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك أو اختر من الردود السريعة بالأسفل!</div>
+          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
         </div>
       `;
       return;
@@ -9889,44 +9263,10 @@ export async function loadChatMessages(convId, isPoll){
       const isMe = m.senderUid === myUid;
       const d = new Date(m.createdAt);
       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      // محتوى الفقاعة: نص، صورة، أو كرت هاتف
-      let bubbleContent = "";
-      if(m.photoUrl){
-        bubbleContent = `
-          <div class="chatPhotoBubble" onclick="openLightbox('${escapeHtml(m.photoUrl)}')">
-            <img src="${escapeHtml(m.photoUrl)}" loading="lazy" alt="صورة الشات">
-            <span class="chatPhotoHint">🔍 انقر للتكبير</span>
-          </div>
-          ${m.text && m.text !== '📷 أرسل صورة' && m.text !== '📷 صورة' ? `<div style="margin-top:4px">${escapeHtml(m.text)}</div>` : ''}
-        `;
-      } else if(m.phoneShared){
-        let clean = (m.phoneShared || "").replace(/[^0-9]/g, "");
-        let waNumber = clean;
-        if(!waNumber.startsWith("218") && waNumber.startsWith("0")) waNumber = "218" + waNumber.slice(1);
-        else if(!waNumber.startsWith("218")) waNumber = "218" + waNumber;
-
-        bubbleContent = `
-          <div class="chatPhoneCard">
-            <div class="phoneTitle">📱 رقم الهاتف للتواصل المباشر:</div>
-            <div class="phoneNumber">${escapeHtml(m.phoneShared)}</div>
-            <div class="phoneActions">
-              <a href="tel:${clean}" class="chatCardActionBtn call">📞 اتصال</a>
-              <a href="https://wa.me/${waNumber}" target="_blank" class="chatCardActionBtn wa">💬 واتساب</a>
-            </div>
-          </div>
-        `;
-      } else {
-        bubbleContent = `<div>${escapeHtml(m.text || '')}</div>`;
-      }
-
-      // علامة التسليم والقراءة ✓ / ✓✓
-      const receiptHtml = isMe ? `<span class="chatReceipt seen" title="تم التسليم">✓✓</span>` : '';
-
       return `
         <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
-          ${bubbleContent}
-          <div class="chatTime">${receiptHtml}${timeStr}</div>
+          ${escapeHtml(m.text || '')}
+          <div class="chatTime">${timeStr}</div>
         </div>
       `;
     }).join("");
@@ -9941,8 +9281,7 @@ export async function loadChatMessages(convId, isPoll){
 }
 window.loadChatMessages = loadChatMessages;
 
-// فتح صندوق الرسائل لجميع المحادثات
-export async function openInbox(skipHistory){
+export async function openInbox(){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
     if(typeof openAuthModal === "function") openAuthModal();
@@ -9953,7 +9292,6 @@ export async function openInbox(skipHistory){
   if(!overlay || !list) return;
 
   overlay.classList.remove("hidden");
-  if(!skipHistory) pushNavState({ screen: 'overlay' });
   list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
 
   try {
@@ -9967,14 +9305,13 @@ export async function openInbox(skipHistory){
     ));
 
     const myUid = auth.currentUser.uid;
-    const deletedConvs = JSON.parse(localStorage.getItem("tasawuq_deleted_convs") || "[]");
     const convs = [];
 
     qSnap.docs.forEach(d => {
       const data = d.data();
       try {
         const c = JSON.parse(data.message || "{}");
-        if(c.convId && !deletedConvs.includes(c.convId) && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
+        if(c.convId && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
           convs.push({
             id: d.id,
             ...c,
@@ -10027,7 +9364,7 @@ export async function openInbox(skipHistory){
       const tagHtml = postTag || storeTag;
 
       return `
-        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}', true)">
+        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
           <div class="inboxAvatar">${initial}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
@@ -10039,7 +9376,6 @@ export async function openInbox(skipHistory){
               ${c.lastSenderUid === myUid ? 'أنت: ' : ''}${escapeHtml(c.lastMessage || '')}
             </div>
           </div>
-          <button type="button" class="inboxDeleteBtn" onclick="deleteChatConversation('${escapeHtml(c.convId)}', event)" title="حذف المحادثة">🗑️</button>
         </div>
       `;
     }).join("");
@@ -10050,29 +9386,6 @@ export async function openInbox(skipHistory){
   }
 }
 window.openInbox = openInbox;
-
-// حذف محادثة من الصندوق
-export function deleteChatConversation(convId, event){
-  if(event) event.stopPropagation();
-  if(!convId) return;
-
-  if(!confirm("هل أنت متأكد من حذف هذه المحادثة من صندوق الرسائل لديك؟")){
-    return;
-  }
-
-  try {
-    const deletedConvs = JSON.parse(localStorage.getItem("tasawuq_deleted_convs") || "[]");
-    if(!deletedConvs.includes(convId)){
-      deletedConvs.push(convId);
-      localStorage.setItem("tasawuq_deleted_convs", JSON.stringify(deletedConvs));
-    }
-    showToast("✅ تم حذف المحادثة من صندوق الرسائل", "success");
-    openInbox();
-  } catch(e){
-    console.error("Error deleting conversation:", e);
-  }
-}
-window.deleteChatConversation = deleteChatConversation;
 
 export function closeInbox(){
   const overlay = document.getElementById("userInboxOverlay");
@@ -10092,14 +9405,13 @@ export async function updateGlobalUnreadChatCount(){
       limit(40)
     ));
     const myUid = auth.currentUser.uid;
-    const deletedConvs = JSON.parse(localStorage.getItem("tasawuq_deleted_convs") || "[]");
     let unreadCount = 0;
     const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
 
     qSnap.docs.forEach(d => {
       try {
         const c = JSON.parse(d.data().message || "{}");
-        if(c.convId && !deletedConvs.includes(c.convId) && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
+        if(c.convId && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
           unreadCount++;
         }
       } catch(e){}
@@ -10129,53 +9441,3 @@ window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 setInterval(() => {
   if(auth.currentUser) updateGlobalUnreadChatCount();
 }, 60000);
-
-
-// تهيئة وحفظ مفتاح OneSignal REST API للـ Push Notifications حتى لو كان الهاتف مقفلاً
-export const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_oaypjv6anza2tjqbrvbjmubdwpvxh6svcgkenzngim3kq4ddjazv3lso5f3aynddjakwakbul77jznflu4bu5u4xpvtc5hdusuetaaa";
-let _onesignalRestKey = localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
-window._onesignalRestKey = _onesignalRestKey;
-
-export async function initOneSignalRestKey(){
-  try {
-    const qSnap = await getDocs(query(collection(db, "feedback"), where("type", "==", "config_onesignal"), limit(1)));
-    if(!qSnap.empty){
-      const data = qSnap.docs[0].data();
-      let k = data.rest_key;
-      if(!k && data.message){
-        try { k = JSON.parse(data.message).rest_key; } catch(e){}
-      }
-      if(k){
-        _onesignalRestKey = String(k).trim();
-        window._onesignalRestKey = _onesignalRestKey;
-        localStorage.setItem("tasawuq_onesignal_rest_key", _onesignalRestKey);
-      }
-    }
-  } catch(e){}
-  return _onesignalRestKey;
-}
-initOneSignalRestKey();
-
-window.setOneSignalRestKey = async (key) => {
-  const currentKey = _onesignalRestKey || DEFAULT_ONESIGNAL_REST_KEY;
-  if(!key) {
-    key = prompt("✅ مفتاح OneSignal المفعّل حالياً (اضغط موافق للتأكيد أو عدّله):", currentKey);
-  }
-  if(key && key.trim()){
-    const cleanKey = key.trim();
-    localStorage.setItem("tasawuq_onesignal_rest_key", cleanKey);
-    window._onesignalRestKey = cleanKey;
-    _onesignalRestKey = cleanKey;
-
-    try {
-      await setDoc(doc(db, "feedback", "config_onesignal"), {
-        type: "config_onesignal",
-        rest_key: cleanKey,
-        updated_at: Date.now()
-      }, { merge: true });
-      showToast("✅ تم تأكيد تفعيل مفتاح OneSignal بنجاح!", "success");
-    } catch(err){
-      showToast("تم الحفظ محلياً: " + err.message, "warn");
-    }
-  }
-};
