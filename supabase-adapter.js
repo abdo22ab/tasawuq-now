@@ -371,17 +371,18 @@ export async function getDocs(target) {
     let req = supabase.from(table).select("*");
 
     for (const f of filters) {
-      if (f.op === "==") req = req.eq(f.field, f.value);
-      else if (f.op === "!=") req = req.neq(f.field, f.value);
-      else if (f.op === ">") req = req.gt(f.field, f.value);
-      else if (f.op === ">=") req = req.gte(f.field, f.value);
-      else if (f.op === "<") req = req.lt(f.field, f.value);
-      else if (f.op === "<=") req = req.lte(f.field, f.value);
-      else if (f.op === "array-contains") req = req.contains(f.field, [f.value]);
+      const dbField = toSnake(f.field);
+      if (f.op === "==") req = req.eq(dbField, f.value);
+      else if (f.op === "!=") req = req.neq(dbField, f.value);
+      else if (f.op === ">") req = req.gt(dbField, f.value);
+      else if (f.op === ">=") req = req.gte(dbField, f.value);
+      else if (f.op === "<") req = req.lt(dbField, f.value);
+      else if (f.op === "<=") req = req.lte(dbField, f.value);
+      else if (f.op === "array-contains") req = req.contains(dbField, [f.value]);
     }
 
     for (const o of orderBys) {
-      req = req.order(o.field, { ascending: o.ascending });
+      req = req.order(toSnake(o.field), { ascending: o.ascending });
     }
 
     if (limitVal) {
