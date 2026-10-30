@@ -1724,14 +1724,7 @@ html.dark-mode .restaurantOrderCard.pending {
 /* نظام المحفظة الإلكترونية وكروت الشحن (Wallet System) */
 /* ============================================ */
 .walletHeaderBtn {
-  display: flex !important;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px !important;
-  width: auto !important;
-  border-radius: 999px !important;
-  background: var(--card);
-  border: 1px solid var(--border);
+  display: none !important;
 }
 .walletBadge {
   font-size: 11px;
@@ -1967,8 +1960,7 @@ html.dark-mode .userWalletCard {
   border-color: rgba(255, 255, 255, 0.1);
 }
 html.dark-mode .walletHeaderBtn {
-  background: var(--card);
-  border-color: var(--border);
+  display: none !important;
 }
 
 /* ============================================
