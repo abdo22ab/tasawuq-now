@@ -1,3 +1,4 @@
+// Supabase Adapter v6 - Realtime & Chat Push compatibility
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 export const SUPABASE_URL = "https://jtpfpqalibbwdbirzdnk.supabase.co";
@@ -222,7 +223,8 @@ function makeQuerySnap(docsArray) {
     docs: docsArray,
     empty: docsArray.length === 0,
     size: docsArray.length,
-    forEach: (cb) => docsArray.forEach(cb)
+    forEach: (cb) => docsArray.forEach(cb),
+    docChanges: () => docsArray.map(d => ({ type: "added", doc: d }))
   };
 }
 
