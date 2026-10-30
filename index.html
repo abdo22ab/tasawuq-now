@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=84">
+<link rel="stylesheet" href="style.css?v=88">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -72,12 +72,13 @@ OneSignalDeferred.push(async function(OneSignal){
 <button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">
   <i data-lucide="moon" id="darkModeIcon"></i>
 </button>
-<button class="bellBtn" onclick="enableNotifications()" title="الإشعارات" style="display:none">
-  <i data-lucide="bell"></i>
+<button class="bellBtn" id="notifHeaderBtn" onclick="enableNotifications()" title="الإشعارات والتنبيهات" style="display:flex;position:relative">
+  <i data-lucide="bell"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></i>
+  <span id="notifHeaderBadge" class="cartBadge" style="display:none;background:#ef4444">!</span>
 </button>
 <span id="walletHeaderBadge" style="display:none">0 د.ل</span>
 <button class="bellBtn" id="chatHeaderBtn" onclick="openInbox()" title="الرسائل والمحادثات" style="display:flex;position:relative">
-  <i data-lucide="message-circle"></i>
+  <i data-lucide="message-circle"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></i>
   <span id="chatHeaderBadge" class="cartBadge" style="display:none;background:#e11d48">0</span>
 </button>
 <button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none" title="السلة">
@@ -416,6 +417,7 @@ OneSignalDeferred.push(async function(OneSignal){
         <button id="limitsBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openLimits()">⚙️ إدارة الحدود</button>
         <button id="dashboardBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openDashboard()">📈 الإحصائيات</button>
         <button id="sendNotifBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openSendNotification()">📢 إرسال إشعار</button>
+        <button id="adminOneSignalBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#0369a1;border:1px solid #bae6fd" onclick="setOneSignalRestKey()">🔔 ربط OneSignal للمقفل</button>
         <button id="adminWalletBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="openAdminWallet()">💰 الإدارة المالية</button>
         <button id="adminCreateStoreBtn" class="btnGhost hidden" style="margin:0;font-size:12px;padding:10px 8px;background:#fff;color:#92400e;border:1px solid #fde68a" onclick="startOpenStore(true)">➕ فتح متجر لعميل</button>
       </div>
@@ -812,36 +814,38 @@ OneSignalDeferred.push(async function(OneSignal){
 
 
 <!-- ============================================ -->
-<!-- لوحة كاشير المطعم المباشرة (Restaurant Live Orders) -->
+<!-- لوحة كاشير المطعم المباشرة (Restaurant Live Orders) — صفحة كاملة -->
 <!-- ============================================ -->
-<div id="restaurantLiveOrdersOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:92vh;overflow-y:auto;padding-bottom:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:24px">🍽️</span>
-        <div>
-          <h3 style="margin:0;font-size:16px" id="rloStoreTitle">طلبات المطعم الحية</h3>
-          <div style="font-size:11px;color:#16a34a;font-weight:700" id="rloLiveStatus"><span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً</div>
+<div id="restaurantLiveOrdersOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <button type="button" onclick="closeRestaurantLiveOrders()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
+        <span style="font-size:26px;flex:0 0 auto">🍽️</span>
+        <div style="min-width:0">
+          <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="rloStoreTitle">طلبات المطعم الحية</h3>
+          <div style="font-size:11.5px;color:#16a34a;font-weight:700" id="rloLiveStatus"><span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <button type="button" id="rloRefreshBtn" onclick="refreshCashierOrders(true)" style="border:1px solid var(--border);background:var(--card);border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;font-weight:700" title="تحديث يدوي فوري">🔄 تحديث</button>
-        <button type="button" id="rloSoundToggle" onclick="toggleCashierSound()" style="border:1px solid var(--border);background:var(--card);border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;font-weight:700">🔔 رنين: مفعّل</button>
-        <button type="button" class="iconBtn" onclick="closeRestaurantLiveOrders()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+      <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+        <button type="button" id="rloRefreshBtn" onclick="refreshCashierOrders(true)" style="border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:6px 10px;font-size:11.5px;cursor:pointer;font-weight:700" title="تحديث يدوي فوري">🔄 تحديث</button>
+        <button type="button" id="rloSoundToggle" onclick="toggleCashierSound()" style="border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:6px 10px;font-size:11.5px;cursor:pointer;font-weight:700">🔔 رنين: مفعّل</button>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px">
-      <button type="button" id="rloTabPending" class="filterBtn active" onclick="switchRloTab('pending')" style="position:relative;font-size:12px;padding:8px 3px">
-        🔔 بانتظار القبول <span id="rloPendingBadge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;margin-right:2px">0</span>
-      </button>
-      <button type="button" id="rloTabActive" class="filterBtn" onclick="switchRloTab('active')" style="position:relative;font-size:12px;padding:8px 3px">
-        🍳 قيد التحضير <span id="rloActiveBadge" style="display:none;background:#f59e0b;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;margin-right:2px">0</span>
-      </button>
-      <button type="button" id="rloTabDone" class="filterBtn" onclick="switchRloTab('done')" style="font-size:12px;padding:8px 3px">
-        ✅ المكتملة
-      </button>
+    <div style="padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);flex:0 0 auto">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <button type="button" id="rloTabPending" class="filterBtn active" onclick="switchRloTab('pending')" style="position:relative;font-size:12.5px;padding:9px 4px;font-weight:800">
+          🔔 بانتظار القبول <span id="rloPendingBadge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px">0</span>
+        </button>
+        <button type="button" id="rloTabActive" class="filterBtn" onclick="switchRloTab('active')" style="position:relative;font-size:12.5px;padding:9px 4px;font-weight:800">
+          🍳 قيد التحضير <span id="rloActiveBadge" style="display:none;background:#f59e0b;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px">0</span>
+        </button>
+        <button type="button" id="rloTabDone" class="filterBtn" onclick="switchRloTab('done')" style="font-size:12.5px;padding:9px 4px;font-weight:800">
+          ✅ المكتملة
+        </button>
+      </div>
     </div>
-    <div id="rloOrdersList"></div>
+    <div id="rloOrdersList" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--bg)"></div>
   </div>
 </div>
 
@@ -1371,43 +1375,54 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- ============================================ -->
 <!-- 💬 نافذة صندوق المحادثات والرسائل للمستخدم -->
 <!-- ============================================ -->
-<div id="userInboxOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:92vh;display:flex;flex-direction:column;border-radius:18px 18px 0 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px">
-      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">
-        💬 الرسائل والمحادثات
-      </h3>
-      <button class="iconBtn" onclick="closeInbox()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+<!-- 💬 صندوق المحادثات والرسائل — صفحة كاملة -->
+<!-- ============================================ -->
+<div id="userInboxOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
+    <!-- رأس صفحة صندوق الرسائل -->
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeInbox()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0;font-size:16.5px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:6px">
+          💬 صندوق الرسائل والمحادثات
+        </h3>
+        <div style="font-size:11.5px;color:var(--muted)">محادثاتك المباشرة مع البائعين والمشترين</div>
+      </div>
     </div>
 
-    <div id="userInboxList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:10px">
+    <!-- محتوى قائمة المحادثات بملء الشاشة مع التمرير -->
+    <div id="userInboxList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--bg)">
       <div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>
     </div>
-
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:8px" onclick="closeInbox()">إغلاق</button>
   </div>
 </div>
 
 <!-- ============================================ -->
-<!-- 💬 نافذة الدردشة المباشرة بين الشاري والبائع -->
+<!-- 💬 شاشة الدردشة المباشرة — صفحة كاملة -->
 <!-- ============================================ -->
-<div id="userChatOverlay" class="overlay hidden">
-  <div class="sheet" style="height:92vh;max-height:92vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:18px 18px 0 0">
+<div id="userChatOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
     <!-- رأس شاشة الدردشة -->
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border)">
-      <button type="button" onclick="closeUserChat()" style="background:none;border:none;font-size:22px;color:var(--text);cursor:pointer;padding:0 6px">✕</button>
-      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:0 0 auto" id="chatTargetAvatar">👤</div>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeUserChat()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
+      <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:0 0 auto" id="chatTargetAvatar">👤</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:900;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatTargetName">البائع</div>
+        <div style="font-weight:900;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatTargetName">البائع</div>
         <div style="font-size:11.5px;color:#16a34a;display:flex;align-items:center;gap:4px">
           <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a"></span> محادثة مباشرة
         </div>
       </div>
+      <!-- أزرار الإجراءات السريعة برأس المحادثة -->
+      <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+        <button type="button" id="chatHeaderCallBtn" class="chatHeaderIconBtn" title="اتصال مباشر" style="display:none" onclick="chatActionCall()">📞</button>
+        <button type="button" id="chatHeaderWaBtn" class="chatHeaderIconBtn wa" title="محادثة واتساب" style="display:none" onclick="chatActionWa()">💬</button>
+        <button type="button" id="chatHeaderReportBtn" class="chatHeaderIconBtn warn" title="إبلاغ عن محادثة" onclick="chatActionReport()">🚩</button>
+      </div>
     </div>
 
     <!-- كرت الإعلان أو المتجر محل التفاوض (Context Banner) -->
-    <div id="chatPostContextBar" style="display:none;background:#f8fafc;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;gap:10px">
-      <img id="chatContextImg" src="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex:0 0 auto">
+    <div id="chatPostContextBar" style="display:none;background:var(--card);padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;gap:10px;flex:0 0 auto">
+      <img id="chatContextImg" src="" style="width:42px;height:42px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex:0 0 auto">
       <div style="flex:1;min-width:0">
         <div style="font-weight:800;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatContextTitle">عنوان الإعلان</div>
         <div style="font-size:12px;font-weight:900;color:var(--teal-dark)" id="chatContextPrice">0 د.ل</div>
@@ -1415,17 +1430,24 @@ OneSignalDeferred.push(async function(OneSignal){
       <button type="button" class="btnGhost" id="chatContextViewBtn" style="padding:4px 10px;font-size:11px;border:1px solid var(--border);margin:0;border-radius:6px;width:auto">👁️ عرض</button>
     </div>
 
-    <!-- منطقة رسائل الدردشة -->
+    <!-- منطقة رسائل الدردشة بملء الشاشة مع التمرير -->
     <div id="chatMessagesBox" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
       <div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>
     </div>
 
-    <!-- شريط إرسال الرسائل السريع -->
-    <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center">
+    <!-- كبسولات الردود السريعة -->
+    <div id="chatQuickRepliesBar" class="chatQuickRepliesBar"></div>
+
+    <!-- شريط إرسال الرسائل والأزرار التفاعلية -->
+    <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center;flex:0 0 auto">
+      <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="handleChatPhotoSelected(event)">
+      <button type="button" class="chatAttachBtn" onclick="document.getElementById('chatPhotoInput').click()" title="إرسال صورة 📷">📷</button>
+      <button type="button" class="chatAttachBtn" onclick="shareMyPhoneInChat()" title="مشاركة رقم هاتفي 📱">📱</button>
+
       <input 
         type="text" 
         id="chatMessageInput" 
-        placeholder="اكتب رسالتك للبائع هنا..." 
+        placeholder="اكتب رسالتك هنا..." 
         dir="auto" 
         autocomplete="off"
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
@@ -1443,7 +1465,7 @@ OneSignalDeferred.push(async function(OneSignal){
   </div>
 </div>
 
-<script type="module" src="app.js?v=87"></script>
+<script type="module" src="app.js?v=93"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
@@ -1475,3 +1497,4 @@ OneSignalDeferred.push(async function(OneSignal){
 
 </body>
 </html>
+
