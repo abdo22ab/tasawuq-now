@@ -3004,7 +3004,7 @@ if(p.priceType==="contact"){
   priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
 }
 updateSEOMeta(p);
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}<span style="position:absolute;bottom:10px;left:10px;z-index:4;background:rgba(0,0,0,0.65);color:#fff;font-size:11px;padding:3px 9px;border-radius:8px;pointer-events:none;backdrop-filter:blur(4px);font-weight:700">🔍 انقر للتكبير الكامل</span></div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 if(window.lucide) lucide.createIcons();
 window.scrollTo(0,0);
@@ -5968,6 +5968,17 @@ async function syncFullUserProfile(uid){
       } catch(e){}
     }
 
+    // جلب الصورة الشخصية للمستخدم إن وجدت
+    const localAvatar = localStorage.getItem("tasawuq_avatar_" + uid);
+    if(localAvatar) profData.avatar = localAvatar;
+    try {
+      const { data: avData } = await supabase.from("feedback").select("message").eq("id", "avatar_" + uid).maybeSingle();
+      if(avData && avData.message){
+        profData.avatar = avData.message;
+        localStorage.setItem("tasawuq_avatar_" + uid, avData.message);
+      }
+    } catch(e){}
+
     if(!myProfile) myProfile = {};
     Object.assign(myProfile, profData);
 
@@ -6003,6 +6014,8 @@ window.syncFullUserProfile = syncFullUserProfile;
 function backFromAccountDirect(){
   const as = document.getElementById("accountScreen");
   if(as) as.classList.add("hidden");
+  const es = document.getElementById("editProfileScreen");
+  if(es) es.classList.add("hidden");
   showCategoriesScreenDirect();
 }
 window.backFromAccountDirect = backFromAccountDirect;
@@ -6012,6 +6025,95 @@ window.backFromAccount = () => {
     return;
   }
   backFromAccountDirect();
+};
+
+window.openEditProfileScreen = () => {
+  const me = auth.currentUser;
+  if(!me){
+    pendingAction = "editProfile";
+    authOverlay.classList.remove("hidden");
+    return;
+  }
+  const as = document.getElementById("accountScreen");
+  const es = document.getElementById("editProfileScreen");
+  if(as) as.classList.add("hidden");
+  if(es) es.classList.remove("hidden");
+  window.scrollTo(0, 0);
+
+  const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
+  const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
+  const myNameInput = document.getElementById("myName");
+  if(myNameInput) myNameInput.value = dn;
+
+  const myUserInput = document.getElementById("myUsername");
+  if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
+
+  const myPhoneInput = document.getElementById("myPhone");
+  if(myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? formatCallPhone(myProfile.phone) : "";
+
+  const editPreview = document.getElementById("editProfileAvatarPreview");
+  const heroAvatar = document.getElementById("accHeroAvatar");
+  const avatarUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+  if(avatarUrl){
+    const imgHtml = `<img src="${escapeHtml(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    if(editPreview) editPreview.innerHTML = imgHtml;
+    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+  } else {
+    if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
+  }
+};
+
+window.backFromEditProfile = () => {
+  const es = document.getElementById("editProfileScreen");
+  const as = document.getElementById("accountScreen");
+  if(es) es.classList.add("hidden");
+  if(as) as.classList.remove("hidden");
+  window.scrollTo(0, 0);
+  updateAccountScreenUI();
+};
+
+window.handleProfileAvatarSelected = async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const me = auth.currentUser;
+  if(!me){
+    showToast("⚠️ الرجاء تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const statusEl = document.getElementById("avatarUploadStatus");
+  const editPreview = document.getElementById("editProfileAvatarPreview");
+  const heroAvatar = document.getElementById("accHeroAvatar");
+
+  if(statusEl) statusEl.textContent = "⏳ جاري رفع وتثبيت صورتك الشخصية...";
+  try {
+    const compressed = await compressImage(file, 600, 0.85);
+    const photoUrl = await uploadToImgBB(compressed);
+    if(!photoUrl) throw new Error("تعذر رفع الصورة");
+
+    if(!myProfile) myProfile = {};
+    myProfile.avatar = photoUrl;
+    localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
+
+    await supabase.from("feedback").upsert({
+      id: "avatar_" + me.uid,
+      type: "profile_avatar",
+      uid: me.uid,
+      user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+      user_phone: (myProfile && myProfile.phone) || "",
+      message: photoUrl,
+      created_at: Date.now()
+    }).catch(e => console.warn("Avatar save warn:", e));
+
+    const imgHtml = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    if(editPreview) editPreview.innerHTML = imgHtml;
+    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+    if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح!";
+
+    showToast("✅ تم تحديث صورتك الشخصية بنجاح", "success");
+  } catch(e) {
+    if(statusEl) statusEl.textContent = "❌ فشل الرفع: " + (e.message || "");
+    showToast("تعذر رفع الصورة: " + e.message, "error");
+  }
 };
 
 function updateAccountScreenUI(){
@@ -6024,7 +6126,16 @@ function updateAccountScreenUI(){
   if(accNameEl) accNameEl.textContent = dn;
 
   const heroAvatar = document.getElementById("accHeroAvatar");
-  if(heroAvatar) heroAvatar.textContent = dn ? dn[0].toUpperCase() : '👤';
+  const editPreview = document.getElementById("editProfileAvatarPreview");
+  const avatarUrl = (myProfile && myProfile.avatar) || (me ? localStorage.getItem("tasawuq_avatar_" + me.uid) : "");
+  if(avatarUrl){
+    const imgHtml = `<img src="${escapeHtml(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+    if(editPreview) editPreview.innerHTML = imgHtml;
+  } else {
+    if(heroAvatar) heroAvatar.textContent = dn ? dn[0].toUpperCase() : '👤';
+    if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
+  }
 
   const myNameInput = document.getElementById("myName");
   if(myNameInput && document.activeElement !== myNameInput) myNameInput.value = dn;
@@ -6271,6 +6382,7 @@ function closeOverlayDirect(){
   const sno=document.getElementById("sendNotifOverlay");if(sno)sno.classList.add("hidden");
   const eso=document.getElementById("editStoreOverlay");
   if(eso)eso.classList.add("hidden");
+  const eps=document.getElementById("editProfileScreen");if(eps)eps.classList.add("hidden");
   const oto=document.getElementById("orderTrackerOverlay");if(oto)oto.classList.add("hidden");
   const rlo=document.getElementById("restaurantLiveOrdersOverlay");if(rlo)rlo.classList.add("hidden");
   const rwo=document.getElementById("rechargeWalletOverlay");if(rwo)rwo.classList.add("hidden");
@@ -6885,6 +6997,7 @@ if(isAdmin){
   setTimeout(checkAutoDelete,3000);
 }
 if(pendingAction==="account"){pendingAction=null;openAccount();}
+else if(pendingAction==="editProfile"){pendingAction=null;openEditProfileScreen();}
 else if(pendingAction==="form"){pendingAction=null;showForm();}
 else if(pendingAction==="postType"){pendingAction=null;setTimeout(()=>startAddPost(),300);}
 else if(pendingAction==="mine"){pendingAction=null;showMyPosts();}
