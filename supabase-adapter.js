@@ -1,4 +1,3 @@
-// Supabase Adapter v6 - Realtime & Chat Push compatibility
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 export const SUPABASE_URL = "https://jtpfpqalibbwdbirzdnk.supabase.co";
@@ -223,8 +222,7 @@ function makeQuerySnap(docsArray) {
     docs: docsArray,
     empty: docsArray.length === 0,
     size: docsArray.length,
-    forEach: (cb) => docsArray.forEach(cb),
-    docChanges: () => docsArray.map(d => ({ type: "added", doc: d }))
+    forEach: (cb) => docsArray.forEach(cb)
   };
 }
 
@@ -373,18 +371,17 @@ export async function getDocs(target) {
     let req = supabase.from(table).select("*");
 
     for (const f of filters) {
-      const dbField = toSnake(f.field);
-      if (f.op === "==") req = req.eq(dbField, f.value);
-      else if (f.op === "!=") req = req.neq(dbField, f.value);
-      else if (f.op === ">") req = req.gt(dbField, f.value);
-      else if (f.op === ">=") req = req.gte(dbField, f.value);
-      else if (f.op === "<") req = req.lt(dbField, f.value);
-      else if (f.op === "<=") req = req.lte(dbField, f.value);
-      else if (f.op === "array-contains") req = req.contains(dbField, [f.value]);
+      if (f.op === "==") req = req.eq(f.field, f.value);
+      else if (f.op === "!=") req = req.neq(f.field, f.value);
+      else if (f.op === ">") req = req.gt(f.field, f.value);
+      else if (f.op === ">=") req = req.gte(f.field, f.value);
+      else if (f.op === "<") req = req.lt(f.field, f.value);
+      else if (f.op === "<=") req = req.lte(f.field, f.value);
+      else if (f.op === "array-contains") req = req.contains(f.field, [f.value]);
     }
 
     for (const o of orderBys) {
-      req = req.order(toSnake(o.field), { ascending: o.ascending });
+      req = req.order(o.field, { ascending: o.ascending });
     }
 
     if (limitVal) {
@@ -458,12 +455,7 @@ export async function updateDoc(docRef, data) {
   // Handle increment fields:
   for (const [k, v] of Object.entries(row)) {
     if (v && v.__type === "increment") {
-      let req = supabase.from(table).select(k);
-      if (table === "phones") req = req.eq("phone", docRef.id);
-      else if (table === "usernames") req = req.eq("username", docRef.id);
-      else if (table === "user_limits") req = req.eq("uid", docRef.id);
-      else req = req.eq("id", docRef.id);
-      const { data: cur } = await req.maybeSingle();
+      const { data: cur } = await supabase.from(table).select(k).eq("id", docRef.id).maybeSingle();
       const curVal = cur && cur[k] != null ? Number(cur[k]) : 0;
       row[k] = curVal + v.value;
     }
@@ -541,30 +533,13 @@ export function increment(n) {
 }
 
 export async function runTransaction(dbInstance, updateFunction) {
-  const pending = [];
   const transaction = {
     get: async (ref) => await getDoc(ref),
-    set: (ref, data, opts) => {
-      const p = setDoc(ref, data, opts);
-      pending.push(p);
-      return p;
-    },
-    update: (ref, data) => {
-      const p = updateDoc(ref, data);
-      pending.push(p);
-      return p;
-    },
-    delete: (ref) => {
-      const p = deleteDoc(ref);
-      pending.push(p);
-      return p;
-    }
+    set: async (ref, data) => await setDoc(ref, data),
+    update: async (ref, data) => await updateDoc(ref, data),
+    delete: async (ref) => await deleteDoc(ref)
   };
-  const result = await updateFunction(transaction);
-  if (pending.length > 0) {
-    await Promise.all(pending);
-  }
-  return result;
+  return await updateFunction(transaction);
 }
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
