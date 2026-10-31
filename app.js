@@ -8523,11 +8523,16 @@ let _chatChannel = null;
 function chatConvId(a, b){ return [a, b].sort().join("_"); }
 
 function _appendBubble(box, m, myUid, animate){
+  const msgKey = (m.id ? 'id_' + m.id : '') || ('t_' + (m.created_at || '') + '_' + (m.sender_uid || ''));
+  if(box.querySelector('[data-msg-key="' + msgKey + '"]')) return;
+
   const isMe = m.sender_uid === myUid;
   const d = new Date(Number(m.created_at) || Date.now());
   const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement("div");
   div.className = "chatBubble " + (isMe ? "outgoing" : "incoming");
+  div.setAttribute("data-msg-key", msgKey);
+  if(m.id) div.setAttribute("data-msg-id", m.id);
   div.innerHTML = `${escapeHtml(m.text || '')}<div class="chatTime">${timeStr}</div>`;
   if(animate){
     div.style.opacity = "0";
@@ -8549,12 +8554,13 @@ async function _loadChatIntoBox(convId){
   const myUid = auth.currentUser ? auth.currentUser.uid : "";
   const sb = window.supabase || supabase;
   try{
+    // جلب أحدث 250 رسالة تنازلياً لضمان عدم اختفاء الرسائل الأخيرة مهما بلغ عدد الرسائل
     const { data, error } = await sb
       .from("chat_messages")
       .select("*")
       .eq("conv_id", convId)
-      .order("created_at", { ascending: true })
-      .limit(300);
+      .order("created_at", { ascending: false })
+      .limit(250);
     if(error) throw error;
     if(!data || data.length === 0){
       box.innerHTML = `
@@ -8565,8 +8571,20 @@ async function _loadChatIntoBox(convId){
         </div>`;
       return;
     }
+    // عكس الترتيب لعرض الأقدم للأحدث نحو الأسفل
+    const sorted = [...data].reverse();
+    // إزالة أي تكرار
+    const seen = new Set();
+    const unique = [];
+    for(const m of sorted){
+      const k = (m.id ? 'id_' + m.id : '') || (m.created_at + '_' + m.text);
+      if(!seen.has(k)){
+        seen.add(k);
+        unique.push(m);
+      }
+    }
     box.innerHTML = "";
-    data.forEach(m => _appendBubble(box, m, myUid, false));
+    unique.forEach(m => _appendBubble(box, m, myUid, false));
     box.scrollTop = box.scrollHeight;
   }catch(err){
     console.error("خطأ في تحميل الرسائل:", err);
@@ -8574,10 +8592,15 @@ async function _loadChatIntoBox(convId){
   }
 }
 
+let _chatPollInterval = null;
 function _unsubscribeChat(){
   if(_chatChannel){
     try{ (window.supabase || supabase).removeChannel(_chatChannel); }catch(e){}
     _chatChannel = null;
+  }
+  if(_chatPollInterval){
+    clearInterval(_chatPollInterval);
+    _chatPollInterval = null;
   }
 }
 
@@ -8673,7 +8696,6 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         if(!box || !window._activeChat || window._activeChat.convId !== convId) return;
         const myUid2 = auth.currentUser ? auth.currentUser.uid : "";
         const isMe = payload.new.sender_uid === myUid2;
-        // إزالة الفقاعة المؤقتة عند تأكيد وصول رسالتي من السيرفر
         if(isMe){
           box.querySelectorAll('[data-temp="1"]').forEach(el => el.remove());
         }
@@ -8683,6 +8705,37 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         box.scrollTop = box.scrollHeight;
       })
     .subscribe();
+
+  // فحص احتياطي سريع كل 2.5 ثانية (يضمن التحديث حتى لو انقطع الويب سوكيت على الموبايل)
+  _chatPollInterval = setInterval(async () => {
+    if(!window._activeChat || window._activeChat.convId !== convId) {
+      clearInterval(_chatPollInterval);
+      return;
+    }
+    const box = document.getElementById("chatMessagesBox");
+    if(!box) return;
+    try {
+      const { data: latestMsgs } = await sb
+        .from("chat_messages")
+        .select("*")
+        .eq("conv_id", convId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if(latestMsgs && latestMsgs.length > 0){
+        const myUid2 = auth.currentUser ? auth.currentUser.uid : "";
+        let hasNew = false;
+        const rev = [...latestMsgs].reverse();
+        rev.forEach(m => {
+          const k = (m.id ? 'id_' + m.id : '') || ('t_' + (m.created_at || '') + '_' + (m.sender_uid || ''));
+          if(!box.querySelector('[data-msg-key="' + k + '"]')){
+            _appendBubble(box, m, myUid2, true);
+            hasNew = true;
+          }
+        });
+        if(hasNew) box.scrollTop = box.scrollHeight;
+      }
+    }catch(e){}
+  }, 2500);
 }
 
 export async function sendUserChatMessage(){
@@ -8723,7 +8776,7 @@ export async function sendUserChatMessage(){
   const sb = window.supabase || supabase;
   try{
     // 1) حفظ الرسالة في جدول الرسائل المخصص
-    const { error: msgErr } = await sb.from("chat_messages").insert({
+    const { data: insertedMsg, error: msgErr } = await sb.from("chat_messages").insert({
       conv_id: convId,
       sender_uid: me.uid,
       sender_name: senderName,
@@ -8732,8 +8785,22 @@ export async function sendUserChatMessage(){
       post_id: activeChat.postId,
       store_id: activeChat.storeId,
       created_at: now
-    });
+    }).select().single();
     if(msgErr) throw msgErr;
+
+    // تأكيد الحفظ فوراً على الفقاعة حتى لا تظل معلقة
+    if(tempBubble){
+      tempBubble.removeAttribute("data-temp");
+      tempBubble.style.opacity = "1";
+      if(insertedMsg && insertedMsg.id){
+        tempBubble.setAttribute("data-msg-key", 'id_' + insertedMsg.id);
+        tempBubble.setAttribute("data-msg-id", insertedMsg.id);
+      }
+      const tEl = tempBubble.querySelector(".chatTime");
+      if(tEl){
+        tEl.innerHTML = '<span style="opacity:0.85;margin-inline-end:3px">✓✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    }
 
     // 2) تحديث ملخص المحادثة (يظهر في صندوق الرسائل لك وللمستلم فوراً)
     const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
