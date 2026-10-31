@@ -8533,7 +8533,14 @@ function _appendBubble(box, m, myUid, animate){
   div.className = "chatBubble " + (isMe ? "outgoing" : "incoming");
   div.setAttribute("data-msg-key", msgKey);
   if(m.id) div.setAttribute("data-msg-id", m.id);
-  div.innerHTML = `${escapeHtml(m.text || '')}<div class="chatTime">${timeStr}</div>`;
+
+  let bodyHtml = escapeHtml(m.text || '');
+  if(m.text && m.text.startsWith("[صورة] ")){
+    const imgUrl = m.text.replace("[صورة] ", "").trim();
+    bodyHtml = `<a href="${escapeHtml(imgUrl)}" target="_blank"><img src="${escapeHtml(imgUrl)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;margin-bottom:4px"></a>`;
+  }
+
+  div.innerHTML = `${bodyHtml}<div class="chatTime">${timeStr}</div>`;
   if(animate){
     div.style.opacity = "0";
     div.style.transform = "translateY(10px)";
@@ -8636,8 +8643,43 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   }
   if(!targetName) targetName = "البائع";
 
+  let targetPhone = "";
+  if(postId){
+    const p = allPosts.find(x => x.id === postId);
+    if(p && p.phone) targetPhone = p.phone;
+  }
+  if(storeId){
+    const s = allStores.find(x => x.id === storeId);
+    if(s && s.phone) targetPhone = s.phone;
+  }
+  if(!targetPhone){
+    const pOwner = allPosts.find(x => x.uid === sellerUid && x.phone);
+    if(pOwner) targetPhone = pOwner.phone;
+    else {
+      const sOwner = allStores.find(x => (x.ownerUid === sellerUid || x.owner_uid === sellerUid) && x.phone);
+      if(sOwner) targetPhone = sOwner.phone;
+    }
+  }
+
+  let isCurrentUserSeller = false;
+  if(postId){
+    const p = allPosts.find(x => x.id === postId);
+    if(p && p.uid === myUid) isCurrentUserSeller = true;
+  }
+  if(storeId){
+    const s = allStores.find(x => x.id === storeId);
+    if(s && (s.ownerUid === myUid || s.owner_uid === myUid)) isCurrentUserSeller = true;
+  }
+
   const convId = chatConvId(myUid, sellerUid);
-  window._activeChat = { convId, targetUid: sellerUid, targetName, postId: postId || null, storeId: storeId || null };
+  window._activeChat = { convId, targetUid: sellerUid, targetName, targetPhone, postId: postId || null, storeId: storeId || null, isSeller: isCurrentUserSeller };
+
+  const callBtn = document.getElementById("chatHeaderCallBtn");
+  const waBtn = document.getElementById("chatHeaderWaBtn");
+  if(callBtn) callBtn.style.display = targetPhone ? "inline-flex" : "none";
+  if(waBtn) waBtn.style.display = targetPhone ? "inline-flex" : "none";
+
+  renderChatQuickReplies(isCurrentUserSeller);
 
   const elName = document.getElementById("chatTargetName");
   const elAvatar = document.getElementById("chatTargetAvatar");
@@ -8971,3 +9013,392 @@ window.openInbox = openInbox;
 window.closeInbox = closeInbox;
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 window.loadChatMessages = _loadChatIntoBox;
+
+
+
+/* ========================================================
+   🚀 المميزات المتطورة: الملف الشخصي + الشات الفائق
+   ======================================================== */
+
+// 1. فتح شاشة تعديل الملف الشخصي
+window.openEditProfileScreen = () => {
+  const me = auth.currentUser;
+  if(!me){
+    pendingAction = "editProfile";
+    if(typeof authOverlay !== 'undefined' && authOverlay) authOverlay.classList.remove("hidden");
+    return;
+  }
+  const as = document.getElementById("accountOverlay") || document.getElementById("accountScreen");
+  const es = document.getElementById("editProfileScreen");
+  if(as) as.classList.add("hidden");
+  if(es) es.classList.remove("hidden");
+  window.scrollTo(0, 0);
+
+  const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
+  const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
+  const myNameInput = document.getElementById("myName");
+  if(myNameInput) myNameInput.value = dn;
+
+  const myUserInput = document.getElementById("myUsername");
+  if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
+
+  const myPhoneInput = document.getElementById("myPhone");
+  if(myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? (typeof formatCallPhone === 'function' ? formatCallPhone(myProfile.phone) : myProfile.phone) : "";
+
+  const editPreview = document.getElementById("editProfileAvatarPreview");
+  const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
+  const avatarUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+  if(avatarUrl){
+    const imgHtml = `<img src="${escapeHtml(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    if(editPreview) editPreview.innerHTML = imgHtml;
+    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+  } else {
+    if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
+  }
+};
+
+window.backFromEditProfile = () => {
+  const es = document.getElementById("editProfileScreen");
+  const as = document.getElementById("accountOverlay") || document.getElementById("accountScreen");
+  if(es) es.classList.add("hidden");
+  if(as) as.classList.remove("hidden");
+  window.scrollTo(0, 0);
+};
+
+// رفع وحفظ الصورة الشخصية
+window.handleProfileAvatarSelected = async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const me = auth.currentUser;
+  if(!me){
+    showToast("⚠️ الرجاء تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const statusEl = document.getElementById("avatarUploadStatus");
+  const editPreview = document.getElementById("editProfileAvatarPreview");
+  const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
+
+  if(statusEl) statusEl.textContent = "⏳ جاري رفع وتثبيت صورتك الشخصية...";
+  try {
+    const compressed = (typeof compressImage === 'function') ? await compressImage(file, 600, 0.85) : file;
+    const photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(compressed) : null;
+    if(!photoUrl) throw new Error("تعذر رفع الصورة للخادم");
+
+    if(!myProfile) myProfile = {};
+    myProfile.avatar = photoUrl;
+    localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
+
+    const sb = window.supabase || supabase;
+    await sb.from("feedback").upsert({
+      id: "avatar_" + me.uid,
+      type: "profile_avatar",
+      uid: me.uid,
+      user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+      user_phone: (myProfile && myProfile.phone) || "",
+      message: photoUrl,
+      created_at: Date.now()
+    }).catch(e => console.warn("Avatar save warn:", e));
+
+    const imgHtml = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    if(editPreview) editPreview.innerHTML = imgHtml;
+    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+    if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح!";
+
+    showToast("✅ تم تحديث صورتك الشخصية بنجاح", "success");
+  } catch(e) {
+    if(statusEl) statusEl.textContent = "❌ فشل الرفع: " + (e.message || "");
+    showToast("تعذر رفع الصورة: " + e.message, "error");
+  }
+};
+
+// حفظ جميع بيانات الملف الشخصي (الاسم، المعرف، الهاتف)
+window.saveAllProfileData = async () => {
+  const me = auth.currentUser;
+  if (!me) { 
+    if(typeof authOverlay !== 'undefined' && authOverlay) authOverlay.classList.remove("hidden");
+    return; 
+  }
+  
+  const nameInput = document.getElementById("myName");
+  const usernameInput = document.getElementById("myUsername");
+  const phoneInput = document.getElementById("myPhone");
+  
+  const newName = (nameInput?.value || "").trim();
+  const rawUsername = (usernameInput?.value || "").trim().toLowerCase();
+  const rawPhone = (phoneInput?.value || "").trim();
+  
+  let changes = [];
+  let errors = [];
+  
+  showToast("⏳ جاري حفظ جميع بيانات الحساب...", "info", 2000);
+
+  if (newName && newName.length >= 2 && newName.length <= 40) {
+    const oldName = (myProfile && myProfile.name) || "";
+    if (newName !== oldName) {
+      try {
+        await setDoc(doc(db, "profiles", me.uid), { name: newName }, { merge: true });
+        if (!myProfile) myProfile = {};
+        myProfile.name = newName;
+        changes.push("الاسم");
+        const mine = allPosts.filter(p => p.uid === me.uid);
+        mine.forEach(p => p.sellerName = newName);
+        Promise.all(mine.map(p => updateDoc(doc(db, "posts", p.id), { sellerName: newName }).catch(()=>{}))).catch(()=>{});
+      } catch(e) {
+        errors.push("الاسم: " + e.message);
+      }
+    }
+  }
+
+  const oldUsername = (myProfile && myProfile.username) || "";
+  if (rawUsername && rawUsername !== oldUsername) {
+    try {
+      const res = await reserveUsername(me, rawUsername, oldUsername);
+      if (res.ok) {
+        if (!myProfile) myProfile = {};
+        myProfile.username = res.value;
+        changes.push("اسم المستخدم (@" + res.value + ")");
+        if (myStore) { try { await updateDoc(doc(db, "stores", myStore.id), { ownerUsername: res.value }); } catch(e){} }
+      } else {
+        errors.push("اسم المستخدم: " + (res.msg || "غير متاح"));
+      }
+    } catch(e) {
+      errors.push("اسم المستخدم: " + e.message);
+    }
+  }
+
+  const oldPhone = (myProfile && myProfile.phone) || "";
+  if (rawPhone && rawPhone !== oldPhone) {
+    try {
+      const res = await reservePhone(me, rawPhone, oldPhone);
+      if (res.ok) {
+        if (!myProfile) myProfile = {};
+        myProfile.phone = res.value;
+        changes.push("رقم الهاتف");
+      } else {
+        errors.push("رقم الهاتف: " + (res.msg || "خطأ"));
+      }
+    } catch(e) {
+      errors.push("رقم الهاتف: " + e.message);
+    }
+  }
+
+  if (errors.length > 0) {
+    showToast("⚠️ " + errors.join(" | "), "error", 4000);
+  } else if (changes.length > 0) {
+    showToast("✅ تم بنجاح تحديث: " + changes.join("، "), "success", 3000);
+    setTimeout(() => { if (typeof backFromEditProfile === "function") backFromEditProfile(); }, 1200);
+  } else {
+    showToast("لم تقم بإجراء أي تعديلات جديدة", "info");
+    setTimeout(() => { if (typeof backFromEditProfile === "function") backFromEditProfile(); }, 800);
+  }
+};
+
+// 2. نغمة تنبيه الدردشة
+export function playChatNotificationSound(){
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
+    const ctx = new AudioContext();
+    if(ctx.state === 'suspended') ctx.resume();
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.exponentialRampToValueAtTime(1318.5, now + 0.12);
+
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.28);
+  } catch(e){}
+}
+window.playChatNotificationSound = playChatNotificationSound;
+
+// 3. كبسولات الردود السريعة
+export function renderChatQuickReplies(isSeller){
+  const bar = document.getElementById("chatQuickRepliesBar");
+  if(!bar) return;
+
+  const buyerChips = [
+    "هل متاح حالياً؟ 📦",
+    "كم السعر النهائي؟ 💰",
+    "وين موقعك بالتحديد؟ 📍",
+    "هل في مجال للتخفيض؟ 🏷️",
+    "ممكن صور أوضح؟ 📷",
+    "أنا جاد وجاهز للشراء اليوم 🤝"
+  ];
+
+  const sellerChips = [
+    "نعم متوفر تفضل 🤝",
+    "السعر نهائي يا غالي 🏷️",
+    "الموقع طرابلس 📍",
+    "تواصل معي واتساب أو اتصال 📞",
+    "تم البيع والحمد لله 🔒"
+  ];
+
+  const chips = isSeller ? sellerChips : buyerChips;
+  bar.innerHTML = chips.map(c => `<button type="button" class="chatQuickChip" onclick="sendQuickReply('${escapeHtml(c)}')">${escapeHtml(c)}</button>`).join("");
+}
+window.renderChatQuickReplies = renderChatQuickReplies;
+
+export function sendQuickReply(text){
+  const input = document.getElementById("chatMessageInput");
+  if(input) input.value = text;
+  sendUserChatMessage();
+}
+window.sendQuickReply = sendQuickReply;
+
+// 4. إجراءات رأس شاشة الشات: اتصال - واتساب - إبلاغ
+export function chatActionCall(){
+  if(!window._activeChat) return;
+  const phone = window._activeChat.targetPhone;
+  if(phone){
+    window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
+  } else {
+    showToast("رقم الهاتف غير مسجل لدى الطرف الآخر، يمكنك سؤاله داخل الشات", "info");
+  }
+}
+window.chatActionCall = chatActionCall;
+
+export function chatActionWa(){
+  if(!window._activeChat) return;
+  const phone = window._activeChat.targetPhone;
+  if(phone){
+    let clean = phone.replace(/[^0-9]/g, "");
+    if(!clean.startsWith("218") && clean.startsWith("0")) clean = "218" + clean.slice(1);
+    else if(!clean.startsWith("218")) clean = "218" + clean;
+    window.open(`https://wa.me/${clean}`, "_blank");
+  } else {
+    showToast("رقم الهاتف غير مسجل لدى الطرف الآخر", "info");
+  }
+}
+window.chatActionWa = chatActionWa;
+
+export async function chatActionReport(){
+  if(!window._activeChat || !auth.currentUser) return;
+  const targetName = window._activeChat.targetName || "المستخدم";
+  const reason = prompt(`يرجى كتابة سبب الإبلاغ عن المحادثة مع (${targetName}) لحمايتك وحماية مستخدمي التطبيق:`);
+  if(!reason || !reason.trim()) return;
+
+  try {
+    const sb = window.supabase || supabase;
+    await sb.from("feedback").insert({
+      type: "chat_report",
+      uid: auth.currentUser.uid,
+      user_name: auth.currentUser.displayName || (myProfile && myProfile.name) || "مستخدم",
+      user_phone: (myProfile && myProfile.phone) || "",
+      message: JSON.stringify({
+        reported_uid: window._activeChat.targetUid,
+        reported_name: targetName,
+        reason: reason.trim(),
+        conv_id: window._activeChat.convId
+      }),
+      created_at: Date.now()
+    });
+    showToast("✅ تم إرسال البلاغ للإدارة للمراجعة الفورية", "success");
+  } catch(e){
+    showToast("تم تسجيل البلاغ", "info");
+  }
+}
+window.chatActionReport = chatActionReport;
+
+// 5. إرسال صورة داخل الشات
+export async function handleChatPhotoSelected(event){
+  const file = event.target?.files?.[0];
+  if(!file) return;
+  event.target.value = "";
+
+  if(!window._activeChat || !auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لإرسال الصور", "warn");
+    return;
+  }
+
+  const me = auth.currentUser;
+  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const activeChat = window._activeChat;
+
+  const box = document.getElementById("chatMessagesBox");
+  let tempDiv = null;
+  if(box){
+    const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
+    if(emptyNotice) box.innerHTML = "";
+    tempDiv = document.createElement("div");
+    tempDiv.className = "chatBubble outgoing";
+    tempDiv.setAttribute("data-temp", "1");
+    tempDiv.innerHTML = `📷 جاري رفع الصورة... <div class="chatTime">الآن ⏳</div>`;
+    box.appendChild(tempDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  try {
+    showToast("⏳ جاري رفع الصورة...", "info");
+    const compressed = (typeof compressImage === 'function') ? await compressImage(file, 800, 0.8) : file;
+    const photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(compressed) : null;
+    if(!photoUrl) throw new Error("فشل رفع الصورة");
+
+    const now = Date.now();
+    const sb = window.supabase || supabase;
+    const { data: insertedMsg, error: msgErr } = await sb.from("chat_messages").insert({
+      conv_id: activeChat.convId,
+      sender_uid: me.uid,
+      sender_name: senderName,
+      receiver_uid: activeChat.targetUid,
+      text: "[صورة] " + photoUrl,
+      post_id: activeChat.postId,
+      store_id: activeChat.storeId,
+      created_at: now
+    }).select().single();
+    if(msgErr) throw msgErr;
+
+    if(tempDiv){
+      tempDiv.removeAttribute("data-temp");
+      tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px"></a><div class="chatTime"><span style="opacity:0.85;margin-inline-end:3px">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+    }
+
+    const p1 = [me.uid, activeChat.targetUid].sort()[0];
+    const p2 = [me.uid, activeChat.targetUid].sort()[1];
+    await sb.from("chat_conversations").upsert({
+      conv_id: activeChat.convId,
+      p1: p1,
+      p2: p2,
+      participant_uids: [me.uid, activeChat.targetUid],
+      last_message: "📷 صورة",
+      last_sender_uid: me.uid,
+      last_sender_name: senderName,
+      updated_at: now
+    });
+  } catch(e) {
+    if(tempDiv) tempDiv.remove();
+    showToast("تعذر إرسال الصورة: " + e.message, "error");
+  }
+}
+window.handleChatPhotoSelected = handleChatPhotoSelected;
+
+// 6. مشاركة رقم هاتفي داخل الشات
+export function shareMyPhoneInChat(){
+  if(!window._activeChat || !auth.currentUser){
+    showToast("يرجى تسجيل الدخول أولاً لمشاركة رقمك", "warn");
+    return;
+  }
+
+  let myPhone = (myProfile && (myProfile.phone || myProfile.phoneNumber)) || (auth.currentUser && auth.currentUser.phoneNumber) || "";
+  if(!myPhone){
+    myPhone = prompt("أدخل رقم هاتفك لمشاركته في المحادثة:");
+    if(!myPhone || !myPhone.trim()) return;
+    myPhone = myPhone.trim();
+  }
+
+  const input = document.getElementById("chatMessageInput");
+  if(input){
+    input.value = "📱 رقم هاتفي للتواصل: " + myPhone;
+    sendUserChatMessage();
+  }
+}
+window.shareMyPhoneInChat = shareMyPhoneInChat;
