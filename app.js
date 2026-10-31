@@ -8513,15 +8513,79 @@ export async function updateCartWalletBalance(){
 }
 window.updateCartWalletBalance = updateCartWalletBalance;
 
-/* ============================================
-   💬 15. نظام الدردشة المباشرة وصندوق المحادثات بين الشاري والبائع
-   ============================================ */
+/* ============================================================
+   💬 15. نظام الدردشة المباشرة وصندوق المحادثات (Realtime فوري عبر الجداول المخصصة)
+   ============================================================ */
+
 window._activeChat = null;
+let _chatChannel = null;
+
+function chatConvId(a, b){ return [a, b].sort().join("_"); }
+
+function _appendBubble(box, m, myUid, animate){
+  const isMe = m.sender_uid === myUid;
+  const d = new Date(Number(m.created_at) || Date.now());
+  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const div = document.createElement("div");
+  div.className = "chatBubble " + (isMe ? "outgoing" : "incoming");
+  div.innerHTML = `${escapeHtml(m.text || '')}<div class="chatTime">${timeStr}</div>`;
+  if(animate){
+    div.style.opacity = "0";
+    div.style.transform = "translateY(10px)";
+  }
+  box.appendChild(div);
+  if(animate){
+    requestAnimationFrame(() => {
+      div.style.transition = "all .25s ease";
+      div.style.opacity = "1";
+      div.style.transform = "none";
+    });
+  }
+}
+
+async function _loadChatIntoBox(convId){
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  const myUid = auth.currentUser ? auth.currentUser.uid : "";
+  const sb = window.supabase || supabase;
+  try{
+    const { data, error } = await sb
+      .from("chat_messages")
+      .select("*")
+      .eq("conv_id", convId)
+      .order("created_at", { ascending: true })
+      .limit(300);
+    if(error) throw error;
+    if(!data || data.length === 0){
+      box.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:8px">💬</div>
+          <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+        </div>`;
+      return;
+    }
+    box.innerHTML = "";
+    data.forEach(m => _appendBubble(box, m, myUid, false));
+    box.scrollTop = box.scrollHeight;
+  }catch(err){
+    console.error("خطأ في تحميل الرسائل:", err);
+    box.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل الرسائل</div>`;
+  }
+}
+
+function _unsubscribeChat(){
+  if(_chatChannel){
+    try{ (window.supabase || supabase).removeChannel(_chatChannel); }catch(e){}
+    _chatChannel = null;
+  }
+}
 
 export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
-    if(typeof openAuthModal === "function") openAuthModal();
+    const ao = document.getElementById("authOverlay");
+    if(ao) ao.classList.remove("hidden");
     return;
   }
   const myUid = auth.currentUser.uid;
@@ -8530,7 +8594,6 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     return;
   }
 
-  // تحديد اسم البائع
   let targetName = targetCustomName || "";
   if(!targetName && postId){
     const p = allPosts.find(x => x.id === postId);
@@ -8550,24 +8613,14 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   }
   if(!targetName) targetName = "البائع";
 
-  const convId = [myUid, sellerUid].sort().join("_");
-
-  window._activeChat = {
-    convId,
-    targetUid: sellerUid,
-    targetName,
-    postId: postId || null,
-    storeId: storeId || null,
-    pollTimer: null,
-    lastMsgCount: 0
-  };
+  const convId = chatConvId(myUid, sellerUid);
+  window._activeChat = { convId, targetUid: sellerUid, targetName, postId: postId || null, storeId: storeId || null };
 
   const elName = document.getElementById("chatTargetName");
   const elAvatar = document.getElementById("chatTargetAvatar");
   if(elName) elName.textContent = targetName;
   if(elAvatar) elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
 
-  // إعداد كرت السياق (Context Banner)
   const ctxBar = document.getElementById("chatPostContextBar");
   const ctxImg = document.getElementById("chatContextImg");
   const ctxTitle = document.getElementById("chatContextTitle");
@@ -8584,9 +8637,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         if(ctxTitle) ctxTitle.textContent = p.title || "إعلان";
         if(ctxPrice) ctxPrice.textContent = p.priceType === "contact" ? "تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
         if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openPost(p.id); };
-      }else{
-        ctxBar.style.display = "none";
-      }
+      }else ctxBar.style.display = "none";
     }else if(storeId){
       const s = allStores.find(x => x.id === storeId);
       if(s){
@@ -8595,84 +8646,44 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         if(ctxTitle) ctxTitle.textContent = s.name || "متجر";
         if(ctxPrice) ctxPrice.textContent = s.category || "";
         if(ctxBtn) ctxBtn.onclick = () => { closeUserChat(); openStore(s.id); };
-      }else{
-        ctxBar.style.display = "none";
-      }
-    }else{
-      ctxBar.style.display = "none";
-    }
+      }else ctxBar.style.display = "none";
+    }else ctxBar.style.display = "none";
   }
 
-  // عرض نافذة الدردشة وإغلاق الصندوق لو كان مفتوحاً
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.remove("hidden");
-  closeInbox();
+  if(typeof closeInbox === "function") closeInbox();
 
-  // تركيز حقل الكتابة
   setTimeout(() => {
     const input = document.getElementById("chatMessageInput");
     if(input) input.focus();
   }, 100);
 
-  // إلغاء أي اشتراك Realtime لحظي سابق
-  if(window._activeChatRealtimeChannel){
-    try { supabase.removeChannel(window._activeChatRealtimeChannel); } catch(e){}
-    window._activeChatRealtimeChannel = null;
-  }
+  await _loadChatIntoBox(convId);
 
-  // اشتراك لحظي فوري عبر WebSocket (Realtime Sub-second)
-  try {
-    const channelName = "chat_" + convId.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + Date.now();
-    window._activeChatRealtimeChannel = supabase
-      .channel(channelName)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "feedback",
-        filter: "type=eq.chat_message"
-      }, (payload) => {
-        const row = payload.new;
-        if(row && window._activeChat && window._activeChat.convId === convId){
-          try {
-            const parsed = typeof row.message === 'string' ? JSON.parse(row.message) : row.message;
-            if(parsed && parsed.convId === convId && parsed.senderUid !== auth.currentUser?.uid){
-              loadChatMessages(convId, true);
-            }
-          } catch(e){}
+  // ✅ التحديث الفوري: Realtime عبر WebSocket
+  _unsubscribeChat();
+  const sb = window.supabase || supabase;
+  _chatChannel = sb
+    .channel("chat:" + convId)
+    .on("postgres_changes",
+      { event: "INSERT", schema: "public", table: "chat_messages", filter: "conv_id=eq." + convId },
+      payload => {
+        const box = document.getElementById("chatMessagesBox");
+        if(!box || !window._activeChat || window._activeChat.convId !== convId) return;
+        const myUid2 = auth.currentUser ? auth.currentUser.uid : "";
+        const isMe = payload.new.sender_uid === myUid2;
+        // إزالة الفقاعة المؤقتة عند تأكيد وصول رسالتي من السيرفر
+        if(isMe){
+          box.querySelectorAll('[data-temp="1"]').forEach(el => el.remove());
         }
+        const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
+        if(emptyNotice) box.innerHTML = "";
+        _appendBubble(box, payload.new, myUid2, true);
+        box.scrollTop = box.scrollHeight;
       })
-      .subscribe();
-  } catch(rtErr) {
-    console.warn("Realtime channel subscription error:", rtErr);
-  }
-
-  // تحميل الرسائل المتبادلة وبدء التحديث التلقائي
-  await loadChatMessages(convId, false);
-
-  if(window._activeChat.pollTimer) clearInterval(window._activeChat.pollTimer);
-  window._activeChat.pollTimer = setInterval(() => {
-    if(!window._activeChat || !chatOverlay || chatOverlay.classList.contains("hidden")){
-      if(window._activeChat?.pollTimer) clearInterval(window._activeChat.pollTimer);
-      return;
-    }
-    loadChatMessages(window._activeChat.convId, true);
-  }, 1500);
+    .subscribe();
 }
-window.openChatWithSeller = openChatWithSeller;
-
-export function closeUserChat(){
-  const chatOverlay = document.getElementById("userChatOverlay");
-  if(chatOverlay) chatOverlay.classList.add("hidden");
-  if(window._activeChat && window._activeChat.pollTimer){
-    clearInterval(window._activeChat.pollTimer);
-  }
-  if(window._activeChatRealtimeChannel){
-    try { supabase.removeChannel(window._activeChatRealtimeChannel); } catch(e){}
-    window._activeChatRealtimeChannel = null;
-  }
-  window._activeChat = null;
-}
-window.closeUserChat = closeUserChat;
 
 export async function sendUserChatMessage(){
   if(!window._activeChat) return;
@@ -8686,179 +8697,84 @@ export async function sendUserChatMessage(){
   if(!text) return;
 
   const me = auth.currentUser;
-  const senderName = me.displayName || (window.currentProfile && window.currentProfile.name) || "مستخدم";
+  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
+  const convId = chatConvId(me.uid, activeChat.targetUid);
 
-  // تنظيف الحقل فوراً لاستجابة سريعة
   input.value = "";
   input.focus();
 
-  // إظهار الرسالة مباشرة في الشاشة (Optimistic UI)
+  // عرض فوري مؤقت (يتم استبداله برسالة السيرفر عبر Realtime)
   const box = document.getElementById("chatMessagesBox");
+  let tempBubble = null;
   if(box){
     const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
     if(emptyNotice) box.innerHTML = "";
-    
-    const tempDiv = document.createElement("div");
-    tempDiv.className = "chatBubble outgoing";
-    tempDiv.innerHTML = `${escapeHtml(text)}<div class="chatTime">الآن ⏳</div>`;
-    box.appendChild(tempDiv);
+    tempBubble = document.createElement("div");
+    tempBubble.className = "chatBubble outgoing";
+    tempBubble.setAttribute("data-temp", "1");
+    tempBubble.style.opacity = ".6";
+    tempBubble.innerHTML = `${escapeHtml(text)}<div class="chatTime">جارٍ الإرسال... ⏳</div>`;
+    box.appendChild(tempBubble);
     box.scrollTop = box.scrollHeight;
   }
 
-  const msgPayload = {
-    convId: activeChat.convId,
-    senderUid: me.uid,
-    senderName: senderName,
-    receiverUid: activeChat.targetUid,
-    text: text,
-    postId: activeChat.postId,
-    storeId: activeChat.storeId,
-    createdAt: Date.now()
-  };
-
-  try {
-    // 1. تسجيل الرسالة في feedback فوراً مع ربط convId
-    await addDoc(collection(db, "feedback"), {
-      type: "chat_message",
-      message: JSON.stringify(msgPayload),
-      uid: me.uid,
-      user_name: senderName,
-      user_phone: activeChat.convId,
-      created_at: Date.now()
+  const now = Date.now();
+  const sb = window.supabase || supabase;
+  try{
+    // 1) حفظ الرسالة في جدول الرسائل المخصص
+    const { error: msgErr } = await sb.from("chat_messages").insert({
+      conv_id: convId,
+      sender_uid: me.uid,
+      sender_name: senderName,
+      receiver_uid: activeChat.targetUid,
+      text: text,
+      post_id: activeChat.postId,
+      store_id: activeChat.storeId,
+      created_at: now
     });
+    if(msgErr) throw msgErr;
 
-    // تحديث علامة الصح إلى تم الإرسال فوراً
-    if(box){
-      const lastBubble = box.querySelector(".chatBubble.outgoing:last-child .chatTime");
-      if(lastBubble) lastBubble.innerHTML = '<span style="opacity:0.8;font-size:11px;margin-inline-end:3px">✓✓</span>' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    // 2. تحديث وثيقة ملخص المحادثة بالخلفية بدون تعطيل واجهة الشات
-    const convDocId = "conv_" + activeChat.convId;
+    // 2) تحديث ملخص المحادثة (يظهر في صندوق الرسائل لك وللمستلم فوراً)
     const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
     const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
     const postImage = document.getElementById("chatContextImg")?.src || "";
-
-    const convSummary = {
-      convId: activeChat.convId,
-      participants: [me.uid, activeChat.targetUid],
-      lastMessage: text,
-      lastSenderUid: me.uid,
-      lastSenderName: senderName,
-      updatedAt: Date.now(),
-      postContext: activeChat.postId ? {
-        id: activeChat.postId,
-        title: postTitle,
-        price: postPrice,
-        image: postImage
-      } : null,
-      storeContext: activeChat.storeId ? {
-        id: activeChat.storeId,
-        name: postTitle
-      } : null
-    };
-
-    setDoc(doc(db, "feedback", convDocId), {
-      type: "chat_conversation",
-      message: JSON.stringify(convSummary),
-      uid: me.uid,
-      user_name: senderName,
-      created_at: Date.now()
-    }, { merge: true }).catch(e => console.warn("Conv summary err:", e));
-
-    if(window._activeChat){
-      window._activeChat.lastMsgCount = (window._activeChat.lastMsgCount || 0) + 1;
-    }
-  } catch(err) {
-    console.error("Error sending chat message:", err);
-    showToast("تعذر إرسال الرسالة: " + (err.message || err), "error");
-  }
-}
-window.sendUserChatMessage = sendUserChatMessage;
-
-export async function loadChatMessages(convId, isPoll){
-  const box = document.getElementById("chatMessagesBox");
-  if(!box) return;
-  if(!isPoll && box.children.length === 0){
-    box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الرسائل...</div>`;
-  }
-
-  try {
-    // استعلام مباشر وسريع وخفيف لجلب رسائل هذه المحادثة فقط
-    const { data: dbRows, error: qErr } = await supabase
-      .from("feedback")
-      .select("*")
-      .eq("type", "chat_message")
-      .ilike("message", `%"convId":"${convId}"%`)
-      .order("created_at", { ascending: true })
-      .limit(300);
-
-    if(qErr) throw qErr;
-
-    const myUid = auth.currentUser ? auth.currentUser.uid : null;
-    const messages = [];
-
-    (dbRows || []).forEach(d => {
-      try {
-        const parsed = typeof d.message === 'string' ? JSON.parse(d.message) : d.message;
-        if(parsed && parsed.convId === convId){
-          messages.push({
-            id: d.id,
-            ...parsed,
-            createdAt: parsed.createdAt || d.created_at || Date.now()
-          });
-        }
-      } catch(e){}
+    const p1 = [me.uid, activeChat.targetUid].sort()[0];
+    const p2 = [me.uid, activeChat.targetUid].sort()[1];
+    const { error: convErr } = await sb.from("chat_conversations").upsert({
+      conv_id: convId,
+      p1: p1,
+      p2: p2,
+      participant_uids: [me.uid, activeChat.targetUid],
+      last_message: text,
+      last_sender_uid: me.uid,
+      last_sender_name: senderName,
+      updated_at: now,
+      post_context: activeChat.postId ? { id: activeChat.postId, title: postTitle, price: postPrice, image: postImage } : null,
+      store_context: activeChat.storeId ? { id: activeChat.storeId, name: postTitle } : null
     });
+    if(convErr) console.warn("تعذر تحديث ملخص المحادثة:", convErr);
 
-    messages.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-
-    if(isPoll && window._activeChat && window._activeChat.lastMsgCount === messages.length){
-      return;
-    }
-
-    if(window._activeChat){
-      window._activeChat.lastMsgCount = messages.length;
-    }
-
-    if(messages.length === 0){
-      box.innerHTML = `
-        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
-          <div style="font-size:36px;margin-bottom:8px">💬</div>
-          <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
-          <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
-        </div>
-      `;
-      return;
-    }
-
-    box.innerHTML = messages.map(m => {
-      const isMe = m.senderUid === myUid;
-      const d = new Date(m.createdAt);
-      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return `
-        <div class="chatBubble ${isMe ? 'outgoing' : 'incoming'}">
-          ${escapeHtml(m.text || '')}
-          <div class="chatTime">${timeStr}</div>
-        </div>
-      `;
-    }).join("");
-
-    box.scrollTop = box.scrollHeight;
-  } catch(err) {
-    console.error("Error loading chat messages:", err);
-    if(!isPoll && box) {
-      box.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل الرسائل</div>`;
-    }
+    // ✅ لا ننتظر إعادة تحميل — الـ Realtime سيرسل الرسالة للطرفين فوراً
+  }catch(err){
+    console.error("فشل إرسال الرسالة:", err);
+    if(tempBubble) tempBubble.remove();
+    showToast("تعذر إرسال الرسالة: " + (err.message || err) + " — تحقق من الاتصال", "error");
   }
 }
-window.loadChatMessages = loadChatMessages;
+
+export function closeUserChat(){
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) chatOverlay.classList.add("hidden");
+  _unsubscribeChat();
+  window._activeChat = null;
+}
 
 export async function openInbox(){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
-    if(typeof openAuthModal === "function") openAuthModal();
+    const ao = document.getElementById("authOverlay");
+    if(ao) ao.classList.remove("hidden");
     return;
   }
   const overlay = document.getElementById("userInboxOverlay");
@@ -8868,65 +8784,42 @@ export async function openInbox(){
   overlay.classList.remove("hidden");
   list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
 
-  try {
+  try{
     localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
     updateGlobalUnreadChatCount();
 
     const myUid = auth.currentUser.uid;
-    // استعلام مباشر وسريع لجلب محادثات هذا المستخدم فقط
-    const { data: dbRows, error: convErr } = await supabase
-      .from("feedback")
+    const sb = window.supabase || supabase;
+    const { data: convs, error } = await sb
+      .from("chat_conversations")
       .select("*")
-      .eq("type", "chat_conversation")
-      .ilike("message", `%${myUid}%`)
-      .order("created_at", { ascending: false })
-      .limit(60);
+      .or(`p1.eq.${myUid},p2.eq.${myUid}`)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    if(error) throw error;
 
-    if(convErr) throw convErr;
-
-    const convs = [];
-    (dbRows || []).forEach(d => {
-      try {
-        const c = typeof d.message === 'string' ? JSON.parse(d.message) : d.message;
-        if(c && c.convId && (c.convId.includes(myUid) || (Array.isArray(c.participants) && c.participants.includes(myUid)))){
-          convs.push({
-            id: d.id,
-            ...c,
-            updatedAt: c.updatedAt || d.created_at || Date.now()
-          });
-        }
-      } catch(e){}
-    });
-
-    convs.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-    if(convs.length === 0){
+    if(!convs || convs.length === 0){
       list.innerHTML = `
         <div style="text-align:center;padding:40px 20px;color:var(--muted)">
           <div style="font-size:42px;margin-bottom:8px">📭</div>
           <div style="font-weight:800;font-size:15px;color:var(--text);margin-bottom:6px">صندوق الرسائل فارغ</div>
           <div style="font-size:12px;margin-bottom:14px">لم تبدأ أي محادثة مع أي بائع أو مشترٍ بعد.</div>
           <button class="btnMain" style="margin:auto;max-width:200px;font-size:13px;padding:10px" onclick="closeInbox()">تصفح الإعلانات الآن</button>
-        </div>
-      `;
+        </div>`;
       return;
     }
 
     list.innerHTML = convs.map(c => {
-      const otherUid = Array.isArray(c.participants) 
-        ? c.participants.find(u => u !== myUid) 
-        : c.convId.split('_').find(u => u !== myUid);
-
+      const otherUid = c.p1 === myUid ? c.p2 : c.p1;
       let otherName = "البائع";
-      if(c.lastSenderUid !== myUid && c.lastSenderName){
-        otherName = c.lastSenderName;
-      }else if(c.postContext?.title){
-        otherName = c.postContext.title;
-      }else if(c.storeContext?.name){
-        otherName = c.storeContext.name;
+      if(c.last_sender_uid !== myUid && c.last_sender_name){
+        otherName = c.last_sender_name;
+      }else if(c.post_context && c.post_context.title){
+        otherName = c.post_context.title;
+      }else if(c.store_context && c.store_context.name){
+        otherName = c.store_context.name;
       }
-
-      if(otherName === "البائع" && otherUid){
+      if(otherName === "البائع"){
         const s = allStores.find(x => x.ownerUid === otherUid);
         if(s) otherName = s.name;
         else {
@@ -8934,87 +8827,80 @@ export async function openInbox(){
           if(p) otherName = p.storeName || p.sellerName || "البائع";
         }
       }
-
       const initial = otherName ? otherName.trim()[0].toUpperCase() : '👤';
-      const postTag = c.postContext?.title ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.postContext.title)}</span>` : '';
-      const storeTag = c.storeContext?.name ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.storeContext.name)}</span>` : '';
+      const postTag = (c.post_context && c.post_context.title) ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.post_context.title)}</span>` : '';
+      const storeTag = (c.store_context && c.store_context.name) ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.store_context.name)}</span>` : '';
       const tagHtml = postTag || storeTag;
-
+      const lastSeenTxt = c.last_message || '';
       return `
-        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml(c.postContext?.id || '')}', '${escapeHtml(c.storeContext?.id || '')}', '${escapeHtml(otherName)}')">
+        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml((c.post_context && c.post_context.id) || '')}', '${escapeHtml((c.store_context && c.store_context.id) || '')}', '${escapeHtml(otherName)}')">
           <div class="inboxAvatar">${initial}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
               <div style="font-weight:800;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(otherName)}</div>
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updatedAt)}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updated_at)}</div>
             </div>
             ${tagHtml ? `<div style="margin-bottom:3px">${tagHtml}</div>` : ''}
             <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              ${c.lastSenderUid === myUid ? 'أنت: ' : ''}${escapeHtml(c.lastMessage || '')}
+              ${c.last_sender_uid === myUid ? 'أنت: ' : ''}${escapeHtml(lastSeenTxt)}
             </div>
           </div>
-        </div>
-      `;
+        </div>`;
     }).join("");
-
-  } catch(err) {
-    console.error("Error loading inbox:", err);
+  }catch(err){
+    console.error("خطأ في تحميل المحادثات:", err);
     list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
   }
 }
-window.openInbox = openInbox;
 
 export function closeInbox(){
   const overlay = document.getElementById("userInboxOverlay");
   if(overlay) overlay.classList.add("hidden");
 }
-window.closeInbox = closeInbox;
 
 export async function updateGlobalUnreadChatCount(){
   if(!auth.currentUser) return;
   const hBadge = document.getElementById("chatHeaderBadge");
   const aBadge = document.getElementById("accountChatBadge");
-
-  try {
-    const qSnap = await getDocs(query(
-      collection(db, "feedback"),
-      where("type", "==", "chat_conversation"),
-      limit(40)
-    ));
+  try{
     const myUid = auth.currentUser.uid;
-    let unreadCount = 0;
     const lastSeen = parseInt(localStorage.getItem("tasawuq_chat_last_seen") || "0", 10);
-
-    qSnap.docs.forEach(d => {
-      try {
-        const c = JSON.parse(d.data().message || "{}");
-        if(c.convId && c.convId.includes(myUid) && c.lastSenderUid !== myUid && (c.updatedAt || 0) > lastSeen){
-          unreadCount++;
-        }
-      } catch(e){}
-    });
+    const sb = window.supabase || supabase;
+    const { data, error } = await sb
+      .from("chat_conversations")
+      .select("conv_id, updated_at, last_sender_uid")
+      .or(`p1.eq.${myUid},p2.eq.${myUid}`)
+      .neq("last_sender_uid", myUid)
+      .gt("updated_at", lastSeen)
+      .limit(50);
+    if(error) return;
+    const unreadCount = (data || []).length;
 
     if(hBadge){
       if(unreadCount > 0){
         hBadge.style.display = "flex";
         hBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
-      } else {
-        hBadge.style.display = "none";
-      }
+      } else hBadge.style.display = "none";
     }
     if(aBadge){
       if(unreadCount > 0){
         aBadge.style.display = "inline-flex";
         aBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
-      } else {
-        aBadge.style.display = "none";
-      }
+      } else aBadge.style.display = "none";
     }
-  } catch(e){}
+  }catch(e){}
 }
-window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 
-// فحص دوري للرسائل غير المقروءة كل دقيقة
+// فحص دوري خفيف للرسائل غير المقروءة كل دقيقة
 setInterval(() => {
   if(auth.currentUser) updateGlobalUnreadChatCount();
 }, 60000);
+
+// تصدير الأسماء المستخدمة في HTML والكود القديم
+window.openChatWithSeller = openChatWithSeller;
+window.closeUserChat = closeUserChat;
+window.sendUserChatMessage = sendUserChatMessage;
+window.openInbox = openInbox;
+window.closeInbox = closeInbox;
+window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
+window.loadChatMessages = _loadChatIntoBox;
