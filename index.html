@@ -610,6 +610,7 @@ OneSignalDeferred.push(async function(OneSignal){
 <input id="editStoreCoverFile" type="file" accept="image/*" class="hidden" onchange="handleEditStoreCover()"></div>
 <input id="directLogoFileInput" type="file" accept="image/*" class="hidden" onchange="handleDirectLogoUpload(event)">
 <input id="directCoverFileInput" type="file" accept="image/*" class="hidden" onchange="handleDirectCoverUpload(event)">
+<input id="directProfileCoverInput" type="file" accept="image/*" class="hidden" onchange="handleDirectProfileCoverUpload(event)">
 <button class="btnMain" id="editStoreSubmitBtn" onclick="saveStoreEdits()" style="background:#16a34a">💾 حفظ التعديلات</button>
 <button class="btnGhost" onclick="closeOverlay()">إلغاء</button>
 </div>
@@ -1423,9 +1424,12 @@ OneSignalDeferred.push(async function(OneSignal){
     <!-- رأس شاشة الدردشة -->
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
       <button type="button" onclick="closeUserChat()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
-      <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:0 0 auto" id="chatTargetAvatar">👤</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:900;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatTargetName">البائع</div>
+      <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex:0 0 auto;cursor:pointer;transition:transform .15s ease" id="chatTargetAvatar" onclick="openChatTargetProfile()" title="عرض الملف الشخصي والحساب">👤</div>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="openChatTargetProfile()" title="عرض الملف الشخصي والحساب">
+        <div style="font-weight:900;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px">
+          <span id="chatTargetName">البائع</span>
+          <span style="font-size:12px;color:var(--muted)">›</span>
+        </div>
         <div style="font-size:11.5px;color:#16a34a;display:flex;align-items:center;gap:4px">
           <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#16a34a"></span> محادثة مباشرة
         </div>
