@@ -418,12 +418,34 @@ window.switchPointsTab = function(tab){
 };
 
 async function addPoints(uid, amount, title, activity){
+  if(!auth.currentUser) return;
   if(!uid || !amount) return;
-  // حماية ضد التلاعب: أقصى إضافة مسموحة في العملية الواحدة 100 نقطة
-  if(amount > 100) {
-    console.warn("محاولة غير مصرح بها لإضافة نقاط.");
+  amount = Number(amount);
+  if(isNaN(amount)) return;
+
+  // 🔒 حماية مشددة: قائمة الأنشطة المعتمدة في النظام فقط
+  const allowedActivities = ['post_create', 'post_approved', 'rating', 'referral_bonus', 'redeem'];
+  if(!allowedActivities.includes(activity)){
+    console.warn("محاولة غير مصرح بها لنشاط نقاط مجهول:", activity);
     return;
   }
+
+  // في حالة استبدال النقاط: يجب أن تكون القيمة سالبة
+  if(activity === 'redeem'){
+    if(amount >= 0) return;
+  } else {
+    // في حالة إضافة نقاط: لا يمكن إضافة أكثر من 40 نقطة (أقصى مكافأة إحالة معتمدة)
+    if(amount <= 0 || amount > 40){
+      console.warn("محاولة غير مصرح بها لإضافة نقاط خارج الحدود المسموحة.");
+      return;
+    }
+    // لا يمكن للمستخدم إضافة نقاط إلا لنفسه، باستثناء بونص الإحالة وموافقة الإعلان
+    if(uid !== auth.currentUser.uid && activity !== 'referral_bonus' && activity !== 'post_approved'){
+      console.warn("محاولة غير مصرح بها لإضافة نقاط لمستخدم آخر.");
+      return;
+    }
+  }
+
   try{
     const userRef = doc(db, 'userPoints', uid);
     const snap = await getDoc(userRef);
@@ -449,7 +471,7 @@ async function addPoints(uid, amount, title, activity){
     console.warn('خطأ في إضافة النقاط:', e.message);
   }
 }
-window.addPoints = addPoints;
+// 🔒 تم إلغاء window.addPoints لمنع التلاعب من كونسول المتصفح
 
 window.redeemReward = async function(rewardId){
   if(!auth.currentUser){
@@ -1516,7 +1538,42 @@ function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHi
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
 function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
-function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});}return results.slice(0,6);}
+function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){
+    const cleanT = t.startsWith('@') ? t.slice(1) : t;
+    // 👤 البحث عن المستخدمين بالمعرف والاسم
+    const matchedUsers = new Map();
+    allPosts.forEach(p => {
+      if(p.uid && (p.sellerUsername || p.sellerName)){
+        const u = (p.sellerUsername || "").toLowerCase();
+        const n = (p.sellerName || "").toLowerCase();
+        if((u.includes(cleanT) || n.includes(cleanT)) && !matchedUsers.has(p.uid)){
+          matchedUsers.set(p.uid, {
+            title: p.sellerName || "مستخدم",
+            username: p.sellerUsername ? "@" + p.sellerUsername : "",
+            uid: p.uid,
+            isUser: true
+          });
+        }
+      }
+    });
+    matchedUsers.forEach(u => results.unshift(u));
+
+    // 🏪 البحث عن المتاجر
+    allStores.forEach(s => {
+      if(s.status === "approved" && (s.name || "").toLowerCase().includes(cleanT)){
+        results.unshift({
+          title: s.name,
+          thumb: s.logo || "",
+          storeId: s.id,
+          isStore: true
+        });
+      }
+    });
+
+    const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];
+    allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});
+  }
+  return results.slice(0,8);}
 
 window.showSearchDropdown=function(){
   const box=document.getElementById("searchDropdown"),input=document.getElementById("searchInput");
@@ -1537,6 +1594,12 @@ window.showSearchDropdown=function(){
     const label=term?"💡 مقترحات":"🔥 إعلانات مقترحة";
     html+=`<div class="sdSection">${label}</div>`;
     html+=suggestions.map(s=>{
+      if(s.isUser){
+        return `<div class="sdItem" onclick="hideSearchDropdown();openSeller('${escapeHtml(s.uid)}')"><span class="sdIcon" style="background:#f0fdf4;color:#166534;border-radius:50%;padding:2px 6px">👤</span><span class="sdText"><b>${escapeHtml(s.title)}</b> <span style="font-size:11px;color:#166534">${escapeHtml(s.username)}</span></span><span style="font-size:11px;color:var(--muted)">الملف الشخصي ›</span></div>`;
+      }
+      if(s.isStore){
+        return `<div class="sdItem" onclick="hideSearchDropdown();openStore('${escapeHtml(s.storeId)}')"><span class="sdIcon">🏪</span><span class="sdText"><b>${escapeHtml(s.title)}</b></span><span style="font-size:11px;color:#92400e;font-weight:700">متجر معتمد ›</span></div>`;
+      }
       const safeTitle=escapeHtml(s.title).replace(/'/g,"&#39;");
       const priceTxt=s.priceType==="contact"?"📞 تواصل":(s.price!=null?formatPrice(s.price)+" د.ل":"");
       return `<div class="sdItem" onclick="pickSearch('${safeTitle}')"><span class="sdIcon">${s.isBrand?"🏷️":(s.thumb?"📦":"🔎")}</span><span class="sdText">${escapeHtml(s.title)}</span>${priceTxt?`<span style="font-size:11.5px;color:var(--teal-dark);font-weight:700">${priceTxt}</span>`:""}</div>`;
@@ -2221,32 +2284,47 @@ async function loadPostsBatch(isInitial = false) {
   }
 
   try {
-    const from = isInitial ? 0 : allPosts.length;
-    const to = from + POSTS_BATCH_SIZE - 1;
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(from, to);
+    // 1) إذا كان أدمن: يجلب جميع الإعلانات بكافة الحالات دفعة واحدة للمراجعة
+    if (isAdmin) {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-    if (error) throw error;
-    const fetchedPosts = (data || []).map(objectFromDb);
-
-    if (fetchedPosts.length < POSTS_BATCH_SIZE) {
+      if (error) throw error;
+      allPosts = (data || []).map(objectFromDb);
       hasMorePosts = false;
     } else {
-      hasMorePosts = true;
-    }
+      // 2) للمستخدمين والزوار: فلترة معتمدة فقط status = 'approved' لتوفير الباقة تماماً
+      const from = isInitial ? 0 : allPosts.length;
+      const to = from + POSTS_BATCH_SIZE - 1;
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
-    if (isInitial) {
-      allPosts = fetchedPosts;
-    } else {
-      const existingIds = new Set(allPosts.map(p => p.id));
-      fetchedPosts.forEach(p => {
-        if (!existingIds.has(p.id)) {
-          allPosts.push(p);
-        }
-      });
+      if (error) throw error;
+      const fetchedPosts = (data || []).map(objectFromDb);
+
+      if (fetchedPosts.length < POSTS_BATCH_SIZE) {
+        hasMorePosts = false;
+      } else {
+        hasMorePosts = true;
+      }
+
+      if (isInitial) {
+        allPosts = fetchedPosts;
+      } else {
+        const existingIds = new Set(allPosts.map(p => p.id));
+        fetchedPosts.forEach(p => {
+          if (!existingIds.has(p.id)) {
+            allPosts.push(p);
+          }
+        });
+      }
     }
 
     allPosts = sortPosts(allPosts);
@@ -2292,6 +2370,16 @@ function updateLoadMoreButton() {
 // التحميل التلقائي عند التمرير لأسفل الصفحة (Infinite Scroll)
 window.addEventListener("scroll", () => {
   if (!hasMorePosts || isLoadingPostsBatch) return;
+  // التحقق من أن المستخدم في الشاشة الرئيسية للإعلانات فقط
+  const home = document.getElementById("home");
+  if (home && home.classList.contains("hidden")) return;
+  const storeOverlay = document.getElementById("storeOverlay");
+  if (storeOverlay && !storeOverlay.classList.contains("hidden")) return;
+  const sellerOverlay = document.getElementById("sellerOverlay");
+  if (sellerOverlay && !sellerOverlay.classList.contains("hidden")) return;
+  const userChatOverlay = document.getElementById("userChatOverlay");
+  if (userChatOverlay && !userChatOverlay.classList.contains("hidden")) return;
+
   if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
     loadPostsBatch(false);
   }
@@ -2743,7 +2831,14 @@ let list=allPosts.filter(p=>{
   if(currentCity!=="الكل" && p.city!==currentCity)return false;
   if(showOnlyMine && p.uid!==me?.uid)return false;
   if(showOnlyFavorites && !favs.includes(p.id))return false;
-  if(term && !(p.title||"").toLowerCase().includes(term))return false;
+  if(term){
+    const cleanT = term.startsWith('@') ? term.slice(1).trim() : term;
+    const matchTitle = (p.title||"").toLowerCase().includes(cleanT);
+    const matchSeller = (p.sellerName||"").toLowerCase().includes(cleanT);
+    const matchUsername = (p.sellerUsername||"").toLowerCase().includes(cleanT);
+    const matchStore = (p.storeName||"").toLowerCase().includes(cleanT);
+    if(!matchTitle && !matchSeller && !matchUsername && !matchStore) return false;
+  }
   if(currentPriceMin!=null && (Number(p.price)||0)<currentPriceMin)return false;
   if(currentPriceMax!=null && (Number(p.price)||0)>currentPriceMax)return false;
   if(currentAdTypeFilter==="wanted" && !isWanted(p))return false;
@@ -5863,70 +5958,115 @@ window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPo
    ============================================ */
 window.openAccount=(skipHistory)=>{
   if(auth.currentUser){
-    // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات لضمان ظهور اليوزر نيم ورقم الهاتف فوراً
-    getDoc(doc(db,"profiles",auth.currentUser.uid)).then(snap=>{
+    const me = auth.currentUser;
+    const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
+    const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
+
+    // تحديث كرت الملف الشخصي البارز في أعلى الشاشة
+    const avCircle = document.getElementById("accountAvatarCircle");
+    const avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+    if(avCircle){
+      if(avUrl){
+        avCircle.innerHTML = `<img src="${escapeHtml(avUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else {
+        avCircle.textContent = dn ? dn[0].toUpperCase() : '👤';
+      }
+    }
+
+    const nameEl = document.getElementById("accountName");
+    if(nameEl) nameEl.textContent = dn;
+
+    const mnEl = document.getElementById("accountMemberNo");
+    if(mnEl){
+      if(myProfile && myProfile.memberNo != null){
+        mnEl.textContent = "#" + myProfile.memberNo;
+        mnEl.style.display = "inline-block";
+      } else {
+        mnEl.textContent = "⏳ تعيين رقم...";
+        mnEl.style.display = "inline-block";
+      }
+    }
+
+    const unEl = document.getElementById("accountUsername");
+    if(unEl){
+      if(myProfile && myProfile.username){
+        unEl.textContent = "@" + myProfile.username;
+        unEl.style.display = "block";
+      } else {
+        unEl.textContent = "@لم تختر معرفاً";
+        unEl.style.display = "block";
+      }
+    }
+
+    const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : me.uid;
+    const refDisplay = document.getElementById("myRefLinkDisplay");
+    if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
+
+    // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات
+    getDoc(doc(db,"profiles",me.uid)).then(snap=>{
       if(snap.exists()){
-        myProfile=snap.data();
-        const unEl=document.getElementById("accountUsername");
+        myProfile = snap.data();
         if(unEl){
-          if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}
-          else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}
+          if(myProfile && myProfile.username) unEl.textContent = "@" + myProfile.username;
         }
-        const myUserInput=document.getElementById("myUsername");
-        if(myUserInput && myProfile.username && document.activeElement!==myUserInput) myUserInput.value=myProfile.username;
-        const myPhoneInput=document.getElementById("myPhone");
-        if(myPhoneInput && myProfile.phone && document.activeElement!==myPhoneInput) myPhoneInput.value=formatCallPhone(myProfile.phone);
-        const mnEl=document.getElementById("accountMemberNo");
-        if(mnEl && myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}
+        if(mnEl && myProfile.memberNo != null){
+          mnEl.textContent = "#" + myProfile.memberNo;
+        }
+        if(avCircle && myProfile.avatar){
+          avCircle.innerHTML = `<img src="${escapeHtml(myProfile.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
       }
     }).catch(()=>{});
 
-    document.getElementById("accountEmail").textContent="";
-    const dn=(myProfile&&myProfile.name)||auth.currentUser.displayName||"مستخدم";
-    document.getElementById("accountName").textContent="👤 "+dn;
-    document.getElementById("myName").value=(myProfile&&myProfile.name)||auth.currentUser.displayName||"";
-    const mnEl=document.getElementById("accountMemberNo");
-    if(mnEl){if(myProfile&&myProfile.memberNo!=null){mnEl.textContent="🔢 رقم العضوية: #"+myProfile.memberNo;mnEl.style.display="block";}else{mnEl.textContent="⏳ جاري تعيين رقم العضوية...";mnEl.style.display="block";}}
-    const unEl=document.getElementById("accountUsername");
-    const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
-    const refDisplay = document.getElementById("myRefLinkDisplay");
-    if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
-    if(unEl){if(myProfile&&myProfile.username){unEl.textContent="🏷️ @"+myProfile.username;unEl.style.display="block";}else{unEl.textContent="⚠️ لم تختر اسم مستخدم بعد";unEl.style.display="block";}}
-    const stEl=document.getElementById("accountStore");
-    if(stEl){if(myStore){const st=myStore.status==="approved"?"✅ متجر: ":myStore.status==="pending"?"⏳ متجر (قيد المراجعة): ":"❌ متجر (مرفوض): ";stEl.textContent=st+myStore.name;stEl.style.display="block";}else{stEl.style.display="none";}}
-    const myUserInput=document.getElementById("myUsername");if(myUserInput)myUserInput.value=(myProfile&&myProfile.username)||"";
-    const myPhoneInput=document.getElementById("myPhone");if(myPhoneInput)myPhoneInput.value=(myProfile&&myProfile.phone)?formatCallPhone(myProfile.phone):"";
-    const openBtn=document.getElementById("openStoreBtn");const myBtn=document.getElementById("myStoreBtn");
-    if(myStore){
-      if(openBtn)openBtn.style.display="none";
-      if(myBtn){myBtn.style.display="block";myBtn.textContent=myStore.status==="approved"?"🏪 متجري":myStore.status==="pending"?"⏳ متجري (قيد المراجعة)":"❌ متجري (مرفوض)";}
-      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
-      if(myRestBtn){
-        const isRest=isRestaurantStore(myStore);
-        myRestBtn.style.display=(isRest && myStore.status==="approved")?"block":"none";
-        myRestBtn.onclick=()=>openRestaurantLiveOrders(myStore.id);
+    const stEl = document.getElementById("accountStore");
+    if(stEl){
+      if(myStore){
+        const st = myStore.status === "approved" ? "✅ متجر: " : myStore.status === "pending" ? "⏳ متجر (قيد المراجعة): " : "❌ متجر (مرفوض): ";
+        stEl.textContent = st + myStore.name;
+        stEl.style.display = "block";
+      } else {
+        stEl.style.display = "none";
       }
-    }else{
-      if(openBtn)openBtn.style.display="block";
-      if(myBtn)myBtn.style.display="none";
-      const myRestBtn=document.getElementById("myRestaurantOrdersBtn");
-      if(myRestBtn)myRestBtn.style.display="none";
     }
-    reportsBtn.classList.toggle("hidden",!isAdmin);
-    if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
-    const lb=document.getElementById("limitsBtn");if(lb)lb.classList.toggle("hidden",!isAdmin);
-    const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
-    const eb=document.getElementById("expiredBtn");if(eb)eb.classList.toggle("hidden",!isAdmin);
-    const notifBtn=document.getElementById("sendNotifBtn");if(notifBtn)notifBtn.classList.toggle("hidden",!isAdmin);
-    const dash=document.getElementById("dashboardBtn");if(dash)dash.classList.toggle("hidden",!isAdmin);
-    const apb=document.getElementById("adminPanelBtn");if(apb)apb.classList.toggle("hidden",!isAdmin);
-    const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
-    const awb=document.getElementById("adminWalletBtn");if(awb)awb.classList.toggle("hidden",!isAdmin);
+
+    const openBtn = document.getElementById("openStoreBtn");
+    const myBtn = document.getElementById("myStoreBtn");
+    if(myStore){
+      if(openBtn) openBtn.style.display = "none";
+      if(myBtn){
+        myBtn.style.display = "block";
+        myBtn.textContent = myStore.status === "approved" ? "🏪 متجري" : myStore.status === "pending" ? "⏳ متجري (قيد المراجعة)" : "❌ متجري (مرفوض)";
+      }
+      const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn){
+        const isRest = isRestaurantStore(myStore);
+        myRestBtn.style.display = (isRest && myStore.status === "approved") ? "block" : "none";
+        myRestBtn.onclick = () => openRestaurantLiveOrders(myStore.id);
+      }
+    } else {
+      if(openBtn) openBtn.style.display = "block";
+      if(myBtn) myBtn.style.display = "none";
+      const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
+      if(myRestBtn) myRestBtn.style.display = "none";
+    }
+
+    if(reportsBtn) reportsBtn.classList.toggle("hidden", !isAdmin);
+    if(moderationBtn) moderationBtn.classList.toggle("hidden", !isAdmin);
+    const lb = document.getElementById("limitsBtn"); if(lb) lb.classList.toggle("hidden", !isAdmin);
+    const smb = document.getElementById("storesModerationBtn"); if(smb) smb.classList.toggle("hidden", !isAdmin);
+    const eb = document.getElementById("expiredBtn"); if(eb) eb.classList.toggle("hidden", !isAdmin);
+    const notifBtn = document.getElementById("sendNotifBtn"); if(notifBtn) notifBtn.classList.toggle("hidden", !isAdmin);
+    const dash = document.getElementById("dashboardBtn"); if(dash) dash.classList.toggle("hidden", !isAdmin);
+    const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.toggle("hidden", !isAdmin);
+    const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.toggle("hidden", !isAdmin);
+    const awb = document.getElementById("adminWalletBtn"); if(awb) awb.classList.toggle("hidden", !isAdmin);
+
     if(typeof getUserWallet === 'function'){
-      getUserWallet(auth.currentUser.uid).then(wal=>{
+      getUserWallet(me.uid).then(wal=>{
         if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
       }).catch(()=>{});
     }
+
     accountOverlay.classList.remove("hidden");
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
@@ -6102,53 +6242,212 @@ function starsText(n){const r=Math.max(0,Math.min(5,Math.round(n)));return "★"
 window.loginToRate=()=>{closeOverlay();authOverlay.classList.remove("hidden");};
 window.openMySeller=()=>{if(auth.currentUser)openSeller(auth.currentUser.uid);};
 window.openSeller=async(uid,skipHistory)=>{
+  if(!uid) return;
   sellerPanelUid=uid;
-  accountOverlay.classList.add("hidden");
-  postOverlay.classList.add("hidden");
-  sellerOverlay.classList.remove("hidden");
-  if(!skipHistory) pushNavState({ screen: 'seller', uid: uid }, '#seller-' + uid);
+  const ao = document.getElementById("accountOverlay"); if(ao) ao.classList.add("hidden");
+  const po = document.getElementById("postOverlay"); if(po) po.classList.add("hidden");
+  const so = document.getElementById("sellerOverlay"); if(so) so.classList.remove("hidden");
+  if(!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'seller', uid: uid }, '#seller-' + uid);
+
+  const me = auth.currentUser;
+  const isMe = !!me && me.uid === uid;
+  const titleEl = document.getElementById("sellerHeaderTitle");
+  if(titleEl) titleEl.textContent = isMe ? "ملفي الشخصي" : "الملف الشخصي";
+
   const box=document.getElementById("sellerContent");
-  box.innerHTML="<div class='reportsEmpty'>جاري التحميل...</div>";
-  const pP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
-  const rP=getDocs(query(collection(db,"ratings"),where("sellerUid","==",uid))).catch(()=>null);
-  const fP=getDocs(collection(db,"users",uid,"followers")).catch(()=>null);
-  const [pS,rS,fS]=await Promise.all([pP,rP,fP]);
-  const prof=(pS&&pS.exists())?pS.data():null;
-  const ratings=rS?rS.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)):[];
-  const followersCount=fS?fS.size:0;
-  renderSeller(uid,prof,ratings,!!fS,ratings,followersCount);
+  if(box && (!box.children.length || box.querySelector('.reportsEmpty'))){
+    box.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل الملف الشخصي...</div>";
+  }
+
+  // إذا كان بروفايلي أنا، اعرضه فوراً باستخدام بيانات myProfile المحلية دون أي تأخير
+  if(isMe && myProfile){
+    try {
+      renderSeller(uid, myProfile, [], false, [], 0);
+    } catch(e){}
+  }
+
+  try {
+    const pP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
+    const rP=getDocs(query(collection(db,"ratings"),where("sellerUid","==",uid))).catch(()=>null);
+    const fP=getDocs(collection(db,"users",uid,"followers")).catch(()=>null);
+    const [pS,rS,fS]=await Promise.all([pP,rP,fP]);
+    const prof=(pS&&pS.exists())?pS.data():(isMe ? myProfile : null);
+    const ratings=rS?rS.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)):[];
+    const followersCount=fS?fS.size:0;
+    renderSeller(uid,prof,ratings,!!fS,ratings,followersCount);
+  } catch(err){
+    console.error("openSeller error:", err);
+    if(isMe && myProfile){
+      renderSeller(uid, myProfile, [], false, [], 0);
+    }
+  }
 };
 function renderSeller(uid,prof,ratings,ratingsFailed,allRatings,followersCount){
 const box=document.getElementById("sellerContent");
 const posts=allPosts.filter(p=>p.uid===uid && getStatus(p)==="approved" && !isExpired(p) && !p.sold);
 const totalPostsBySeller=allPosts.filter(p=>p.uid===uid && getStatus(p)==="approved").length;
 const tierBadge=renderSellerTierBadge(uid,totalPostsBySeller);
-const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"بائع";
+const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"مستخدم";
 const memberNo=prof&&prof.memberNo;
 const uname=prof&&prof.username;
 const ph=prof&&prof.phone;
-const count=ratings.length;const avg=count?ratings.reduce((s,r)=>s+(r.stars||0),0)/count:0;
-const me=auth.currentUser;const isMe=!!me&&me.uid===uid;const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
+const avatarUrl=(prof&&prof.avatar)||(localStorage.getItem("tasawuq_avatar_"+uid))||"";
+const count=ratings.length;
+const avg=count?ratings.reduce((s,r)=>s+(r.stars||0),0)/count:0;
+const me=auth.currentUser;
+const isMe=!!me&&me.uid===uid;
+const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
 const following=isFollowing(uid);
 selectedStars=mine?(mine.stars||0):0;
+
 let rateHtml="";
-if(isMe)rateHtml="";
-else if(!me)rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
+if(isMe) rateHtml="";
+else if(!me) rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
 else rateHtml=`<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div><div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div><textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea><button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
-const reviewsHtml=count?ratings.map(r=>{const canDel=isAdmin||(me&&r.raterUid===me.uid);return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;}).join(""):`<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
-let badges="";
-if(uname)badges+=`<span class="usernameBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">@${escapeHtml(uname)}</span>`;
-if(memberNo)badges+=`<span class="memberNoBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">#${memberNo}</span>`;
-if(ph)badges+=`<span class="phoneBadge" style="margin:4px 4px 0 0;font-size:13px;padding:5px 12px">📱 ${escapeHtml(normalizePhone(ph))}</span>`;
-let followHtml="";
-let chatSellerProfileBtn="";
-if(!isMe){
-  if(following){followHtml=`<button class="followBtn following" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`;}
-  else{followHtml=`<button class="followBtn" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;}
-  chatSellerProfileBtn=`<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-top:8px;margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:800;padding:10px 14px;border-radius:10px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="openChatWithSeller('${escapeHtml(uid)}',null,null,'${escapeHtml(name)}')">💬 إرسال رسالة مباشرة للبائع</button>`;
+
+const reviewsHtml=count?ratings.map(r=>{
+  const canDel=isAdmin||(me&&r.raterUid===me.uid);
+  return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;
+}).join(""): `<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
+
+// تصميم كروت إعلانات المستخدم في صفحته الشخصية
+const postsGridHtml = posts.length ? `
+  <div class="postsGrid" style="margin-top:10px">
+    ${posts.map(p => {
+      const imgs = getImages(p);
+      const img = imgs[0] || "icon-192.png";
+      const pr = p.priceType === "contact" ? "تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+      return `
+        <div class="postCard" onclick="openPost('${escapeHtml(p.id)}')">
+          <div class="postImgWrap">
+            <img src="${escapeHtml(img)}" alt="${escapeHtml(p.title || '')}" loading="lazy">
+          </div>
+          <div class="postInfo">
+            <div class="postTitle">${escapeHtml(p.title || '')}</div>
+            <div class="postPrice">${escapeHtml(pr)}</div>
+            <div class="postMeta">
+              <span>${escapeHtml(p.city || '')}</span>
+              <span>${timeAgo(p.createdAt)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("")}
+  </div>
+` : `<div class="reportsEmpty">لا توجد إعلانات نشطة حالياً لهذا المستخدم</div>`;
+
+// أزرار التفاعل والإجراءات
+let actionButtonsHtml = "";
+if(isMe){
+  actionButtonsHtml = `
+    <button class="fbBtnAction edit" onclick="sellerOverlay.classList.add('hidden');openEditProfileScreen()">
+      ✏️ تعديل بياناتي وصورتي
+    </button>
+    <button class="fbBtnAction primary" onclick="closeOverlayDirect();openAccount()">
+      ⚙️ لوحة حسابي والمحفظة
+    </button>
+  `;
+} else {
+  const followBtn = following 
+    ? `<button class="fbBtnAction edit" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`
+    : `<button class="fbBtnAction primary" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;
+  const chatBtn = `<button class="fbBtnAction chat" onclick="openChatWithSeller('${escapeHtml(uid)}',null,null,'${escapeHtml(name)}')">💬 مراسلة</button>`;
+  const waBtn = ph ? `<button class="fbBtnAction whatsapp" onclick="window.open('https://wa.me/${normalizePhone(ph)}', '_blank')">📱 واتساب</button>` : "";
+  actionButtonsHtml = `${followBtn}${chatBtn}${waBtn}`;
 }
-box.innerHTML=`<div class="sHead"><div class="sName">👤 ${escapeHtml(name)}${tierBadge}</div><div>${badges}</div><div class="starsRow" style="font-size:18px;margin-top:6px">${starsText(avg)} <span style="font-size:13px;color:var(--muted)">${count?avg.toFixed(1)+" ("+count+" تقييم)":"بدون تقييمات"}</span></div><div style="margin-top:10px">${followHtml}${chatSellerProfileBtn}</div></div><div class="sStats"><div class="sStat"><b>${posts.length}</b><span>إعلانات</span></div><div class="sStat"><b>${followersCount}</b><span>متابع</span></div><div class="sStat"><b>${count}</b><span>تقييمات</span></div></div>${rateHtml}<div style="font-weight:800;margin:14px 0 2px">التقييمات</div>${reviewsHtml}`;
+
+// بناء البروفايل الكامل على نمط الفيسبوك
+box.innerHTML = `
+  <div class="fbProfileCard">
+    <!-- غلاف البروفايل (Cover Photo) -->
+    <div class="fbCoverArea">
+      <div class="fbCoverPattern"></div>
+      <div class="fbAvatarWrapper">
+        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}">` : (name ? name[0].toUpperCase() : '👤')}
+      </div>
+    </div>
+
+    <!-- بيانات المستخدم -->
+    <div class="fbProfileDetails">
+      <div class="fbNameRow">
+        <h2 class="fbUserName">
+          ${escapeHtml(name)}
+          ${tierBadge}
+        </h2>
+      </div>
+
+      <!-- المعرفات والشارات -->
+      <div class="fbUserBadges">
+        ${uname ? `<span class="fbUsernameTag">@${escapeHtml(uname)}</span>` : ''}
+        ${memberNo ? `<span class="fbMemberTag">#${memberNo}</span>` : ''}
+        ${ph ? `<span class="fbPhoneTag">📱 ${escapeHtml(normalizePhone(ph))}</span>` : ''}
+      </div>
+
+      <!-- شريط الإحصائيات (Stats) -->
+      <div class="fbStatsBar">
+        <div class="fbStatItem" style="cursor:pointer" onclick="openFollowersModal('${uid}')" title="عرض المتابعين">
+          <span class="fbStatNum" style="color:#0284c7">${followersCount}</span>
+          <span class="fbStatLabel" style="color:#0284c7;text-decoration:underline">متابع 👥</span>
+        </div>
+        <div class="fbStatItem">
+          <span class="fbStatNum">${posts.length}</span>
+          <span class="fbStatLabel">إعلانات نشطة</span>
+        </div>
+        <div class="fbStatItem">
+          <span class="fbStatNum">${avg ? avg.toFixed(1) : "0.0"} ★</span>
+          <span class="fbStatLabel">${count} تقييم</span>
+        </div>
+      </div>
+
+      <!-- أزرار الإجراءات (متابعة / شات / تعديل) -->
+      <div class="fbActionsGrid">
+        ${actionButtonsHtml}
+      </div>
+    </div>
+  </div>
+
+  <!-- التبويبات: إعلاناته / التقييمات -->
+  <div class="fbTabsBar">
+    <button type="button" class="fbTabBtn active" id="fbTabPostsBtn" onclick="switchFbProfileTab('posts')">
+      📦 الإعلانات المعروضة (${posts.length})
+    </button>
+    <button type="button" class="fbTabBtn" id="fbTabReviewsBtn" onclick="switchFbProfileTab('reviews')">
+      ⭐ التقييمات والآراء (${count})
+    </button>
+  </div>
+
+  <div id="fbTabPostsContent">
+    ${postsGridHtml}
+  </div>
+
+  <div id="fbTabReviewsContent" style="display:none">
+    ${rateHtml}
+    <div style="font-weight:800;margin:14px 0 6px">جميع التقييمات</div>
+    ${reviewsHtml}
+  </div>
+`;
 }
+
+window.switchFbProfileTab = (tab) => {
+  const pBtn = document.getElementById("fbTabPostsBtn");
+  const rBtn = document.getElementById("fbTabReviewsBtn");
+  const pContent = document.getElementById("fbTabPostsContent");
+  const rContent = document.getElementById("fbTabReviewsContent");
+  if(!pBtn || !rBtn || !pContent || !rContent) return;
+
+  if(tab === 'posts'){
+    pBtn.classList.add("active");
+    rBtn.classList.remove("active");
+    pContent.style.display = "block";
+    rContent.style.display = "none";
+  } else {
+    rBtn.classList.add("active");
+    pBtn.classList.remove("active");
+    pContent.style.display = "none";
+    rContent.style.display = "block";
+  }
+};
+
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
 window.submitRating=async()=>{
   const me=auth.currentUser;
@@ -6493,21 +6792,49 @@ window.detectCity=async()=>{
   },{timeout:10000});
 };
 
-window.enableNotifications=async()=>{
-  try{
-    let tries=0;
-    while(!window.OneSignal && tries<25){await new Promise(r=>setTimeout(r,200));tries++;}
-    if(!window.OneSignal){showToast("⚠️ خدمة الإشعارات لم تُحمّل بعد.","warn");return;}
-    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone=window.matchMedia('(display-mode:standalone)').matches || window.navigator.standalone===true;
-    if(isIOS && !isStandalone){
-      alert("📱 على iPhone:\n\n1. افتح Safari\n2. اضغط زر المشاركة\n3. اختر: إضافة إلى الشاشة الرئيسية\n4. افتح من الأيقونة الجديدة\n5. اضغط 🔔 مرة ثانية");
+window.enableNotifications = async () => {
+  if(!window.Notification){
+    showToast("⚠️ المتصفح لا يدعم الإشعارات في هذا الجهاز", "warn");
+    return;
+  }
+
+  try {
+    showToast("⏳ جاري طلب إذن الإشعارات...", "info", 1500);
+
+    // التحقق من حالة الإذن الحالية
+    if(Notification.permission === "denied"){
+      alert("⚠️ الإشعارات محظورة في إعدادات المتصفح لـ localhost!\n\nللسماح بها:\n1. اضغط على أيقونة الإعدادات 🔒 بجانب الرابط في الأعلى\n2. غيّر خيار الإشعارات إلى (سماح / Allow)\n3. أعد تحميل الصفحة واضغط الزر مجدداً.");
       return;
     }
-    await window.OneSignal.Notifications.requestPermission();
-    if(window.OneSignal.Notifications.permission){showToast("✅ تم تفعيل الإشعارات بنجاح","success");}
-    else{showToast("⚠️ لم يتم منح إذن الإشعارات","warn");}
-  }catch(e){showToast("تعذر تفعيل الإشعارات: "+e.message,"error");}
+
+    let perm = Notification.permission;
+    if(perm !== "granted"){
+      perm = await Notification.requestPermission();
+    }
+
+    // مزامنة OneSignal
+    if(window.OneSignal && window.OneSignal.Notifications && window.OneSignal.Notifications.requestPermission){
+      window.OneSignal.Notifications.requestPermission().catch(()=>{});
+    }
+    if(auth.currentUser && typeof bindOneSignalUser === 'function'){
+      bindOneSignalUser(auth.currentUser);
+    }
+
+    if(perm === "granted"){
+      showToast("✅ تم تفعيل الإشعارات بنجاح!", "success", 3000);
+      try {
+        new Notification("🔔 تسوق الآن", {
+          body: "تم تفعيل إشعارات الرسائل والمحادثات بنجاح!",
+          icon: "icon-192.png"
+        });
+      } catch(e){}
+    } else {
+      showToast("⚠️ لم يتم منح إذن الإشعارات", "warn");
+    }
+  } catch(err){
+    console.error("enableNotifications err:", err);
+    showToast("حدث خطأ أثناء تفعيل الإشعارات: " + err.message, "error");
+  }
 };
 
 /* ============================================
@@ -7085,7 +7412,7 @@ window.shareRefOnWhatsapp = function() {
 
 
 // ============================================
-if (typeof addPoints === 'function' && typeof window.addPoints === 'undefined') window.addPoints = addPoints;
+// window.addPoints disabled for security
 if (typeof addRecentView === 'function' && typeof window.addRecentView === 'undefined') window.addRecentView = addRecentView;
 if (typeof addToSearchHistory === 'function' && typeof window.addToSearchHistory === 'undefined') window.addToSearchHistory = addToSearchHistory;
 if (typeof assignMemberNumber === 'function' && typeof window.assignMemberNumber === 'undefined') window.assignMemberNumber = assignMemberNumber;
@@ -7293,12 +7620,29 @@ export async function recordWalletTx(uid, txType, amount, balanceBefore, balance
     return null;
   }
 }
-window.recordWalletTx = recordWalletTx;
+// window.recordWalletTx disabled for security
 
-// 3. إضافة رصيد للمحفظة (Credit)
+// 3. إضافة رصيد للمحفظة (Credit) - 🔒 محمي تماماً
 export async function creditUserWallet(uid, amount, reason, meta = {}){
+  if(!auth.currentUser) return { ok: false, error: "يجب تسجيل الدخول أولاً" };
   amount = Math.max(0, Number(amount) || 0);
-  if(amount <= 0) return { ok: false, error: "المبلغ غير صحيح" };
+  if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
+
+  // 🔒 حماية مشددة: لا يمكن لأي مستخدم مناداة الدالة لإضافة رصيد وهمي لنفسه
+  // العمليات المسموحة فقط: شحن كارت حقيقي، رد طلبية ملغاة، أو إيداع يدوي من الأدمن المعتمد
+  const allowedTxTypes = ["card_recharge", "order_refund", "admin_credit"];
+  if(!allowedTxTypes.includes(meta.txType)){
+    console.warn("محاولة غير مصرح بها لإضافة رصيد محفظة.");
+    return { ok: false, error: "نوع العملية غير مصرح به" };
+  }
+  if(meta.txType === "admin_credit" && !isAdmin){
+    console.warn("محاولة إيداع أدمن من مستخدم عادي.");
+    return { ok: false, error: "هذا الإجراء مخصص للأدمن فقط" };
+  }
+  if(meta.txType === "card_recharge" && !meta.cardCode){
+    return { ok: false, error: "رمز الكارت مطلوب لإتمام الشحن" };
+  }
+
   try{
     const current = await getUserWallet(uid);
     const oldBalance = current.balance;
@@ -7316,7 +7660,7 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       updatedAt: Date.now()
     }, { merge: true });
 
-    const txId = await recordWalletTx(uid, meta.txType || "card_recharge", amount, oldBalance, newBalance, reason, meta);
+    const txId = await recordWalletTx(uid, meta.txType, amount, oldBalance, newBalance, reason, meta);
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
     }
@@ -7326,12 +7670,20 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: e.message };
   }
 }
-window.creditUserWallet = creditUserWallet;
+// 🔒 تم إلغاء window.creditUserWallet لمنع التلاعب من الكونسول
 
-// 4. خصم رصيد من المحفظة (Debit)
+// 4. خصم رصيد من المحفظة (Debit) - 🔒 محمي تماماً
 export async function debitUserWallet(uid, amount, reason, meta = {}){
+  if(!auth.currentUser) return { ok: false, error: "يجب تسجيل الدخول أولاً" };
   amount = Math.max(0, Number(amount) || 0);
-  if(amount <= 0) return { ok: false, error: "المبلغ غير صحيح" };
+  if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
+
+  // 🔒 حماية: لا يمكن خصم رصيد إلا من محفظة صاحب الحساب الحالي (أو الأدمن)
+  if(auth.currentUser.uid !== uid && !isAdmin){
+    console.warn("محاولة غير مصرح بها لخصم رصيد من محفظة أخرى.");
+    return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
+  }
+
   try{
     const current = await getUserWallet(uid);
     const oldBalance = current.balance;
@@ -7362,7 +7714,7 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: e.message };
   }
 }
-window.debitUserWallet = debitUserWallet;
+// 🔒 تم إلغاء window.debitUserWallet لمنع التلاعب من الكونسول
 
 // 5. استرجاع قيمة طلبية ملغاة (Refund)
 export async function refundOrderToWallet(uid, amount, orderNo, storeName){
@@ -8522,25 +8874,500 @@ let _chatChannel = null;
 
 function chatConvId(a, b){ return [a, b].sort().join("_"); }
 
-function _appendBubble(box, m, myUid, animate){
+
+window._chatSelectMode = false;
+window._selectedChatMsgIds = new Set();
+
+let _chatLongPressTimer = null;
+let _chatTouchStartX = 0;
+let _chatTouchStartY = 0;
+
+function _attachBubbleEvents(bubble){
+  if(!bubble || bubble._eventsAttached) return;
+  bubble._eventsAttached = true;
+
+  // 1) لمس مطول للشاشات التي تعمل باللمس (موبايل وتابلت)
+  bubble.addEventListener('touchstart', (e) => {
+    if(!e.touches || e.touches.length > 1) return;
+    _chatTouchStartX = e.touches[0].clientX;
+    _chatTouchStartY = e.touches[0].clientY;
+    _chatLongPressTimer = setTimeout(() => {
+      if(navigator.vibrate) try{ navigator.vibrate(40); }catch(v){}
+      if(!window._chatSelectMode){
+        enterChatSelectMode(bubble);
+      } else {
+        toggleSelectBubble(bubble);
+      }
+    }, 450);
+  }, { passive: true });
+
+  bubble.addEventListener('touchmove', (e) => {
+    if(!_chatLongPressTimer) return;
+    const dx = Math.abs(e.touches[0].clientX - _chatTouchStartX);
+    const dy = Math.abs(e.touches[0].clientY - _chatTouchStartY);
+    if(dx > 10 || dy > 10){
+      clearTimeout(_chatLongPressTimer);
+      _chatLongPressTimer = null;
+    }
+  }, { passive: true });
+
+  bubble.addEventListener('touchend', () => {
+    if(_chatLongPressTimer){
+      clearTimeout(_chatLongPressTimer);
+      _chatLongPressTimer = null;
+    }
+  });
+
+  bubble.addEventListener('touchcancel', () => {
+    if(_chatLongPressTimer){
+      clearTimeout(_chatLongPressTimer);
+      _chatLongPressTimer = null;
+    }
+  });
+
+  // 2) النقر عند تفعيل وضع التحديد
+  bubble.addEventListener('click', (e) => {
+    if(window._chatSelectMode){
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSelectBubble(bubble);
+    }
+  });
+
+  // 3) كليك يمين للكمبيوتر (Desktop)
+  bubble.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if(!window._chatSelectMode){
+      enterChatSelectMode(bubble);
+    } else {
+      toggleSelectBubble(bubble);
+    }
+  });
+}
+
+export function toggleChatSelectionMode(){
+  if(window._chatSelectMode){
+    cancelChatSelection();
+  } else {
+    enterChatSelectMode();
+  }
+}
+window.toggleChatSelectionMode = toggleChatSelectionMode;
+
+export function enterChatSelectMode(initialBubble){
+  window._chatSelectMode = true;
+  window._selectedChatMsgIds.clear();
+  const box = document.getElementById("chatMessagesBox");
+  if(box) box.classList.add("chatSelectMode");
+  const bar = document.getElementById("chatSelectionBar");
+  if(bar) bar.style.display = "flex";
+  const delBtn = document.getElementById("chatHeaderDeleteBtn");
+  if(delBtn) delBtn.classList.add("active");
+
+  if(initialBubble){
+    const msgId = initialBubble.getAttribute("data-msg-id");
+    if(msgId){
+      window._selectedChatMsgIds.add(String(msgId));
+      initialBubble.classList.add("msgSelected");
+    }
+  }
+  _updateSelectionBarUI();
+}
+window.enterChatSelectMode = enterChatSelectMode;
+
+export function cancelChatSelection(){
+  window._chatSelectMode = false;
+  window._selectedChatMsgIds.clear();
+  const box = document.getElementById("chatMessagesBox");
+  if(box){
+    box.classList.remove("chatSelectMode");
+    box.querySelectorAll(".msgSelected").forEach(b => b.classList.remove("msgSelected"));
+  }
+  const bar = document.getElementById("chatSelectionBar");
+  if(bar) bar.style.display = "none";
+  const delBtn = document.getElementById("chatHeaderDeleteBtn");
+  if(delBtn) delBtn.classList.remove("active");
+}
+window.cancelChatSelection = cancelChatSelection;
+
+export function toggleSelectBubble(bubble){
+  const msgId = bubble.getAttribute("data-msg-id");
+  if(!msgId) {
+    showToast("هذه الرسالة قيد الإرسال، انتظر لحظة", "info");
+    return;
+  }
+  if(window._selectedChatMsgIds.has(String(msgId))){
+    window._selectedChatMsgIds.delete(String(msgId));
+    bubble.classList.remove("msgSelected");
+  } else {
+    window._selectedChatMsgIds.add(String(msgId));
+    bubble.classList.add("msgSelected");
+  }
+  _updateSelectionBarUI();
+}
+window.toggleSelectBubble = toggleSelectBubble;
+
+export function selectAllChatMessages(){
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  const bubbles = box.querySelectorAll(".chatBubble[data-msg-id]");
+  const allSelected = bubbles.length > 0 && Array.from(bubbles).every(b => window._selectedChatMsgIds.has(String(b.getAttribute("data-msg-id"))));
+  
+  if(allSelected){
+    window._selectedChatMsgIds.clear();
+    bubbles.forEach(b => b.classList.remove("msgSelected"));
+  } else {
+    bubbles.forEach(b => {
+      const id = b.getAttribute("data-msg-id");
+      if(id){
+        window._selectedChatMsgIds.add(String(id));
+        b.classList.add("msgSelected");
+      }
+    });
+  }
+  _updateSelectionBarUI();
+}
+window.selectAllChatMessages = selectAllChatMessages;
+
+function _updateSelectionBarUI(){
+  const count = window._selectedChatMsgIds.size;
+  const countEl = document.getElementById("chatSelectionCount");
+  const btnDelete = document.getElementById("btnConfirmDeleteMsgs");
+  if(countEl){
+    if(count === 0){
+      countEl.textContent = "اضغط على أي رسالة لتحديدها";
+    } else if(count === 1){
+      countEl.textContent = "تم تحديد رسالة واحدة";
+    } else if(count === 2){
+      countEl.textContent = "تم تحديد رسالتين";
+    } else if(count <= 10){
+      countEl.textContent = `تم تحديد ${count} رسائل`;
+    } else {
+      countEl.textContent = `تم تحديد ${count} رسالة`;
+    }
+  }
+  if(btnDelete){
+    if(count > 0){
+      btnDelete.style.opacity = "1";
+      btnDelete.style.pointerEvents = "auto";
+      btnDelete.innerHTML = `<span>🗑️</span><span>حذف من الطرفين (${count})</span>`;
+    } else {
+      btnDelete.style.opacity = "0.5";
+      btnDelete.style.pointerEvents = "none";
+      btnDelete.innerHTML = `<span>🗑️</span><span>حذف من الطرفين</span>`;
+    }
+  }
+}
+
+export function confirmDeleteSelectedChatMessages(){
+  const count = window._selectedChatMsgIds.size;
+  if(count === 0) return;
+
+  const box = document.getElementById("chatMessagesBox");
+  let myMessagesCount = 0;
+  let otherMessagesCount = 0;
+
+  window._selectedChatMsgIds.forEach(id => {
+    const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
+    if(el){
+      if(el.classList.contains("outgoing")){
+        myMessagesCount++;
+      } else {
+        otherMessagesCount++;
+      }
+    }
+  });
+
+  const textEl = document.getElementById("deleteChatConfirmText");
+  const btnEveryone = document.getElementById("btnDeleteForEveryone");
+  const btnForMe = document.getElementById("btnDeleteForMe");
+
+  // 🔒 قاعدة أساسية: كل شخص يحذف رسائله هو فقط من الطرفين!
+  // رسائل الطرف الآخر تُحذف من عندك فقط ولا يمكن حذفها من الطرفين
+  if(btnEveryone){
+    if(otherMessagesCount > 0 && myMessagesCount === 0){
+      // كل الرسائل المحددة من الطرف الآخر -> لا يمكن حذفها من الطرفين
+      btnEveryone.style.display = "none";
+    } else if(otherMessagesCount > 0 && myMessagesCount > 0){
+      // مختلط -> حذف رسائلي فقط من الطرفين
+      btnEveryone.style.display = "flex";
+      btnEveryone.innerHTML = `<span>🗑️</span><span>حذف رسائلي فقط من الطرفين (${myMessagesCount})</span>`;
+    } else {
+      // كلها رسائلي -> متاح بالكامل للطرفين
+      btnEveryone.style.display = "flex";
+      btnEveryone.innerHTML = `<span>🗑️</span><span>الحذف لدى الجميع (من الطرفين) (${count})</span>`;
+    }
+  }
+
+  if(btnForMe){
+    btnForMe.innerHTML = `<span>👁️‍🗨️</span><span>الحذف لدي فقط (${count})</span>`;
+  }
+
+  if(textEl){
+    if(otherMessagesCount > 0 && myMessagesCount === 0){
+      textEl.textContent = count === 1 ? "هذه الرسالة مرسلة من الطرف الآخر، يمكنك حذفها من عندك فقط." : "الرسائل المحددة مرسلة من الطرف الآخر، يمكنك حذفها من عندك فقط.";
+    } else {
+      textEl.textContent = "اختر هل تريد حذف الرسائل من عندك فقط أم من الطرفين:";
+    }
+  }
+
+  const modal = document.getElementById("deleteChatConfirmModal");
+  if(modal) modal.classList.remove("hidden");
+}
+window.confirmDeleteSelectedChatMessages = confirmDeleteSelectedChatMessages;
+
+export function closeDeleteChatConfirmModal(){
+  const modal = document.getElementById("deleteChatConfirmModal");
+  if(modal) modal.classList.add("hidden");
+}
+window.closeDeleteChatConfirmModal = closeDeleteChatConfirmModal;
+
+export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
+  const modal = document.getElementById("deleteChatConfirmModal");
+  if(modal) modal.classList.add("hidden");
+
+  const ids = Array.from(window._selectedChatMsgIds).map(x => Number(x)).filter(Boolean);
+  if(ids.length === 0) return;
+
+  const box = document.getElementById("chatMessagesBox");
+  const activeChat = window._activeChat;
+  const convId = activeChat ? activeChat.convId : null;
+  const myUid = auth.currentUser ? auth.currentUser.uid : "";
+  const sb = window.supabase || supabase;
+
+  try {
+    if(mode === 'for_me'){
+      // ============================================
+      // 1) الحذف لدي فقط (من عندي مثل ماسنجر)
+      // ============================================
+      showToast("⏳ جاري حذف الرسائل من عندك...", "info");
+
+      // حفظ محلياً في localStorage
+      const localKey = "tasawuq_hidden_msgs_" + myUid;
+      let localHidden = [];
+      try { localHidden = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
+      const updatedHidden = Array.from(new Set([...localHidden, ...ids]));
+      localStorage.setItem(localKey, JSON.stringify(updatedHidden));
+
+      // حفظ في سوبابيز داخل store_context.hidden_for
+      if(convId && myUid){
+        try{
+          const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+          let sc = conv?.store_context;
+          if(!sc || typeof sc !== 'object') sc = {};
+          if(!sc.hidden_for || typeof sc.hidden_for !== 'object') sc.hidden_for = {};
+          const prev = Array.isArray(sc.hidden_for[myUid]) ? sc.hidden_for[myUid] : [];
+          sc.hidden_for[myUid] = Array.from(new Set([...prev, ...ids]));
+          await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
+        }catch(e){}
+      }
+
+      // إزالة من الشاشة فوراً
+      ids.forEach(id => {
+        const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
+        if(el){
+          el.style.transition = "all .25s ease";
+          el.style.opacity = "0";
+          el.style.transform = "scale(0.8)";
+          setTimeout(() => el.remove(), 250);
+        }
+      });
+
+      cancelChatSelection();
+      showToast("تم حذف الرسائل من عندك بنجاح 🗑️", "success");
+
+    } else {
+      // ============================================
+      // 2) الحذف لدى الجميع (من الطرفين مثل ماسنجر)
+      // ============================================
+      showToast("⏳ جاري حذف الرسائل من الطرفين...", "info");
+
+      // 🔒 فحص أمني: كل شخص يحذف رسائله هو فقط من جدول chat_messages للطرفين
+      const myMsgIds = [];
+      const otherMsgIds = [];
+      ids.forEach(id => {
+        const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
+        if(el && el.classList.contains("outgoing")){
+          myMsgIds.push(id);
+        } else {
+          otherMsgIds.push(id);
+        }
+      });
+
+      if(myMsgIds.length > 0){
+        const { error } = await sb
+          .from("chat_messages")
+          .delete()
+          .in("id", myMsgIds)
+          .eq("sender_uid", myUid);
+        if(error) throw error;
+      }
+
+      // إذا كانت هناك رسائل أخرى محددة للطرف الآخر، تُحذف من عندي فقط
+      if(otherMsgIds.length > 0 && convId && myUid){
+        try{
+          const localKey = "tasawuq_hidden_msgs_" + myUid;
+          let localHidden = [];
+          try { localHidden = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
+          localStorage.setItem(localKey, JSON.stringify(Array.from(new Set([...localHidden, ...otherMsgIds]))));
+
+          const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+          let sc = conv?.store_context;
+          if(!sc || typeof sc !== 'object') sc = {};
+          if(!sc.hidden_for || typeof sc.hidden_for !== 'object') sc.hidden_for = {};
+          const prev = Array.isArray(sc.hidden_for[myUid]) ? sc.hidden_for[myUid] : [];
+          sc.hidden_for[myUid] = Array.from(new Set([...prev, ...otherMsgIds]));
+          await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
+        }catch(e){}
+      }
+
+      // إزالة الرسائل فورياً من الشاشة
+      ids.forEach(id => {
+        const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
+        if(el){
+          el.style.transition = "all .25s ease";
+          el.style.opacity = "0";
+          el.style.transform = "scale(0.8)";
+          setTimeout(() => el.remove(), 250);
+        }
+      });
+
+      cancelChatSelection();
+
+      // تحديث آخر رسالة في المحادثة
+      if(convId){
+        const { data: latest } = await sb
+          .from("chat_messages")
+          .select("*")
+          .eq("conv_id", convId)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if(latest && latest.length > 0){
+          let preview = latest[0].text;
+          if(preview.startsWith("[صورة] ")) preview = "📷 صورة";
+          else if(preview.startsWith("[صوت:")) preview = "🎙️ رسالة صوتية";
+          await sb.from("chat_conversations").update({
+            last_message: preview,
+            last_sender_uid: latest[0].sender_uid,
+            last_sender_name: latest[0].sender_name,
+            updated_at: latest[0].created_at
+          }).eq("conv_id", convId);
+        } else {
+          await sb.from("chat_conversations").update({
+            last_message: "تم حذف الرسائل",
+            updated_at: Date.now()
+          }).eq("conv_id", convId);
+        }
+      }
+
+      showToast("تم حذف الرسائل من الطرفين بنجاح 🗑️", "success");
+    }
+
+    // فحص إذا فرغت المحادثة
+    setTimeout(() => {
+      if(box && !box.querySelector(".chatBubble")){
+        box.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+            <div style="font-size:36px;margin-bottom:8px">💬</div>
+            <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+            <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+          </div>`;
+      }
+    }, 300);
+
+  } catch(err) {
+    console.error("خطأ في حذف الرسائل:", err);
+    showToast("⚠️ تعذر حذف الرسائل، يرجى المحاولة ثانية", "warn");
+  }
+}
+window.executeDeleteSelectedChatMessages = executeDeleteSelectedChatMessages;
+
+
+// ============================================================
+// 👁️ نظام علامات القراءة الفورية (Read Receipts مثل واتساب وماسنجر)
+// ============================================================
+window._chatOtherReadTime = 0;
+
+export async function markChatAsRead(convId, myUid){
+  if(!convId || !myUid) return;
+  try{
+    const sb = window.supabase || supabase;
+    const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+    let sc = conv?.store_context;
+    if(!sc || typeof sc !== 'object') sc = {};
+    if(!sc.read_by || typeof sc.read_by !== 'object') sc.read_by = {};
+    sc.read_by[myUid] = Date.now();
+    await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
+  }catch(e){
+    console.warn("markChatAsRead error:", e);
+  }
+}
+window.markChatAsRead = markChatAsRead;
+
+function _updateMessagesReadStatus(readTime){
+  if(!readTime) return;
+  const box = document.getElementById("chatMessagesBox");
+  if(!box) return;
+  box.querySelectorAll(".chatBubble.outgoing").forEach(b => {
+    const msgTime = Number(b.getAttribute("data-created-at")) || 0;
+    if(msgTime && msgTime <= readTime){
+      const checkEl = b.querySelector(".chatCheck");
+      if(checkEl && !checkEl.classList.contains("read")){
+        checkEl.className = "chatCheck read";
+        checkEl.innerHTML = "✓✓";
+        checkEl.setAttribute("title", "تمت القراءة");
+      }
+    }
+  });
+}
+window._updateMessagesReadStatus = _updateMessagesReadStatus;
+
+function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
   const msgKey = (m.id ? 'id_' + m.id : '') || ('t_' + (m.created_at || '') + '_' + (m.sender_uid || ''));
   if(box.querySelector('[data-msg-key="' + msgKey + '"]')) return;
 
   const isMe = m.sender_uid === myUid;
-  const d = new Date(Number(m.created_at) || Date.now());
+  const msgTime = Number(m.created_at) || Date.now();
+  const d = new Date(msgTime);
   const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement("div");
   div.className = "chatBubble " + (isMe ? "outgoing" : "incoming");
   div.setAttribute("data-msg-key", msgKey);
   if(m.id) div.setAttribute("data-msg-id", m.id);
+  div.setAttribute("data-created-at", msgTime);
+  div.setAttribute("data-sender-uid", m.sender_uid || (isMe ? myUid : ""));
 
   let bodyHtml = escapeHtml(m.text || '');
   if(m.text && m.text.startsWith("[صورة] ")){
     const imgUrl = m.text.replace("[صورة] ", "").trim();
-    bodyHtml = `<a href="${escapeHtml(imgUrl)}" target="_blank"><img src="${escapeHtml(imgUrl)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;margin-bottom:4px"></a>`;
+    bodyHtml = `<a href="${escapeHtml(imgUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(imgUrl)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a>`;
+  } else if(m.text && m.text.startsWith("[صوت:")){
+    const parts = m.text.split("] ");
+    const audioSrc = parts.slice(1).join("] ").trim();
+    bodyHtml = `
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🎙️</span>
+        <audio controls style="max-width:210px;height:36px;outline:none">
+          <source src="${audioSrc}" type="audio/webm">
+        </audio>
+      </div>`;
   }
 
-  div.innerHTML = `${bodyHtml}<div class="chatTime">${timeStr}</div>`;
+  // 👁️ تحديد شكل السهمين: رمادي عند الإرسال (غير مقروء)، وأزرق مضيء ✓✓ عند قراءة المستلم
+  let checkHtml = "";
+  if(isMe){
+    const readLimit = otherReadTimestamp || (window._chatOtherReadTime || 0);
+    const isRead = readLimit > 0 && msgTime <= readLimit;
+    if(isRead){
+      checkHtml = '<span class="chatCheck read" title="تمت القراءة">✓✓</span>';
+    } else {
+      checkHtml = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>';
+    }
+  }
+
+  div.innerHTML = `${bodyHtml}<div class="chatTime">${checkHtml}${timeStr}</div>`;
+  _attachBubbleEvents(div);
   if(animate){
     div.style.opacity = "0";
     div.style.transform = "translateY(10px)";
@@ -8556,12 +9383,37 @@ function _appendBubble(box, m, myUid, animate){
 }
 
 async function _loadChatIntoBox(convId){
+  cancelChatSelection();
   const box = document.getElementById("chatMessagesBox");
   if(!box) return;
   const myUid = auth.currentUser ? auth.currentUser.uid : "";
   const sb = window.supabase || supabase;
   try{
-    // جلب أحدث 250 رسالة تنازلياً لضمان عدم اختفاء الرسائل الأخيرة مهما بلغ عدد الرسائل
+    // 1) جلب وقت قراءة الطرف الآخر وقائمة الرسائل المحذوفة من عندي (Delete for me)
+    let otherReadTime = 0;
+    const hiddenIdsSet = new Set();
+    const localKey = "tasawuq_hidden_msgs_" + myUid;
+    try {
+      const localHidden = JSON.parse(localStorage.getItem(localKey) || "[]");
+      localHidden.forEach(id => hiddenIdsSet.add(Number(id)));
+    } catch(e){}
+
+    const targetUid = window._activeChat ? window._activeChat.targetUid : null;
+    const { data: convData } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+    if(convData && convData.store_context){
+      if(convData.store_context.read_by && targetUid){
+        otherReadTime = Number(convData.store_context.read_by[targetUid]) || 0;
+      }
+      if(convData.store_context.hidden_for && myUid && Array.isArray(convData.store_context.hidden_for[myUid])){
+        convData.store_context.hidden_for[myUid].forEach(id => hiddenIdsSet.add(Number(id)));
+      }
+    }
+    window._chatOtherReadTime = otherReadTime;
+
+    // 2) تسجيل أنني قرأت المحادثة الآن
+    if(myUid) markChatAsRead(convId, myUid);
+
+    // 3) جلب أحدث 250 رسالة تنازلياً
     const { data, error } = await sb
       .from("chat_messages")
       .select("*")
@@ -8580,10 +9432,11 @@ async function _loadChatIntoBox(convId){
     }
     // عكس الترتيب لعرض الأقدم للأحدث نحو الأسفل
     const sorted = [...data].reverse();
-    // إزالة أي تكرار
     const seen = new Set();
     const unique = [];
     for(const m of sorted){
+      // استثناء الرسائل المحذوفة من عندي (Delete for me)
+      if(m.id && hiddenIdsSet.has(Number(m.id))) continue;
       const k = (m.id ? 'id_' + m.id : '') || (m.created_at + '_' + m.text);
       if(!seen.has(k)){
         seen.add(k);
@@ -8591,7 +9444,7 @@ async function _loadChatIntoBox(convId){
       }
     }
     box.innerHTML = "";
-    unique.forEach(m => _appendBubble(box, m, myUid, false));
+    unique.forEach(m => _appendBubble(box, m, myUid, false, otherReadTime));
     box.scrollTop = box.scrollHeight;
   }catch(err){
     console.error("خطأ في تحميل الرسائل:", err);
@@ -8684,7 +9537,26 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
   const elName = document.getElementById("chatTargetName");
   const elAvatar = document.getElementById("chatTargetAvatar");
   if(elName) elName.textContent = targetName;
-  if(elAvatar) elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
+
+  // جلب وتعيين صورة الطرف الآخر إن وجدت
+  let targetAvatarUrl = localStorage.getItem("tasawuq_avatar_" + sellerUid) || "";
+  if(elAvatar){
+    if(targetAvatarUrl){
+      elAvatar.innerHTML = `<img src="${escapeHtml(targetAvatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
+      // فحص سريع من قاعدة البيانات لصورة الطرف الآخر
+      getDoc(doc(db, "profiles", sellerUid)).then(snap => {
+        if(snap.exists() && snap.data().avatar){
+          const av = snap.data().avatar;
+          localStorage.setItem("tasawuq_avatar_" + sellerUid, av);
+          if(window._activeChat && window._activeChat.targetUid === sellerUid && elAvatar){
+            elAvatar.innerHTML = `<img src="${escapeHtml(av)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+          }
+        }
+      }).catch(()=>{});
+    }
+  }
 
   const ctxBar = document.getElementById("chatPostContextBar");
   const ctxImg = document.getElementById("chatContextImg");
@@ -8746,6 +9618,43 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         _appendBubble(box, payload.new, myUid2, true);
         box.scrollTop = box.scrollHeight;
       })
+    .on("postgres_changes",
+      { event: "DELETE", schema: "public", table: "chat_messages" },
+      payload => {
+        const box = document.getElementById("chatMessagesBox");
+        if(!box || !window._activeChat || window._activeChat.convId !== convId) return;
+        const delId = payload.old ? payload.old.id : null;
+        if(delId){
+          const target = box.querySelector(`[data-msg-id="${delId}"]`);
+          if(target){
+            target.style.transition = "all .25s ease";
+            target.style.opacity = "0";
+            target.style.transform = "scale(0.8)";
+            setTimeout(() => {
+              target.remove();
+              if(!box.querySelector(".chatBubble")){
+                box.innerHTML = `
+                  <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+                    <div style="font-size:36px;margin-bottom:8px">💬</div>
+                    <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+                    <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+                  </div>`;
+              }
+            }, 250);
+          }
+        }
+      })
+    .on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "chat_conversations", filter: "conv_id=eq." + convId },
+      payload => {
+        const sc = payload.new ? payload.new.store_context : null;
+        const targetUid = window._activeChat ? window._activeChat.targetUid : null;
+        if(sc && sc.read_by && targetUid && sc.read_by[targetUid]){
+          const newReadTime = Number(sc.read_by[targetUid]);
+          window._chatOtherReadTime = newReadTime;
+          _updateMessagesReadStatus(newReadTime);
+        }
+      })
     .subscribe();
 
   // فحص احتياطي سريع كل 2.5 ثانية (يضمن التحديث حتى لو انقطع الويب سوكيت على الموبايل)
@@ -8775,6 +9684,46 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
           }
         });
         if(hasNew) box.scrollTop = box.scrollHeight;
+      }
+
+      // فحص إذا قرأ الطرف الآخر الرسائل وتحديث الأسهم إلى زرقاء ✓✓
+      if(window._activeChat && window._activeChat.targetUid){
+        const { data: convCheck } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+        if(convCheck && convCheck.store_context && convCheck.store_context.read_by){
+          const rt = Number(convCheck.store_context.read_by[window._activeChat.targetUid]) || 0;
+          if(rt > (window._chatOtherReadTime || 0)){
+            window._chatOtherReadTime = rt;
+            _updateMessagesReadStatus(rt);
+          }
+        }
+      }
+
+      // فحص الرسائل المحذوفة من الطرف الآخر وإزالتها
+      const visibleBubbles = box.querySelectorAll('.chatBubble[data-msg-id]');
+      if(visibleBubbles.length > 0){
+        const { data: allActive } = await sb
+          .from("chat_messages")
+          .select("id")
+          .eq("conv_id", convId);
+        if(allActive){
+          const activeSet = new Set(allActive.map(x => String(x.id)));
+          let removedAny = false;
+          visibleBubbles.forEach(b => {
+            const bId = b.getAttribute("data-msg-id");
+            if(bId && !activeSet.has(bId)){
+              removedAny = true;
+              b.remove();
+            }
+          });
+          if(removedAny && !box.querySelector(".chatBubble")){
+            box.innerHTML = `
+              <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+                <div style="font-size:36px;margin-bottom:8px">💬</div>
+                <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:4px">لا توجد رسائل سابقة</div>
+                <div style="font-size:12px">ابدأ المحادثة الآن واكتب رسالتك بالأسفل!</div>
+              </div>`;
+          }
+        }
       }
     }catch(e){}
   }, 2500);
@@ -8830,6 +9779,9 @@ export async function sendUserChatMessage(){
     }).select().single();
     if(msgErr) throw msgErr;
 
+    // 🔔 إرسال إشعار فوري (Push Notification) لهاتف المستلم حتى لو كان هاتفه مقفلاً
+    dispatchChatPushNotification(activeChat.targetUid, senderName, text, convId);
+
     // تأكيد الحفظ فوراً على الفقاعة حتى لا تظل معلقة
     if(tempBubble){
       tempBubble.removeAttribute("data-temp");
@@ -8837,10 +9789,11 @@ export async function sendUserChatMessage(){
       if(insertedMsg && insertedMsg.id){
         tempBubble.setAttribute("data-msg-key", 'id_' + insertedMsg.id);
         tempBubble.setAttribute("data-msg-id", insertedMsg.id);
+        _attachBubbleEvents(tempBubble);
       }
       const tEl = tempBubble.querySelector(".chatTime");
       if(tEl){
-        tEl.innerHTML = '<span style="opacity:0.85;margin-inline-end:3px">✓✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        tEl.innerHTML = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
     }
 
@@ -8873,6 +9826,7 @@ export async function sendUserChatMessage(){
 }
 
 export function closeUserChat(){
+  cancelChatSelection();
   const chatOverlay = document.getElementById("userChatOverlay");
   if(chatOverlay) chatOverlay.classList.add("hidden");
   _unsubscribeChat();
@@ -8954,6 +9908,7 @@ export async function openInbox(){
               ${c.last_sender_uid === myUid ? 'أنت: ' : ''}${escapeHtml(lastSeenTxt)}
             </div>
           </div>
+          <button type="button" onclick="event.stopPropagation();deleteConversationForMe('${escapeHtml(c.conv_id)}')" title="حذف المحادثة من عندي" style="background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;flex:0 0 auto;opacity:0.6;transition:all .2s" onmouseover="this.style.opacity='1';this.style.color='#ef4444'" onmouseout="this.style.opacity='0.6';this.style.color='var(--muted)'">🗑️</button>
         </div>`;
     }).join("");
   }catch(err){
@@ -8961,6 +9916,41 @@ export async function openInbox(){
     list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
   }
 }
+
+
+// ============================================================
+// 🗑️ حذف محادثة كاملة من صندوق الرسائل (من عندي فقط)
+// ============================================================
+export async function deleteConversationForMe(convId){
+  if(!auth.currentUser || !convId) return;
+  if(!confirm("هل تريد بالتأكيد حذف هذه المحادثة من صندوق بريدك؟\n(ستختفي من عندك فقط وستبقى محفوظة لدى الطرف الآخر بشكل طبيعي)")) return;
+  const myUid = auth.currentUser.uid;
+  const sb = window.supabase || supabase;
+  
+  try{
+    // 1) حفظ محلياً في localStorage
+    const localKey = "tasawuq_deleted_convs_" + myUid;
+    let localList = [];
+    try { localList = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
+    localList.push(convId);
+    localStorage.setItem(localKey, JSON.stringify(Array.from(new Set(localList))));
+
+    // 2) حفظ في سوبابيز داخل store_context.deleted_by
+    const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+    let sc = conv?.store_context;
+    if(!sc || typeof sc !== 'object') sc = {};
+    if(!sc.deleted_by || typeof sc.deleted_by !== 'object') sc.deleted_by = {};
+    sc.deleted_by[myUid] = true;
+    await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
+
+    openInbox();
+    showToast("تم حذف المحادثة من عندك بنجاح 🗑️", "success");
+  }catch(e){
+    console.error("deleteConversationForMe error:", e);
+    showToast("تعذر حذف المحادثة", "warn");
+  }
+}
+window.deleteConversationForMe = deleteConversationForMe;
 
 export function closeInbox(){
   const overlay = document.getElementById("userInboxOverlay");
@@ -9059,9 +10049,10 @@ window.openEditProfileScreen = () => {
 
 window.backFromEditProfile = () => {
   const es = document.getElementById("editProfileScreen");
-  const as = document.getElementById("accountOverlay") || document.getElementById("accountScreen");
   if(es) es.classList.add("hidden");
-  if(as) as.classList.remove("hidden");
+  if(auth.currentUser){
+    openSeller(auth.currentUser.uid);
+  }
   window.scrollTo(0, 0);
 };
 
@@ -9185,11 +10176,15 @@ window.saveAllProfileData = async () => {
   if (errors.length > 0) {
     showToast("⚠️ " + errors.join(" | "), "error", 4000);
   } else if (changes.length > 0) {
-    showToast("✅ تم بنجاح تحديث: " + changes.join("، "), "success", 3000);
-    setTimeout(() => { if (typeof backFromEditProfile === "function") backFromEditProfile(); }, 1200);
+    showToast("✅ تم بنجاح تحديث: " + changes.join("، "), "success", 2000);
+    setTimeout(() => {
+      if (typeof backFromEditProfile === "function") backFromEditProfile();
+    }, 600);
   } else {
     showToast("لم تقم بإجراء أي تعديلات جديدة", "info");
-    setTimeout(() => { if (typeof backFromEditProfile === "function") backFromEditProfile(); }, 800);
+    setTimeout(() => {
+      if (typeof backFromEditProfile === "function") backFromEditProfile();
+    }, 500);
   }
 };
 
@@ -9359,7 +10354,12 @@ export async function handleChatPhotoSelected(event){
 
     if(tempDiv){
       tempDiv.removeAttribute("data-temp");
-      tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px"></a><div class="chatTime"><span style="opacity:0.85;margin-inline-end:3px">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+      if(insertedMsg && insertedMsg.id){
+        tempDiv.setAttribute("data-msg-key", 'id_' + insertedMsg.id);
+        tempDiv.setAttribute("data-msg-id", insertedMsg.id);
+        _attachBubbleEvents(tempDiv);
+      }
+      tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a><div class="chatTime"><span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
     }
 
     const p1 = [me.uid, activeChat.targetUid].sort()[0];
@@ -9402,3 +10402,476 @@ export function shareMyPhoneInChat(){
   }
 }
 window.shareMyPhoneInChat = shareMyPhoneInChat;
+
+
+
+window.openMyProfile = () => {
+  if(!auth.currentUser){
+    pendingAction = "profile";
+    const ao = document.getElementById("authOverlay");
+    if(ao) ao.classList.remove("hidden");
+    return;
+  }
+  const accOv = document.getElementById("accountOverlay");
+  if(accOv) accOv.classList.add("hidden");
+  openSeller(auth.currentUser.uid);
+};
+window.openMySeller = window.openMyProfile;
+
+
+
+window.closeFollowersModal = () => {
+  const fo = document.getElementById("followersOverlay");
+  if(fo) fo.classList.add("hidden");
+};
+
+window.openFollowersModal = async (targetUid) => {
+  if(!targetUid) return;
+  const fo = document.getElementById("followersOverlay");
+  const list = document.getElementById("followersModalList");
+  if(fo) fo.classList.remove("hidden");
+  if(list) list.innerHTML = "<div class='reportsEmpty'>⏳ جاري تحميل المتابعين...</div>";
+
+  try {
+    const fSnap = await getDocs(collection(db, "users", targetUid, "followers")).catch(() => null);
+    if(!fSnap || fSnap.empty){
+      list.innerHTML = "<div class='reportsEmpty'>👥 لا يوجد متابعون بعد</div>";
+      return;
+    }
+
+    const followerUids = fSnap.docs.map(d => d.id);
+    // جلب ملفات المتابعين الشخصية
+    const profPromises = followerUids.map(uid => getDoc(doc(db, "profiles", uid)).then(s => ({ uid, ...(s.exists() ? s.data() : {}) })).catch(() => ({ uid })));
+    const profiles = await Promise.all(profPromises);
+
+    list.innerHTML = profiles.map(p => {
+      const name = p.name || "مستخدم";
+      const uname = p.username ? "@" + p.username : "";
+      const avUrl = p.avatar || localStorage.getItem("tasawuq_avatar_" + p.uid) || "";
+      const initial = name ? name.trim()[0].toUpperCase() : '👤';
+      return `
+        <div class="followerUserRow" onclick="closeFollowersModal();openSeller('${escapeHtml(p.uid)}')">
+          <div class="followerAvatar">
+            ${avUrl ? `<img src="${escapeHtml(avUrl)}" alt="${escapeHtml(name)}">` : initial}
+          </div>
+          <div class="followerInfo">
+            <div class="followerName">${escapeHtml(name)}</div>
+            ${uname ? `<div class="followerUsername">${escapeHtml(uname)}</div>` : ''}
+          </div>
+          <div style="font-size:12px;color:var(--muted)">عرض الإعلانات ›</div>
+        </div>
+      `;
+    }).join("");
+  } catch(err){
+    console.error("openFollowersModal error:", err);
+    list.innerHTML = "<div class='reportsEmpty'>⚠️ تعذر تحميل المتابعين</div>";
+  }
+};
+
+
+
+/* ========================================================
+   🔔 نظام إشعارات OneSignal الحقيقي (Web Push Notifications)
+   ======================================================== */
+export const DEFAULT_ONESIGNAL_APP_ID = "7030f4d7-c06e-41a9-a601-8d42965023b3";
+export const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_oaypjv6anza2tjqbrvbjmubdwpvxh6svcgkenzngim3kq4ddjazv3lso5f3aynddjakwakbul77jznflu4bu5u4xpvtc5hdusuetaaa";
+
+let _onesignalRestKey = localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
+window._onesignalRestKey = _onesignalRestKey;
+
+// ربط المستخدم بـ OneSignal لتلقي الإشعارات حتى عندما يكون الهاتف أو الشاشة مقفلة
+export function bindOneSignalUser(user){
+  if(!user) return;
+  startChatPushRealtimeListener(user.uid);
+  const setupOneSignal = async (OneSignal) => {
+    try {
+      if(OneSignal.login){
+        await OneSignal.login(user.uid);
+      } else if(OneSignal.setExternalUserId){
+        await OneSignal.setExternalUserId(user.uid);
+      }
+      if(OneSignal.User && OneSignal.User.addTag){
+        await OneSignal.User.addTag("user_uid", user.uid);
+        if(user.displayName) await OneSignal.User.addTag("user_name", user.displayName);
+      }
+      // طلب الإذن بلطف
+      if(window.Notification && Notification.permission === "default"){
+        setTimeout(() => {
+          try {
+            if(OneSignal.Notifications && OneSignal.Notifications.requestPermission){
+              OneSignal.Notifications.requestPermission();
+            }
+          } catch(e){}
+        }, 4000);
+      }
+    } catch(err){
+      console.warn("OneSignal binding:", err);
+    }
+  };
+
+  if(window.OneSignal){
+    setupOneSignal(window.OneSignal);
+  } else {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(setupOneSignal);
+  }
+}
+window.bindOneSignalUser = bindOneSignalUser;
+
+export function unbindOneSignalUser(){
+  try {
+    if(window.OneSignal && window.OneSignal.logout){
+      window.OneSignal.logout();
+    }
+  } catch(e){}
+}
+window.unbindOneSignalUser = unbindOneSignalUser;
+
+// إرسال Push Notification فوري للمستلم عبر OneSignal REST API لإيقاظ هاتفه حتى لو كان مقفلاً
+export async function dispatchChatPushNotification(receiverUid, senderName, textPreview, convId){
+  if(!receiverUid || !auth.currentUser) return;
+  const cleanSnippet = (textPreview || "أرسل لك رسالة جديدة").slice(0, 140);
+  const myName = senderName || auth.currentUser.displayName || (myProfile && myProfile.name) || "مستخدم";
+
+  try {
+    const restKey = window._onesignalRestKey || localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
+    if (restKey) {
+      const payload = {
+        app_id: DEFAULT_ONESIGNAL_APP_ID,
+        include_aliases: { external_id: [receiverUid] },
+        include_external_user_ids: [receiverUid],
+        target_channel: "push",
+        headings: {
+          ar: `💬 رسالة من ${myName}`,
+          en: `💬 Message from ${myName}`
+        },
+        contents: {
+          ar: cleanSnippet,
+          en: cleanSnippet
+        },
+        url: window.location.origin + "?openChat=" + encodeURIComponent(convId),
+        data: {
+          convId: convId,
+          type: "chat_message",
+          senderUid: auth.currentUser.uid
+        }
+      };
+
+      fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": "Basic " + restKey
+        },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn("OneSignal Push delivery:", err));
+    }
+  } catch(err){
+    console.warn("dispatchChatPushNotification err:", err);
+  }
+}
+window.dispatchChatPushNotification = dispatchChatPushNotification;
+
+
+
+/* ========================================================
+   🔔 نظام الاستماع الفوري لإشعارات الرسائل (Realtime & Push)
+   ======================================================== */
+let _chatPushUnsub = null;
+
+export function startChatPushRealtimeListener(myUid){
+  if(!myUid || _chatPushUnsub) return;
+
+  const startTimestamp = Date.now();
+  const processedEventIds = new Set();
+  const sb = window.supabase || supabase;
+
+  try {
+    // استماع فوري لأي رسالة جديدة موجهة لي في جدول chat_messages
+    const channel = sb
+      .channel('chat_notifications:' + myUid)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: 'receiver_uid=eq.' + myUid
+      }, payload => {
+        const msg = payload.new;
+        if(!msg || processedEventIds.has(msg.id)) return;
+        processedEventIds.add(msg.id);
+
+        const isActiveHere = window._activeChat && window._activeChat.convId === msg.conv_id && !document.hidden;
+        if(!isActiveHere){
+          // 1. تشغيل التنبيه الصوتي
+          if(typeof playChatNotificationSound === 'function') playChatNotificationSound();
+          // 2. تحديث عداد الرسائل
+          if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
+
+          // 3. عرض إشعار النظام المباشر
+          const title = `💬 ${msg.sender_name || 'رسالة جديدة'}`;
+          const body = (msg.text || "وصلتك رسالة جديدة").replace('[صورة] ', '📷 صورة: ');
+
+          if(window.Notification && Notification.permission === "granted"){
+            if(navigator.serviceWorker && navigator.serviceWorker.ready){
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, {
+                  body: body,
+                  icon: "icon-192.png",
+                  badge: "icon-192.png",
+                  vibrate: [200, 100, 200],
+                  tag: "chat_" + msg.conv_id,
+                  data: { url: window.location.origin + "?openChat=" + encodeURIComponent(msg.conv_id) }
+                });
+              }).catch(() => {
+                new Notification(title, { body: body, icon: "icon-192.png" });
+              });
+            } else {
+              new Notification(title, { body: body, icon: "icon-192.png" });
+            }
+          }
+        }
+      })
+      .subscribe();
+
+    _chatPushUnsub = () => {
+      try { sb.removeChannel(channel); } catch(e){}
+    };
+  } catch(e){
+    console.warn("startChatPushRealtimeListener error:", e);
+  }
+}
+window.startChatPushRealtimeListener = startChatPushRealtimeListener;
+
+
+
+/* ========================================================
+   🎙️ نظام التسجيل الصوتي المباشر والتبديل مثل Messenger
+   ======================================================== */
+let _mediaRecorder = null;
+let _audioChunks = [];
+let _voiceRecordTimer = null;
+let _voiceRecordSeconds = 0;
+let _recordedAudioBlob = null;
+
+// التبديل الذكي بين الميكروفون وزر الإرسال عند الكتابة
+window.handleChatInputTyping = (input) => {
+  const text = (input?.value || "").trim();
+  const micBtn = document.getElementById("btnChatVoiceRecord");
+  const sendBtn = document.getElementById("btnSendUserChat");
+  if(text.length > 0){
+    if(micBtn) micBtn.style.display = "none";
+    if(sendBtn) sendBtn.style.display = "flex";
+  } else {
+    if(micBtn) micBtn.style.display = "flex";
+    if(sendBtn) sendBtn.style.display = "none";
+  }
+};
+
+// بدء أو إيقاف التسجيل الصوتي
+window.toggleVoiceRecording = async () => {
+  if(_mediaRecorder && _mediaRecorder.state === "recording"){
+    // تم الانتهاء من التسجيل -> تجهيز الإرسال
+    stopVoiceRecordingAndSend();
+    return;
+  }
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showToast("⚠️ جهازك لا يدعم تسجيل الصوت من المتصفح", "warn");
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _mediaRecorder = new MediaRecorder(stream);
+    _audioChunks = [];
+    _recordedAudioBlob = null;
+
+    _mediaRecorder.ondataavailable = (e) => {
+      if(e.data.size > 0) _audioChunks.push(e.data);
+    };
+
+    _mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(_voiceRecordTimer);
+      if(_audioChunks.length > 0){
+        _recordedAudioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
+        // إرسال الصوت مباشرة
+        uploadAndSendVoiceMessage(_recordedAudioBlob, _voiceRecordSeconds);
+      }
+      resetVoiceRecordingUI();
+    };
+
+    _mediaRecorder.start();
+    _voiceRecordSeconds = 0;
+    showVoiceRecordingUI();
+
+    _voiceRecordTimer = setInterval(() => {
+      _voiceRecordSeconds++;
+      const m = Math.floor(_voiceRecordSeconds / 60);
+      const s = (_voiceRecordSeconds % 60).toString().padStart(2, '0');
+      const timerEl = document.getElementById("chatVoiceTimer");
+      if(timerEl) timerEl.textContent = `${m}:${s}`;
+      if(_voiceRecordSeconds >= 120){ // الحد الأقصى دقيقتين
+        stopVoiceRecordingAndSend();
+      }
+    }, 1000);
+
+  } catch(err){
+    console.error("Mic error:", err);
+    showToast("يرجى السماح بالوصول للميكروفون لتسجيل الصوت 🎙️", "warn");
+  }
+};
+
+function showVoiceRecordingUI(){
+  const input = document.getElementById("chatMessageInput");
+  const attachBtns = document.getElementById("chatNormalAttachBtns");
+  const voiceBar = document.getElementById("chatVoiceRecordingBar");
+  const micBtn = document.getElementById("btnChatVoiceRecord");
+  const sendBtn = document.getElementById("btnSendUserChat");
+
+  if(input) input.style.display = "none";
+  if(attachBtns) attachBtns.style.display = "none";
+  if(voiceBar) voiceBar.style.display = "flex";
+  if(micBtn){
+    micBtn.innerHTML = "🚀";
+    micBtn.style.background = "#0284c7";
+    micBtn.style.color = "#fff";
+    micBtn.title = "إرسال التسجيل الصوتي";
+  }
+  const timerEl = document.getElementById("chatVoiceTimer");
+  if(timerEl) timerEl.textContent = "0:00";
+}
+
+function resetVoiceRecordingUI(){
+  const input = document.getElementById("chatMessageInput");
+  const attachBtns = document.getElementById("chatNormalAttachBtns");
+  const voiceBar = document.getElementById("chatVoiceRecordingBar");
+  const micBtn = document.getElementById("btnChatVoiceRecord");
+  const sendBtn = document.getElementById("btnSendUserChat");
+
+  if(input) input.style.display = "block";
+  if(attachBtns) attachBtns.style.display = "flex";
+  if(voiceBar) voiceBar.style.display = "none";
+  if(micBtn){
+    micBtn.innerHTML = "🎙️";
+    micBtn.style.background = "#f1f5f9";
+    micBtn.style.color = "#0f172a";
+    micBtn.title = "تسجيل رسالة صوتية 🎙️";
+    micBtn.style.display = (input && input.value.trim().length > 0) ? "none" : "flex";
+  }
+  if(sendBtn){
+    sendBtn.style.display = (input && input.value.trim().length > 0) ? "flex" : "none";
+  }
+}
+
+// إلغاء التسجيل وحذفه في سلة المهملات
+window.cancelVoiceRecording = () => {
+  _audioChunks = [];
+  _recordedAudioBlob = null;
+  clearInterval(_voiceRecordTimer);
+  if(_mediaRecorder && _mediaRecorder.state === "recording"){
+    _mediaRecorder.onstop = (e) => {
+      if(_mediaRecorder.stream){
+        _mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      }
+      resetVoiceRecordingUI();
+    };
+    _mediaRecorder.stop();
+  } else {
+    resetVoiceRecordingUI();
+  }
+  showToast("🗑️ تم إلغاء التسجيل الصوتي", "info", 1500);
+};
+
+function stopVoiceRecordingAndSend(){
+  if(_mediaRecorder && _mediaRecorder.state === "recording"){
+    _mediaRecorder.stop();
+  }
+}
+
+// رفع الرسالة الصوتية وإرسالها في الشات
+async function uploadAndSendVoiceMessage(blob, durationSec){
+  if(!blob || !window._activeChat || !auth.currentUser) return;
+  const me = auth.currentUser;
+  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const activeChat = window._activeChat;
+  const convId = activeChat.convId;
+
+  const box = document.getElementById("chatMessagesBox");
+  let tempDiv = null;
+  if(box){
+    const emptyNotice = box.querySelector(".reportsEmpty, div[style*='text-align:center']");
+    if(emptyNotice) box.innerHTML = "";
+    tempDiv = document.createElement("div");
+    tempDiv.className = "chatBubble outgoing";
+    tempDiv.setAttribute("data-temp", "1");
+    tempDiv.innerHTML = `🎙️ رسالة صوتية (${durationSec || 1}ث) ⏳ <div class="chatTime">الآن</div>`;
+    box.appendChild(tempDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  try {
+    // تحويل الـ Blob إلى Base64 Data URL لنقله وتشغيله مباشرة
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result;
+      const now = Date.now();
+      const textPayload = `[صوت:${durationSec || 1}] ` + base64Audio;
+      const sb = window.supabase || supabase;
+
+      const { data: insertedMsg, error: msgErr } = await sb.from("chat_messages").insert({
+        conv_id: convId,
+        sender_uid: me.uid,
+        sender_name: senderName,
+        receiver_uid: activeChat.targetUid,
+        text: textPayload,
+        post_id: activeChat.postId,
+        store_id: activeChat.storeId,
+        created_at: now
+      }).select().single();
+
+      if(msgErr) throw msgErr;
+
+      if(tempDiv){
+        tempDiv.removeAttribute("data-temp");
+        if(insertedMsg && insertedMsg.id){
+          tempDiv.setAttribute("data-msg-key", 'id_' + insertedMsg.id);
+          tempDiv.setAttribute("data-msg-id", insertedMsg.id);
+          _attachBubbleEvents(tempDiv);
+        }
+        tempDiv.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">🎙️</span>
+            <audio controls style="max-width:210px;height:36px;outline:none">
+              <source src="${base64Audio}" type="audio/webm">
+            </audio>
+          </div>
+          <div class="chatTime"><span style="opacity:0.85;margin-inline-end:3px">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        `;
+      }
+
+      // تحديث ملخص المحادثة لصندوق الرسائل
+      const p1 = [me.uid, activeChat.targetUid].sort()[0];
+      const p2 = [me.uid, activeChat.targetUid].sort()[1];
+      await sb.from("chat_conversations").upsert({
+        conv_id: convId,
+        p1: p1,
+        p2: p2,
+        participant_uids: [me.uid, activeChat.targetUid],
+        last_message: "🎙️ رسالة صوتية",
+        last_sender_uid: me.uid,
+        last_sender_name: senderName,
+        updated_at: now
+      });
+
+      // إشعار فوري
+      if(typeof dispatchChatPushNotification === 'function'){
+        dispatchChatPushNotification(activeChat.targetUid, senderName, "🎙️ أرسل لك رسالة صوتية", convId);
+      }
+    };
+  } catch(e){
+    if(tempDiv) tempDiv.remove();
+    showToast("تعذر إرسال الصوت: " + e.message, "error");
+  }
+}
