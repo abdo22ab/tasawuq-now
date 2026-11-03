@@ -1480,38 +1480,92 @@ let _searchDebounceTimer=null;
 let _serverSearchCache={};
 let _isSearchingServer=false;
 
+window._matchedSearchUsers = [];
+
 async function searchServerPosts(term){
-  if(!term || term.trim().length < 2) return;
-  const cleanTerm = term.trim().toLowerCase();
-  if(_serverSearchCache[cleanTerm]) return;
-  _serverSearchCache[cleanTerm] = true;
+  if(!term || term.trim().length < 2) {
+    window._matchedSearchUsers = [];
+    return;
+  }
+  const rawTerm = term.trim();
+  const cleanTerm = rawTerm.replace(/^@/, '').toLowerCase();
 
   try {
-    const seenIds = new Set(allPosts.map(p => p.id));
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('status', 'approved')
-      .or(`title.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%,brand.ilike.%${cleanTerm}%,category.ilike.%${cleanTerm}%,city.ilike.%${cleanTerm}%`)
-      .order('created_at', { ascending: false })
-      .limit(30);
+    const sb = window.supabase || supabase;
+    if(!sb) return;
 
+    // 1) البحث الفوري في جدول profiles بالاسم أو المعرف (@username) أو رقم العضوية
+    const num = parseInt(cleanTerm, 10);
+    let userFilter = `name.ilike.%${cleanTerm}%,username.ilike.%${cleanTerm}%`;
+    if(!isNaN(num) && num > 0){
+      userFilter += `,member_no.eq.${num}`;
+    }
+    const { data: matchedUsers, error: uErr } = await sb
+      .from('profiles')
+      .select('id, name, username, member_no, phone')
+      .or(userFilter)
+      .limit(6);
+    
+    if(!uErr && matchedUsers && matchedUsers.length > 0){
+      window._matchedSearchUsers = matchedUsers;
+    } else {
+      window._matchedSearchUsers = [];
+    }
+
+    // 2) جلب إعلانات المستخدمين المطابقين من السيرفر
+    const seenIds = new Set(allPosts.map(p => p.id));
     let addedCount = 0;
-    if (!error && data) {
-      data.forEach(item => {
-        const p = objectFromDb(item);
-        if(!seenIds.has(p.id)){
-          seenIds.add(p.id);
-          allPosts.push(p);
-          addedCount++;
-        }
-      });
+
+    if(matchedUsers && matchedUsers.length > 0){
+      const uids = matchedUsers.map(u => u.id);
+      const { data: userPosts } = await sb
+        .from('posts')
+        .select('*')
+        .in('uid', uids)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if(userPosts && userPosts.length > 0){
+        userPosts.forEach(raw => {
+          const p = objectFromDb(raw);
+          if(!seenIds.has(p.id)){
+            seenIds.add(p.id);
+            allPosts.push(p);
+            addedCount++;
+          }
+        });
+      }
+    }
+
+    // 3) البحث في جدول الإعلانات بالنص
+    const cacheKey = cleanTerm;
+    if(!_serverSearchCache[cacheKey]){
+      _serverSearchCache[cacheKey] = true;
+      const { data, error } = await sb
+        .from('posts')
+        .select('*')
+        .eq('status', 'approved')
+        .or(`title.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%,brand.ilike.%${cleanTerm}%,category.ilike.%${cleanTerm}%,city.ilike.%${cleanTerm}%,seller_name.ilike.%${cleanTerm}%,seller_username.ilike.%${cleanTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if(!error && data && data.length > 0){
+        data.forEach(raw => {
+          const p = objectFromDb(raw);
+          if(!seenIds.has(p.id)){
+            seenIds.add(p.id);
+            allPosts.push(p);
+            addedCount++;
+          }
+        });
+      }
     }
 
     if(addedCount > 0){
       allPosts = sortPosts(allPosts);
-      renderPosts();
     }
+    if(typeof renderPosts === 'function') renderPosts();
+    if(typeof showSearchDropdown === 'function') showSearchDropdown();
   } catch(err){
     console.warn("Server search error:", err);
   }
@@ -1540,6 +1594,20 @@ function removeFromHistory(term,event){if(event)event.stopPropagation();let h=ge
 function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
 function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){
     const cleanT = t.startsWith('@') ? t.slice(1) : t;
+
+    // 👤 دمج الحسابات والأشخاص من نتائج البحث في profiles
+    if(window._matchedSearchUsers && window._matchedSearchUsers.length > 0){
+      window._matchedSearchUsers.forEach(u => {
+        results.unshift({
+          title: u.name || "مستخدم",
+          username: u.username ? "@" + u.username : "",
+          memberNo: u.member_no ? "#" + u.member_no : "",
+          uid: u.id,
+          isUser: true
+        });
+      });
+    }
+
     // 👤 البحث عن المستخدمين بالمعرف والاسم
     const matchedUsers = new Map();
     allPosts.forEach(p => {
@@ -1595,7 +1663,7 @@ window.showSearchDropdown=function(){
     html+=`<div class="sdSection">${label}</div>`;
     html+=suggestions.map(s=>{
       if(s.isUser){
-        return `<div class="sdItem" onclick="hideSearchDropdown();openSeller('${escapeHtml(s.uid)}')"><span class="sdIcon" style="background:#f0fdf4;color:#166534;border-radius:50%;padding:2px 6px">👤</span><span class="sdText"><b>${escapeHtml(s.title)}</b> <span style="font-size:11px;color:#166534">${escapeHtml(s.username)}</span></span><span style="font-size:11px;color:var(--muted)">الملف الشخصي ›</span></div>`;
+        return `<div class="sdItem" onclick="hideSearchDropdown();openSeller('${escapeHtml(s.uid)}')"><span class="sdIcon" style="background:#e0f2fe;color:#0284c7;border-radius:50%;padding:3px 7px;font-size:14px">👤</span><span class="sdText"><b>${escapeHtml(s.title)}</b> ${s.username ? `<span style="font-size:11.5px;color:#0284c7;margin-right:4px">${escapeHtml(s.username)}</span>` : ''}${s.memberNo ? `<span style="font-size:10.5px;background:#f1f5f9;color:var(--muted);padding:1px 5px;border-radius:4px;margin-right:4px">${escapeHtml(s.memberNo)}</span>` : ''}</span><span style="font-size:11.5px;color:#0284c7;font-weight:700">الملف الشخصي ›</span></div>`;
       }
       if(s.isStore){
         return `<div class="sdItem" onclick="hideSearchDropdown();openStore('${escapeHtml(s.storeId)}')"><span class="sdIcon">🏪</span><span class="sdText"><b>${escapeHtml(s.title)}</b></span><span style="font-size:11px;color:#92400e;font-weight:700">متجر معتمد ›</span></div>`;
@@ -1612,7 +1680,7 @@ window.showSearchDropdown=function(){
 window.hideSearchDropdown=function(){const box=document.getElementById("searchDropdown");if(box)box.classList.add("hidden");};
 window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();if(term&&term.trim().length>=2){searchServerPosts(term.trim());}renderPosts();};
 window.updateClearBtn=function(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";};
-window.clearSearch=function(){const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
+window.clearSearch=function(){window._matchedSearchUsers=[];const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
 document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
 
 /* ============================================
@@ -2832,12 +2900,13 @@ let list=allPosts.filter(p=>{
   if(showOnlyMine && p.uid!==me?.uid)return false;
   if(showOnlyFavorites && !favs.includes(p.id))return false;
   if(term){
-    const cleanT = term.startsWith('@') ? term.slice(1).trim() : term;
+    const cleanT = (term.startsWith('@') ? term.slice(1).trim() : term.trim()).toLowerCase();
     const matchTitle = (p.title||"").toLowerCase().includes(cleanT);
     const matchSeller = (p.sellerName||"").toLowerCase().includes(cleanT);
     const matchUsername = (p.sellerUsername||"").toLowerCase().includes(cleanT);
     const matchStore = (p.storeName||"").toLowerCase().includes(cleanT);
-    if(!matchTitle && !matchSeller && !matchUsername && !matchStore) return false;
+    const matchUser = window._matchedSearchUsers && window._matchedSearchUsers.some(u => u.id === p.uid);
+    if(!matchTitle && !matchSeller && !matchUsername && !matchStore && !matchUser) return false;
   }
   if(currentPriceMin!=null && (Number(p.price)||0)<currentPriceMin)return false;
   if(currentPriceMax!=null && (Number(p.price)||0)>currentPriceMax)return false;
@@ -2883,7 +2952,42 @@ if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && 
 }
 list=sortPosts(list);
 
+let userBannerHtml = "";
+if(term && window._matchedSearchUsers && window._matchedSearchUsers.length > 0){
+  userBannerHtml = `
+    <div class="searchUsersBanner">
+      <div class="subTitle">👤 حسابات وأشخاص تطابق "${escapeHtml(term)}"</div>
+      ${window._matchedSearchUsers.map(u => {
+        const initial = u.name ? u.name.trim()[0].toUpperCase() : '👤';
+        const av = localStorage.getItem("tasawuq_avatar_" + u.id);
+        const avHtml = av ? `<img src="${escapeHtml(av)}" alt="${escapeHtml(u.name || '')}">` : initial;
+        return `
+          <div class="searchUserCard" onclick="openSeller('${escapeHtml(u.id)}')">
+            <div class="sucAvatar">${avHtml}</div>
+            <div class="sucDetails">
+              <div class="sucName">${escapeHtml(u.name || 'مستخدم')}</div>
+              <div class="sucMeta">
+                ${u.username ? `<span>@${escapeHtml(u.username)}</span>` : ''}
+                ${u.member_no ? `<span>#${u.member_no}</span>` : ''}
+                <span style="color:#0284c7">👤 زيارة الحساب بالكامل ›</span>
+              </div>
+            </div>
+            <button type="button" class="sucBtn">عرض الحساب</button>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
 if(list.length===0){
+  if(userBannerHtml){
+    postsBox.innerHTML = userBannerHtml + `
+      <div class="reportsEmpty" style="margin-top:10px">
+        لا توجد إعلانات مطابقة لهذا الاسم حالياً، لكن يمكنك الدخول لحسابه بالأعلى 👆
+      </div>`;
+    return;
+  }
   /* ✅ المنطق الآمن للصفحة الفارغة */
   if(showOnlyFavorites){
     postsBox.innerHTML=buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
@@ -2898,7 +3002,7 @@ if(list.length===0){
   }
   return;
 }
-postsBox.innerHTML=list.map(p=>{
+postsBox.innerHTML=userBannerHtml + list.map(p=>{
 if(p.isRestaurantStructure){
   return renderRestaurantStructureCard(p.storeData, 'home');
 }
@@ -4756,7 +4860,61 @@ document.addEventListener("scroll",e=>{const el=e.target;if(!el||!el.classList||
 window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 
 async function compressImage(file,maxSize=1200,quality=0.82){try{const bmp=await createImageBitmap(file);const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(bmp,0,0,w,h);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));return b||file;}catch(e){return file;}}
-async function uploadToImgBB(file){const fd=new FormData();const toSend=await compressImage(file);fd.append("image",toSend,"photo.jpg");const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,{method:"POST",body:fd});const data=await res.json();if(!data.success)throw new Error("فشل رفع الصورة");return data.data.url;}
+function blobToDataUrl(blob){
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result || "");
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function compressImageToDataUrl(file, maxSize = 800, quality = 0.82){
+  try{
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxSize / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bmp, 0, 0, w, h);
+    return c.toDataURL("image/jpeg", quality);
+  }catch(e){
+    return await blobToDataUrl(file);
+  }
+}
+
+async function uploadToImgBB(file, maxSize = 1000, quality = 0.85){
+  // 1) محاولة الرفع السحابي إلى ImgBB مع مهلة 4 ثوانٍ
+  try {
+    const toSend = await compressImage(file, maxSize, quality);
+    const fd = new FormData();
+    fd.append("image", toSend, "photo.jpg");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+      method: "POST",
+      body: fd,
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if(res.ok){
+      const data = await res.json();
+      if(data && data.success && data.data && data.data.url){
+        return data.data.url;
+      }
+    }
+  } catch(err){
+    console.warn("ImgBB upload failed or blocked by network, using guaranteed Data URL fallback:", err);
+  }
+
+  // 2) البديل المضمون 100%: ضغط الصورة وحفظها كـ Data URL عالي الجودة والدقة
+  const dataUrl = await compressImageToDataUrl(file, maxSize, quality);
+  if(dataUrl) return dataUrl;
+  throw new Error("تعذر معالجة الصورة من جهازك");
+}
 function renderImagePicker(){const box=document.getElementById("imgThumbs");box.innerHTML=selectedImages.map((item,i)=>{const src=item.type==="existing"?item.url:item.previewUrl;return `<div class="imgThumb"><img src="${escapeHtml(src)}"><button class="rm" onclick="removeImage(${i})">×</button></div>`;}).join("");document.getElementById("imgAddTile").classList.toggle("hidden",selectedImages.length>=10);}
 window.removeImage=(i)=>{selectedImages.splice(i,1);renderImagePicker();};
 window.handleFilesSelected=()=>{const input=document.getElementById("imageFile");const files=Array.from(input.files);const remaining=10-selectedImages.length;files.slice(0,remaining).forEach(file=>{selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});});input.value="";renderImagePicker();};
@@ -6306,6 +6464,7 @@ const memberNo=prof&&prof.memberNo;
 const uname=prof&&prof.username;
 const ph=prof&&prof.phone;
 const avatarUrl=(prof&&prof.avatar)||(localStorage.getItem("tasawuq_avatar_"+uid))||"";
+const coverUrl=(prof&&prof.cover)||(localStorage.getItem("tasawuq_cover_"+uid))||"";
 const count=ratings.length;
 const avg=count?ratings.reduce((s,r)=>s+(r.stars||0),0)/count:0;
 const me=auth.currentUser;
@@ -6324,25 +6483,68 @@ const reviewsHtml=count?ratings.map(r=>{
   return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;
 }).join(""): `<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
 
-// تصميم كروت إعلانات المستخدم في صفحته الشخصية
+// تصميم إعلانات المستخدم في صفحته الشخصية بنمط فيسبوك الأنيق والمتتالي
 const postsGridHtml = posts.length ? `
-  <div class="postsGrid" style="margin-top:10px">
+  <div class="fbFeedContainer">
     ${posts.map(p => {
       const imgs = getImages(p);
-      const img = imgs[0] || "icon-192.png";
-      const pr = p.priceType === "contact" ? "تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+      const img = imgs[0] || "";
+      const pr = p.priceType === "contact" ? "📞 تواصل للسعر" : (p.price != null ? formatPrice(p.price) + " د.ل" : "");
+      const descSnippet = (p.description || "").trim().slice(0, 160);
+      const postPhone = p.phone || ph || "";
       return `
-        <div class="postCard" onclick="openPost('${escapeHtml(p.id)}')">
-          <div class="postImgWrap">
-            <img src="${escapeHtml(img)}" alt="${escapeHtml(p.title || '')}" loading="lazy">
-          </div>
-          <div class="postInfo">
-            <div class="postTitle">${escapeHtml(p.title || '')}</div>
-            <div class="postPrice">${escapeHtml(pr)}</div>
-            <div class="postMeta">
-              <span>${escapeHtml(p.city || '')}</span>
-              <span>${timeAgo(p.createdAt)}</span>
+        <div class="fbPostCard" onclick="openPost('${escapeHtml(p.id)}')">
+          <!-- رأس البوست: صاحب الإعلان + الوقت والمدينة + السعر -->
+          <div class="fbPostHeader">
+            <div class="fbPostAuthor">
+              <div class="fbPostAuthorAvatar">
+                ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}">` : (name ? escapeHtml(name[0].toUpperCase()) : '👤')}
+              </div>
+              <div style="min-width:0">
+                <div class="fbPostAuthorName">
+                  ${escapeHtml(name)}
+                  ${memberNo ? `<span class="fbPostMemberTag">#${memberNo}</span>` : ''}
+                </div>
+                <div class="fbPostMetaTime">
+                  <span>${timeAgo(p.createdAt)}</span>
+                  <span>•</span>
+                  <span>📍 ${escapeHtml(p.city || 'ليبيا')}</span>
+                  ${p.category ? `<span>•</span><span>🏷️ ${escapeHtml(p.category)}</span>` : ''}
+                </div>
+              </div>
             </div>
+            <div class="fbPostPriceBadge">
+              ${escapeHtml(pr)}
+            </div>
+          </div>
+
+          <!-- عنوان الإعلان + الشرح التوضيحي الأنيق تحته -->
+          <div class="fbPostText">
+            <h4 class="fbPostTitle">${escapeHtml(p.title || 'إعلان')}</h4>
+            ${descSnippet ? `<p class="fbPostDesc">${escapeHtml(descSnippet)}</p>` : ''}
+          </div>
+
+          <!-- صورة الإعلان بحجم أنيق ومتناسق وغير مبالغ فيه -->
+          ${img ? `
+            <div class="fbPostMediaWrap">
+              <img src="${escapeHtml(img)}" alt="${escapeHtml(p.title || '')}" loading="lazy">
+              ${imgs.length > 1 ? `<span class="fbPostImgCount">📷 ${imgs.length} صور</span>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- أزرار الإجراءات السريعة فيسبوك ستايل -->
+          <div class="fbPostActions">
+            <button type="button" class="fbPostActBtn primary" onclick="event.stopPropagation();openPost('${escapeHtml(p.id)}')">
+              <span>👁️</span> عرض التفاصيل
+            </button>
+            ${postPhone ? `
+              <button type="button" class="fbPostActBtn wa" onclick="event.stopPropagation();window.open('https://wa.me/${normalizePhone(postPhone)}', '_blank')">
+                <span>📱</span> واتساب
+              </button>
+            ` : ''}
+            <button type="button" class="fbPostActBtn chat" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}', '${escapeHtml(p.id)}', null, '${escapeHtml(name)}')">
+              <span>💬</span> دردشة
+            </button>
           </div>
         </div>
       `;
@@ -6375,9 +6577,11 @@ box.innerHTML = `
   <div class="fbProfileCard">
     <!-- غلاف البروفايل (Cover Photo) -->
     <div class="fbCoverArea">
-      <div class="fbCoverPattern"></div>
-      <div class="fbAvatarWrapper">
-        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}">` : (name ? name[0].toUpperCase() : '👤')}
+      ${coverUrl ? `<img src="${escapeHtml(coverUrl)}" class="fbCoverImg" alt="غلاف البروفايل">` : `<div class="fbCoverPattern"></div>`}
+      ${isMe ? `<button type="button" class="fbCoverEditBtn" onclick="triggerProfileCoverChange()" title="تغيير صورة الغلاف">📷 تغيير الغلاف</button>` : ''}
+      <div class="fbAvatarWrapper" ${isMe ? 'onclick="triggerProfileAvatarChange()" style="cursor:pointer" title="تغيير صورتك الشخصية"' : ''}>
+        ${avatarUrl ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(name)}">` : (name ? escapeHtml(name[0].toUpperCase()) : '👤')}
+        ${isMe ? `<div class="fbAvatarEditBadge" title="تغيير الصورة">📷</div>` : ''}
       </div>
     </div>
 
@@ -9564,11 +9768,24 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
       elAvatar.textContent = targetName ? targetName.trim()[0].toUpperCase() : "👤";
       // فحص سريع من قاعدة البيانات لصورة الطرف الآخر
       getDoc(doc(db, "profiles", sellerUid)).then(snap => {
-        if(snap.exists() && snap.data().avatar){
-          const av = snap.data().avatar;
+        let av = (snap.exists() && snap.data().avatar) ? snap.data().avatar : null;
+        if(av){
           localStorage.setItem("tasawuq_avatar_" + sellerUid, av);
           if(window._activeChat && window._activeChat.targetUid === sellerUid && elAvatar){
             elAvatar.innerHTML = `<img src="${escapeHtml(av)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+          }
+        } else {
+          const sb = window.supabase || supabase;
+          if(sb){
+            sb.from("feedback").select("message").eq("id", "avatar_" + sellerUid).maybeSingle().then(res => {
+              if(res && res.data && res.data.message){
+                const avFb = res.data.message;
+                localStorage.setItem("tasawuq_avatar_" + sellerUid, avFb);
+                if(window._activeChat && window._activeChat.targetUid === sellerUid && elAvatar){
+                  elAvatar.innerHTML = `<img src="${escapeHtml(avFb)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                }
+              }
+            }).catch(()=>{});
           }
         }
       }).catch(()=>{});
@@ -10040,6 +10257,33 @@ setInterval(() => {
 }, 60000);
 
 // تصدير الأسماء المستخدمة في HTML والكود القديم
+
+// الدخول المباشر إلى الملف الشخصي أو المتجر لصاحب الحساب عند الضغط على صورته في الشات
+export function openChatTargetProfile(){
+  if(!window._activeChat || !window._activeChat.targetUid) return;
+  const targetUid = window._activeChat.targetUid;
+  const storeId = window._activeChat.storeId;
+
+  // رفع طبقة البروفايل لتظهر فوق نافذة الشات بسلاسة
+  const so = document.getElementById("sellerOverlay");
+  if(so) so.style.zIndex = "1015";
+
+  const sto = document.getElementById("storeOverlay");
+  if(sto) sto.style.zIndex = "1015";
+
+  if(storeId){
+    openStore(storeId, false, 'chat');
+  } else {
+    const sOwner = allStores.find(x => (x.ownerUid === targetUid || x.owner_uid === targetUid) && x.status === "approved");
+    if(sOwner){
+      openStore(sOwner.id, false, 'chat');
+    } else {
+      openSeller(targetUid);
+    }
+  }
+}
+window.openChatTargetProfile = openChatTargetProfile;
+
 window.openChatWithSeller = openChatWithSeller;
 window.closeUserChat = closeUserChat;
 window.sendUserChatMessage = sendUserChatMessage;
@@ -10055,6 +10299,65 @@ window.loadChatMessages = _loadChatIntoBox;
    ======================================================== */
 
 // 1. فتح شاشة تعديل الملف الشخصي
+
+// معالجة وحفظ صورة غلاف الملف الشخصي
+window.triggerProfileCoverChange = () => {
+  const input = document.getElementById("directProfileCoverInput") || document.getElementById("profileCoverInput");
+  if(input) input.click();
+};
+
+window.triggerProfileAvatarChange = () => {
+  const input = document.getElementById("profileAvatarInput");
+  if(input) input.click();
+};
+
+window.handleDirectProfileCoverUpload = async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const me = auth.currentUser;
+  if(!me){
+    showToast("⚠️ الرجاء تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  event.target.value = "";
+  showToast("⏳ جاري حفظ وتثبيت صورة الغلاف...", "info", 2000);
+  try {
+    const photoUrl = await uploadToImgBB(file, 900, 0.85);
+    if(!photoUrl) throw new Error("تعذر معالجة الصورة");
+
+    if(!myProfile) myProfile = {};
+    myProfile.cover = photoUrl;
+    localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl);
+
+    try {
+      await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
+    } catch(e){}
+
+    const sb = window.supabase || supabase;
+    if(sb){
+      await sb.from("feedback").upsert({
+        id: "cover_" + me.uid,
+        type: "profile_cover",
+        uid: me.uid,
+        message: photoUrl,
+        created_at: Date.now()
+      }).catch(()=>{});
+    }
+
+    const editPreview = document.getElementById("editProfileCoverPreview");
+    if(editPreview){
+      editPreview.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    }
+
+    showToast("✅ تم تحديث صورة غلاف الحساب بنجاح!", "success");
+    if(typeof openSeller === 'function' && me.uid){
+      openSeller(me.uid);
+    }
+  } catch(e) {
+    showToast("❌ تعذر حفظ الغلاف: " + (e.message || ""), "error");
+  }
+};
+
 window.openEditProfileScreen = () => {
   const me = auth.currentUser;
   if(!me){
@@ -10091,6 +10394,16 @@ window.openEditProfileScreen = () => {
     if(heroAvatar) heroAvatar.innerHTML = imgHtml;
   } else {
     if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
+  }
+
+  const editCoverPreview = document.getElementById("editProfileCoverPreview");
+  const coverUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid);
+  if(editCoverPreview){
+    if(coverUrl){
+      editCoverPreview.innerHTML = `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    } else {
+      editCoverPreview.innerHTML = `🌄 اضغط لاختيار صورة غلاف لملفك الشخصي`;
+    }
   }
 };
 
