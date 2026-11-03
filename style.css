@@ -2572,3 +2572,383 @@ html.dark-mode .chatBubble.incoming {
   50% { transform: scale(1.4); opacity: 0.6; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+
+/* ============================================
+   📱 تصميم إعلانات البروفايل على نمط فيسبوك الأنيق
+   ============================================ */
+.fbFeedContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 620px;
+  margin: 12px auto 30px;
+  padding: 0 2px;
+}
+.fbPostCard {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+}
+.fbPostCard:active {
+  transform: scale(0.99);
+}
+.fbPostHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fbPostAuthor {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.fbPostAuthorAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.fbPostAuthorAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fbPostAuthorName {
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.fbPostMemberTag {
+  font-size: 10.5px;
+  background: rgba(2, 132, 199, 0.1);
+  color: #0284c7;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 800;
+}
+.fbPostMetaTime {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 1px;
+}
+.fbPostPriceBadge {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+html.dark-mode .fbPostPriceBadge {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #047857;
+}
+.fbPostText {
+  margin-bottom: 10px;
+}
+.fbPostTitle {
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.35;
+}
+.fbPostDesc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.fbPostMediaWrap {
+  width: 100%;
+  height: 230px;
+  max-height: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f172a;
+  position: relative;
+  margin-bottom: 12px;
+}
+@media (min-width: 600px) {
+  .fbPostMediaWrap {
+    height: 280px;
+    max-height: 300px;
+  }
+}
+.fbPostMediaWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fbPostImgCount {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+.fbPostActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.fbPostActBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.fbPostActBtn.primary {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+.fbPostActBtn.wa {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+.fbPostActBtn.chat {
+  background: #f8fafc;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.fbPostActBtn:hover {
+  filter: brightness(0.96);
+}
+html.dark-mode .fbPostActBtn.primary {
+  background: #082f49;
+  color: #38bdf8;
+  border-color: #0369a1;
+}
+html.dark-mode .fbPostActBtn.wa {
+  background: #052e16;
+  color: #4ade80;
+  border-color: #15803d;
+}
+html.dark-mode .fbPostActBtn.chat {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+
+/* ============================================
+   👤 بطاقات البحث عن الأشخاص والحسابات
+   ============================================ */
+.searchUsersBanner {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.searchUsersBanner .subTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--teal-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.searchUserCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+}
+.searchUserCard:last-child {
+  margin-bottom: 0;
+}
+.searchUserCard:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56,189,248,0.12);
+}
+.sucAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 18px;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+.sucAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sucDetails {
+  flex: 1;
+  min-width: 0;
+}
+.sucName {
+  font-weight: 900;
+  font-size: 14.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sucMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.sucMeta span:first-child {
+  color: #0284c7;
+  font-weight: 700;
+}
+.sucBtn {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.searchUserCard:hover .sucBtn {
+  background: #0284c7;
+  color: #fff;
+}
+html.dark-mode .searchUserCard {
+  background: var(--card);
+}
+html.dark-mode .sucBtn {
+  background: #0c2942;
+  color: #38bdf8;
+  border-color: #1c3a5c;
+}
+html.dark-mode .searchUserCard:hover .sucBtn {
+  background: #38bdf8;
+  color: #0c2942;
+}
+
+
+/* ============================================
+   🌄 غلاف الملف الشخصي والأيقونات التفاعلية
+   ============================================ */
+.fbCoverImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+.fbCoverEditBtn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  z-index: 5;
+  backdrop-filter: blur(4px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .2s ease;
+  font-family: inherit;
+}
+.fbCoverEditBtn:hover {
+  background: rgba(2, 132, 199, 0.9);
+  border-color: #38bdf8;
+}
+.fbAvatarEditBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0284c7;
+  color: #fff;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 4;
+}
