@@ -36,7 +36,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=112">
+<link rel="stylesheet" href="style.css?v=114">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -334,80 +334,97 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- ============================================ -->
 <div id="accountOverlay" class="overlay hidden">
 <div class="sheet">
-<h3>حسابي</h3>
-<div class="accountEmail" id="accountEmail" style="display:none"></div>
-<div class="accountEmail" id="accountName" style="font-weight:700;color:var(--teal-dark);font-size:15px"></div>
-<div class="accountEmail" id="accountMemberNo" style="display:none;background:#e6f6fe;color:#0284c7;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
-<div class="accountEmail" id="accountUsername" style="display:none;background:#f0fdf4;color:#166534;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px;direction:ltr"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <h3 style="margin:0;font-size:18px;font-weight:900">حسابي</h3>
+    <button type="button" class="btnGhost" style="padding:4px 8px;font-size:18px;border:none;margin:0" onclick="closeOverlay()">✕</button>
+  </div>
 
-<!-- 💳 بطاقة المحفظة الإلكترونية للمستخدم -->
-<div class="userWalletCard" id="accountWalletCard">
-  <div class="uwcTop">
-    <div class="uwcBrand">
-      <span class="uwcIcon">💳</span>
-      <div>
-        <div class="uwcTitle">المحفظة الإلكترونية</div>
-        <div class="uwcSubtitle">رصيدك الآمن للطلبات والمشتريات</div>
+  <!-- 🌟 كرت الملف الشخصي البارز في أعلى القائمة (عند الضغط عليه يفتح بروفايل فيسبوك الكامل) -->
+  <div class="accountProfileHeaderCard" onclick="openMyProfile()" style="background:linear-gradient(135deg,#0284c7,#0369a1);border-radius:16px;padding:14px 16px;color:#fff;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 14px rgba(2,132,199,0.3);position:relative">
+    <div id="accountAvatarCircle" style="width:54px;height:54px;border-radius:50%;background:#fff;color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;border:3px solid rgba(255,255,255,0.8);overflow:hidden;flex:0 0 auto">👤</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div id="accountName" style="font-weight:900;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">مستخدم</div>
+        <span id="accountMemberNo" style="font-size:11px;background:rgba(255,255,255,0.25);padding:2px 7px;border-radius:6px;font-weight:800;display:none">#1000</span>
+      </div>
+      <div id="accountUsername" style="font-size:12.5px;opacity:0.9;direction:ltr;text-align:right;margin-top:2px;font-weight:700">@username</div>
+      <div style="font-size:11.5px;color:#bae6fd;margin-top:3px;display:flex;align-items:center;gap:4px">
+        <span>عرض الملف الشخصي بالكامل</span>
+        <span style="font-size:13px">‹</span>
       </div>
     </div>
-    <div class="uwcBadge">🟢 حساب مفعل</div>
   </div>
-  <div class="uwcBalanceArea">
-    <div class="uwcBalanceLabel">الرصيد المتاح حالياً</div>
-    <div class="uwcBalanceNum"><span id="userWalletBalanceText">0.00</span> <small>د.ل</small></div>
+
+  <div class="accountEmail" id="accountEmail" style="display:none"></div>
+
+  <!-- 💳 بطاقة المحفظة الإلكترونية للمستخدم -->
+  <div class="userWalletCard" id="accountWalletCard">
+    <div class="uwcTop">
+      <div class="uwcBrand">
+        <span class="uwcIcon">💳</span>
+        <div>
+          <div class="uwcTitle">المحفظة الإلكترونية</div>
+          <div class="uwcSubtitle">رصيدك الآمن للطلبات والمشتريات</div>
+        </div>
+      </div>
+      <div class="uwcBadge">🟢 حساب مفعل</div>
+    </div>
+    <div class="uwcBalanceArea">
+      <div class="uwcBalanceLabel">الرصيد المتاح حالياً</div>
+      <div class="uwcBalanceNum"><span id="userWalletBalanceText">0.00</span> <small>د.ل</small></div>
+    </div>
+    <div class="uwcButtonsGrid">
+      <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
+        <span>⚡</span> شحن المحفظة
+      </button>
+      <button type="button" class="uwcBtnHistory" onclick="openMyWalletHistory()">
+        <span>📜</span> كشف الحساب
+      </button>
+    </div>
   </div>
-  <div class="uwcButtonsGrid">
-    <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
-      <span>⚡</span> شحن المحفظة
-    </button>
-    <button type="button" class="uwcBtnHistory" onclick="openMyWalletHistory()">
-      <span>📜</span> كشف الحساب
-    </button>
+
+  <!-- 🎁 بطاقة شارك واربح -->
+  <div class="referralCardBox" id="accountRefCard">
+    <h4>🎁 شارك واربح كروت شحن!</h4>
+    <p>ادعُ أصحابك للتسجيل بجوجل واكسب 40 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
+    <div class="referralLinkDisplay" id="myRefLinkDisplay">https://tasawuqnow.com/?ref=...</div>
+    <div class="referralBtnsRow">
+      <button type="button" style="background:#fff;color:#0284c7" onclick="copyRefLink()">📋 نسخ الرابط</button>
+      <button type="button" style="background:#25d366;color:#fff" onclick="shareRefOnWhatsapp()">💬 واتساب</button>
+    </div>
   </div>
-</div>
 
+  <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 
+  <!-- 💬 صندوق الرسائل والمحادثات -->
+  <button class="btnGhost" onclick="openInbox()" style="background:#eff6ff;color:#1e40af;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px">
+    💬 صندوق الرسائل والمحادثات
+    <span id="accountChatBadge" class="inboxBadge" style="display:none">0</span>
+  </button>
 
-<div class="referralCardBox" id="accountRefCard">
-  <h4>🎁 شارك واربح كروت شحن!</h4>
-  <p>ادعُ أصحابك للتسجيل بجوجل واكسب 40 نقطة لكل صديق لاستبدالها بكروت تعبئة رصيد وإعلانات مميزة مجاناً!</p>
-  <div class="referralLinkDisplay" id="myRefLinkDisplay">https://tasawuqnow.com/?ref=...</div>
-  <div class="referralBtnsRow">
-    <button type="button" style="background:#fff;color:#0284c7" onclick="copyRefLink()">📋 نسخ الرابط</button>
-    <button type="button" style="background:#25d366;color:#fff" onclick="shareRefOnWhatsapp()">💬 واتساب</button>
-  </div>
-</div>
+  <!-- 🔔 الإشعارات والشكاوى -->
+  <button class="btnGhost accountBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
+  <button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
 
+  <!-- 🏪 المتجر -->
+  <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
+  <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
+  <button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
 
-<div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
-<div class="field" style="margin-bottom:8px"><label>اسمك الظاهر</label><input id="myName" maxlength="30" placeholder="اسمك"></div>
-<button class="btnGhost accountBtn" style="margin-top:0" onclick="saveMyName()">💾 حفظ الاسم</button>
-<div class="field" style="margin-top:12px;margin-bottom:8px"><label>اسم المستخدم (@username)</label><input id="myUsername" class="usernameInput" maxlength="20" placeholder="ahmed" oninput="normalizeUsernameInput()"></div>
-<button class="btnGhost accountBtn" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
-<div class="field" style="margin-top:12px;margin-bottom:8px"><label>📱 رقم الواتساب (يظهر في كل إعلاناتك)</label><input id="myPhone" class="phoneInput" maxlength="16" placeholder="0912345678" oninput="normalizePhoneInput()"><div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0912345678</b> أو <b>+218912345678</b>) وسيتم تثبيته بحسابك</div></div>
-<button class="btnGhost accountBtn" onclick="saveMyPhone()">📱 حفظ رقم الواتساب</button>
-<button class="btnGhost" onclick="openInbox()" style="background:#eff6ff;color:#1e40af;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px">
-  💬 صندوق الرسائل والمحادثات
-  <span id="accountChatBadge" class="inboxBadge" style="display:none">0</span>
-</button>
-<button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
-<button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
-<button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
-<button class="btnGhost accountBtn" onclick="openMySeller()">👤 صفحتي كبائع</button>
-<button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
-<button class="btnGhost accountBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
-<button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
-<button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
-<button id="storesModerationBtn" class="btnGhost hidden" onclick="openStoresModeration()" style="background:#fff7e6;color:#92400e">🏪 إدارة المتاجر</button>
-<button id="expiredBtn" class="btnGhost hidden" onclick="openExpired()" style="background:#f3f4f6;color:#4b5563">⏰ إعلانات منتهية</button>
-<button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
-<button id="dashboardBtn" class="btnGhost hidden" onclick="openDashboard()" style="background:#ede9fe;color:#6d28d9">📈 لوحة الإحصائيات</button>
+  <!-- أزرار الإدارة للأدمن فقط -->
+  <button id="reportsBtn" class="btnGhost hidden" onclick="openReports()">🚩 الإبلاغات</button>
+  <button id="moderationBtn" class="btnGhost hidden" onclick="openModeration()" style="background:#fef3c7;color:#92400e">⏳ الإعلانات قيد المراجعة</button>
+  <button id="storesModerationBtn" class="btnGhost hidden" onclick="openStoresModeration()" style="background:#fff7e6;color:#92400e">🏪 إدارة المتاجر</button>
+  <button id="expiredBtn" class="btnGhost hidden" onclick="openExpired()" style="background:#f3f4f6;color:#4b5563">⏰ إعلانات منتهية</button>
+  <button id="limitsBtn" class="btnGhost hidden" onclick="openLimits()" style="background:#e0f2fe;color:#0369a1">⚙️ إدارة حدود المستخدمين</button>
+  <button id="dashboardBtn" class="btnGhost hidden" onclick="openDashboard()" style="background:#ede9fe;color:#6d28d9">📈 لوحة الإحصائيات</button>
   <button id="sendNotifBtn" class="btnGhost hidden" onclick="openSendNotification()" style="background:#fef3c7;color:#92400e">📢 إرسال إشعار للمستخدمين</button>
-<button id="adminCreateStoreBtn" class="btnGhost hidden" onclick="startOpenStore(true)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800">➕ فتح صفحة مطعم/متجر لعميل (أدمن)</button>
-<button id="adminWalletBtn" class="btnGhost hidden" onclick="openAdminWallet()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800">💰 الإدارة المالية والمحفظة (أدمن)</button>
-<button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
-<button class="btnMain" style="background:var(--danger)" onclick="logout();closeOverlay()">تسجيل الخروج</button>
-<button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button>
+  <button id="adminCreateStoreBtn" class="btnGhost hidden" onclick="startOpenStore(true)" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-weight:800">➕ فتح صفحة مطعم/متجر لعميل (أدمن)</button>
+  <button id="adminWalletBtn" class="btnGhost hidden" onclick="openAdminWallet()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:800">💰 الإدارة المالية والمحفظة (أدمن)</button>
+  <button id="adminPanelBtn" class="btnGhost hidden" onclick="window.location.href='admin.html'" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff">⚙️ لوحة الأدمن والبانر الإعلاني</button>
+
+  <!-- زر تسجيل الخروج -->
+  <button class="btnMain" style="background:var(--danger);margin-top:10px" onclick="logout();closeOverlay()">تسجيل الخروج</button>
 </div>
 </div>
 
@@ -1064,7 +1081,35 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="planCard" onclick="selectPlan(30,'30 يوم',40)"><div class="planTitle"><span class="planDays">🥇 30 يوم</span><span class="planPrice">40 د.ل</span></div></div>
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
-<div id="sellerOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><div id="sellerContent"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+
+<!-- ============================================ -->
+<!-- 👥 نافذة قائمة المتابعين (Followers Modal) -->
+<!-- ============================================ -->
+<div id="followersOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeFollowersModal()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
+      <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)" id="followersModalTitle">المتابعون</h3>
+      <div style="width:32px"></div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px;background:var(--bg)" id="followersModalList">
+      <div class="reportsEmpty">⏳ جاري التحميل...</div>
+    </div>
+  </div>
+</div>
+
+<div id="sellerOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeOverlay()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px">‹</button>
+      <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)" id="sellerHeaderTitle">الملف الشخصي</h3>
+      <div style="width:32px"></div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px;background:var(--bg)">
+      <div id="sellerContent"></div>
+    </div>
+  </div>
+</div>
 
 <div id="feedbackOverlay" class="overlay hidden">
 <div class="sheet">
@@ -1296,20 +1341,23 @@ OneSignalDeferred.push(async function(OneSignal){
 <!-- ============================================ -->
 <!-- 💬 نافذة صندوق المحادثات والرسائل للمستخدم -->
 <!-- ============================================ -->
-<div id="userInboxOverlay" class="overlay hidden">
-  <div class="sheet" style="max-height:92vh;display:flex;flex-direction:column;border-radius:18px 18px 0 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px">
-      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">
-        💬 الرسائل والمحادثات
-      </h3>
-      <button class="iconBtn" onclick="closeInbox()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+<div id="userInboxOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0;background:var(--bg)">
+    <!-- رأس شاشة صندوق الرسائل الراقي بتصميم إنستغرام ومسنجر -->
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeInbox()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 4px;display:flex;align-items:center">‹</button>
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0;font-size:18px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:8px">
+          💬 المحادثات والرسائل
+        </h3>
+        <div style="font-size:12px;color:var(--muted)">رسائلك المباشرة مع البائعين والمشترين</div>
+      </div>
     </div>
 
-    <div id="userInboxList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:10px">
+    <!-- قائمة المحادثات -->
+    <div id="userInboxList" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px">
       <div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>
     </div>
-
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:8px" onclick="closeInbox()">إغلاق</button>
   </div>
 </div>
 
@@ -1380,9 +1428,25 @@ OneSignalDeferred.push(async function(OneSignal){
       </div>
       <!-- أزرار الإجراءات السريعة برأس المحادثة -->
       <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">
+        <button type="button" id="chatHeaderDeleteBtn" class="chatHeaderIconBtn del" title="حذف رسائل من الطرفين" onclick="toggleChatSelectionMode()">🗑️</button>
         <button type="button" id="chatHeaderCallBtn" class="chatHeaderIconBtn" title="اتصال مباشر" style="display:none" onclick="chatActionCall()">📞</button>
         <button type="button" id="chatHeaderWaBtn" class="chatHeaderIconBtn wa" title="محادثة واتساب" style="display:none" onclick="chatActionWa()">💬</button>
         <button type="button" id="chatHeaderReportBtn" class="chatHeaderIconBtn warn" title="إبلاغ عن محادثة" onclick="chatActionReport()">🚩</button>
+      </div>
+    </div>
+
+    <!-- شريط وضع تحديد الرسائل والحذف من الطرفين -->
+    <div id="chatSelectionBar" style="display:none;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:2px solid #ef4444;box-shadow:0 3px 10px rgba(0,0,0,0.06);flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" onclick="cancelChatSelection()" style="background:none;border:none;font-size:18px;color:var(--text);cursor:pointer;padding:2px 6px" title="إلغاء التحديد">✕</button>
+        <div style="font-weight:900;font-size:13px;color:var(--text)" id="chatSelectionCount">اضغط على أي رسالة لتحديدها</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onclick="selectAllChatMessages()" class="btnGhost" style="padding:5px 10px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;margin:0">تحديد الكل</button>
+        <button type="button" id="btnConfirmDeleteMsgs" onclick="confirmDeleteSelectedChatMessages()" style="background:#ef4444;color:#fff;border:none;border-radius:18px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(239,68,68,0.3);opacity:0.5;pointer-events:none">
+          <span>🗑️</span>
+          <span>حذف من الطرفين</span>
+        </button>
       </div>
     </div>
 
@@ -1405,33 +1469,89 @@ OneSignalDeferred.push(async function(OneSignal){
     <div id="chatQuickRepliesBar" class="chatQuickRepliesBar"></div>
 
     <!-- شريط إرسال الرسائل والأزرار التفاعلية -->
-    <div style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center;flex:0 0 auto">
+    <div id="chatInputArea" style="padding:10px 14px;background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center;flex:0 0 auto;position:relative">
       <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="handleChatPhotoSelected(event)">
-      <button type="button" class="chatAttachBtn" onclick="document.getElementById('chatPhotoInput').click()" title="إرسال صورة 📷">📷</button>
-      <button type="button" class="chatAttachBtn" onclick="shareMyPhoneInChat()" title="مشاركة رقم هاتفي 📱">📱</button>
+      
+      <!-- أزرار الإرفاق (صورة وهاتف) -->
+      <div id="chatNormalAttachBtns" style="display:flex;gap:6px;align-items:center">
+        <button type="button" class="chatAttachBtn" onclick="document.getElementById('chatPhotoInput').click()" title="إرسال صورة 📷">📷</button>
+        <button type="button" class="chatAttachBtn" onclick="shareMyPhoneInChat()" title="مشاركة رقم هاتفي 📱">📱</button>
+      </div>
 
+      <!-- حقل الكتابة العادي -->
       <input 
         type="text" 
         id="chatMessageInput" 
-        placeholder="اكتب رسالتك هنا..." 
+        placeholder="اكتب رسالتك..." 
         dir="auto" 
         autocomplete="off"
+        oninput="handleChatInputTyping(this)"
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
-        style="flex:1;height:44px;box-sizing:border-box;padding:8px 14px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none"
+        style="flex:1;height:44px;box-sizing:border-box;padding:8px 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14.5px;outline:none;transition:all .2s"
       >
+
+      <!-- شريط التسجيل الصوتي المباشر مثل ماسنجر -->
+      <div id="chatVoiceRecordingBar" style="display:none;flex:1;align-items:center;gap:12px;background:#fef2f2;border:1px solid #fecdd3;border-radius:22px;padding:6px 14px;height:44px;box-sizing:border-box">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulseRed 1s infinite"></span>
+        <span id="chatVoiceTimer" style="font-weight:800;color:#ef4444;font-size:13.5px;direction:ltr">0:00</span>
+        <div style="flex:1;font-size:12px;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">جاري تسجيل رسالة صوتية...</div>
+        <button type="button" id="btnCancelVoice" onclick="cancelVoiceRecording()" title="حذف التسجيل" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;color:#b91c1c">🗑️</button>
+      </div>
+
+      <!-- زر الميكروفون (يظهر عندما يكون حقل الكتابة فارغاً) -->
+      <button 
+        type="button" 
+        id="btnChatVoiceRecord" 
+        onclick="toggleVoiceRecording()" 
+        title="تسجيل رسالة صوتية 🎙️"
+        style="width:44px;height:44px;border-radius:50%;background:#f1f5f9;color:#0f172a;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-size:18px;transition:all .2s"
+      >
+        🎙️
+      </button>
+
+      <!-- زر الإرسال (يظهر عند الكتابة) -->
       <button 
         type="button" 
         id="btnSendUserChat" 
         onclick="sendUserChatMessage()" 
-        style="width:44px;height:44px;border-radius:50%;background:#0284c7;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 2px 6px rgba(2,132,199,0.3)"
+        title="إرسال"
+        style="display:none;width:44px;height:44px;border-radius:50%;background:#0284c7;color:#fff;border:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 3px 10px rgba(2,132,199,0.3)"
       >
         <span style="font-size:16px">🚀</span>
       </button>
     </div>
+      <!-- مودال خيارات الحذف (من عندي أو من الطرفين مثل ماسنجر) -->
+    <div id="deleteChatConfirmModal" class="overlay hidden" style="background:rgba(0,0,0,0.65);align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px)">
+      <div class="sheet" style="max-width:360px;width:92%;border-radius:22px;padding:24px 20px;text-align:center;box-shadow:0 15px 40px rgba(0,0,0,0.35);background:var(--card)">
+        <div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;color:#ef4444;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 4px 12px rgba(239,68,68,0.2)">🗑️</div>
+        <h3 style="margin:0 0 6px;font-size:17px;font-weight:900;color:var(--text)">حذف الرسائل</h3>
+        <p style="margin:0 0 18px;font-size:13px;color:var(--muted);line-height:1.5" id="deleteChatConfirmText">
+          اختر طريقة الحذف المناسبة لك:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <!-- 1. الحذف لدى الجميع (من الطرفين) -->
+          <button type="button" id="btnDeleteForEveryone" onclick="executeDeleteSelectedChatMessages('everyone')" style="background:#ef4444;color:#fff;border:none;border-radius:14px;padding:12px;font-size:13.5px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;gap:6px">
+            <span>🗑️</span>
+            <span>الحذف لدى الجميع (من الطرفين)</span>
+          </button>
+          
+          <!-- 2. الحذف لدي فقط (من عندي) -->
+          <button type="button" id="btnDeleteForMe" onclick="executeDeleteSelectedChatMessages('for_me')" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:14px;padding:12px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span>👁️‍🗨️</span>
+            <span>الحذف لدي فقط (من عندي)</span>
+          </button>
+          
+          <!-- إلغاء -->
+          <button type="button" onclick="closeDeleteChatConfirmModal()" style="background:transparent;color:var(--muted);border:none;border-radius:12px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:2px">
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<script type="module" src="app.js?v=112"></script>
+<script type="module" src="app.js?v=114"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
