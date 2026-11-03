@@ -6005,7 +6005,9 @@ window.openAccount=(skipHistory)=>{
     // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات
     getDoc(doc(db,"profiles",me.uid)).then(snap=>{
       if(snap.exists()){
-        myProfile = snap.data();
+        const prevAvatar = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+        myProfile = snap.data() || {};
+        if(!myProfile.avatar && prevAvatar) myProfile.avatar = prevAvatar;
         if(unEl){
           if(myProfile && myProfile.username) unEl.textContent = "@" + myProfile.username;
         }
@@ -6078,6 +6080,7 @@ window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverla
 function closeOverlayDirect(){
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
+  const eps = document.getElementById("editProfileScreen"); if(eps) eps.classList.add("hidden");
   warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");
   postTypeOverlay.classList.add("hidden");
   openStoreOverlay.classList.add("hidden");storesModerationOverlay.classList.add("hidden");expiredOverlay.classList.add("hidden");
@@ -6270,8 +6273,19 @@ window.openSeller=async(uid,skipHistory)=>{
     const pP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
     const rP=getDocs(query(collection(db,"ratings"),where("sellerUid","==",uid))).catch(()=>null);
     const fP=getDocs(collection(db,"users",uid,"followers")).catch(()=>null);
-    const [pS,rS,fS]=await Promise.all([pP,rP,fP]);
-    const prof=(pS&&pS.exists())?pS.data():(isMe ? myProfile : null);
+    const sb = window.supabase || supabase;
+    const avP=sb ? sb.from("feedback").select("message").eq("id","avatar_"+uid).maybeSingle().catch(()=>null) : Promise.resolve(null);
+    const [pS,rS,fS,avS]=await Promise.all([pP,rP,fP,avP]);
+    let prof=(pS&&pS.exists())?pS.data():(isMe ? myProfile : null);
+    if(prof && !prof.avatar){
+      if(avS && avS.data && avS.data.message){
+        prof.avatar = avS.data.message;
+        try{ localStorage.setItem("tasawuq_avatar_" + uid, avS.data.message); }catch(e){}
+      } else {
+        const localAv = localStorage.getItem("tasawuq_avatar_" + uid);
+        if(localAv) prof.avatar = localAv;
+      }
+    }
     const ratings=rS?rS.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)):[];
     const followersCount=fS?fS.size:0;
     renderSeller(uid,prof,ratings,!!fS,ratings,followersCount);
@@ -6340,7 +6354,7 @@ const postsGridHtml = posts.length ? `
 let actionButtonsHtml = "";
 if(isMe){
   actionButtonsHtml = `
-    <button class="fbBtnAction edit" onclick="sellerOverlay.classList.add('hidden');openEditProfileScreen()">
+    <button class="fbBtnAction edit" onclick="openEditProfileScreen()">
       ✏️ تعديل بياناتي وصورتي
     </button>
     <button class="fbBtnAction primary" onclick="closeOverlayDirect();openAccount()">
@@ -6647,7 +6661,9 @@ function startProfileListener(user){
   let assignAttempted=false;
   unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
     if(snap.exists()){
-      myProfile=snap.data();
+      const prevAvatar = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + user.uid);
+      myProfile=snap.data() || {};
+      if(!myProfile.avatar && prevAvatar) myProfile.avatar = prevAvatar;
       const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
       const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
       const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
@@ -9297,8 +9313,9 @@ export async function markChatAsRead(convId, myUid){
     let sc = conv?.store_context;
     if(!sc || typeof sc !== 'object') sc = {};
     if(!sc.read_by || typeof sc.read_by !== 'object') sc.read_by = {};
-    sc.read_by[myUid] = Date.now();
-    await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
+    const now = Date.now();
+    sc.read_by[myUid] = now;
+    await sb.from("chat_conversations").update({ store_context: sc, updated_at: now }).eq("conv_id", convId);
   }catch(e){
     console.warn("markChatAsRead error:", e);
   }
@@ -9311,7 +9328,7 @@ function _updateMessagesReadStatus(readTime){
   if(!box) return;
   box.querySelectorAll(".chatBubble.outgoing").forEach(b => {
     const msgTime = Number(b.getAttribute("data-created-at")) || 0;
-    if(msgTime && msgTime <= readTime){
+    if(msgTime && msgTime <= (readTime + 5000)){
       const checkEl = b.querySelector(".chatCheck");
       if(checkEl && !checkEl.classList.contains("read")){
         checkEl.className = "chatCheck read";
@@ -9358,11 +9375,11 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
   let checkHtml = "";
   if(isMe){
     const readLimit = otherReadTimestamp || (window._chatOtherReadTime || 0);
-    const isRead = readLimit > 0 && msgTime <= readLimit;
+    const isRead = readLimit > 0 && msgTime <= (readLimit + 5000);
     if(isRead){
       checkHtml = '<span class="chatCheck read" title="تمت القراءة">✓✓</span>';
     } else {
-      checkHtml = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>';
+      checkHtml = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>';
     }
   }
 
@@ -9645,9 +9662,10 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         }
       })
     .on("postgres_changes",
-      { event: "UPDATE", schema: "public", table: "chat_conversations", filter: "conv_id=eq." + convId },
+      { event: "UPDATE", schema: "public", table: "chat_conversations" },
       payload => {
-        const sc = payload.new ? payload.new.store_context : null;
+        if(!payload.new || payload.new.conv_id !== convId) return;
+        const sc = payload.new.store_context;
         const targetUid = window._activeChat ? window._activeChat.targetUid : null;
         if(sc && sc.read_by && targetUid && sc.read_by[targetUid]){
           const newReadTime = Number(sc.read_by[targetUid]);
@@ -9657,7 +9675,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
       })
     .subscribe();
 
-  // فحص احتياطي سريع كل 2.5 ثانية (يضمن التحديث حتى لو انقطع الويب سوكيت على الموبايل)
+  // فحص احتياطي سريع كل 1.5 ثانية لتحديث علامات القراءة الفورية
   _chatPollInterval = setInterval(async () => {
     if(!window._activeChat || window._activeChat.convId !== convId) {
       clearInterval(_chatPollInterval);
@@ -9793,16 +9811,31 @@ export async function sendUserChatMessage(){
       }
       const tEl = tempBubble.querySelector(".chatTime");
       if(tEl){
-        tEl.innerHTML = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        tEl.innerHTML = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
     }
 
-    // 2) تحديث ملخص المحادثة (يظهر في صندوق الرسائل لك وللمستلم فوراً)
+    // 2) تحديث ملخص المحادثة (مع الحفاظ على read_by وجميع البيانات السابقة)
     const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
     const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
     const postImage = document.getElementById("chatContextImg")?.src || "";
     const p1 = [me.uid, activeChat.targetUid].sort()[0];
     const p2 = [me.uid, activeChat.targetUid].sort()[1];
+
+    let sc = {};
+    try {
+      const { data: curConv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
+      if(curConv && curConv.store_context && typeof curConv.store_context === 'object'){
+        sc = { ...curConv.store_context };
+      }
+    } catch(e){}
+    if(activeChat.storeId){
+      sc.id = activeChat.storeId;
+      sc.name = postTitle;
+    }
+    if(!sc.read_by || typeof sc.read_by !== 'object') sc.read_by = {};
+    sc.read_by[me.uid] = now; // المرسل قرأ حتى هذه اللحظة
+
     const { error: convErr } = await sb.from("chat_conversations").upsert({
       conv_id: convId,
       p1: p1,
@@ -9813,7 +9846,7 @@ export async function sendUserChatMessage(){
       last_sender_name: senderName,
       updated_at: now,
       post_context: activeChat.postId ? { id: activeChat.postId, title: postTitle, price: postPrice, image: postImage } : null,
-      store_context: activeChat.storeId ? { id: activeChat.storeId, name: postTitle } : null
+      store_context: sc
     });
     if(convErr) console.warn("تعذر تحديث ملخص المحادثة:", convErr);
 
@@ -9861,7 +9894,18 @@ export async function openInbox(){
       .limit(50);
     if(error) throw error;
 
-    if(!convs || convs.length === 0){
+    const localKey = "tasawuq_deleted_convs_" + myUid;
+    let localDeleted = [];
+    try { localDeleted = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
+    const deletedSet = new Set(localDeleted);
+
+    const activeConvs = (convs || []).filter(c => {
+      if(deletedSet.has(c.conv_id)) return false;
+      if(c.store_context && c.store_context.deleted_by && c.store_context.deleted_by[myUid]) return false;
+      return true;
+    });
+
+    if(!activeConvs || activeConvs.length === 0){
       list.innerHTML = `
         <div style="text-align:center;padding:40px 20px;color:var(--muted)">
           <div style="font-size:42px;margin-bottom:8px">📭</div>
@@ -9872,7 +9916,7 @@ export async function openInbox(){
       return;
     }
 
-    list.innerHTML = convs.map(c => {
+    list.innerHTML = activeConvs.map(c => {
       const otherUid = c.p1 === myUid ? c.p2 : c.p1;
       let otherName = "البائع";
       if(c.last_sender_uid !== myUid && c.last_sender_name){
@@ -10021,8 +10065,11 @@ window.openEditProfileScreen = () => {
   const as = document.getElementById("accountOverlay") || document.getElementById("accountScreen");
   const es = document.getElementById("editProfileScreen");
   if(as) as.classList.add("hidden");
-  if(es) es.classList.remove("hidden");
-  window.scrollTo(0, 0);
+  if(es) {
+    es.classList.remove("hidden");
+    const sheetBody = es.querySelector(".sheet > div:last-child");
+    if(sheetBody) sheetBody.scrollTop = 0;
+  }
 
   const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
   const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
@@ -10051,12 +10098,16 @@ window.backFromEditProfile = () => {
   const es = document.getElementById("editProfileScreen");
   if(es) es.classList.add("hidden");
   if(auth.currentUser){
-    openSeller(auth.currentUser.uid);
+    const so = document.getElementById("sellerOverlay");
+    if(so && !so.classList.contains("hidden")){
+      // sellerOverlay is active
+    } else {
+      openSeller(auth.currentUser.uid);
+    }
   }
-  window.scrollTo(0, 0);
 };
 
-// رفع وحفظ الصورة الشخصية
+// رفع وحفظ الصورة الشخصية بجودة فائقة وحفظ دائم
 window.handleProfileAvatarSelected = async (event) => {
   const file = event.target.files && event.target.files[0];
   if(!file) return;
@@ -10068,17 +10119,43 @@ window.handleProfileAvatarSelected = async (event) => {
   const statusEl = document.getElementById("avatarUploadStatus");
   const editPreview = document.getElementById("editProfileAvatarPreview");
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
+  const circleAvatar = document.getElementById("accountAvatarCircle");
 
-  if(statusEl) statusEl.textContent = "⏳ جاري رفع وتثبيت صورتك الشخصية...";
+  if(statusEl) statusEl.textContent = "⏳ جاري رفع وتثبيت صورتك الشخصية بدقة عالية...";
   try {
-    const compressed = (typeof compressImage === 'function') ? await compressImage(file, 600, 0.85) : file;
-    const photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(compressed) : null;
-    if(!photoUrl) throw new Error("تعذر رفع الصورة للخادم");
+    let photoUrl = "";
+    try {
+      const fd = new FormData();
+      const compressed = (typeof compressImage === 'function') ? await compressImage(file, 800, 0.90) : file;
+      fd.append("image", compressed, "profile_" + me.uid + ".jpg");
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: fd
+      });
+      const data = await res.json();
+      if(data && data.success && data.data && data.data.url){
+        photoUrl = data.data.url;
+      }
+    } catch(err){
+      console.warn("Direct avatar upload warning:", err);
+    }
+
+    if(!photoUrl){
+      photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file) : null;
+    }
+
+    if(!photoUrl) throw new Error("تعذر رفع الصورة، يرجى المحاولة مرة أخرى أو فحص الاتصال");
 
     if(!myProfile) myProfile = {};
     myProfile.avatar = photoUrl;
     localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
 
+    // 1) حفظ في profiles
+    try {
+      await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
+    } catch(e){}
+
+    // 2) حفظ في جدول feedback لضمان بقائها دائمة لكل الزوار
     const sb = window.supabase || supabase;
     await sb.from("feedback").upsert({
       id: "avatar_" + me.uid,
@@ -10088,13 +10165,16 @@ window.handleProfileAvatarSelected = async (event) => {
       user_phone: (myProfile && myProfile.phone) || "",
       message: photoUrl,
       created_at: Date.now()
-    }).catch(e => console.warn("Avatar save warn:", e));
+    }).catch(e => console.warn("Avatar feedback backup warn:", e));
 
     const imgHtml = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
     if(editPreview) editPreview.innerHTML = imgHtml;
     if(heroAvatar) heroAvatar.innerHTML = imgHtml;
-    if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح!";
+    if(circleAvatar) circleAvatar.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    const fbAvatar = document.getElementById("fbProfileAvatar");
+    if(fbAvatar) fbAvatar.innerHTML = imgHtml;
 
+    if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح بدقة ممتازة!";
     showToast("✅ تم تحديث صورتك الشخصية بنجاح", "success");
   } catch(e) {
     if(statusEl) statusEl.textContent = "❌ فشل الرفع: " + (e.message || "");
@@ -10359,7 +10439,7 @@ export async function handleChatPhotoSelected(event){
         tempDiv.setAttribute("data-msg-id", insertedMsg.id);
         _attachBubbleEvents(tempDiv);
       }
-      tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a><div class="chatTime"><span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
+      tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a><div class="chatTime"><span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
     }
 
     const p1 = [me.uid, activeChat.targetUid].sort()[0];
