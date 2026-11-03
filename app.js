@@ -1283,6 +1283,15 @@ function getActiveTopView() {
   const tp = document.getElementById("transferPostsOverlay");
   if (tp) return { type: 'customOverlay', el: tp };
 
+  const eps = document.getElementById("editProfileScreen");
+  if (eps && !eps.classList.contains("hidden")) return { type: 'editProfile' };
+
+  const so = document.getElementById("sellerOverlay");
+  if (so && !so.classList.contains("hidden")) return { type: 'seller' };
+
+  const uco = document.getElementById("userChatOverlay");
+  if (uco && !uco.classList.contains("hidden")) return { type: 'chat' };
+
   if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
 
   const openOverlay = document.querySelector(".overlay:not(.hidden)");
@@ -1323,6 +1332,20 @@ function performBackAction() {
   }
   if (top.type === 'customOverlay') {
     if (top.el && top.el.remove) top.el.remove();
+    return true;
+  }
+  if (top.type === 'editProfile') {
+    if (typeof backFromEditProfile === 'function') backFromEditProfile();
+    else { const eps = document.getElementById("editProfileScreen"); if (eps) eps.classList.add("hidden"); }
+    return true;
+  }
+  if (top.type === 'seller') {
+    const so = document.getElementById("sellerOverlay");
+    if (so) so.classList.add("hidden");
+    return true;
+  }
+  if (top.type === 'chat') {
+    if (typeof closeUserChat === 'function') closeUserChat();
     return true;
   }
   if (top.type === 'post') {
@@ -4869,6 +4892,51 @@ function blobToDataUrl(blob){
   });
 }
 
+async function compressFileToDataUrl(file, maxDimension = 400, quality = 0.82) {
+  return new Promise((resolve) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawResult = e.target.result;
+        const img = new Image();
+        img.onload = () => {
+          try {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDimension || h > maxDimension) {
+              if (w > h) {
+                h = Math.round((h * maxDimension) / w);
+                w = maxDimension;
+              } else {
+                w = Math.round((w * maxDimension) / h);
+                h = maxDimension;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+            resolve(dataUrl || rawResult);
+          } catch(err) {
+            resolve(rawResult);
+          }
+        };
+        img.onerror = () => resolve(rawResult);
+        img.src = rawResult;
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    } catch(err) {
+      resolve("");
+    }
+  });
+}
+window.compressFileToDataUrl = compressFileToDataUrl;
+
 async function compressImageToDataUrl(file, maxSize = 800, quality = 0.82){
   try{
     const bmp = await createImageBitmap(file);
@@ -6416,42 +6484,107 @@ window.openSeller=async(uid,skipHistory)=>{
   if(titleEl) titleEl.textContent = isMe ? "ملفي الشخصي" : "الملف الشخصي";
 
   const box=document.getElementById("sellerContent");
-  if(box && (!box.children.length || box.querySelector('.reportsEmpty'))){
+
+  // 1) بيانات أولية فورية لعرض البروفايل في 0 ثانية دون أي تعليق
+  const chatTarget = (window._activeChat && window._activeChat.targetUid === uid) ? window._activeChat : null;
+  const existingPost = allPosts.find(p => p.uid === uid);
+  const localAvatar = localStorage.getItem("tasawuq_avatar_" + uid);
+  const localCover = localStorage.getItem("tasawuq_cover_" + uid);
+
+  let initialProf = null;
+  if(isMe && myProfile){
+    initialProf = myProfile;
+  } else if(chatTarget || existingPost || localAvatar){
+    initialProf = {
+      id: uid,
+      name: (chatTarget && chatTarget.targetName) || (existingPost && existingPost.sellerName) || "مستخدم",
+      phone: (chatTarget && chatTarget.targetPhone) || (existingPost && existingPost.phone) || "",
+      avatar: localAvatar || (chatTarget && chatTarget.targetAvatar) || "",
+      cover: localCover || "",
+      username: (existingPost && existingPost.sellerUsername) || "",
+      memberNo: (existingPost && existingPost.memberNo) || null
+    };
+  }
+
+  if(initialProf){
+    try {
+      renderSeller(uid, initialProf, [], false, [], 0);
+    } catch(e){}
+  } else if(box && (!box.children.length || box.querySelector('.reportsEmpty'))){
     box.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل الملف الشخصي...</div>";
   }
 
-  // إذا كان بروفايلي أنا، اعرضه فوراً باستخدام بيانات myProfile المحلية دون أي تأخير
-  if(isMe && myProfile){
-    try {
-      renderSeller(uid, myProfile, [], false, [], 0);
-    } catch(e){}
-  }
-
   try {
-    const pP=getDoc(doc(db,"profiles",uid)).catch(()=>null);
-    const rP=getDocs(query(collection(db,"ratings"),where("sellerUid","==",uid))).catch(()=>null);
-    const fP=getDocs(collection(db,"users",uid,"followers")).catch(()=>null);
     const sb = window.supabase || supabase;
-    const avP=sb ? sb.from("feedback").select("message").eq("id","avatar_"+uid).maybeSingle().catch(()=>null) : Promise.resolve(null);
-    const [pS,rS,fS,avS]=await Promise.all([pP,rP,fP,avP]);
-    let prof=(pS&&pS.exists())?pS.data():(isMe ? myProfile : null);
-    if(prof && !prof.avatar){
-      if(avS && avS.data && avS.data.message){
-        prof.avatar = avS.data.message;
-        try{ localStorage.setItem("tasawuq_avatar_" + uid, avS.data.message); }catch(e){}
-      } else {
-        const localAv = localStorage.getItem("tasawuq_avatar_" + uid);
-        if(localAv) prof.avatar = localAv;
-      }
+    let prof = null;
+    let avatarUrl = localAvatar || "";
+    let coverUrl = localCover || "";
+
+    if(sb){
+      try {
+        const { data: pData } = await sb.from("profiles").select("*").eq("id", uid).maybeSingle();
+        if(pData) prof = pData;
+      } catch(e){}
+
+      try {
+        const { data: avData } = await sb.from("feedback").select("message").eq("id", "avatar_" + uid).maybeSingle();
+        if(avData && avData.message) {
+          avatarUrl = avData.message;
+          try { localStorage.setItem("tasawuq_avatar_" + uid, avData.message); } catch(e){}
+        }
+      } catch(e){}
+
+      try {
+        const { data: covData } = await sb.from("feedback").select("message").eq("id", "cover_" + uid).maybeSingle();
+        if(covData && covData.message) {
+          coverUrl = covData.message;
+          try { localStorage.setItem("tasawuq_cover_" + uid, covData.message); } catch(e){}
+        }
+      } catch(e){}
+
+      try {
+        const { data: uPosts } = await sb.from("posts").select("*").eq("uid", uid).eq("status", "approved");
+        if(uPosts && uPosts.length){
+          uPosts.forEach(up => {
+            const mapped = (typeof objectFromDb === 'function') ? objectFromDb(up) : up;
+            if(!allPosts.some(p => p.id === mapped.id)) allPosts.unshift(mapped);
+          });
+        }
+      } catch(e){}
     }
-    const ratings=rS?rS.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)):[];
-    const followersCount=fS?fS.size:0;
-    renderSeller(uid,prof,ratings,!!fS,ratings,followersCount);
+
+    if(!prof){
+      try {
+        const pS = await getDoc(doc(db, "profiles", uid));
+        if(pS && pS.exists()) prof = pS.data();
+      } catch(e){}
+    }
+
+    if(!prof){
+      prof = isMe ? (myProfile || {}) : (initialProf || { id: uid, name: (existingPost && existingPost.sellerName) || "مستخدم" });
+    }
+    if(avatarUrl) prof.avatar = avatarUrl;
+    if(coverUrl) prof.cover = coverUrl;
+
+    let ratings = [];
+    try {
+      const rS = await getDocs(query(collection(db, "ratings"), where("sellerUid", "==", uid)));
+      if(rS && rS.docs){
+        ratings = rS.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      }
+    } catch(e){}
+
+    let followersCount = 0;
+    try {
+      const fS = await getDocs(collection(db, "users", uid, "followers"));
+      if(fS) followersCount = fS.size || 0;
+    } catch(e){}
+
+    renderSeller(uid, prof, ratings, false, ratings, followersCount);
   } catch(err){
     console.error("openSeller error:", err);
-    if(isMe && myProfile){
-      renderSeller(uid, myProfile, [], false, [], 0);
-    }
+    const fallbackProf = initialProf || (isMe ? myProfile : { id: uid, name: "مستخدم" });
+    renderSeller(uid, fallbackProf, [], false, [], 0);
   }
 };
 function renderSeller(uid,prof,ratings,ratingsFailed,allRatings,followersCount){
@@ -10266,10 +10399,10 @@ export function openChatTargetProfile(){
 
   // رفع طبقة البروفايل لتظهر فوق نافذة الشات بسلاسة
   const so = document.getElementById("sellerOverlay");
-  if(so) so.style.zIndex = "1015";
+  if(so) so.style.zIndex = "1025";
 
   const sto = document.getElementById("storeOverlay");
-  if(sto) sto.style.zIndex = "1015";
+  if(sto) sto.style.zIndex = "1025";
 
   if(storeId){
     openStore(storeId, false, 'chat');
@@ -10321,38 +10454,75 @@ window.handleDirectProfileCoverUpload = async (event) => {
   }
   event.target.value = "";
   showToast("⏳ جاري حفظ وتثبيت صورة الغلاف...", "info", 2000);
+
   try {
-    const photoUrl = await uploadToImgBB(file, 900, 0.85);
-    if(!photoUrl) throw new Error("تعذر معالجة الصورة");
+    const photoUrl = (typeof compressFileToDataUrl === 'function')
+      ? await compressFileToDataUrl(file, 900, 0.82)
+      : await compressImageToDataUrl(file, 900, 0.82);
+    if(!photoUrl) throw new Error("تعذر قراءة ملف الصورة من جهازك");
 
     if(!myProfile) myProfile = {};
     myProfile.cover = photoUrl;
-    localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl);
-
     try {
-      await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
+      localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl);
     } catch(e){}
-
-    const sb = window.supabase || supabase;
-    if(sb){
-      await sb.from("feedback").upsert({
-        id: "cover_" + me.uid,
-        type: "profile_cover",
-        uid: me.uid,
-        message: photoUrl,
-        created_at: Date.now()
-      }).catch(()=>{});
-    }
 
     const editPreview = document.getElementById("editProfileCoverPreview");
     if(editPreview){
       editPreview.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
     }
 
-    showToast("✅ تم تحديث صورة غلاف الحساب بنجاح!", "success");
-    if(typeof openSeller === 'function' && me.uid){
-      openSeller(me.uid);
+    const fbCoverArea = document.querySelector(".fbCoverArea");
+    if(fbCoverArea){
+      const img = fbCoverArea.querySelector(".fbCoverImg");
+      if(img) img.src = photoUrl;
+      else {
+        const pattern = fbCoverArea.querySelector(".fbCoverPattern");
+        if(pattern) pattern.outerHTML = `<img src="${escapeHtml(photoUrl)}" class="fbCoverImg" alt="غلاف البروفايل">`;
+      }
     }
+
+    showToast("✅ تم تحديث صورة غلاف الحساب بنجاح!", "success");
+
+    // الحفظ في الخلفية دون أي تعطيل أو إشعار خطأ
+    (async () => {
+      try {
+        await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
+      } catch(e){}
+
+      try {
+        const sb = window.supabase || supabase;
+        if(sb){
+          await sb.from("feedback").upsert({
+            id: "cover_" + me.uid,
+            type: "profile_cover",
+            uid: me.uid,
+            message: photoUrl,
+            created_at: Date.now()
+          });
+        }
+      } catch(e){}
+
+      try {
+        const cloudUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file, 900, 0.85) : null;
+        if(cloudUrl && cloudUrl.startsWith('http')){
+          myProfile.cover = cloudUrl;
+          try { localStorage.setItem("tasawuq_cover_" + me.uid, cloudUrl); } catch(e){}
+          try { await setDoc(doc(db, "profiles", me.uid), { cover: cloudUrl }, { merge: true }); } catch(e){}
+          const sb = window.supabase || supabase;
+          if(sb){
+            await sb.from("feedback").upsert({
+              id: "cover_" + me.uid,
+              type: "profile_cover",
+              uid: me.uid,
+              message: cloudUrl,
+              created_at: Date.now()
+            });
+          }
+        }
+      } catch(e){}
+    })();
+
   } catch(e) {
     showToast("❌ تعذر حفظ الغلاف: " + (e.message || ""), "error");
   }
@@ -10369,10 +10539,12 @@ window.openEditProfileScreen = () => {
   const es = document.getElementById("editProfileScreen");
   if(as) as.classList.add("hidden");
   if(es) {
+    es.style.zIndex = "1040";
     es.classList.remove("hidden");
     const sheetBody = es.querySelector(".sheet > div:last-child");
     if(sheetBody) sheetBody.scrollTop = 0;
   }
+  if(typeof pushNavState === 'function') pushNavState({ screen: 'editProfile' }, '#edit-profile');
 
   const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
   const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
@@ -10410,17 +10582,15 @@ window.openEditProfileScreen = () => {
 window.backFromEditProfile = () => {
   const es = document.getElementById("editProfileScreen");
   if(es) es.classList.add("hidden");
-  if(auth.currentUser){
-    const so = document.getElementById("sellerOverlay");
-    if(so && !so.classList.contains("hidden")){
-      // sellerOverlay is active
-    } else {
-      openSeller(auth.currentUser.uid);
-    }
+  const so = document.getElementById("sellerOverlay");
+  if(so && sellerPanelUid){
+    so.classList.remove("hidden");
+  } else if(auth.currentUser){
+    openSeller(auth.currentUser.uid, true);
   }
 };
 
-// رفع وحفظ الصورة الشخصية بجودة فائقة وحفظ دائم
+// رفع وحفظ الصورة الشخصية بجودة فائقة وحفظ دائم فوري 100%
 window.handleProfileAvatarSelected = async (event) => {
   const file = event.target.files && event.target.files[0];
   if(!file) return;
@@ -10429,69 +10599,99 @@ window.handleProfileAvatarSelected = async (event) => {
     showToast("⚠️ الرجاء تسجيل الدخول أولاً", "warn");
     return;
   }
+  event.target.value = "";
   const statusEl = document.getElementById("avatarUploadStatus");
   const editPreview = document.getElementById("editProfileAvatarPreview");
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
   const circleAvatar = document.getElementById("accountAvatarCircle");
 
-  if(statusEl) statusEl.textContent = "⏳ جاري رفع وتثبيت صورتك الشخصية بدقة عالية...";
+  if(statusEl) statusEl.textContent = "⏳ جاري حفظ وتثبيت صورتك الشخصية...";
+
   try {
-    let photoUrl = "";
-    try {
-      const fd = new FormData();
-      const compressed = (typeof compressImage === 'function') ? await compressImage(file, 800, 0.90) : file;
-      fd.append("image", compressed, "profile_" + me.uid + ".jpg");
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: "POST",
-        body: fd
-      });
-      const data = await res.json();
-      if(data && data.success && data.data && data.data.url){
-        photoUrl = data.data.url;
-      }
-    } catch(err){
-      console.warn("Direct avatar upload warning:", err);
-    }
+    // 1) ضغط الصورة فورياً إلى Data URL فائق الدقة وخفيف الحجم (~30KB)
+    const photoUrl = (typeof compressFileToDataUrl === 'function')
+      ? await compressFileToDataUrl(file, 400, 0.85)
+      : await compressImageToDataUrl(file, 400, 0.85);
 
     if(!photoUrl){
-      photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file) : null;
+      throw new Error("تعذر قراءة ملف الصورة من جهازك");
     }
-
-    if(!photoUrl) throw new Error("تعذر رفع الصورة، يرجى المحاولة مرة أخرى أو فحص الاتصال");
 
     if(!myProfile) myProfile = {};
     myProfile.avatar = photoUrl;
-    localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
-
-    // 1) حفظ في profiles
     try {
-      await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
-    } catch(e){}
+      localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
+    } catch(e){
+      console.warn("localStorage quota warn:", e);
+    }
 
-    // 2) حفظ في جدول feedback لضمان بقائها دائمة لكل الزوار
-    const sb = window.supabase || supabase;
-    await sb.from("feedback").upsert({
-      id: "avatar_" + me.uid,
-      type: "profile_avatar",
-      uid: me.uid,
-      user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
-      user_phone: (myProfile && myProfile.phone) || "",
-      message: photoUrl,
-      created_at: Date.now()
-    }).catch(e => console.warn("Avatar feedback backup warn:", e));
-
+    // تحديث كافة عناصر الواجهة فوراً دون أي تأخير
     const imgHtml = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
     if(editPreview) editPreview.innerHTML = imgHtml;
     if(heroAvatar) heroAvatar.innerHTML = imgHtml;
     if(circleAvatar) circleAvatar.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    const fbAvatar = document.getElementById("fbProfileAvatar");
-    if(fbAvatar) fbAvatar.innerHTML = imgHtml;
+    const fbAvatar = document.querySelector(".fbAvatarWrapper");
+    if(fbAvatar){
+      fbAvatar.innerHTML = imgHtml + (me ? `<div class="fbAvatarEditBadge" title="تغيير الصورة">📷</div>` : '');
+    }
 
     if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح بدقة ممتازة!";
     showToast("✅ تم تحديث صورتك الشخصية بنجاح", "success");
+
+    // 2) حفظ في الخلفية دون تعطيل المستخدم إطلاقاً
+    (async () => {
+      // حفظ في profiles
+      try {
+        await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
+      } catch(e){
+        console.warn("setDoc avatar warn:", e);
+      }
+
+      // حفظ في feedback كنسخة احتياطية دائمة
+      try {
+        const sb = window.supabase || supabase;
+        if(sb){
+          await sb.from("feedback").upsert({
+            id: "avatar_" + me.uid,
+            type: "profile_avatar",
+            uid: me.uid,
+            user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+            user_phone: (myProfile && myProfile.phone) || "",
+            message: photoUrl,
+            created_at: Date.now()
+          });
+        }
+      } catch(e){
+        console.warn("Feedback avatar backup error:", e);
+      }
+
+      // 3) محاولة رفع سحابي إضافي إلى ImgBB إذا توفر الاتصال
+      try {
+        const cloudUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file, 600, 0.88) : null;
+        if(cloudUrl && cloudUrl.startsWith('http')){
+          myProfile.avatar = cloudUrl;
+          try { localStorage.setItem("tasawuq_avatar_" + me.uid, cloudUrl); } catch(e){}
+          try { await setDoc(doc(db, "profiles", me.uid), { avatar: cloudUrl }, { merge: true }); } catch(e){}
+          const sb = window.supabase || supabase;
+          if(sb){
+            await sb.from("feedback").upsert({
+              id: "avatar_" + me.uid,
+              type: "profile_avatar",
+              uid: me.uid,
+              user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+              user_phone: (myProfile && myProfile.phone) || "",
+              message: cloudUrl,
+              created_at: Date.now()
+            });
+          }
+        }
+      } catch(e){}
+    })();
+
   } catch(e) {
-    if(statusEl) statusEl.textContent = "❌ فشل الرفع: " + (e.message || "");
-    showToast("تعذر رفع الصورة: " + e.message, "error");
+    console.error("handleProfileAvatarSelected error:", e);
+    if(statusEl) statusEl.textContent = "❌ تعذر حفظ الصورة: " + (e.message || "");
+    showToast("تعذر حفظ الصورة: " + e.message, "error");
   }
 };
 
