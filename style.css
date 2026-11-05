@@ -1,7 +1,11 @@
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:16px;line-height:1.5;overflow-x:hidden}
 @supports(padding:max(0px)){body{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}}
 :root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d;--purple:#8b5cf6;--pink:#ec4899}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button, a, input, select, textarea { touch-action: manipulation; }
+@media screen and (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
+}
 body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0));width:100%;max-width:100%;overflow-x:hidden}
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar.scrollAway{position:relative}
@@ -2022,6 +2026,7 @@ html.dark-mode .walletHeaderBtn {
   transform: scale(0.99);
 }
 .inboxAvatar {
+  overflow: hidden;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -2048,13 +2053,13 @@ html.dark-mode .inboxRow {
   border-color: var(--border);
 }
 html.dark-mode .chatBubble.incoming {
-  background: #1e293b;
-  border-color: #334155;
-  color: #f1f5f9;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
-
-
-
+html.dark-mode .chatBubble.incoming * {
+  color: #0f172a !important;
+}
 
 /* ========================================================
    🚀 تنسيقات أزرار الشات المتطورة والكبسولات
@@ -2215,7 +2220,6 @@ html.dark-mode .chatBubble.incoming {
   cursor: pointer;
   flex: 0 0 auto;
 }
-
 
 /* ========================================================
    🌟 فيسبوك ستايل - بروفايل الملف الشخصي المتطور
@@ -2429,7 +2433,6 @@ html.dark-mode .chatBubble.incoming {
   border-bottom-color: #0284c7;
 }
 
-
 /* 👥 تنسيقات كروت المتابعين */
 .followerUserRow {
   display: flex;
@@ -2487,7 +2490,6 @@ html.dark-mode .chatBubble.incoming {
   text-align: right;
 }
 
-
 /* ========================================================
    💬 ثيم المحادثات الفاخر بتصميم Instagram & Messenger
    ======================================================== */
@@ -2509,6 +2511,7 @@ html.dark-mode .chatBubble.incoming {
   box-shadow: 0 4px 14px rgba(2,132,199,0.1);
 }
 .inboxAvatar {
+  overflow: hidden;
   width: 52px;
   height: 52px;
   border-radius: 50%;
@@ -2552,9 +2555,19 @@ html.dark-mode .chatBubble.incoming {
 .chatBubble.incoming {
   align-self: flex-end !important;
   background: #ffffff !important;
-  color: var(--text) !important;
-  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  border: 1.5px solid #cbd5e1 !important;
   border-bottom-left-radius: 4px !important;
+}
+.chatBubble.incoming,
+.chatBubble.incoming span,
+.chatBubble.incoming div,
+.chatBubble.incoming p {
+  color: #0f172a !important;
+}
+.chatBubble.incoming .chatTime {
+  color: #64748b !important;
+  opacity: 1 !important;
 }
 .chatBubble .chatTime {
   font-size: 10.5px !important;
@@ -2566,13 +2579,11 @@ html.dark-mode .chatBubble.incoming {
   gap: 4px !important;
 }
 
-
 @keyframes pulseRed {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.4); opacity: 0.6; }
   100% { transform: scale(1); opacity: 1; }
 }
-
 
 /* ============================================
    📱 تصميم إعلانات البروفايل على نمط فيسبوك الأنيق
@@ -2784,7 +2795,6 @@ html.dark-mode .fbPostActBtn.chat {
   border-color: #334155;
 }
 
-
 /* ============================================
    👤 بطاقات البحث عن الأشخاص والحسابات
    ============================================ */
@@ -2898,7 +2908,6 @@ html.dark-mode .searchUserCard:hover .sucBtn {
   color: #0c2942;
 }
 
-
 /* ============================================
    🌄 غلاف الملف الشخصي والأيقونات التفاعلية
    ============================================ */
@@ -2951,4 +2960,118 @@ html.dark-mode .searchUserCard:hover .sucBtn {
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   z-index: 4;
+}
+
+
+/* 🔒 تثبيت لون الخط الأسود والخلفية البيضاء في الشات لمنع أي شفافية على كل الهواتف */
+#chatMessageInput {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+#chatMessageInput::placeholder {
+  color: #94a3b8 !important;
+}
+
+
+/* ========================================================
+   💎 تصميم الشات الفاخر والعصري (Luxury Modern Chat UI)
+   ======================================================== */
+.chatAttachBtn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 19px !important;
+  cursor: pointer !important;
+  flex: 0 0 auto !important;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+}
+.chatAttachBtn:active {
+  transform: scale(0.92) !important;
+}
+.chatAttachBtn.luxuryCam {
+  background: #f0f9ff !important;
+  border: 1.5px solid #bae6fd !important;
+  color: #0284c7 !important;
+}
+.chatAttachBtn.luxuryCam:hover {
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 4px 12px rgba(2,132,199,0.18) !important;
+}
+.chatAttachBtn.luxuryPhone {
+  background: #f0fdf4 !important;
+  border: 1.5px solid #bbf7d0 !important;
+  color: #16a34a !important;
+}
+.chatAttachBtn.luxuryPhone:hover {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+  box-shadow: 0 4px 12px rgba(22,163,74,0.18) !important;
+}
+
+.chatHeaderIconBtn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid var(--border) !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  transition: all .2s ease !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+}
+.chatHeaderIconBtn:active {
+  transform: scale(0.92) !important;
+}
+.chatHeaderIconBtn.call {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border-color: #bbf7d0 !important;
+}
+.chatHeaderIconBtn.call:hover {
+  background: #dcfce7 !important;
+  box-shadow: 0 4px 10px rgba(22,163,74,0.15) !important;
+}
+.chatHeaderIconBtn.del {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border-color: #fecdd3 !important;
+}
+.chatHeaderIconBtn.del:hover {
+  background: #fee2e2 !important;
+  box-shadow: 0 4px 10px rgba(239,68,68,0.15) !important;
+}
+.chatHeaderIconBtn.del.active {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border-color: #ef4444 !important;
+}
+.chatHeaderIconBtn.warn {
+  background: #fffbeb !important;
+  color: #f59e0b !important;
+  border-color: #fde68a !important;
+}
+.chatHeaderIconBtn.warn:hover {
+  background: #fef3c7 !important;
+}
+
+#chatMessageInput:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+#userChatOverlay {
+  z-index: 1300 !important;
+}
+
+#authOverlay {
+  z-index: 2500 !important;
 }
