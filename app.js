@@ -26,7 +26,6 @@ import {
   ai,
   getGenerativeModel
 } from "./supabase-adapter.js?v=5";
-
 // التقاط رابط الإحالة من الرابط عند الدخول
 try {
   const prms = new URLSearchParams(window.location.search);
@@ -35,9 +34,7 @@ try {
     sessionStorage.setItem('tasawuq_pending_ref', refCode);
   }
 } catch(e){}
-
 console.log('🚀 تسوق الآن يعمل بالكامل عبر Supabase');
-
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_WHATSAPP="218928476784";
@@ -48,7 +45,9 @@ const RESTAURANT_CATEGORY="المطاعم والمأكولات";
 const RESTAURANT_CATEGORY_LEGACY="مطاعم ومأكولات";
 const RESTAURANT_CATEGORY_LEGACY2="مطعم مأكولات";
 const RESTAURANT_CATEGORY_LEGACY3="مطاعم وغداء";
+
 function isRestaurantCategory(cat){return cat===RESTAURANT_CATEGORY || cat===RESTAURANT_CATEGORY_LEGACY || cat===RESTAURANT_CATEGORY_LEGACY2 || cat===RESTAURANT_CATEGORY_LEGACY3;}
+
 window.isRestaurantCategory=isRestaurantCategory;
 const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","المطاعم والمأكولات","مطعم مأكولات","مطاعم ومأكولات","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
 const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
@@ -57,7 +56,6 @@ const PHONE_BRANDS=["Apple / آيفون","Samsung / سامسونج","Huawei / ه
 const COMPUTER_BRANDS=["HP / إتش بي","Dell / ديل","Lenovo / لينوفو","Asus / أسوس","Acer / إيسر","Toshiba / توشيبا","Apple MacBook","MSI","Samsung","Microsoft Surface","Sony Vaio","Fujitsu","Razer","Alienware","LG Gram","Huawei MateBook","Xiaomi Mi Notebook","Gigabyte","Panasonic","Compaq","IBM","ThinkPad","Chromebook","PC تجميع","أخرى"];
 const ANIMAL_TYPES=["كلاب","قطط","طيور","أغنام ومواشي","أرانب وقوارض","أسماك وزينة","خيول ودواب","زواحف","أخرى"];
 const PERFUME_TYPES=["عطور رجالية","عطور نسائية","عطور عربية","بخور وعود","مسك","ماركات عالمية","معطرات جسم","أخرى"];
-
 const SUB_CATEGORIES={
   "سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
   "دراجات نارية":{title:"🏍️ اختر الماركة:",items:MOTORCYCLE_BRANDS},
@@ -70,7 +68,6 @@ const SUB_CATEGORIES={
   "الحيوانات والطيور":{title:"🐾 اختر النوع:",items:ANIMAL_TYPES},
   "العطور":{title:"🌸 اختر النوع:",items:PERFUME_TYPES}
 };
-
 const CATEGORIES=[
 {name:"الشركات والمتاجر",icon:"",isStore:true,iconName:"store",color:"#f59e0b"},
 {name:"المطاعم والمأكولات",icon:"🍽️",isRestaurantDirectory:true,iconName:"utensils-crossed",color:"#dc2626",image:"restaurant.png"},
@@ -94,15 +91,17 @@ const CATEGORIES=[
 {name:"العطور",icon:"🌸",iconName:"spray-can",color:"#ec4899",image:"perfume.png"},
 {name:"الكل",icon:"✨",iconName:"layout-grid",color:"#38bdf8"}
 ];
-
 const FORBIDDEN_WORDS=["إباحي","اباحي","جنس","جنسي","سكس","عارية","عاري","عريان","عريانة","ملط","دعارة","عاهر","عاهرة","شرموط","شرموطة","قحبة","زانية","زاني","للتعارف","شات جنسي","فتاة ليل","حشيش","كوكايين","هيروين","بانجو","ماريجوانا","ترامادول","كبتاجون","استروكس","مخدر","بندقية للبيع","كلاشنكوف","سلاح للبيع","مسدس للبيع","خرطوش","رصاص للبيع","تهريب","نصب","غش","وهمي","مزيف","porn","sex","nude","xxx","adult","escort","prostitute","whore","fuck","weed","cocaine","heroin","drugs","scam"];
-function detectForbidden(t){if(!t)return null;const s=String(t).toLowerCase();for(const w of FORBIDDEN_WORDS){if(s.includes(w.toLowerCase()))return w;}return null;}
-function checkContent(t,d){const a=detectForbidden(t);if(a)return{word:a,field:"العنوان"};const b=detectForbidden(d);if(b)return{word:b,field:"الوصف"};return null;}
 
+function detectForbidden(t){if(!t)return null;const s=String(t).toLowerCase();for(const w of FORBIDDEN_WORDS){if(s.includes(w.toLowerCase()))return w;}return null;}
+
+function checkContent(t,d){const a=detectForbidden(t);if(a)return{word:a,field:"العنوان"};const b=detectForbidden(d);if(b)return{word:b,field:"الوصف"};return null;}
 const RESERVED_USERNAMES=["admin","administrator","root","support","help","tasawuq","tasawuqnow","owner","moderator","mod","official","system","api","www","mail","email"];
+
 function validateUsername(u){if(!u)return{ok:false,msg:"اكتب اسم المستخدم"};const s=String(u).trim().toLowerCase();if(s.length<3)return{ok:false,msg:"الاسم قصير جدًا (3 أحرف على الأقل)"};if(s.length>20)return{ok:false,msg:"الاسم طويل جدًا (20 حرف كحد أقصى)"};if(!/^[a-z][a-z0-9_]*$/.test(s))return{ok:false,msg:"لازم يبدأ بحرف إنجليزي، ويحتوي فقط a-z / 0-9 / _"};if(RESERVED_USERNAMES.includes(s))return{ok:false,msg:"هذا الاسم محجوز للنظام"};return{ok:true,value:s};}
 
 /* ✅ دالات تنسيق والتحقق من رقم الهاتف */
+
 function normalizePhone(p){
   let s = String(p || "").replace(/[^0-9]/g, "");
   if (!s) return "";
@@ -111,6 +110,7 @@ function normalizePhone(p){
   while (s.startsWith("0")) s = s.slice(1);
   return "218" + s;
 }
+
 window.normalizePhone = normalizePhone;
 
 function formatCallPhone(p){
@@ -118,6 +118,7 @@ function formatCallPhone(p){
   if (!norm) return "";
   return "0" + norm.slice(3);
 }
+
 window.formatCallPhone = formatCallPhone;
 
 function validatePhone(p){
@@ -130,9 +131,11 @@ function validatePhone(p){
   if (rest.length > 12) return {ok: false, msg: "الرقم طويل جدًا، تأكد من الرقم"};
   return {ok: true, value: normalized};
 }
+
 window.validatePhone = validatePhone;
 
 window.normalizeUsernameInput=()=>{const i=document.getElementById("myUsername");if(!i)return;i.value=i.value.toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,20);};
+
 window.normalizePhoneInput=()=>{
   const i=document.getElementById("myPhone");
   if(!i)return;
@@ -140,14 +143,12 @@ window.normalizePhoneInput=()=>{
   if(v.indexOf("+")>0) v=v[0]+v.slice(1).replace(/\+/g,"");
   i.value=v.slice(0,16);
 };
-
 const userLimitsCache={};
 const DEFAULT_LIMIT=3;
 const STORE_DEFAULT_LIMIT=20;
 async function getUserLimit(uid){if(!uid)return DEFAULT_LIMIT;if(userLimitsCache[uid]!==undefined)return userLimitsCache[uid];try{const snap=await getDoc(doc(db,"userLimits",uid));if(snap.exists()){const l=snap.data().limit||DEFAULT_LIMIT;userLimitsCache[uid]=l;return l;}}catch(e){}userLimitsCache[uid]=DEFAULT_LIMIT;return DEFAULT_LIMIT;}
 async function getUserStoreLimit(uid){if(!uid)return STORE_DEFAULT_LIMIT;try{const snap=await getDoc(doc(db,"userLimits",uid));if(snap.exists()){return snap.data().storeLimit||STORE_DEFAULT_LIMIT;}}catch(e){}return STORE_DEFAULT_LIMIT;}
 async function setUserLimit(uid,limit,extra={}){try{const data={limit:Number(limit),email:extra.email||"",name:extra.name||"",username:extra.username||"",memberNo:extra.memberNo||null,updatedAt:Date.now()};if(extra.storeLimit!==undefined)data.storeLimit=Number(extra.storeLimit);await setDoc(doc(db,"userLimits",uid),data,{merge:true});userLimitsCache[uid]=Number(limit);return true;}catch(e){return false;}}
-
 let isAdmin=false,showOnlyMine=false,showOnlyFavorites=false,currentCategory="الكل",currentSubCategory="الكل";
 let currentSort="newest",currentPriceMin=null,currentPriceMax=null,currentAdTypeFilter="all";
 const LIBYA_CITIES={"الغرب":["طرابلس","جنزور","تاجوراء","القره بوللي","سوق الجمعة","أبوسليم","عين زارة","قصر بن غشير","العزيزية","الماية","الزاوية","صرمان","صبراتة","العجيلات","زوارة","الجميل","رقدالين","زلطن","الرياينة","الخمس","زليتن","مسلاتة","مصراتة","ترهونة","بني وليد","غريان","مزدة","يفرن","جادو","نالوت","غدامس","الزنتان","الرجبان","الرحيبات","القلعة","ككلة","تيجي","الشقيقة","الأصابعة","ورشفانة","القواليش"],"الشرق":["بنغازي","البيضاء","درنة","طبرق","المرج","شحات","سوسة","الأبرق","القبة","الأبيار","سلوق","توكرة","قمينس","إجدابيا","البريقة","رأس لانوف","العقيلة","أمساعد","بنينة"],"الوسط":["سرت","مرادة","بن جواد","النوفلية","أبوقرين","الوشكة","هون","ودان","سوكنة","زلة","الجفرة","أوجلة","جالو"],"الجنوب":["سبها","أوباري","مرزق","غات","الشاطئ","براك الشاطئ","تمنهنت","القطرون","تراغن","أدري","الكفرة","ربيانة","تازربو","الغريفة"]};
@@ -165,11 +166,12 @@ let _tempStoreData=null;
 let currentStoreHelpers=[];
 let compareList=[];
 try{compareList=JSON.parse(localStorage.getItem('compareList')||'[]');}catch(e){compareList=[];}
+
 function saveCompare(){try{localStorage.setItem('compareList',JSON.stringify(compareList));}catch(e){}}
 
 function isRestaurantStore(store){return !!(store && isRestaurantCategory(store.category));}
-
 let _toastTimer=null;
+
 function showToast(text,type="info",duration=2200){
   let t=document.getElementById("globalToast");
   if(!t){
@@ -185,6 +187,7 @@ function showToast(text,type="info",duration=2200){
   if(_toastTimer)clearTimeout(_toastTimer);
   _toastTimer=setTimeout(()=>{t.classList.remove("show");},duration);
 }
+
 window.showToast=showToast;
 
 function showFloatingButtons(){
@@ -194,6 +197,7 @@ function showFloatingButtons(){
   if(btn1) btn1.style.display = status.canSpin ? 'flex' : 'none';
   if(btn2) btn2.style.display = 'flex';
 }
+
 function hideFloatingButtons(){
   const btn1 = document.getElementById('luckyWheelBtn');
   const btn2 = document.getElementById('aiChatBtn');
@@ -202,7 +206,9 @@ function hideFloatingButtons(){
   const chatWin = document.getElementById('aiChatWindow');
   if(chatWin) chatWin.style.display = 'none';
 }
+
 window.showFloatingButtons = showFloatingButtons;
+
 window.hideFloatingButtons = hideFloatingButtons;
 
 function refreshNavIcons(){
@@ -210,6 +216,7 @@ function refreshNavIcons(){
     try{ lucide.createIcons(); }catch(e){ console.warn('Lucide error:', e); }
   }
 }
+
 window.refreshNavIcons = refreshNavIcons;
 refreshNavIcons();
 setTimeout(refreshNavIcons, 300);
@@ -224,7 +231,6 @@ const POINTS_TIERS = [
   { name: 'ذهبي',    icon: '🥇', min: 2000, max: 4999,  color: '#eab308', discount: 10 },
   { name: 'ماسي',    icon: '💎', min: 5000, max: 999999, color: '#6366f1', discount: 20 }
 ];
-
 const POINTS_REWARDS = [
   { id: 'featured_1',  icon: '⭐', category: 'featured', title: 'إعلان مميز — يوم واحد',  cost: 250,   desc: 'إعلانك في الأعلى لمدة 24 ساعة' },
   { id: 'featured_3',  icon: '⭐', category: 'featured', title: 'إعلان مميز — 3 أيام',    cost: 400,   desc: 'إعلانك في الأعلى 3 أيام كاملة' },
@@ -241,7 +247,6 @@ const POINTS_REWARDS = [
   { id: 'home_banner',   icon: '🌟', category: 'vip', title: 'شريط إعلان في الرئيسية',  cost: 10000, desc: 'إعلانك في بانر الرئيسية أسبوع' },
   { id: 'premium_badge', icon: '🏅', category: 'vip', title: 'شارة "بائع مميز"',       cost: 8000,  desc: 'شارة ذهبية تظهر جنب اسمك شهر' }
 ];
-
 let myPoints = 0;
 let myTier = POINTS_TIERS[0];
 let myHistory = [];
@@ -416,20 +421,17 @@ window.switchPointsTab = function(tab){
     historyBtn.style.color = '#fff';
   }
 };
-
 async function addPoints(uid, amount, title, activity){
   if(!auth.currentUser) return;
   if(!uid || !amount) return;
   amount = Number(amount);
   if(isNaN(amount)) return;
-
   // 🔒 حماية مشددة: قائمة الأنشطة المعتمدة في النظام فقط
   const allowedActivities = ['post_create', 'post_approved', 'rating', 'referral_bonus', 'redeem'];
   if(!allowedActivities.includes(activity)){
     console.warn("محاولة غير مصرح بها لنشاط نقاط مجهول:", activity);
     return;
   }
-
   // في حالة استبدال النقاط: يجب أن تكون القيمة سالبة
   if(activity === 'redeem'){
     if(amount >= 0) return;
@@ -445,7 +447,6 @@ async function addPoints(uid, amount, title, activity){
       return;
     }
   }
-
   try{
     const userRef = doc(db, 'userPoints', uid);
     const snap = await getDoc(userRef);
@@ -499,12 +500,12 @@ window.redeemReward = async function(rewardId){
     });
     showToast(`✅ تم! تواصل مع الإدارة لاستلام "${reward.title}"`, 'success', 4000);
     const adminMsg = `🏆 طلب استبدال نقاط\n\n👤 المستخدم: ${auth.currentUser.email}\n🎁 المكافأة: ${reward.title}\n💰 التكلفة: ${discountedCost} نقطة`;
+
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, '_blank');
   } catch(e){
     showToast('❌ خطأ: ' + e.message, 'error');
   }
 };
-
 async function rewardReferrer(refCode, newUid) {
   try {
     const found = await findUserByAny(refCode);
@@ -515,7 +516,6 @@ async function rewardReferrer(refCode, newUid) {
     console.warn('Reward referrer error:', e);
   }
 }
-
 async function giveWelcomePoints(uid){
   try{
     const userRef = doc(db, 'userPoints', uid);
@@ -523,7 +523,6 @@ async function giveWelcomePoints(uid){
     if(!snap.exists()){
       let welcomePts = 20;
       let history = [{ value: 20, title: '🎉 مكافأة الترحيب', activity: 'welcome', timestamp: Date.now() }];
-      
       const refCode = sessionStorage.getItem('tasawuq_pending_ref');
       if (refCode) {
         welcomePts += 20;
@@ -531,7 +530,6 @@ async function giveWelcomePoints(uid){
         rewardReferrer(refCode, uid);
         sessionStorage.removeItem('tasawuq_pending_ref');
       }
-
       await setDoc(userRef, {
         points: welcomePts,
         history: history,
@@ -541,7 +539,6 @@ async function giveWelcomePoints(uid){
     }
   }catch(e){}
 }
-
 async function syncPendingPoints(){
   if(!auth.currentUser) return;
   try{
@@ -573,6 +570,7 @@ async function syncPendingPoints(){
     console.warn('فشلت مزامنة النقاط المعلقة:', e);
   }
 }
+
 window.syncPendingPoints = syncPendingPoints;
 
 /* ============================================
@@ -588,7 +586,6 @@ const WHEEL_REWARDS = [
   { type: 'points', value: 25,    icon: '🥉', title: '25 نقطة',      desc: 'أضفنا 25 نقطة لرصيدك',      weight: 10 },
   { type: 'points', value: 100,   icon: '🥇', title: '100 نقطة',     desc: 'مكافأة أسطورية! 100 نقطة',  weight: 1 }
 ];
-
 const WHEEL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const WHEEL_STORAGE_KEY = 'luckyWheelLast';
 let wheelSpinning = false;
@@ -650,6 +647,7 @@ window.closeLuckyWheel = function(){
   document.getElementById('luckyWheelOverlay').classList.add('hidden');
   if(window._wheelCooldownInterval){
     clearInterval(window._wheelCooldownInterval);
+
     window._wheelCooldownInterval = null;
   }
   updateWheelBadge();
@@ -658,6 +656,7 @@ window.closeLuckyWheel = function(){
 function startWheelCooldown(){
   const el = document.getElementById('wheelCooldownText');
   if(!el) return;
+
   function update(){
     const status = getWheelStatus();
     if(status.canSpin){
@@ -673,6 +672,7 @@ function startWheelCooldown(){
   }
   update();
   if(window._wheelCooldownInterval) clearInterval(window._wheelCooldownInterval);
+
   window._wheelCooldownInterval = setInterval(update, 1000);
 }
 
@@ -709,7 +709,6 @@ window.spinLuckyWheel = async function(){
   wheelSpinning = false;
   updateWheelBadge();
 };
-
 async function giveWheelReward(uid, reward){
   const pointsToAdd = reward.type === 'points' ? reward.value : 0;
   try{
@@ -730,7 +729,6 @@ async function giveWheelReward(uid, reward){
       updates.freeFeaturedTokens = (currentData.freeFeaturedTokens || 0) + 1;
     }
     await setDoc(userRef, updates, { merge: true });
-
     myPoints = newPoints;
     myHistory = history;
     const balEl = document.getElementById('pointsBalance');
@@ -738,7 +736,6 @@ async function giveWheelReward(uid, reward){
     updatePointsBadge();
     updateTier();
     renderPoints();
-
     console.log('✅ تم إضافة', pointsToAdd, 'نقطة | الرصيد الجديد:', newPoints);
   }catch(e){
     console.error('❌ فشل حفظ النقاط في Firestore:', e);
@@ -784,8 +781,8 @@ const AI_MODELS_LIST = [
 ];
 let _workingModel = null;
 try{ _workingModel = localStorage.getItem('aiWorkingModel') || null; }catch(e){}
-
 let aiModel = null;
+
 function createAIModel(modelName){
   if (ai && typeof getGenerativeModel === 'function') {
     try {
@@ -796,11 +793,9 @@ function createAIModel(modelName){
   }
   return null;
 }
-
 if(_workingModel){
   try{ aiModel = createAIModel(_workingModel); console.log('✅ موديل محفوظ:', _workingModel); }catch(e){ aiModel = null; }
 }
-
 async function generateAIContent(prompt){
   if(aiModel){
     try{
@@ -833,11 +828,8 @@ async function generateAIContent(prompt){
   }
   throw lastError || new Error('كل الموديلات فشلت');
 }
-
 const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الليبي 🇱🇾 (منصة إعلانات مجانية).
-
 🎯 مهمتك: مساعد المستخدمين في استخدام الموقع فقط.
-
 📚 المعلومات:
 - التسجيل: زر "حسابي" في الأسفل → Google
 - النشر: زر ➕ الأصفر → إعلان فردي أو متجر
@@ -848,7 +840,6 @@ const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الل�
 - الترقية: 7 أيام 15 د.ل، 15 يوم 30 د.ل، 30 يوم 40 د.ل
 - 🎡 عجلة الحظ: كل 24 ساعة → نقاط مجانية
 - 🏆 نظام النقاط: انشر إعلان (10 نقاط)، قيّم بائع (3 نقاط)، ادعُ صديق (50 نقطة)
-
 ⚠️ قواعد صارمة:
 1. أجب بالعربية الليبية البسيطة
 2. الرد بحد أقصى 4 أسطر
@@ -857,13 +848,12 @@ const AI_SYSTEM_PROMPT = `أنت مساعد موقع "تسوق الآن" الل�
 5. لا تطلب أرقام/إيميلات/كلمات سر
 6. لو ما تعرف: "تواصل مع الإدارة على واتساب 218928476784"
 7. استخدم إيموجي بسيط
-
 سؤال المستخدم: `;
-
 const AI_BLOCKED = ['سياسة','سياسي','رئيس','حكومة','انتخابات','حرب','دين','ديني','إسلام','مسيحي','يهودي','صلاة','جنس','جنسي','سكس','عاري','عنف','قتل','سلاح','بندقية','هاك','اختراق','فيروس','هاكر','كلمة سر','باسورد','مخدر','حشيش','كحول','احتيال','نصب عليك','سرقة بيانات'];
 const AI_DAILY_LIMIT = 30;
 
 function getAICount(){ try{ return parseInt(localStorage.getItem('aiCount_'+new Date().toDateString())||'0'); }catch(e){ return 0; } }
+
 function incAICount(){ try{ localStorage.setItem('aiCount_'+new Date().toDateString(), String(getAICount()+1)); }catch(e){} }
 
 window.toggleAIChat = () => {
@@ -875,6 +865,7 @@ window.toggleAIChat = () => {
 
 window.aiQuickAsk = (question) => {
   document.getElementById('aiChatInput').value = question;
+
   window.sendAIChat();
 };
 
@@ -935,6 +926,7 @@ window.sendAIChat = async () => {
   let startX, startY, startLeft, startTop;
   let offsetX = 0, offsetY = 0;
   let moved = false;
+
   function initializePosition(){
     const rect = btn.getBoundingClientRect();
     btn.style.right = 'auto';
@@ -944,6 +936,7 @@ window.sendAIChat = async () => {
     btn.style.transform = 'translate(0,0)';
   }
   btn.addEventListener('pointerdown', (e) => {
+
     window._aiDraggingNow = false;
     moved = false;
     initializePosition();
@@ -982,12 +975,14 @@ window.sendAIChat = async () => {
       try{ localStorage.setItem('aiBtnPos', JSON.stringify({ x: offsetX, y: offsetY })); }catch(err){}
       setTimeout(()=>{ window._aiDraggingNow = false; }, 100);
     } else {
+
       window._aiDraggingNow = false;
       if(typeof window.toggleAIChat === 'function') window.toggleAIChat();
     }
   });
   btn.addEventListener('pointercancel', () => {
     isDragging = false;
+
     window._aiDraggingNow = false;
     btn.style.cursor = 'grab';
     btn.style.opacity = '0.7';
@@ -1015,6 +1010,7 @@ window.sendAIChat = async () => {
     setTimeout(()=>{const icon=document.getElementById('darkModeIcon');if(icon){icon.setAttribute('data-lucide',useDark?'sun':'moon');if(window.lucide)lucide.createIcons();}},200);
   }catch(e){}
 })();
+
 window.toggleDarkMode=function(){
   const html=document.documentElement;
   const isDark=html.classList.toggle('dark-mode');
@@ -1026,12 +1022,17 @@ if(icon){icon.setAttribute('data-lucide',isDark?'sun':'moon');if(window.lucide)l
 };
 
 function loadCart(){try{const saved=localStorage.getItem('tasawuqCart');if(saved){const parsed=JSON.parse(saved);if(parsed && typeof parsed==="object" && Array.isArray(parsed.items)){cart=parsed;}}}catch(e){}}
+
 function saveCart(){try{localStorage.setItem('tasawuqCart',JSON.stringify(cart));}catch(e){}}
+
 function cartTotalCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
+
 function cartTotalPrice(){return cart.items.reduce((s,i)=>s+((i.price||0)*(i.qty||1)),0);}
+
 function cartTotalItemsCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
 
 /* ✅ تعديل: السلة والمقارنة بأنيميشن ناعم */
+
 function updateCartUI(){
   const cnt=cartTotalCount();
   const hc=document.getElementById("cartHeaderCount");
@@ -1061,9 +1062,9 @@ function updateCartUI(){
   });
 }
 loadCart();
+
 window.addEventListener('load',()=>{setTimeout(updateCartUI,500);});
 updateCartUI();
-
 const home=document.getElementById("home"),form=document.getElementById("form"),postsBox=document.getElementById("posts"),homeTitle=document.getElementById("homeTitle");
 const categoriesScreen=document.getElementById("categoriesScreen");
 const mainTopbar=document.getElementById("mainTopbar");
@@ -1080,15 +1081,18 @@ const editStoreOverlay=document.getElementById("editStoreOverlay");
 const feedbackOverlay=document.getElementById("feedbackOverlay");
 
 window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
+
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
 
 /* ===== Store Helpers ===== */
+
 window.loadStoreHelpers=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){currentStoreHelpers=[];renderStoreHelpersList();return;}
   currentStoreHelpers=Array.isArray(store.helpers)?[...store.helpers]:[];
   renderStoreHelpersList();
 };
+
 function renderStoreHelpersList(){
   const box=document.getElementById("storeHelpersList");
   if(!box)return;
@@ -1103,6 +1107,7 @@ function renderStoreHelpersList(){
     </div>
   `).join("");
 }
+
 window.addStoreHelper=()=>{
   const input=document.getElementById("newHelperEmail");
   const email=(input.value||"").trim().toLowerCase();
@@ -1115,12 +1120,14 @@ window.addStoreHelper=()=>{
   renderStoreHelpersList();
   showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات","success",3000);
 };
+
 window.removeStoreHelper=(index)=>{
   if(!confirm("حذف هذا المساعد؟"))return;
   currentStoreHelpers.splice(index,1);
   renderStoreHelpersList();
   showToast("✅ تم الحذف — لا تنسى حفظ التعديلات","success",3000);
 };
+
 window.isStoreHelper=(storeId,userEmail)=>{
   if(!userEmail)return false;
   const store=allStores.find(s=>s.id===storeId);
@@ -1129,6 +1136,7 @@ window.isStoreHelper=(storeId,userEmail)=>{
 };
 
 /* ===== Feedback ===== */
+
 window.openFeedback=()=>{
   const t=document.getElementById("fbType");
   const m=document.getElementById("fbMessage");
@@ -1138,6 +1146,7 @@ window.openFeedback=()=>{
   if(c)c.value="";
   feedbackOverlay.classList.remove("hidden");
 };
+
 window.submitFeedback=async()=>{
   const type=document.getElementById("fbType").value;
   const message=(document.getElementById("fbMessage").value||"").trim();
@@ -1164,6 +1173,7 @@ window.submitFeedback=async()=>{
 };
 
 /* ===== التعديلات الجديدة على السعر ===== */
+
 window.onPriceTypeChange=()=>{
   const contact=document.getElementById("contactPrice");
   const priceInput=document.getElementById("price");
@@ -1201,6 +1211,7 @@ window.toggleReceiptPhoneField=()=>{
   const nLbl=document.getElementById("storeNameLabel");
   if(nLbl)nLbl.textContent=isRest?"اسم المطعم":"اسم المتجر / الشركة";
 };
+
 window.toggleEditReceiptPhoneField=()=>{
   const cat=document.getElementById("editStoreCategory")?.value;
   const isRest=isRestaurantCategory(cat);
@@ -1213,15 +1224,21 @@ window.toggleEditReceiptPhoneField=()=>{
   const pHelp=document.getElementById("editStorePhoneHelp");
   if(pHelp)pHelp.textContent=isRest?"💡 طلب الأوردر يكون بالاتصال الهاتفي فقط. هذا الرقم مخصص لإرسال واصل التحويل في حال الدفع المصرفي.":"💡 في المتاجر والشركات، رقم الواتساب والاتصال موحّد";
 };
+
   /* ============================================
    ✅ أدوات مساعدة (formatPrice + buildEmptyState)
    ============================================ */
+
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
 window.escapeHtml=escapeHtml;
+
 function formatPrice(n){if(n==null||n===""||isNaN(n))return"";return Number(n).toLocaleString('en-US');}
+
 window.formatPrice=formatPrice;
 
 /* ✅ دالة الصفحة الفارغة الآمنة — string concatenation فقط، بدون تداخل */
+
 function buildEmptyState(icon, title, desc, btnLabel, btnOnclick, btnSecondary){
   var cls = btnSecondary ? 'esBtn esBtnSecondary' : 'esBtn';
   var btnHtml = btnLabel ? '<button class="' + cls + '" onclick="' + btnOnclick + '">' + btnLabel + '</button>' : '';
@@ -1236,6 +1253,7 @@ function buildEmptyState(icon, title, desc, btnLabel, btnOnclick, btnSecondary){
 /* ============================================
    الأقسام + الشاشات + التنقل
    ============================================ */
+
 function catIconHtml(c){
   const color=c.color||"#38bdf8";
   if(c.image){
@@ -1243,6 +1261,7 @@ function catIconHtml(c){
   }
   return `<div class="catIconWrap" style="background:${color}"><i data-lucide="${c.iconName||'circle'}"></i></div>`;
 }
+
 function buildCategoriesGrid(){
   const grid=document.getElementById("categoriesGrid");
   if(!grid)return;
@@ -1271,55 +1290,50 @@ function pushNavState(stateObj, hash) {
     history.pushState(stateObj, '', url);
   } catch(e) {}
 }
+
 window.pushNavState = pushNavState;
 
 function getActiveTopView() {
   const lb = document.getElementById("lightbox");
   if (lb && !lb.classList.contains("hidden")) return { type: 'lightbox' };
-
   const sm = document.getElementById("storyModalOverlay");
   if (sm && !sm.classList.contains("hidden")) return { type: 'storyModal' };
-
+  const uco = document.getElementById("userChatOverlay");
+  if (uco && !uco.classList.contains("hidden")) return { type: 'chat' };
   const tp = document.getElementById("transferPostsOverlay");
   if (tp) return { type: 'customOverlay', el: tp };
-
   const eps = document.getElementById("editProfileScreen");
   if (eps && !eps.classList.contains("hidden")) return { type: 'editProfile' };
-
   const so = document.getElementById("sellerOverlay");
   if (so && !so.classList.contains("hidden")) return { type: 'seller' };
 
-  const uco = document.getElementById("userChatOverlay");
-  if (uco && !uco.classList.contains("hidden")) return { type: 'chat' };
+  const rlo = document.getElementById("restaurantLiveOrdersOverlay");
+  if (rlo && !rlo.classList.contains("hidden")) return { type: 'restaurantOrders' };
 
+  const ao = document.getElementById("accountOverlay");
+  if (ao && !ao.classList.contains("hidden")) return { type: 'account' };
   if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
-
   const openOverlay = document.querySelector(".overlay:not(.hidden)");
   if (openOverlay) return { type: 'overlay', el: openOverlay };
-
   const sc = document.getElementById("storeScreen");
   if (sc && !sc.classList.contains("hidden")) return { type: 'store' };
-
   const formEl = document.getElementById("form");
   if (formEl && !formEl.classList.contains("hidden")) return { type: 'form' };
-
   const ss = document.getElementById("storesScreen");
   if (ss && !ss.classList.contains("hidden")) return { type: 'stores' };
-
   const homeEl = document.getElementById("home");
   const catScEl = document.getElementById("categoriesScreen");
   if (homeEl && !homeEl.classList.contains("hidden") && catScEl && catScEl.classList.contains("hidden")) {
     return { type: 'home' };
   }
-
   return null;
 }
+
 window.getActiveTopView = getActiveTopView;
 
 function performBackAction() {
   const top = getActiveTopView();
   if (!top) return false;
-
   if (top.type === 'lightbox') {
     if (typeof closeLightboxDirect === 'function') closeLightboxDirect();
     else { const lb = document.getElementById("lightbox"); if (lb) lb.classList.add("hidden"); }
@@ -1339,13 +1353,25 @@ function performBackAction() {
     else { const eps = document.getElementById("editProfileScreen"); if (eps) eps.classList.add("hidden"); }
     return true;
   }
-  if (top.type === 'seller') {
-    const so = document.getElementById("sellerOverlay");
-    if (so) so.classList.add("hidden");
+  if (top.type === 'chat') {
+    if (typeof closeUserChatDirect === 'function') closeUserChatDirect();
+    else if (typeof closeUserChat === 'function') closeUserChat(true);
     return true;
   }
-  if (top.type === 'chat') {
-    if (typeof closeUserChat === 'function') closeUserChat();
+  if (top.type === 'seller') {
+    const so = document.getElementById("sellerOverlay");
+    if (so) { so.classList.add("hidden"); so.style.zIndex = ""; }
+    return true;
+  }
+
+  if (top.type === 'restaurantOrders') {
+    if (typeof closeRestaurantLiveOrders === 'function') closeRestaurantLiveOrders();
+    else { const rlo = document.getElementById("restaurantLiveOrdersOverlay"); if (rlo) rlo.classList.add("hidden"); }
+    return true;
+  }
+
+  if (top.type === 'account') {
+    closeOverlayDirect();
     return true;
   }
   if (top.type === 'post') {
@@ -1376,6 +1402,7 @@ function performBackAction() {
   }
   return false;
 }
+
 window.performBackAction = performBackAction;
 
 window.addEventListener('popstate', (e) => {
@@ -1388,10 +1415,10 @@ window.addEventListener('popstate', (e) => {
     setTimeout(() => { _isHistoryNavigating = false; }, 60);
   }
 });
-
 if (typeof window !== 'undefined') {
   try {
     if (!window.history.state) {
+
       window.history.replaceState({ screen: 'root' }, '', window.location.href);
     }
   } catch(e) {}
@@ -1408,9 +1435,12 @@ function showCategoriesScreenDirect(){
   renderRecentlyViewed();updateCartUI();updateCompareUI();window.scrollTo(0,0);
   showFloatingButtons();
 }
+
 window.showCategoriesScreenDirect=showCategoriesScreenDirect;
+
 window.showCategoriesScreen=()=>{
   if(!_isHistoryNavigating && window.history.state && (window.history.state.screen === 'stores' || window.history.state.screen === 'category' || window.history.state.screen === 'mine' || window.history.state.screen === 'fav')){
+
     window.history.back();
     return;
   }
@@ -1431,7 +1461,9 @@ function openCategoryDirect(cat){
   renderSubCats();renderPosts();updateCartUI();window.scrollTo(0,0);
   hideFloatingButtons();
 }
+
 window.openCategoryDirect=openCategoryDirect;
+
 window.openCategory=(cat,skipHistory)=>{
   openCategoryDirect(cat);
   if(!skipHistory) pushNavState({ screen: 'category', cat: cat }, '#cat-' + encodeURIComponent(cat || 'all'));
@@ -1443,15 +1475,20 @@ function backFromFormDirect(){
   else if(currentCategory && currentCategory!=="الكل"){openCategoryDirect(currentCategory);}
   else{showCategoriesScreenDirect();}
 }
+
 window.backFromFormDirect=backFromFormDirect;
+
 window.backFromForm=()=>{
   if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'form'){
+
     window.history.back();
     return;
   }
   backFromFormDirect();
 };
+
 window.focusSearchInHome=()=>{openCategory("الكل");setTimeout(()=>{const i=document.getElementById("searchInput");if(i)i.focus();},200);};
+
 window.filterCityCat=()=>{const v=document.getElementById("cityFilterCat").value;document.getElementById("cityFilter").value=v;currentCity=v;openCategory("الكل");setTimeout(()=>{document.getElementById("cityFilter").value=v;currentCity=v;renderPosts();},100);};
 
 window.setSort=(type)=>{
@@ -1461,8 +1498,11 @@ window.setSort=(type)=>{
   if(el)el.classList.add("active");
   renderPosts();
 };
+
 window.togglePriceFilter=()=>{const row=document.getElementById("priceFilterRow");const btn=document.getElementById("priceFilterToggle");if(!row)return;row.classList.toggle("open");if(btn)btn.classList.toggle("active",row.classList.contains("open"));};
+
 window.applyPriceFilter=()=>{const mn=parseInt(document.getElementById("priceMin").value,10);const mx=parseInt(document.getElementById("priceMax").value,10);currentPriceMin=isNaN(mn)?null:mn;currentPriceMax=isNaN(mx)?null:mx;renderPosts();};
+
 window.clearPriceFilter=()=>{document.getElementById("priceMin").value="";document.getElementById("priceMax").value="";currentPriceMin=null;currentPriceMax=null;renderPosts();};
 
 window.toggleAdTypeFilter=()=>{
@@ -1476,8 +1516,11 @@ window.toggleAdTypeFilter=()=>{
 /* ============================================
    تصفحتها حديثاً
    ============================================ */
+
 function getRecentViews(){try{return JSON.parse(localStorage.getItem('recentViews')||'[]');}catch(e){return[];}}
+
 function addRecentView(id){try{let v=getRecentViews().filter(x=>x!==id);v.unshift(id);if(v.length>10)v=v.slice(0,10);localStorage.setItem('recentViews',JSON.stringify(v));}catch(e){}}
+
 function renderRecentlyViewed(){
   const section=document.getElementById("recentSection");
   const box=document.getElementById("recentScroll");
@@ -1504,19 +1547,17 @@ let _serverSearchCache={};
 let _isSearchingServer=false;
 
 window._matchedSearchUsers = [];
-
 async function searchServerPosts(term){
   if(!term || term.trim().length < 2) {
+
     window._matchedSearchUsers = [];
     return;
   }
   const rawTerm = term.trim();
   const cleanTerm = rawTerm.replace(/^@/, '').toLowerCase();
-
   try {
     const sb = window.supabase || supabase;
     if(!sb) return;
-
     // 1) البحث الفوري في جدول profiles بالاسم أو المعرف (@username) أو رقم العضوية
     const num = parseInt(cleanTerm, 10);
     let userFilter = `name.ilike.%${cleanTerm}%,username.ilike.%${cleanTerm}%`;
@@ -1528,17 +1569,16 @@ async function searchServerPosts(term){
       .select('id, name, username, member_no, phone')
       .or(userFilter)
       .limit(6);
-    
     if(!uErr && matchedUsers && matchedUsers.length > 0){
+
       window._matchedSearchUsers = matchedUsers;
     } else {
+
       window._matchedSearchUsers = [];
     }
-
     // 2) جلب إعلانات المستخدمين المطابقين من السيرفر
     const seenIds = new Set(allPosts.map(p => p.id));
     let addedCount = 0;
-
     if(matchedUsers && matchedUsers.length > 0){
       const uids = matchedUsers.map(u => u.id);
       const { data: userPosts } = await sb
@@ -1559,7 +1599,6 @@ async function searchServerPosts(term){
         });
       }
     }
-
     // 3) البحث في جدول الإعلانات بالنص
     const cacheKey = cleanTerm;
     if(!_serverSearchCache[cacheKey]){
@@ -1571,7 +1610,6 @@ async function searchServerPosts(term){
         .or(`title.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%,brand.ilike.%${cleanTerm}%,category.ilike.%${cleanTerm}%,city.ilike.%${cleanTerm}%,seller_name.ilike.%${cleanTerm}%,seller_username.ilike.%${cleanTerm}%`)
         .order('created_at', { ascending: false })
         .limit(30);
-
       if(!error && data && data.length > 0){
         data.forEach(raw => {
           const p = objectFromDb(raw);
@@ -1583,7 +1621,6 @@ async function searchServerPosts(term){
         });
       }
     }
-
     if(addedCount > 0){
       allPosts = sortPosts(allPosts);
     }
@@ -1593,8 +1630,8 @@ async function searchServerPosts(term){
     console.warn("Server search error:", err);
   }
 }
-window.searchServerPosts = searchServerPosts;
 
+window.searchServerPosts = searchServerPosts;
 if(searchInputEl){
   searchInputEl.addEventListener('input',function(){
     const v=this.value||"";
@@ -1612,14 +1649,18 @@ if(searchInputEl){
 if(clearSearchBtnEl){clearSearchBtnEl.addEventListener('click',function(e){e.preventDefault();if(searchInputEl)searchInputEl.value="";try{localStorage.removeItem('lastSearch');}catch(e){}this.style.display='none';if(typeof hideSearchDropdown==='function')hideSearchDropdown();if(typeof renderPosts==='function')renderPosts();});}
 
 function getSearchHistory(){try{return JSON.parse(localStorage.getItem('searchHistory')||'[]');}catch(e){return[];}}
+
 function addToSearchHistory(term){if(!term||term.trim().length<2)return;const t=term.trim();let h=getSearchHistory().filter(x=>x!==t);h.unshift(t);if(h.length>10)h=h.slice(0,10);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}}
+
 function removeFromHistory(term,event){if(event)event.stopPropagation();let h=getSearchHistory().filter(x=>x!==term);try{localStorage.setItem('searchHistory',JSON.stringify(h));}catch(e){}showSearchDropdown();}
+
 function clearSearchHistory(event){if(event)event.stopPropagation();if(!confirm("مسح كل سجل البحث؟"))return;try{localStorage.removeItem('searchHistory');}catch(e){}showSearchDropdown();}
+
 function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen=new Set();const results=[];allPosts.forEach(p=>{if(getStatus(p)!=="approved")return;if(isExpired(p))return;if(p.sold)return;const title=(p.title||"").trim();if(!title)return;const lower=title.toLowerCase();if(t && !lower.includes(t))return;const key=lower.slice(0,30);if(seen.has(key))return;seen.add(key);results.push({title,price:p.price,priceType:p.priceType,thumb:(p.images&&p.images[0])||p.imageUrl||""});});if(t){
     const cleanT = t.startsWith('@') ? t.slice(1) : t;
-
     // 👤 دمج الحسابات والأشخاص من نتائج البحث في profiles
     if(window._matchedSearchUsers && window._matchedSearchUsers.length > 0){
+
       window._matchedSearchUsers.forEach(u => {
         results.unshift({
           title: u.name || "مستخدم",
@@ -1630,7 +1671,6 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
         });
       });
     }
-
     // 👤 البحث عن المستخدمين بالمعرف والاسم
     const matchedUsers = new Map();
     allPosts.forEach(p => {
@@ -1648,7 +1688,6 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
       }
     });
     matchedUsers.forEach(u => results.unshift(u));
-
     // 🏪 البحث عن المتاجر
     allStores.forEach(s => {
       if(s.status === "approved" && (s.name || "").toLowerCase().includes(cleanT)){
@@ -1660,7 +1699,6 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
         });
       }
     });
-
     const allBrands=[...CAR_BRANDS,...MOTORCYCLE_BRANDS,...PHONE_BRANDS,...COMPUTER_BRANDS,...ANIMAL_TYPES,...PERFUME_TYPES];
     allBrands.forEach(b=>{if(b.toLowerCase().includes(t) && !seen.has(b.toLowerCase())){seen.add(b.toLowerCase());results.push({title:b,price:null,thumb:"",isBrand:true});}});
   }
@@ -1700,22 +1738,34 @@ window.showSearchDropdown=function(){
   box.innerHTML=html;
   box.classList.remove("hidden");
 };
+
 window.hideSearchDropdown=function(){const box=document.getElementById("searchDropdown");if(box)box.classList.add("hidden");};
+
 window.pickSearch=function(term){const input=document.getElementById("searchInput");if(!input)return;input.value=term;addToSearchHistory(term);try{localStorage.setItem('lastSearch',term);}catch(e){}updateClearBtn();hideSearchDropdown();input.blur();if(term&&term.trim().length>=2){searchServerPosts(term.trim());}renderPosts();};
+
 window.updateClearBtn=function(){const i=document.getElementById("searchInput");const b=document.getElementById("clearSearchBtn");if(!i||!b)return;b.style.display=(i.value&&i.value.length>0)?"flex":"none";};
+
 window.clearSearch=function(){window._matchedSearchUsers=[];const i=document.getElementById("searchInput");if(i){i.value="";i.focus();}try{localStorage.removeItem('lastSearch');}catch(e){}updateClearBtn();hideSearchDropdown();renderPosts();};
 document.addEventListener('click',(e)=>{const box=document.querySelector('.searchBox');if(box && !box.contains(e.target)){hideSearchDropdown();}});
 
 /* ============================================
    أدوات الإعلانات
    ============================================ */
+
 function isPostFeatured(p){return !!(p&&p.featured&&p.featuredUntil&&p.featuredUntil>Date.now());}
+
 function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.featuredUntil-Date.now())/(24*60*60*1000));}
+
 function getStatus(p){return p.status||"approved";}
+
 function getExpiresAt(p){if(p && p.expiresAt) return p.expiresAt;if(p && p.createdAt) return p.createdAt + POST_DURATION_MS;return null;}
+
 function isExpired(p){const e=getExpiresAt(p);if(!e)return false;return e < Date.now();}
+
 function daysLeft(p){const e=getExpiresAt(p);if(!e)return null;return Math.ceil((e-Date.now())/(24*60*60*1000));}
+
 function expiredGracePassed(p){const e=getExpiresAt(p);if(!e)return false;const graceEnd=e+EXPIRED_GRACE_DAYS*24*60*60*1000;return Date.now()>graceEnd;}
+
 function isWanted(p){return p && p.adType==="wanted";}
 
 function sortPosts(arr){
@@ -1735,11 +1785,17 @@ function sortPosts(arr){
 /* ============================================
    المفضلة + المشاهدات
    ============================================ */
+
 function getFavorites(){try{return JSON.parse(localStorage.getItem('favorites')||'[]');}catch(e){return[];}}
+
 function saveFavorites(arr){try{localStorage.setItem('favorites',JSON.stringify(arr));}catch(e){}}
+
 function isFavorite(id){return getFavorites().includes(id);}
+
 window.toggleFavorite=(id,event)=>{if(event)event.stopPropagation();let favs=getFavorites();if(favs.includes(id)){favs=favs.filter(x=>x!==id);incrementFavoritesCount(id,-1);}else{favs.push(id);incrementFavoritesCount(id,1);}saveFavorites(favs);renderPosts();};
+
 function hasViewedOnDevice(id){try{const v=JSON.parse(localStorage.getItem('viewedPosts')||'[]');return v.includes(id);}catch(e){return false;}}
+
 function markViewedOnDevice(id){try{let v=JSON.parse(localStorage.getItem('viewedPosts')||'[]');if(!v.includes(id)){v.push(id);if(v.length>300)v=v.slice(-300);localStorage.setItem('viewedPosts',JSON.stringify(v));}}catch(e){}}
 async function incrementViews(id){try{if(hasViewedOnDevice(id))return;markViewedOnDevice(id);await updateDoc(doc(db,"posts",id),{views:increment(1)});}catch(e){}}
 async function incrementWhatsappClick(id,type){
@@ -1757,13 +1813,16 @@ async function incrementFavoritesCount(postId,delta){if(!postId)return;try{await
    ============================================ */
 const AD_IMAGE_URL="https://placehold.co/600x800/38bdf8/ffffff?text=اعلان+هنا";
 const AD_INTERVAL_DAYS=30;
+
 function showAdIfDue(){try{const last=localStorage.getItem('adLastShownAt');const now=Date.now();const interval=AD_INTERVAL_DAYS*24*60*60*1000;if(!last||(now-parseInt(last,10))>=interval){const img=document.getElementById('adImage');if(img)img.src=AD_IMAGE_URL;const popup=document.getElementById('adPopup');if(popup)popup.classList.remove('hidden');localStorage.setItem('adLastShownAt',String(now));}}catch(e){}}
+
 window.closeAd=function(){const p=document.getElementById('adPopup');if(p)p.classList.add('hidden');};
 setTimeout(showAdIfDue,2600);
 
 /* ============================================
    المتاجر — ساعات + تقييم + شارات
    ============================================ */
+
 function isStoreOpen(store){
   if(!store || !store.workingHours) return null;
   const wh=store.workingHours;
@@ -1777,18 +1836,21 @@ function isStoreOpen(store){
   if(close>open){ return current>=open && current<close; }
   return current>=open || current<close;
 }
+
 function formatStoreHours(store){
   if(!store || !store.workingHours) return "";
   const wh=store.workingHours;
   if(wh.alwaysOpen) return "24 ساعة";
   return `${wh.openTime} - ${wh.closeTime}`;
 }
+
 function openBadgeHTML(store){
   const open=isStoreOpen(store);
   if(open===null) return "";
   if(open) return `<span class="openBadgeGreen">🟢 مفتوح الآن</span>`;
   return `<span class="openBadgeRed">🔴 مغلق حالياً</span>`;
 }
+
 function getSellerTier(postCount){
   if(postCount>=50)return{tier:"diamond",label:"💎 ماسي"};
   if(postCount>=21)return{tier:"gold",label:"🥇 ذهبي"};
@@ -1796,12 +1858,12 @@ function getSellerTier(postCount){
   if(postCount>=1)return{tier:"bronze",label:"🥉 برونزي"};
   return null;
 }
+
 function renderSellerTierBadge(uid,postCount){
   const t=getSellerTier(postCount);
   if(!t)return "";
   return `<span class="sellerTier ${t.tier}">${t.label}</span>`;
 }
-
 async function loadStoreRatings(storeId){
   if(allStoreRatings[storeId]) return allStoreRatings[storeId];
   try{
@@ -1811,6 +1873,7 @@ async function loadStoreRatings(storeId){
     return ratings;
   }catch(e){allStoreRatings[storeId]=[];return [];}
 }
+
 window.openStoreRating=async(storeId)=>{
   const me=auth.currentUser;
   if(!me){pendingAction={type:"storeRating",storeId};authOverlay.classList.remove("hidden");return;}
@@ -1837,6 +1900,7 @@ window.openStoreRating=async(storeId)=>{
 /* ============================================
    الخصم + معاينة
    ============================================ */
+
 function getDiscountPercent(post){
   if(!post || !post.originalPrice || !post.price) return 0;
   const orig=Number(post.originalPrice);
@@ -1844,6 +1908,7 @@ function getDiscountPercent(post){
   if(!orig || orig<=curr) return 0;
   return Math.round(((orig-curr)/orig)*100);
 }
+
 window.updateDiscountPreview=()=>{
   const orig=parseFloat(document.getElementById("originalPrice")?.value)||0;
   const curr=parseFloat(document.getElementById("price")?.value)||0;
@@ -1858,6 +1923,7 @@ window.updateDiscountPreview=()=>{
 /* ============================================
    منتجات المتجر (مع الصفحة الفارغة الآمنة)
    ============================================ */
+
 window.setStoreSort=(sort)=>{
   currentStoreSort=sort;
   ["ssortNewest","ssortCheapest","ssortExpensive","ssortViews"].forEach(id=>{
@@ -1869,11 +1935,11 @@ window.setStoreSort=(sort)=>{
   if(active) active.classList.add("active");
   renderStoreProducts();
 };
+
 /* ============================================
    🍔 بريستو - محرك تصنيفات المتاجر وقوائم المطاعم (Presto Engine)
    ============================================ */
 let currentStoreSubCategory = "all";
-
 const STORE_CATEGORY_PRESETS = {
   restaurant: [
     { name: 'برجر', icon: '🍔', keywords: ['برجر', 'burger'] },
@@ -2002,8 +2068,11 @@ function renderStoreCategoryTiles(items, categories){
 }
 
 window._currentKshOrder = {};
+
 window.addKshOrder = function(id, title, price){
+
   window._currentKshOrder[id] = window._currentKshOrder[id] || { title, price: Number(price)||0, count: 0 };
+
   window._currentKshOrder[id].count++;
   updateKshBar();
   showToast(`أضيف: ${title} (اضغط اتصال بالأسفل للطلب)`, "success", 1600);
@@ -2038,7 +2107,6 @@ function renderKshFoodItemHtml(p, canManage){
       ${inCartQty > 0 ? `<span class="kshAddBadge">${inCartQty}</span>` : ''}
     </button>
   ` : '';
-
   return `
     <div class="kshItem" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">
       <div class="kshTxt">
@@ -2071,7 +2139,6 @@ function renderStoreProducts(){
   if(!box) return;
   const store = allStores.find(s => s.id === window._currentStoreId);
   const isRestaurant = isRestaurantStore(store);
-
   let items = currentStoreItems.slice();
   if(currentStoreSearch){
     items = items.filter(p => (p.title||"").toLowerCase().includes(currentStoreSearch));
@@ -2079,7 +2146,6 @@ function renderStoreProducts(){
   if(currentStoreSubCategory && currentStoreSubCategory !== "all"){
     items = items.filter(p => getProductSubCategory(p, isRestaurant) === currentStoreSubCategory);
   }
-
   items.sort((a,b)=>{
     switch(currentStoreSort){
       case "cheapest":return (Number(a.price)||0)-(Number(b.price)||0);
@@ -2088,7 +2154,6 @@ function renderStoreProducts(){
       default:return (b.createdAt||0)-(a.createdAt||0);
     }
   });
-
   if(items.length===0){
     const isFiltered = currentStoreSearch.length > 0 || currentStoreSubCategory !== "all";
     const canManage=window._canManageStoreItems;
@@ -2103,7 +2168,6 @@ function renderStoreProducts(){
     return;
   }
   const canManage=window._canManageStoreItems;
-
   let filterBanner = '';
   if(currentStoreSubCategory !== 'all'){
     filterBanner = `
@@ -2117,7 +2181,6 @@ function renderStoreProducts(){
       </div>
     `;
   }
-
   // إذا كان مطعماً: عرض بنمط KSH
   if(isRestaurant){
     if(currentStoreSubCategory === 'all' && !currentStoreSearch){
@@ -2127,7 +2190,6 @@ function renderStoreProducts(){
         if(!groups[cat]) groups[cat] = [];
         groups[cat].push(p);
       });
-
       let html = filterBanner;
       Object.keys(groups).forEach(catName => {
         const groupItems = groups[catName];
@@ -2142,7 +2204,6 @@ function renderStoreProducts(){
     }
     return;
   }
-
   // إذا كان متجراً عاماً أو إلكترونيات: عرض شبكة الكروت
   box.innerHTML=filterBanner + `<div class="grid" style="padding:0;grid-template-columns:1fr 1fr;gap:10px">${items.map(p=>{
     const imgs=getImages(p);const th=imgs[0]||"";
@@ -2167,7 +2228,7 @@ function renderStoreProducts(){
     }
     const cartRow=cartBtnHtml?`<div style="display:flex;gap:6px;margin-top:6px;align-items:center">${cartBtnHtml}</div>`:"";
     const viewsLine=canManage?`<div class="cardViews">👁️ ${p.views||0} مشاهدة</div>`:"";
-    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
+    return `<div class="${cls}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)" style="cursor:pointer">${th?`<img src="${escapeHtml(th)}" loading="lazy" decoding="async">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}${discBadge}</div><div class="body"><h4 style="cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${p.id}'),200)">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${viewsLine}${cartRow}${actionsHtml}</div></div>`;
   }).join("")}</div>`;
 }
 
@@ -2181,6 +2242,7 @@ window.applyStoreProductFilterClear=()=>{
 /* ============================================
    QR + نسخ + إيصال
    ============================================ */
+
 window.generateStoreQR=async(storeId)=>{
   const box=document.getElementById("storeQRBox");
   if(!box) return;
@@ -2188,6 +2250,7 @@ window.generateStoreQR=async(storeId)=>{
   const qrImageUrl=`https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=300&margin=1&ecLevel=M`;
   box.innerHTML=`<img src="${qrImageUrl}" alt="QR Code" style="max-width:220px;margin:8px auto;display:block;border-radius:8px" onerror="this.parentElement.innerHTML='<div style=color:#e5484d;padding:20px>تعذر تحميل QR</div>'"><div style="font-size:11.5px;color:var(--muted);margin-top:8px;word-break:break-all;direction:ltr">${url}</div><a download="store-qr-${storeId}.png" href="${qrImageUrl}" target="_blank" rel="noopener" class="storeQRBtn" style="margin-top:10px;text-decoration:none;display:inline-block">⬇️ تحميل QR</a>`;
 };
+
 window.toggleStoreQR=()=>{
   const box=document.getElementById("storeQRBox");
   if(!box) return;
@@ -2216,26 +2279,32 @@ window.sendReceiptToSeller=(phone,storeName)=>{
   if(!cleanPhone){showToast("⚠️ رقم المتجر غير متوفر","warn");return;}
   const msg=`السلام عليكم 👋\n\nحولت مبلغ لـ "${storeName}" على موقع تسوق الآن.\n\n📎 هذا إيصال التحويل 👇\n\n(أرفق صورة الإيصال هنا)`;
   const url=`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+
   window.open(url,"_blank");
 };
 
 /* ============================================
    Lightbox + SEO
    ============================================ */
+
 function closeLightboxDirect(){
   const lb=document.getElementById("lightbox");
   if(lb)lb.classList.add("hidden");
   document.body.style.overflow="";
 }
+
 window.closeLightboxDirect=closeLightboxDirect;
+
 window.closeLightbox=(e)=>{
   if(e)e.stopPropagation();
   if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'lightbox'){
+
     window.history.back();
     return;
   }
   closeLightboxDirect();
 };
+
 window.openLightbox=(url,skipHistory)=>{
   if(!url)return;
   const lb=document.getElementById("lightbox");
@@ -2246,6 +2315,7 @@ window.openLightbox=(url,skipHistory)=>{
   document.body.style.overflow="hidden";
   if(!skipHistory) pushNavState({ screen: 'lightbox' });
 };
+
 window.scrollToPostImage=(postId,idx)=>{
   const carousel=document.querySelector("#postContent .carousel");
   if(!carousel)return;
@@ -2296,6 +2366,7 @@ function updateSEOMeta(post){
 /* ============================================
    المقارنة
    ============================================ */
+
 window.toggleCompare=(postId,event)=>{
   if(event){event.stopPropagation();event.preventDefault();}
   const idx=compareList.indexOf(postId);
@@ -2306,6 +2377,7 @@ window.toggleCompare=(postId,event)=>{
   }
   saveCompare();updateCompareUI();renderPosts();
 };
+
 function updateCompareUI(){
   const fab=document.getElementById("compareFAB");
   if(!fab)return;
@@ -2314,6 +2386,7 @@ function updateCompareUI(){
     fab.innerHTML=`⚖️ قارن (${compareList.length})`;
   }else{fab.classList.add("fabOff");}
 }
+
 window.openCompare=()=>{
   const items=compareList.map(id=>allPosts.find(p=>p.id===id)).filter(Boolean);
   if(items.length<2){showToast("⚠️ اختر إعلانين على الأقل","warn");return;}
@@ -2322,7 +2395,7 @@ window.openCompare=()=>{
     const imgs=getImages(p);const th=imgs[0]||"";
     const priceTxt=p.priceType==="contact"?"📞 تواصل":(p.price!=null?formatPrice(p.price)+" د.ل":"—");
     return `<div class="compareCol">
-      ${th?`<img src="${escapeHtml(th)}">`:`<div style="aspect-ratio:1/1;background:var(--teal-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.5;margin-bottom:8px">🖼️</div>`}
+      ${th?`<img src="${escapeHtml(th)}" loading="lazy" decoding="async">`:`<div style="aspect-ratio:1/1;background:var(--teal-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:.5;margin-bottom:8px">🖼️</div>`}
       <h4>${escapeHtml(p.title||"بدون عنوان")}</h4>
       <div class="comparePrice">${priceTxt}</div>
       <div class="compareRow"><b>القسم:</b> ${escapeHtml(p.category||"—")}</div>
@@ -2336,11 +2409,13 @@ window.openCompare=()=>{
   }).join("")}</div>`;
   document.getElementById("compareOverlay").classList.remove("hidden");
 };
+
 window.clearCompare=()=>{compareList=[];saveCompare();updateCompareUI();renderPosts();showToast("✅ تم مسح المقارنة","success");};
 
 /* ============================================
    Skeletons + Listener
    ============================================ */
+
 function renderSkeletons(){
   const box=document.getElementById("posts");
   if(!box)return;
@@ -2356,24 +2431,20 @@ function renderSkeletons(){
     </div>
   `).join("");
 }
-
 let _postsLoadedOnce=false;
 let lastVisiblePostDoc = null;
 let hasMorePosts = true;
 let isLoadingPostsBatch = false;
 const POSTS_BATCH_SIZE = 24;
-
 async function loadPostsBatch(isInitial = false) {
   if (isLoadingPostsBatch) return;
   if (!isInitial && !hasMorePosts) return;
-
   isLoadingPostsBatch = true;
   const btn = document.getElementById("loadMorePostsBtn");
   if (btn) {
     btn.textContent = "⏳ جاري تحميل الإعلانات...";
     btn.disabled = true;
   }
-
   try {
     // 1) إذا كان أدمن: يجلب جميع الإعلانات بكافة الحالات دفعة واحدة للمراجعة
     if (isAdmin) {
@@ -2382,7 +2453,6 @@ async function loadPostsBatch(isInitial = false) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(500);
-
       if (error) throw error;
       allPosts = (data || []).map(objectFromDb);
       hasMorePosts = false;
@@ -2396,16 +2466,13 @@ async function loadPostsBatch(isInitial = false) {
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
         .range(from, to);
-
       if (error) throw error;
       const fetchedPosts = (data || []).map(objectFromDb);
-
       if (fetchedPosts.length < POSTS_BATCH_SIZE) {
         hasMorePosts = false;
       } else {
         hasMorePosts = true;
       }
-
       if (isInitial) {
         allPosts = fetchedPosts;
       } else {
@@ -2417,7 +2484,6 @@ async function loadPostsBatch(isInitial = false) {
         });
       }
     }
-
     allPosts = sortPosts(allPosts);
     _postsLoadedOnce = true;
     renderPosts();
@@ -2447,7 +2513,6 @@ function updateLoadMoreButton() {
     btn.onclick = () => loadPostsBatch(false);
     postsBox.parentNode.insertBefore(btn, postsBox.nextSibling);
   }
-
   if (btn) {
     if (hasMorePosts && allPosts.length >= POSTS_BATCH_SIZE) {
       btn.style.display = "block";
@@ -2457,8 +2522,8 @@ function updateLoadMoreButton() {
     }
   }
 }
-
 // التحميل التلقائي عند التمرير لأسفل الصفحة (Infinite Scroll)
+
 window.addEventListener("scroll", () => {
   if (!hasMorePosts || isLoadingPostsBatch) return;
   // التحقق من أن المستخدم في الشاشة الرئيسية للإعلانات فقط
@@ -2470,7 +2535,6 @@ window.addEventListener("scroll", () => {
   if (sellerOverlay && !sellerOverlay.classList.contains("hidden")) return;
   const userChatOverlay = document.getElementById("userChatOverlay");
   if (userChatOverlay && !userChatOverlay.classList.contains("hidden")) return;
-
   if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
     loadPostsBatch(false);
   }
@@ -2479,13 +2543,14 @@ window.addEventListener("scroll", () => {
 function startPostsListener(){
   loadPostsBatch(true);
 }
+
 function timeAgo(ts){if(!ts)return"";const d=Math.floor((Date.now()-ts)/1000);if(d<60)return"الآن";if(d<3600)return Math.floor(d/60)+" د";if(d<86400)return Math.floor(d/3600)+" س";return Math.floor(d/86400)+" يوم";}
 
 /* ============================================
    حركات ومواصفات السوق المفتوح الذكية (OpenSooq Smart Specs)
    ============================================ */
-
 let currentFormSpecsState = {};
+
 window.currentFormSpecsState = currentFormSpecsState;
 
 window.selectSpecChip = (field, val, btn) => {
@@ -2540,21 +2605,17 @@ function renderYearSelect(selectedYear) {
 function renderDynamicSpecsForm(category, existingSpecs) {
   const container = document.getElementById("dynamicSpecsContainer");
   if (!container) return;
-  
   if (existingSpecs) {
     currentFormSpecsState = { ...existingSpecs, _category: category };
   } else if (!currentFormSpecsState || currentFormSpecsState._category !== category) {
     currentFormSpecsState = { _category: category };
   }
-  
   const s = currentFormSpecsState;
-  
   // 1. موبايل وتابلت
   if (category === "موبايل وتابلت") {
     container.classList.remove("hidden");
     const subType = s.subType || "هاتف";
     s.subType = subType;
-    
     let subHtml = "";
     if (subType === "هاتف") {
       subHtml = `
@@ -2579,7 +2640,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
         ${renderSpecChipGroup("condition", "✨ الحالة", ["جديد بالعلبة", "كسر زيرو", "مستعمل ممتاز"], s.condition)}
       `;
     }
-    
     container.innerHTML = `
       <div class="specsHeader">
         <span class="specsHeaderTitle">📱 مواصفات وتفاصيل الجهاز</span>
@@ -2595,7 +2655,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 2. سيارات ومركبات
   if (category === "سيارات ومركبات") {
     container.classList.remove("hidden");
@@ -2622,7 +2681,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 3. دراجات نارية
   if (category === "دراجات نارية") {
     container.classList.remove("hidden");
@@ -2637,7 +2695,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 4. عقارات للبيع & عقارات للإيجار
   if (category === "عقارات للبيع" || category === "عقارات للإيجار") {
     container.classList.remove("hidden");
@@ -2660,7 +2717,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 5. لابتوب وكمبيوتر
   if (category === "لابتوب وكمبيوتر") {
     container.classList.remove("hidden");
@@ -2677,7 +2733,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 6. أجهزة منزلية
   if (category === "أجهزة منزلية") {
     container.classList.remove("hidden");
@@ -2690,7 +2745,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // 7. ألعاب وألعاب الفيديو
   if (category === "ألعاب وألعاب الفيديو") {
     container.classList.remove("hidden");
@@ -2703,7 +2757,6 @@ function renderDynamicSpecsForm(category, existingSpecs) {
     `;
     return;
   }
-  
   // أي تصنيف آخر
   container.classList.add("hidden");
   container.innerHTML = "";
@@ -2712,19 +2765,14 @@ function renderDynamicSpecsForm(category, existingSpecs) {
 function collectDynamicSpecs(category) {
   const container = document.getElementById("dynamicSpecsContainer");
   if (!container || container.classList.contains("hidden")) return {};
-  
   const result = { ...currentFormSpecsState };
   delete result._category;
-  
   const odoInput = document.getElementById("spec_odometer_input");
   if (odoInput && odoInput.value.trim()) result.odometer = odoInput.value.trim();
-  
   const areaInput = document.getElementById("spec_area");
   if (areaInput && areaInput.value.trim()) result.area = areaInput.value.trim();
-  
   const yearSelect = document.getElementById("spec_year");
   if (yearSelect && yearSelect.value) result.year = yearSelect.value;
-  
   return result;
 }
 
@@ -2732,7 +2780,6 @@ function renderCardSpecs(p) {
   if (!p.specs || typeof p.specs !== "object") return "";
   const s = p.specs;
   const pills = [];
-  
   if (s.subType === "هاتف") {
     if (s.storage) pills.push(`💾 ${escapeHtml(s.storage)}`);
     if (s.battery) pills.push(`🔋 ${escapeHtml(s.battery)}`);
@@ -2747,43 +2794,36 @@ function renderCardSpecs(p) {
     if (s.itemType) pills.push(`⌚ ${escapeHtml(s.itemType)}`);
     if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
   }
-  
   if (p.category === "سيارات ومركبات") {
     if (s.year) pills.push(`📅 ${escapeHtml(s.year)}`);
     if (s.odometer) pills.push(`🛣️ ${escapeHtml(s.odometer.replace(/أصفار \(زيرو\)/, 'زيرو'))}`);
     if (s.transmission) pills.push(`${escapeHtml(s.transmission.split(' ')[0])}`);
     if (s.fuel) pills.push(`${escapeHtml(s.fuel.split(' ')[0])}`);
   }
-  
   if (p.category === "دراجات نارية") {
     if (s.cc) pills.push(`🏍️ ${escapeHtml(s.cc)}`);
     if (s.year) pills.push(`📅 ${escapeHtml(s.year)}`);
     if (s.odometer) pills.push(`🛣️ ${escapeHtml(s.odometer)}`);
   }
-  
   if (p.category === "عقارات للبيع" || p.category === "عقارات للإيجار") {
     if (s.propertyType) pills.push(`${escapeHtml(s.propertyType)}`);
     if (s.area) pills.push(`📐 ${escapeHtml(s.area)} م²`);
     if (s.rooms) pills.push(`🛏️ ${escapeHtml(s.rooms)} غرف`);
     if (s.furnished) pills.push(`${escapeHtml(s.furnished.split(' ')[0])}`);
   }
-  
   if (p.category === "لابتوب وكمبيوتر") {
     if (s.cpu) pills.push(`💻 ${escapeHtml(s.cpu)}`);
     if (s.ram) pills.push(`🧠 ${escapeHtml(s.ram)}`);
     if (s.storage) pills.push(`⚡ ${escapeHtml(s.storage)}`);
   }
-  
   if (p.category === "أجهزة منزلية") {
     if (s.applianceType) pills.push(`🧊 ${escapeHtml(s.applianceType)}`);
     if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
   }
-  
   if (p.category === "ألعاب وألعاب الفيديو") {
     if (s.console) pills.push(`🎮 ${escapeHtml(s.console)}`);
     if (s.condition) pills.push(`✨ ${escapeHtml(s.condition)}`);
   }
-  
   if (pills.length === 0) return "";
   return `<div class="specsRow">${pills.slice(0, 4).map(pill => `<span class="specPill">${pill}</span>`).join('')}</div>`;
 }
@@ -2792,7 +2832,6 @@ function renderDetailsSpecs(p) {
   if (!p.specs || typeof p.specs !== "object" || Object.keys(p.specs).length === 0) return "";
   const s = p.specs;
   const items = [];
-  
   const labelsMap = {
     subType: "القسم الفرعي",
     storage: "المساحة التخزينية",
@@ -2824,7 +2863,6 @@ function renderDetailsSpecs(p) {
     applianceType: "نوع الجهاز",
     console: "المنصة / الجهاز"
   };
-  
   for (const [key, val] of Object.entries(s)) {
     if (!val || key === "subCategory" || key === "_category") continue;
     const label = labelsMap[key] || key;
@@ -2837,7 +2875,6 @@ function renderDetailsSpecs(p) {
       </div>
     `);
   }
-  
   if (items.length === 0) return "";
   return `
     <div class="specsDetailsBox">
@@ -2852,12 +2889,12 @@ function renderDetailsSpecs(p) {
 /* ============================================
    عرض الإعلانات (renderPosts) — مع الصفحة الفارغة الآمنة
    ============================================ */
+
 function renderPosts(){
 if(allPosts.length===0 && !showOnlyFavorites && !_postsLoadedOnce){renderSkeletons();}
 const term=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
 const favs=getFavorites();
 const me=auth.currentUser;
-
 // إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
 if(isRestaurantCategory(currentCategory)){
   const _hrb=document.getElementById("homeRestaurantsBox");if(_hrb){_hrb.innerHTML="";_hrb.classList.add("hidden");}
@@ -2878,7 +2915,6 @@ if(isRestaurantCategory(currentCategory)){
   `;
   return;
 }
-
 let list=allPosts.filter(p=>{
   const status=getStatus(p);
   const isOwner=me&&p.uid===me.uid;
@@ -2887,14 +2923,12 @@ let list=allPosts.filter(p=>{
   if(expired && !isOwner && !isAdmin && !isMyStorePost)return false;
   if(status!=="approved" && !isOwner && !isAdmin && !isMyStorePost)return false;
   if(currentStoreFilter && p.storeId!==currentStoreFilter)return false;
-
   // استبعاد وجبات المطاعم الفردية من قسم الكل عشان ما تتبعثرش وسط الإعلانات
   const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
   const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
   if(!currentStoreFilter && isRestaurantPost && (currentCategory==="الكل" || !isRestaurantCategory(currentCategory))){
     return false;
   }
-
   if(!currentStoreFilter && currentCategory!=="الكل"){
     if(p.category!==currentCategory)return false;
   }
@@ -2937,14 +2971,12 @@ let list=allPosts.filter(p=>{
   if(currentAdTypeFilter==="offer" && isWanted(p))return false;
   return true;
 });
-
 // في قسم الكل: دمج المطاعم كعناصر ضمن الخط الزمني للإعلانات (تنزل لأسفل مع نزول أي إعلان جديد)
 const homeRestsBox=document.getElementById("homeRestaurantsBox");
 if(homeRestsBox){
   homeRestsBox.innerHTML="";
   homeRestsBox.classList.add("hidden");
 }
-
 if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && !showOnlyMine && currentAdTypeFilter==="all" && currentPriceMin==null && currentPriceMax==null){
   let approvedRests=allStores.filter(s=>s.status==="approved" && isRestaurantStore(s));
   if(term){
@@ -2974,7 +3006,6 @@ if(currentCategory==="الكل" && !currentStoreFilter && !showOnlyFavorites && 
   });
 }
 list=sortPosts(list);
-
 let userBannerHtml = "";
 if(term && window._matchedSearchUsers && window._matchedSearchUsers.length > 0){
   userBannerHtml = `
@@ -3002,7 +3033,6 @@ if(term && window._matchedSearchUsers && window._matchedSearchUsers.length > 0){
     </div>
   `;
 }
-
 if(list.length===0){
   if(userBannerHtml){
     postsBox.innerHTML = userBannerHtml + `
@@ -3011,6 +3041,7 @@ if(list.length===0){
       </div>`;
     return;
   }
+
   /* ✅ المنطق الآمن للصفحة الفارغة */
   if(showOnlyFavorites){
     postsBox.innerHTML=buildEmptyState('❤️','المفضلة فاضية','اضغط على القلب 🤍 في أي إعلان<br>عشان تحفظه هنا','🏠 تصفح الإعلانات','showCategoriesScreen()',true);
@@ -3089,6 +3120,7 @@ return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><
 /* ============================================
    تفاصيل الإعلان (openPost)
    ============================================ */
+
 window.openPost=(id,skipHistory)=>{
 const p=allPosts.find(x=>x.id===id);if(!p)return;
 const status=getStatus(p);const me=auth.currentUser;const isOwner=me&&me.uid===p.uid;const isMyStorePost=myStore&&p.storeId===myStore.id;
@@ -3108,14 +3140,12 @@ if(p.storeId){sellerTags+=` <span class="storeBadge">🏪 ${escapeHtml(p.storeNa
 else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
 if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
 const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
-
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
 const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
 const chatSellerBtn=(!isSold && p.uid && !isOwner)
   ? `<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}','${escapeHtml(p.id)}')">💬 دردشة فورية مع البائع</button>`
   : "";
-
 const contactBtn=(p.phone && !isSold)
   ? (isRestaurantPost
       ? `${postCallPhone ? `<a href="tel:${formatCallPhone(postCallPhone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي لطلب الأوردر (${formatCallPhone(postCallPhone)})</a>` : ''}
@@ -3125,7 +3155,6 @@ const contactBtn=(p.phone && !isSold)
           <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي</a>
         </div>`)
   : "";
-
 const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
 const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`:"";
 const viewsBadge=(isOwner||isAdmin||isMyStorePost)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
@@ -3182,6 +3211,7 @@ updateSEOMeta(p);
 document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
 postOverlay.classList.remove("hidden");
 if(window.lucide) lucide.createIcons();
+
 window.scrollTo(0,0);
 if(!skipHistory) pushNavState({ screen: 'post', id: id }, '#post-' + id);
 setTimeout(()=>{
@@ -3194,9 +3224,11 @@ setTimeout(()=>{
   }
 },50);
 };
+
   /* ============================================
    حفظ الإعلان (savePost) — مع priceType + negotiable
    ============================================ */
+
 function generateKeywords(title, description, brand, category, city, specs){
   let specsText = "";
   if(specs && typeof specs === "object") {
@@ -3252,14 +3284,12 @@ if(!city){showToast("الرجاء اختيار المدينة","warn");return;}
 if(!wasEditing && !document.getElementById("termsCheck").checked){showToast("⚠️ يجب الموافقة على الشروط والتعهد القانوني قبل النشر","warn");return;}
 const bad=checkContent(title,description);
 if(bad){showToast(`❌ لا يمكن نشر الإعلان — يحتوي على كلمة ممنوعة (${bad.word})`,"error");return;}
-
 if(isStore && !_tempStoreData){
   try{
     const saved=sessionStorage.getItem('_tempStoreData');
     if(saved) _tempStoreData=JSON.parse(saved);
   }catch(e){}
 }
-
 const storeToUse=isStore && _tempStoreData ? _tempStoreData : myStore;
 if(!wasEditing){
   if(isStore){
@@ -3389,6 +3419,7 @@ window.renewPost=async(id,event)=>{
     showToast("✅ تم التجديد 30 يوم إضافية","success");
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
+
 window.approvePost=async(id)=>{
   if(!isAdmin)return;
   try{
@@ -3409,6 +3440,7 @@ window.approvePost=async(id)=>{
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
+
 window.rejectPost=async(id)=>{
   if(!isAdmin)return;
   const reason=prompt("سبب الرفض:","محتوى غير مناسب");
@@ -3428,7 +3460,9 @@ window.rejectPost=async(id)=>{
     closeOverlay();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
+
 window.toggleFeatured=async(id,event)=>{if(event)event.stopPropagation();if(!isAdmin)return;const p=allPosts.find(x=>x.id===id);if(!p)return;const isFeat=isPostFeatured(p);if(!confirm(isFeat?"إلغاء التمييز؟":"تمييز الإعلان 7 أيام مجاناً؟"))return;try{if(isFeat){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+7*24*60*60*1000,featuredPlan:"admin"});}showToast("✅ تم","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.adminFeature=async(id,days)=>{if(!isAdmin)return;try{if(days===0){await updateDoc(doc(db,"posts",id),{featured:false,featuredUntil:0,featuredPlan:null});}else{await updateDoc(doc(db,"posts",id),{featured:true,featuredUntil:Date.now()+days*24*60*60*1000,featuredPlan:"admin",featuredBy:"admin"});}showToast("✅ تم تفعيل التمييز","success");closeOverlay();}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
@@ -3548,8 +3582,11 @@ function updateModBadge(){
 /* ============================================
    الإبلاغات
    ============================================ */
+
 window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});showToast("تم إرسال الإبلاغ، شكراً لك","success");}catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}};
+
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
+
 function renderReports(){
 const list=document.getElementById("reportsList");if(!list)return;
 if(allReports.length===0){list.innerHTML="<div class='reportsEmpty'>✅ لا توجد إبلاغات</div>";return;}
@@ -3565,16 +3602,23 @@ return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;mar
 }).join("");
 list.innerHTML=toolbar+items;
 }
+
 window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}if(!confirm(`تجاهل ${allReports.length} إبلاغ؟`))return;let ok=0;for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));ok++;}catch(e){}}showToast(`✅ تم تجاهل ${ok}`,"success");renderReports();};
+
 window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){showToast("تم الإلغاء","info");return;}let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
+
 window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
    Admin: Limits
    ============================================ */
+
 window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+
 function renderLimits(){
   const list=document.getElementById("limitsList");if(!list)return;
   if(allLimits.length===0){list.innerHTML="<div class='reportsEmpty'>لا توجد حدود مخصصة بعد<br><span style='font-size:12px'>الحد الافتراضي: 3 إعلانات فردية · 20 إعلان متجر</span></div>";return;}
@@ -3583,9 +3627,12 @@ function renderLimits(){
     return `<div class="reportItem" style="background:#f0f9ff;border-color:#0ea5e9"><div class="rTitle">👤 ${escapeHtml(l.name||"مستخدم")} ${l.username?`<span class="usernameBadge" style="margin-right:6px">@${escapeHtml(l.username)}</span>`:""} ${l.memberNo?`<span class="memberNoBadge" style="margin-right:6px">#${l.memberNo}</span>`:""}</div><div class="rMeta"><b>📋 فردي:</b> <span style="color:#0284c7;font-weight:800;font-size:15px">${l.limit}</span> إعلان<br><b>🏪 متجر:</b> <span style="color:#92400e;font-weight:800;font-size:15px">${storeLimit}</span> منتج</div><div class="rActions" style="grid-template-columns:1fr 1fr"><button class="rDismiss" style="background:#e0f2fe;color:#0369a1" onclick="editLimit('${escapeHtml(l.uid)}')">✏️ تعديل</button><button class="rDelete" onclick="removeLimit('${escapeHtml(l.uid)}')">🗑️ إلغاء</button></div></div>`;
   }).join("");
 }
+
 window.editLimit=(uid)=>{const l=allLimits.find(x=>x.uid===uid);if(!l)return;document.getElementById("limitSearch").value=l.username?l.username:(l.memberNo?String(l.memberNo):(l.email||""));document.getElementById("limitNumber").value=l.limit||3;document.getElementById("storeLimitNumber").value=l.storeLimit||20;};
+
 window.removeLimit=async(uid)=>{if(!confirm("إلغاء الحد المخصص؟"))return;try{await deleteDoc(doc(db,"userLimits",uid));delete userLimitsCache[uid];showToast("✅ تم الإلغاء","success");}catch(e){showToast("خطأ: "+e.message,"error");}};
 async function findUserByAny(search){const s=String(search||"").trim();if(!s)return null;const clean=s.replace(/^@/,"").toLowerCase();try{const u=await getDoc(doc(db,"usernames",clean));if(u.exists())return{uid:u.data().uid};}catch(e){}const num=parseInt(s,10);if(!isNaN(num)){try{const q=query(collection(db,"profiles"),where("memberNo","==",num));const snap=await getDocs(q);if(!snap.empty)return{uid:snap.docs[0].id};}catch(e){}}return null;}
+
 window.applyUserLimit=async()=>{
   if(!isAdmin)return;
   const search=document.getElementById("limitSearch").value.trim();
@@ -3604,8 +3651,10 @@ window.applyUserLimit=async()=>{
 /* ============================================
    Admin: Expired
    ============================================ */
+
 window.openExpired=()=>{if(!isAdmin)return;accountOverlay.classList.add("hidden");expiredOverlay.classList.remove("hidden");renderExpiredList();};
 async function autoDeleteOldExpired(){if(!isAdmin)return;try{const toDelete=allPosts.filter(p=>expiredGracePassed(p));if(toDelete.length===0)return;let ok=0;for(const p of toDelete){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}}catch(e){}}
+
 function renderExpiredList(){
   const list=document.getElementById("expiredList");if(!list)return;
   const expired=allPosts.filter(p=>isExpired(p));
@@ -3620,15 +3669,21 @@ function renderExpiredList(){
   }).join("");
   list.innerHTML=toolbar+items;
 }
+
 window.deleteExpiredPost=async(id)=>{if(!isAdmin)return;if(!confirm("حذف هذا الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",id));renderExpiredList();}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.deleteAllExpired=async()=>{if(!isAdmin)return;const expired=allPosts.filter(p=>isExpired(p));if(expired.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${expired.length}؟`))return;const c=prompt('اكتب "حذف":');if(c!=="حذف"){return;}let ok=0;for(const p of expired){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ تم حذف ${ok}`,"success");renderExpiredList();};
+
 window.deleteAutoReadyExpired=async()=>{if(!isAdmin)return;const ready=allPosts.filter(p=>expiredGracePassed(p));if(ready.length===0){showToast("لا توجد","info");return;}if(!confirm(`حذف ${ready.length}؟`))return;let ok=0;for(const p of ready){try{await deleteDoc(doc(db,"posts",p.id));ok++;}catch(e){}}showToast(`✅ ${ok}`,"success");renderExpiredList();};
 
 /* ============================================
    Upgrade + Dashboard
    ============================================ */
+
 window.openUpgrade=(id)=>{if(!auth.currentUser)return;postOverlay.classList.add("hidden");upgradeOverlay.classList.remove("hidden");window._upgradePostId=id;};
+
 window.selectPlan=(days,label,price)=>{const id=window._upgradePostId;const p=allPosts.find(x=>x.id===id);if(!p)return;const link=`${window.location.origin}${window.location.pathname}#post-${id}?plan=${days}&price=${price}`;const msg=`🛒 طلب ترقية إعلان\n\n📌 الإعلان: ${p.title||'بدون عنوان'}\n📦 الباقة: ${label}\n💵 المبلغ: ${price} د.ل\n🔗 الرابط: ${link}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;window.open(waUrl,'_blank');setTimeout(()=>{closeOverlay();showToast("✅ بعد الدفع، اضغط الرابط","info");},400);};
+
 function tryApplyPendingUpgrade(){if(!pendingAutoUpgrade)return;if(!isAdmin)return;const d=pendingAutoUpgrade;pendingAutoUpgrade=null;setTimeout(()=>{const p=allPosts.find(x=>x.id===d.postId);if(!p){showToast("⚠️ الإعلان غير موجود","warn");history.replaceState(null,'',window.location.pathname);return;}const cm=`⭐ تفعيل الترقية\n\n📌 ${p.title}\n📦 ${d.days} يوم\n💵 ${d.price} د.ل\n\nهل تأكدت من استلام المبلغ؟`;if(confirm(cm)){adminFeature(d.postId,d.days);history.replaceState(null,'',window.location.pathname);}else{history.replaceState(null,'',window.location.pathname);}},1200);}
 
 window.openSendNotification=()=>{
@@ -3721,7 +3776,9 @@ window.submitNotification=async()=>{
 /* ============================================
    السلة الكاملة
    ============================================ */
+
 function canHaveCart(post){if(!post)return false;if(!post.storeId)return false;if(post.category==="سيارات ومركبات")return false;if(post.category==="دراجات نارية")return false;return CART_ALLOWED_CATEGORIES.includes(post.category);}
+
 window.openCart=(skipHistory)=>{
   const fab=document.getElementById("cartFAB");
   if(fab)fab.classList.add("fabOff");
@@ -3729,6 +3786,7 @@ window.openCart=(skipHistory)=>{
   cartOverlay.classList.remove("hidden");
   if(!skipHistory) pushNavState({ screen: 'cart' }, '#cart');
 };
+
 function renderCartUI(){
   const box=document.getElementById("cartItemsBox");
   const storeLine=document.getElementById("cartStoreLine");
@@ -3783,6 +3841,7 @@ function renderCartUI(){
   }
   if(clearBtn)clearBtn.classList.remove("hidden");
 }
+
 window.addToCart=async(postId,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===postId);
@@ -3807,12 +3866,14 @@ window.addToCart=async(postId,event)=>{
   if(typeof renderStoreProducts==='function') renderStoreProducts();
   showToast(`🛒 أُضيف: ${p.title||"الصنف"}`,"success",1400);
 };
+
 window.removeFromCart=(postId)=>{
   cart.items=cart.items.filter(i=>i.postId!==postId);
   if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 };
+
 window.changeQty=(postId,delta)=>{
   const item=cart.items.find(i=>i.postId===postId);
   if(!item)return;
@@ -3822,6 +3883,7 @@ window.changeQty=(postId,delta)=>{
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 };
+
 window.clearCart=()=>{
   if(cart.items.length===0)return;
   if(!confirm("إفراغ السلة بالكامل؟"))return;
@@ -3829,6 +3891,7 @@ window.clearCart=()=>{
   saveCart();updateCartUI();renderCartUI();
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 };
+
 window.sendCartToWhats=()=>{
   if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
   if(!cart.storePhone){showToast("⚠️ لا يوجد رقم هاتف للمتجر","warn");return;}
@@ -3840,14 +3903,17 @@ window.sendCartToWhats=()=>{
   if(isRestaurant){
     let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title} × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n");
     alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
+
     window.location.href=`tel:${formatCallPhone(phone)}`;
     return;
   }
   let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title}\n   💰 ${formatPrice(item.price)} د.ل × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n\n");
   const msg=`السلام عليكم 👋\n\nشفت منتجاتك على موقع "تسوق الآن" وأنا مهتم بـ:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 عدد القطع: ${cnt}\n\nهل ممكن نتفق؟`;
   const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+
   window.open(url,"_blank");
 };
+
 window.sendCartToCall=()=>{
   if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
   if(!cart.storePhone){showToast("⚠️ لا يوجد رقم هاتف للمطعم","warn");return;}
@@ -3856,14 +3922,15 @@ window.sendCartToCall=()=>{
   const cnt=cartTotalItemsCount();
   let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title} × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n");
   alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
+
   window.location.href=`tel:${formatCallPhone(phone)}`;
 };
 
 /* =====================================================
    منظومة طلبات المطاعم الحية (لوحة الكاشير + تتبع الزبون بالعداد الآلي)
    ===================================================== */
-
 // نغمة رنين المطعم والزبون باستخدام Web Audio الأصلي
+
 function playRestaurantBell(type='new_order'){
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
@@ -3891,6 +3958,7 @@ function playRestaurantBell(type='new_order'){
     }
   }catch(e){console.warn("Audio bell error:",e);}
 }
+
 window.playRestaurantBell=playRestaurantBell;
 
 window.toggleRestDeliveryFields=()=>{
@@ -3908,8 +3976,8 @@ window.toggleRestDeliveryFields=()=>{
     if(dLbl){dLbl.style.borderColor="var(--border)";dLbl.style.borderWidth="1px";}
   }
 };
-
 // إرسال الطلبية للكاشير مباشرة
+
 window.submitRestaurantDirectOrder=async()=>{
   if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
   const custName=(document.getElementById("restCustName")?.value||"").trim();
@@ -3918,18 +3986,14 @@ window.submitRestaurantDirectOrder=async()=>{
   const address=(document.getElementById("restCustAddress")?.value||"").trim();
   const notes=(document.getElementById("restCustNotes")?.value||"").trim();
   const paymentMethod=document.querySelector('input[name="restPaymentMethod"]:checked')?.value||"cash";
-
   if(!custName){showToast("⚠️ يرجى كتابة اسمك الكريم","warn");return;}
   if(!custPhone || custPhone.replace(/[^0-9]/g,"").length < 9){showToast("⚠️ يرجى كتابة رقم هاتف صحيح للتواصل","warn");return;}
   if(deliveryType==="delivery" && !address){showToast("⚠️ يرجى كتابة عنوان التوصيل والحي","warn");return;}
-
   const btn=document.getElementById("cartSendRestBtn");
   if(btn){btn.disabled=true;btn.textContent="⏳ جاري إرسال الطلبية للكاشير...";}
-
   try{
     const totalToPay = cartTotalPrice();
     let walletDebitRes = null;
-
     if(paymentMethod === "wallet"){
       if(!auth.currentUser){
         showToast("⚠️ يرجى تسجيل الدخول أولاً للدفع من المحفظة الإلكترونية", "warn");
@@ -3955,7 +4019,6 @@ window.submitRestaurantDirectOrder=async()=>{
         return;
       }
     }
-
     const orderNum=Math.floor(100+Math.random()*900);
     const orderId='order_'+Date.now()+'_'+orderNum;
     const store=allStores.find(s=>s.id===cart.storeId);
@@ -3985,7 +4048,6 @@ window.submitRestaurantDirectOrder=async()=>{
       acceptedAt:null,
       readyAt:null
     };
-
     await addDoc(collection(db,"feedback"),{
       id:orderId,
       type:"restaurant_order",
@@ -3993,9 +4055,7 @@ window.submitRestaurantDirectOrder=async()=>{
       message:JSON.stringify(orderData),
       createdAt:Date.now()
     });
-
     try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
-
     const sentStoreId = cart.storeId;
     if(restBroadcast){
       try {
@@ -4010,11 +4070,9 @@ window.submitRestaurantDirectOrder=async()=>{
     if(_rloStoreId && _rloStoreId === sentStoreId){
       refreshCashierOrders(false);
     }
-
     cart={storeId:null,storeName:"",storePhone:"",items:[]};
     saveCart();updateCartUI();renderCartUI();
     closeOverlayDirect();
-
     showToast("🎉 تم إرسال طلبيتك إلى كاشير المطعم بنجاح!","success",4000);
     openOrderTracker(orderId);
   }catch(e){
@@ -4023,7 +4081,6 @@ window.submitRestaurantDirectOrder=async()=>{
     if(btn){btn.disabled=false;btn.textContent="🚀 إرسال الطلبية للكاشير مباشرة";}
   }
 };
-
 // ============================================
 // مزامنة فورية فائقة بين التبويبات والشاشات (Realtime Sync)
 // ============================================
@@ -4052,7 +4109,6 @@ if(restBroadcast){
     }
   };
 }
-
 if(typeof document !== 'undefined'){
   document.addEventListener("visibilitychange", () => {
     if(!document.hidden){
@@ -4065,6 +4121,7 @@ if(typeof document !== 'undefined'){
       }
     }
   });
+
   window.addEventListener("focus", () => {
     if(_rloStoreId){
       const overlay = document.getElementById("restaurantLiveOrdersOverlay");
@@ -4075,7 +4132,6 @@ if(typeof document !== 'undefined'){
     }
   });
 }
-
 // شاشة تتبع الطلب للزبون (عداد تنازلي آلي وتحديث حي)
 let _orderTrackerUnsub=null;
 let _orderCountdownTimer=null;
@@ -4098,14 +4154,11 @@ window.openOrderTracker=(orderId)=>{
   if(!overlay)return;
   closeOverlayDirect();
   overlay.classList.remove("hidden");
-
   if(_orderTrackerUnsub){_orderTrackerUnsub();_orderTrackerUnsub=null;}
   if(_orderCountdownTimer){clearInterval(_orderCountdownTimer);_orderCountdownTimer=null;}
   if(_orderTrackerPollTimer){clearInterval(_orderTrackerPollTimer);_orderTrackerPollTimer=null;}
-
   // جلب فوري لبيانات الطلبية
   refreshTrackingOrder(orderId);
-
   // تحديث دوري تلقائي كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
   _orderTrackerPollTimer = setInterval(() => {
     if(!_currentTrackingOrderId){
@@ -4115,7 +4168,6 @@ window.openOrderTracker=(orderId)=>{
     }
     refreshTrackingOrder(_currentTrackingOrderId);
   }, 2500);
-
   // مستمع احتياطي
   try{
     _orderTrackerUnsub=onSnapshot(doc(db,"feedback",orderId),(snap)=>{
@@ -4133,7 +4185,6 @@ window.refreshTrackingOrder=async(orderId)=>{
     refreshBtn.disabled = true;
     refreshBtn.textContent = "⏳...";
   }
-
   try {
     let row = null;
     if(window.supabase){
@@ -4150,24 +4201,20 @@ window.refreshTrackingOrder=async(orderId)=>{
         if(snap.exists()) row = { id: snap.id, ...snap.data() };
       } catch(e){}
     }
-
     if(!row){
       renderOrderTrackerUI(null, "❌ لم يتم العثور على الطلبية أو تم مسحها");
       return;
     }
-
     let order = null;
     try { order = JSON.parse(row.message || "{}"); } catch(e){}
     if(!order){
       renderOrderTrackerUI(null, "⚠️ خطأ في قراءة بيانات الطلبية");
       return;
     }
-
     if(_lastTrackingStatus === 'pending' && order.status === 'accepted'){
       showToast("🎉 قبل الكاشير طلبيتك! وجاري التحضير الآن", "success", 4000);
     }
     _lastTrackingStatus = order.status;
-
     if(order.status === 'completed'){
       hideActiveOrderFloatingPill();
       try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
@@ -4178,7 +4225,6 @@ window.refreshTrackingOrder=async(orderId)=>{
       try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
       if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer = null; }
     }
-
     renderOrderTrackerUI(order);
   } catch(e){
     console.warn("Tracker refresh error:", e);
@@ -4201,21 +4247,17 @@ function renderOrderTrackerUI(order,errorMsg){
     box.innerHTML=`<div class="reportsEmpty">⏳ جاري تحميل بيانات الطلبية...</div>`;
     return;
   }
-
   const itemsHtml=order.items?.map(it=>`
     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px dashed var(--border)">
       <span>${escapeHtml(it.title)} × ${it.qty||1}</span>
       <b>${formatPrice((it.price||0)*(it.qty||1))} د.ل</b>
     </div>
   `).join("")||"";
-
   const isDelivery=order.deliveryType==="delivery";
   const deliveryBadge=isDelivery
     ? `<span style="background:#f0fdf4;color:#166534;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #bbf7d0">🛵 توصيل: ${escapeHtml(order.deliveryAddress||"")}</span>`
     : `<span style="background:#e0f2fe;color:#0369a1;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #bae6fd">🚗 سفري (استلام من الفرع)</span>`;
-
   let statusCardHtml='';
-
   if(order.status==='pending'){
     statusCardHtml=`
       <div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
@@ -4280,13 +4322,10 @@ function renderOrderTrackerUI(order,errorMsg){
     hideActiveOrderFloatingPill();
     try { localStorage.removeItem('tasawuq_active_order_id'); } catch(e){}
   }
-
   const callBtn=order.storePhone?`<a href="tel:${formatCallPhone(order.storePhone)}" class="btnMain" style="background:#16a34a;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;font-weight:800;padding:11px;margin-top:10px">📞 اتصال بالمطعم للاستفسار (${escapeHtml(order.storePhone)})</a>`:'';
-
   const paymentMethodBadge = (order.paymentMethod === 'wallet')
     ? `<span style="color:#16a34a;font-weight:800">🟢 مدفوع مسبقاً بالمحفظة (خالص)</span>`
     : `<span style="color:#f59e0b;font-weight:800">💵 كاش عند الاستلام</span>`;
-
   box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div>
@@ -4328,12 +4367,9 @@ function startOrderCountdown(readyAt,order){
     const mins = Math.floor(diff / 60);
     const secs = diff % 60;
     const str = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-
     const el = document.getElementById("trackerCountdownDisplay");
     if(el) el.textContent = str;
-
     updateActiveOrderFloatingPill(order, `🍳 متبقي: ${str}`);
-
     if(diff <= 0){
       clearInterval(_orderCountdownTimer);
       _orderCountdownTimer = null;
@@ -4341,7 +4377,6 @@ function startOrderCountdown(readyAt,order){
       renderOrderTrackerUI(order);
     }
   }
-
   tick();
   _orderCountdownTimer = setInterval(tick, 1000);
 }
@@ -4351,13 +4386,11 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
   const overlay=document.getElementById("orderTrackerOverlay");
   if(overlay) overlay.classList.add("hidden");
   hideActiveOrderFloatingPill();
-
   try{ localStorage.removeItem('tasawuq_active_order_id'); }catch(e){}
   _currentTrackingOrderId=null;
   if(_orderCountdownTimer){ clearInterval(_orderCountdownTimer); _orderCountdownTimer=null; }
   if(_orderTrackerPollTimer){ clearInterval(_orderTrackerPollTimer); _orderTrackerPollTimer=null; }
   if(_orderTrackerUnsub){ _orderTrackerUnsub(); _orderTrackerUnsub=null; }
-
   if(markInDb && orderId){
     try{
       const snap=await getDoc(doc(db,"feedback",orderId));
@@ -4442,7 +4475,6 @@ function hideActiveOrderFloatingPill(){
   const pill=document.getElementById("activeOrderFloatingPill");
   if(pill) pill.classList.add("hidden");
 }
-
 // ============================================
 // لوحة كاشير المطعم المباشرة (Restaurant Live Orders)
 // ============================================
@@ -4469,22 +4501,19 @@ window.openRestaurantLiveOrders=(storeId)=>{
   const isOwnerStore=me && store && me.uid===store.ownerUid;
   const isAdminUser=me && (me.email===ADMIN_EMAIL || isAdmin);
   const isHelper=me && isStoreHelper(storeId, me.email);
-
   if(!isOwnerStore && !isAdminUser && !isHelper){
     showToast("❌ لوحة الكاشير خاصة بصاحب المطعم أو عماله فقط","error");
     return;
   }
-
   _rloStoreId=storeId;
   _lastPendingCount=0;
   _seenOrderIds.clear();
   closeOverlayDirect();
   const overlay=document.getElementById("restaurantLiveOrdersOverlay");
   if(overlay) overlay.classList.remove("hidden");
-
   const titleEl=document.getElementById("rloStoreTitle");
   if(titleEl) titleEl.textContent = "🍽️ طلبات: " + (store?.name || "المطعم");
-
+  if(typeof pushNavState === 'function') pushNavState({ screen: 'restaurantOrders', storeId: storeId }, '#restaurant-orders-' + storeId);
   startRestaurantOrdersListener(storeId);
   switchRloTab('pending');
 };
@@ -4494,6 +4523,9 @@ window.closeRestaurantLiveOrders=()=>{
   if(overlay) overlay.classList.add("hidden");
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
   if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
+  if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'restaurantOrders'){
+    window.history.back();
+  }
 };
 
 window.switchRloTab=(tab)=>{
@@ -4513,7 +4545,6 @@ window.refreshCashierOrders=async(manual=false)=>{
     refreshBtn.textContent="⏳...";
   }
   const statusEl=document.getElementById("rloLiveStatus");
-
   try{
     let rawList=[];
     if(window.supabase){
@@ -4531,7 +4562,6 @@ window.refreshCashierOrders=async(manual=false)=>{
         rawList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       }catch(e){}
     }
-
     const matched=[];
     rawList.forEach(row=>{
       if(row.type === "restaurant_order" && (row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`)))){
@@ -4543,10 +4573,8 @@ window.refreshCashierOrders=async(manual=false)=>{
         }
       }
     });
-
     matched.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     _rloOrders = matched;
-
     const pendingList = _rloOrders.filter(o=>o.status==='pending');
     let hasBrandNewOrder=false;
     pendingList.forEach(o=>{
@@ -4558,16 +4586,13 @@ window.refreshCashierOrders=async(manual=false)=>{
         _seenOrderIds.add(oid);
       }
     });
-
     if(hasBrandNewOrder || (_lastPendingCount > 0 && pendingList.length > _lastPendingCount)){
       if(_cashierSoundEnabled) playRestaurantBell('new_order');
       showToast("🔔 طلبية جديدة وصلت للكاشير الآن!", "info", 4000);
     }
     _lastPendingCount = pendingList.length;
-
     updateCashierBadges();
     renderCashierOrdersList();
-
     if(statusEl){
       const nowStr = new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       statusEl.innerHTML = `<span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً (${nowStr})`;
@@ -4587,10 +4612,8 @@ window.refreshCashierOrders=async(manual=false)=>{
 function startRestaurantOrdersListener(storeId){
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
   if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
-
   // جلب فوري
   refreshCashierOrders(false);
-
   // تحديث دوري مستمر فائق السرعة كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
   _rloPollTimer = setInterval(() => {
     const overlay = document.getElementById("restaurantLiveOrdersOverlay");
@@ -4601,7 +4624,6 @@ function startRestaurantOrdersListener(storeId){
       _rloPollTimer = null;
     }
   }, 2500);
-
   // مستمع احتياطي
   try{
     _rloUnsub = onSnapshot(collection(db, "feedback"), () => {
@@ -4615,13 +4637,11 @@ function startRestaurantOrdersListener(storeId){
 function updateCashierBadges(){
   const pending = _rloOrders.filter(o=>o.status==='pending');
   const active = _rloOrders.filter(o=>o.status==='accepted');
-
   const pBadge = document.getElementById("rloPendingBadge");
   if(pBadge){
     pBadge.textContent = pending.length;
     pBadge.style.display = pending.length > 0 ? "inline-block" : "none";
   }
-
   const aBadge = document.getElementById("rloActiveBadge");
   if(aBadge){
     aBadge.textContent = active.length;
@@ -4632,18 +4652,15 @@ function updateCashierBadges(){
 function renderCashierOrdersList(){
   const listEl=document.getElementById("rloOrdersList");
   if(!listEl)return;
-
   let filtered=[];
   if(_rloActiveTab==='pending') filtered=_rloOrders.filter(o=>o.status==='pending');
   else if(_rloActiveTab==='active') filtered=_rloOrders.filter(o=>o.status==='accepted');
   else filtered=_rloOrders.filter(o=>o.status==='ready'||o.status==='completed'||o.status==='rejected');
-
   if(filtered.length===0){
     const msg = _rloActiveTab==='pending' ? "لا توجد طلبات جديدة بانتظار القبول حالياً 🔔" : (_rloActiveTab==='active' ? "لا توجد طلبات قيد التحضير حالياً 🍳" : "لا توجد طلبات مكتملة بعد ✅");
     listEl.innerHTML=`<div class="reportsEmpty">${msg}</div>`;
     return;
   }
-
   listEl.innerHTML=filtered.map(order=>{
     const itemsHtml=order.items?.map(it=>`
       <div class="rloItemRow">
@@ -4651,12 +4668,10 @@ function renderCashierOrdersList(){
         <b>${formatPrice((it.price||0)*(it.qty||1))} د.ل</b>
       </div>
     `).join("")||"";
-
     const isDelivery=order.deliveryType==="delivery";
     const deliveryTag=isDelivery
       ? `<span style="background:#f0fdf4;color:#166534;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:800;border:1px solid #bbf7d0">🛵 توصيل: ${escapeHtml(order.deliveryAddress||"")}</span>`
       : `<span style="background:#e0f2fe;color:#0369a1;padding:3px 9px;border-radius:8px;font-size:12px;font-weight:800;border:1px solid #bae6fd">🚗 سفري (استلام من المحل)</span>`;
-
     let actionsHtml='';
     if(order.status==='pending'){
       actionsHtml=`
@@ -4690,11 +4705,9 @@ function renderCashierOrdersList(){
         </div>
       `;
     }
-
     const paymentBadge = (order.paymentMethod === 'wallet' && order.isPaid)
       ? `<span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;margin-right:6px">🟢 مدفوع بالمحفظة (خالص)</span>`
       : `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;margin-right:6px">💵 كاش عند الاستلام</span>`;
-
     return `
       <div class="restaurantOrderCard ${order.status==='pending'?'pending':''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -4736,7 +4749,6 @@ window.cashierAcceptOrder=async(docId, minutes)=>{
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
-
     // تحديث محلي فوري
     const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
     if(ordIdx!==-1){
@@ -4768,7 +4780,6 @@ window.cashierRejectOrder=async(docId)=>{
     const data=snap.data();
     let order=JSON.parse(data.message||"{}");
     order.status='rejected';
-
     let didRefund = false;
     if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
       try{
@@ -4782,7 +4793,6 @@ window.cashierRejectOrder=async(docId)=>{
         console.error("Auto refund error:", err);
       }
     }
-
     await updateDoc(doc(db,"feedback",docId),{
       message:JSON.stringify(order)
     });
@@ -4846,7 +4856,6 @@ window.cashierCompleteOrder=async(docId)=>{
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
 
-
 window.toggleSold=async(id,event)=>{
   if(event)event.stopPropagation();
   const p=allPosts.find(x=>x.id===id);
@@ -4873,16 +4882,20 @@ window.toggleSold=async(id,event)=>{
 /* ============================================
    الصور + الضغط + الرفع
    ============================================ */
+
 function getImages(p){return (p.images&&p.images.length)?p.images:(p.imageUrl?[p.imageUrl]:[]);}
+
 function carouselHtml(images,lightbox){
   if(!images.length)return `<div class="carousel"><div class="slide"><span style="font-size:34px;opacity:.5">🖼️</span></div></div>`;
-  return `<div class="carousel">${images.map(u=>`<div class="slide"${lightbox?` onclick="event.stopPropagation();openLightbox('${escapeHtml(u)}')" style="cursor:zoom-in"`:""}><img src="${escapeHtml(u)}" loading="lazy" onerror="this.parentElement.innerHTML='<span style=font-size:34px;opacity:.5>🖼️</span>'"></div>`).join("")}</div>`;
+  return `<div class="carousel">${images.map(u=>`<div class="slide"${lightbox?` onclick="event.stopPropagation();openLightbox('${escapeHtml(u)}')" style="cursor:zoom-in"`:""}><img src="${escapeHtml(u)}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<span style=font-size:34px;opacity:.5>🖼️</span>'"></div>`).join("")}</div>`;
 }
+
 function dotsHtml(images){if(images.length<=1)return"";return `<div class="dots">${images.map((_,i)=>`<span class="dot${i===0?" active":""}"></span>`).join("")}</div>`;}
 document.addEventListener("scroll",e=>{const el=e.target;if(!el||!el.classList||!el.classList.contains("carousel"))return;const d=el.parentElement&&el.parentElement.querySelector(".dots");if(!d)return;const i=Math.round(el.scrollLeft/(el.clientWidth||1));Array.from(d.children).forEach((x,idx)=>x.classList.toggle("active",idx===i));},true);
-window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 
+window.updateDescCount=()=>{const d=document.getElementById("description");document.getElementById("descCount").textContent=d?d.value.length:0;};
 async function compressImage(file,maxSize=1200,quality=0.82){try{const bmp=await createImageBitmap(file);const scale=Math.min(1,maxSize/Math.max(bmp.width,bmp.height));const w=Math.round(bmp.width*scale),h=Math.round(bmp.height*scale);const c=document.createElement("canvas");c.width=w;c.height=h;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(bmp,0,0,w,h);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",quality));return b||file;}catch(e){return file;}}
+
 function blobToDataUrl(blob){
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -4891,7 +4904,6 @@ function blobToDataUrl(blob){
     reader.readAsDataURL(blob);
   });
 }
-
 async function compressFileToDataUrl(file, maxDimension = 400, quality = 0.82) {
   return new Promise((resolve) => {
     try {
@@ -4935,8 +4947,8 @@ async function compressFileToDataUrl(file, maxDimension = 400, quality = 0.82) {
     }
   });
 }
-window.compressFileToDataUrl = compressFileToDataUrl;
 
+window.compressFileToDataUrl = compressFileToDataUrl;
 async function compressImageToDataUrl(file, maxSize = 800, quality = 0.82){
   try{
     const bmp = await createImageBitmap(file);
@@ -4953,7 +4965,6 @@ async function compressImageToDataUrl(file, maxSize = 800, quality = 0.82){
     return await blobToDataUrl(file);
   }
 }
-
 async function uploadToImgBB(file, maxSize = 1000, quality = 0.85){
   // 1) محاولة الرفع السحابي إلى ImgBB مع مهلة 4 ثوانٍ
   try {
@@ -4977,20 +4988,23 @@ async function uploadToImgBB(file, maxSize = 1000, quality = 0.85){
   } catch(err){
     console.warn("ImgBB upload failed or blocked by network, using guaranteed Data URL fallback:", err);
   }
-
   // 2) البديل المضمون 100%: ضغط الصورة وحفظها كـ Data URL عالي الجودة والدقة
   const dataUrl = await compressImageToDataUrl(file, maxSize, quality);
   if(dataUrl) return dataUrl;
   throw new Error("تعذر معالجة الصورة من جهازك");
 }
+
 function renderImagePicker(){const box=document.getElementById("imgThumbs");box.innerHTML=selectedImages.map((item,i)=>{const src=item.type==="existing"?item.url:item.previewUrl;return `<div class="imgThumb"><img src="${escapeHtml(src)}"><button class="rm" onclick="removeImage(${i})">×</button></div>`;}).join("");document.getElementById("imgAddTile").classList.toggle("hidden",selectedImages.length>=10);}
+
 window.removeImage=(i)=>{selectedImages.splice(i,1);renderImagePicker();};
+
 window.handleFilesSelected=()=>{const input=document.getElementById("imageFile");const files=Array.from(input.files);const remaining=10-selectedImages.length;files.slice(0,remaining).forEach(file=>{selectedImages.push({type:"new",file,previewUrl:URL.createObjectURL(file)});});input.value="";renderImagePicker();};
 
 /* ============================================
    المتاجر — القائمة + الصفحة
    ============================================ */
 let storesLoadedInitially = false;
+
 function startStoresListener(){
   if(unsubStores)return;
   unsubStores=onSnapshot(collection(db,"stores"),snap=>{
@@ -5008,8 +5022,11 @@ function startStoresListener(){
     if(home && !home.classList.contains("hidden")) renderPosts();
   });
 }
+
 window._storesFilterMode = 'stores';
+
 window.openStores=(mode='stores',skipHistory)=>{
+
   window._storesFilterMode = (mode === 'restaurants') ? 'restaurants' : 'stores';
   document.querySelectorAll(".catChip").forEach(b=>b.classList.remove("active"));
   categoriesScreen.classList.add("hidden");home.classList.add("hidden");form.classList.add("hidden");
@@ -5026,10 +5043,12 @@ window.openStores=(mode='stores',skipHistory)=>{
   }
   if(!unsubStores) startStoresListener();
   renderStoresList();
+
   window.scrollTo(0,0);
   hideFloatingButtons();
   if(!skipHistory) pushNavState({ screen: 'stores', mode: window._storesFilterMode }, '#stores' + (window._storesFilterMode ? '-' + window._storesFilterMode : ''));
 };
+
 window.openRestaurants=(skipHistory)=>openStores('restaurants',skipHistory);
 
 function renderRestaurantStructureCard(s, backTo='home'){
@@ -5103,6 +5122,7 @@ function renderStoresList(){
     return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
   }).join("");
 }
+
 window.refreshOpenStore=async(storeId)=>{
   const formScreen=document.getElementById("form");
   if(formScreen && !formScreen.classList.contains("hidden")) return;
@@ -5111,9 +5131,11 @@ window.refreshOpenStore=async(storeId)=>{
   if(window._currentStoreId!==storeId)return;
   await openStore(storeId,true);
 };
+
 window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
   try{
     if(!keepScroll){window._currentStoreId=storeId;}
+
     window._storeBackTo=backTo||"categories";
     closeOverlayDirect();
     const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");
@@ -5123,7 +5145,6 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     if(!box)return;
     if(!keepScroll)box.innerHTML="<div class='reportsEmpty'>⏳ جاري التحميل...</div>";
     if(!keepScroll && !skipHistory) pushNavState({ screen: 'store', id: storeId, backTo: backTo || 'categories' }, '#store-' + storeId);
-    
     let store=allStores.find(s=>s.id===storeId);
     if(!store){
       try{
@@ -5140,10 +5161,10 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير موجود أو تم حذفه<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
       return;
     }
+
     window._currentStoreId=storeId;
     const titleEl=document.getElementById("storeScreenTitle");
     if(titleEl)titleEl.textContent=store.name||"🏪 المتجر";
-
     const isOwnerStore=auth.currentUser && auth.currentUser.uid===store.ownerUid;
     const isAdminUser=auth.currentUser && auth.currentUser.email===ADMIN_EMAIL;
     const isStoreHelperNow=auth.currentUser && isStoreHelper(storeId,auth.currentUser.email);
@@ -5151,13 +5172,34 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       box.innerHTML="<div class='reportsEmpty'>❌ المتجر غير متاح حالياً<br><br><button class='btnMain' style='max-width:200px;margin:auto' onclick='openStores()'>العودة لدليل المتاجر</button></div>";
       return;
     }
+    // ✅ جلب جميع إعلانات المتجر مباشرة من قاعدة البيانات لحل مشكلة الـ 24 إعلان بالرئيسية نهائياً
+    try {
+      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if (sb) {
+        let q = sb.from("posts").select("*").eq("store_id", storeId);
+        if (!isOwnerStore && !isAdminUser && !isStoreHelperNow) {
+          q = q.eq("status", "approved");
+        }
+        const { data: sPosts, error: sErr } = await q.order("created_at", { ascending: false });
+        if (!sErr && sPosts && sPosts.length) {
+          sPosts.forEach(sp => {
+            const mapped = (typeof objectFromDb === 'function') ? objectFromDb(sp) : sp;
+            const exIdx = allPosts.findIndex(p => p.id === mapped.id);
+            if (exIdx >= 0) allPosts[exIdx] = mapped;
+            else allPosts.unshift(mapped);
+          });
+        }
+      }
+    } catch(err) {
+      console.warn("Could not direct-fetch store posts:", err);
+    }
     const items=allPosts.filter(p=>p.storeId===storeId && (getStatus(p)==="approved" || (auth.currentUser && (auth.currentUser.uid===store.ownerUid||isAdminUser||isStoreHelperNow))) && (!isExpired(p) || isOwnerStore || isAdminUser || isStoreHelperNow));
     currentStoreItems=items.slice();
+
     window._canManageStoreItems=isAdminUser||isOwnerStore||isStoreHelperNow;
     const isRestaurant=isRestaurantStore(store);
     const coverHtml=store.cover?`<img src="${escapeHtml(store.cover)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
     const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
-
     const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
     const storeCallNumber=store.callPhone||store.phone;
     const receiptWaNumber=store.receiptPhone||store.phone;
@@ -5170,13 +5212,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
               <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>
             </div>`)
       : "";
-
     const chatStoreBtn=(!isOwnerStore && store.ownerUid) ? `
       <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
         💬 دردشة فورية مع المتجر
       </button>
     ` : '';
-
     const bi=store.bankInfo || {};
     const hasIban=bi.iban && bi.iban.trim();
     const hasAccount=bi.accountNumber && bi.accountNumber.trim();
@@ -5198,7 +5238,6 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     /* ✅ زر نقل الإعلانات الفردية */
     const myIndividualCount=(auth.currentUser && (isOwnerStore||isAdminUser)) ? allPosts.filter(p=>p.uid===store.ownerUid && !p.storeId).length : 0;
     const transferBtn=myIndividualCount>0?`<button class="storeQRBtn" onclick="transferMyPostsToStore('${store.id}')" style="background:#0284c7;color:#fff">📥 نقل إعلاناتي (${myIndividualCount})</button>`:"";
-
     const storeCartCount=cart.storeId===storeId?cartTotalCount():0;
     const showCartBtn=storeCartCount>0?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="openCart()">🛒 عرض سلتك (${storeCartCount})</button>`:"";
     const storeFilterBar=`<div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap"><input type="text" id="storeProductSearch" placeholder="🔍 ابحث في المنتجات..." oninput="applyStoreProductFilter()" style="flex:1;min-width:150px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;background:var(--card);color:var(--text)"><button class="filterBtn active" onclick="setStoreSort('newest')" id="ssortNewest" style="font-size:12px">🆕 الأحدث</button><button class="filterBtn" onclick="setStoreSort('cheapest')" id="ssortCheapest" style="font-size:12px">💰 الأرخص</button><button class="filterBtn" onclick="setStoreSort('expensive')" id="ssortExpensive" style="font-size:12px">💎 الأغلى</button><button class="filterBtn" onclick="setStoreSort('views')" id="ssortViews" style="font-size:12px">👁️ الأكثر مشاهدة</button></div>`;
@@ -5207,10 +5246,8 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     const verifiedBadgeLg=store.verified?`<span class="verifiedBadge verifiedBadgeLg" title="متجر موثق"></span>`:"";
     const deliveryBadge=store.deliveryCompany?`<span style="font-size:12px;color:#166534;padding:3px 9px;background:#f0fdf4;border-radius:7px;font-weight:700;border:1px solid #bbf7d0">🛵 التوصيل: ${escapeHtml(store.deliveryCompany)}</span>`:"";
     const restaurantBadge=isRestaurant?`<span class="restaurantBadge">🍽️ مطعم</span>`:`<span class="storeBadge">🏢 شركة/متجر</span>`;
-
     const storePostsCount=allPosts.filter(p=>p.storeId===store.id && getStatus(p)==="approved").length;
     const storeTierBadge=typeof renderSellerTierBadge === 'function' ? renderSellerTierBadge(store.ownerUid, storePostsCount) : "";
-
     currentStoreSubCategory = "all";
     currentStoreSearch = "";
     const availableSubCategories = [];
@@ -5219,12 +5256,12 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       if(cat && !availableSubCategories.includes(cat)) availableSubCategories.push(cat);
     });
     if(isRestaurant){
+
       window._currentKshOrder = {};
       const canEditBranding = isOwnerStore || isAdminUser;
       const logoClickAttr = canEditBranding ? `onclick="triggerStoreLogoDirectChange('${store.id}')" style="cursor:pointer;position:relative" title="اضغط لتغيير الشعار"` : '';
       const coverClickBadge = canEditBranding ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
       const logoBadge = canEditBranding ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
-
       const kshCoverHtml = store.cover
         ? `<img src="${escapeHtml(store.cover)}" alt="غلاف المطعم">`
         : `<div class="kshCoverEmojis">🍔🍗🍕</div>`;
@@ -5233,14 +5270,12 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
         : `<div style="font-weight:800;font-size:18px">${escapeHtml((store.name||'KSH').slice(0,3))}</div>`;
       const hoursFormatted = formatStoreHours(store) || "12:00 – 02:00";
       const deliveryFormatted = store.deliveryCompany ? escapeHtml(store.deliveryCompany) : "داخلي / شركات";
-
       const navButtonsHtml = `
         <button class="${currentStoreSubCategory==='all'?'on':''}" onclick="setStoreSubCategory('all')">الكل</button>
         ${availableSubCategories.map(cat => `
           <button class="${currentStoreSubCategory===cat?'on':''}" onclick="setStoreSubCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</button>
         `).join('')}
       `;
-
       box.innerHTML = `
         ${statusNote}${statusNote2}
         <div class="kshCover">${kshCoverHtml}${coverClickBadge}</div>
@@ -5307,13 +5342,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
       hideFloatingButtons();
       return;
     }
-
     const prestoCategoriesHtml = renderStoreCategoryTiles(items, availableSubCategories);
     const canEditBrandingStd = isOwnerStore || isAdminUser;
     const stdLogoAttr = canEditBrandingStd ? `onclick="triggerStoreLogoDirectChange('${store.id}')" style="cursor:pointer;position:relative" title="اضغط لتغيير الشعار"` : '';
     const stdCoverBadge = canEditBrandingStd ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
     const stdLogoBadge = canEditBrandingStd ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
-
     box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}${stdCoverBadge}</div><div class="logoWrap" ${stdLogoAttr}>${logoHtml}${stdLogoBadge}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${chatStoreBtn}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
     renderStoreProducts();
     updateCartUI();
@@ -5339,24 +5372,31 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     }
   }
 };
+
 function backFromStoreDirect(){
   const sc=document.getElementById("storeScreen");
   if(sc)sc.classList.add("hidden");
+
   window._currentKshOrder = {};
   if(window._storeBackTo==="stores"){const ss=document.getElementById("storesScreen");if(ss)ss.classList.remove("hidden");}
   else if(window._storeBackTo==="home"){home.classList.remove("hidden");showFloatingButtons();}
   else if(window._storeBackTo==="post"){postOverlay.classList.remove("hidden");}
   else{showCategoriesScreenDirect();}
 }
+
 window.backFromStoreDirect=backFromStoreDirect;
+
 window.backFromStore=()=>{
   if(!_isHistoryNavigating && window.history.state && window.history.state.screen === 'store'){
+
     window.history.back();
     return;
   }
   backFromStoreDirect();
 };
+
 window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(String(phone||'').replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
+
 window.goAddStorePost=(storeId)=>{
   const store=allStores.find(s=>s.id===storeId);
   if(!store){showToast("❌ المتجر غير موجود","error");return;}
@@ -5373,10 +5413,13 @@ window.goAddStorePost=(storeId)=>{
   try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}
   setTimeout(()=>showForm(true),200);
 };
+
 window.openMyStore=()=>{if(!myStore){showToast("لا يوجد متجر","info");return;}openStore(myStore.id);};
+
 window.deleteStoreProduct=async(id)=>{if(!confirm("حذف هذا المنتج؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));setTimeout(()=>{if(window._currentStoreId)openStore(window._currentStoreId,true);},300);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ✅ دالة نقل الإعلانات الفردية للمتجر (يدوياً بضغطة زر) */
+
 window.transferMyPostsToStore=async(storeId)=>{
   if(!auth.currentUser){showToast("⚠️ سجّل دخولك أولاً","warn");return;}
   const store=allStores.find(s=>s.id===storeId);
@@ -5385,11 +5428,9 @@ window.transferMyPostsToStore=async(storeId)=>{
   if(!isOwner && !isAdmin){showToast("❌ ليس لديك صلاحية","error");return;}
   const myPosts=allPosts.filter(p=>p.uid===store.ownerUid && !p.storeId);
   if(myPosts.length===0){showToast("ℹ️ مفيش إعلانات فردية للنقل","info");return;}
-
   const overlay=document.createElement('div');
   overlay.id='transferPostsOverlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease-out;overflow-y:auto';
-
   let listHtml='';
   for(const p of myPosts){
     const imgArr=getImages(p);
@@ -5409,7 +5450,6 @@ window.transferMyPostsToStore=async(storeId)=>{
         '</div>'+
       '</label>';
   }
-
   overlay.innerHTML=
     '<div style="background:#fff;border-radius:20px;padding:22px 18px;max-width:480px;width:100%;max-height:90vh;display:flex;flex-direction:column">'+
       '<div style="text-align:center;margin-bottom:14px">'+
@@ -5427,9 +5467,7 @@ window.transferMyPostsToStore=async(storeId)=>{
         '<button id="transferCancelBtn" style="padding:13px 20px;border:none;border-radius:12px;background:#f3f4f6;color:#4b5563;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">إلغاء</button>'+
       '</div>'+
     '</div>';
-
   document.body.appendChild(overlay);
-
   const updateBtn=function(){
     const checked=overlay.querySelectorAll('.transferChk:checked').length;
     const btn=overlay.querySelector('#transferConfirmBtn');
@@ -5444,7 +5482,6 @@ window.transferMyPostsToStore=async(storeId)=>{
       btn.textContent='📥 نقل المحدد ('+checked+')';
     }
   };
-
   overlay.querySelector('#transferCancelBtn').onclick=()=>overlay.remove();
   overlay.querySelector('#transferSelectAll').onclick=()=>{
     overlay.querySelectorAll('.transferChk').forEach(c=>c.checked=true);
@@ -5456,7 +5493,6 @@ window.transferMyPostsToStore=async(storeId)=>{
   };
   overlay.querySelectorAll('.transferChk').forEach(c=>{c.onchange=updateBtn;});
   overlay.addEventListener('click',(e)=>{if(e.target===overlay)overlay.remove();});
-
   overlay.querySelector('#transferConfirmBtn').onclick=async()=>{
     const checked=overlay.querySelectorAll('.transferChk:checked');
     if(checked.length===0){showToast('⚠️ اختر إعلان واحد على الأقل','warn');return;}
@@ -5482,7 +5518,6 @@ window.transferMyPostsToStore=async(storeId)=>{
     showToast('✅ تم نقل '+ok+' إعلان للمتجر'+(fail>0?' (فشل '+fail+')':''),'success',3500);
     if(window._currentStoreId===store.id){setTimeout(()=>openStore(store.id,true),500);}
   };
-
   updateBtn();
 };
 
@@ -5685,6 +5720,7 @@ window.saveStoreEdits=async()=>{
 /* ============================================
    فتح متجر جديد — بدون حذف الإعلانات الفردية
    ============================================ */
+
 window.startOpenStore=async(asAdminClient)=>{
   if(!auth.currentUser){authOverlay.classList.remove("hidden");return;}
   const isAdminUser = isAdmin || (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL);
@@ -5706,14 +5742,12 @@ window.startOpenStore=async(asAdminClient)=>{
   const _soe=document.getElementById("storeOwnerEmail");if(_soe)_soe.value="";
   toggleReceiptPhoneField();
   document.getElementById("storeCity").value="";
-
   const adminNotice=document.getElementById("adminStoreCreationNotice");
   const regularNotice=document.getElementById("openStoreRegularNotice");
   const emailField=document.getElementById("storeOwnerEmailField");
   const modalTitle=document.getElementById("openStoreModalTitle");
   const submitBtn=document.getElementById("storeSubmitBtn");
   const phoneInput=document.getElementById("storePhone");
-
   if(isCreatingAsAdmin){
     if(adminNotice)adminNotice.classList.remove("hidden");
     if(regularNotice)regularNotice.classList.add("hidden");
@@ -5736,7 +5770,6 @@ window.startOpenStore=async(asAdminClient)=>{
       phoneInput.value=userPhone;
     }
   }
-
   document.getElementById("storeDescription").value="";
   document.getElementById("storeOpenTime").value="09:00";
   document.getElementById("storeCloseTime").value="23:00";
@@ -5750,8 +5783,11 @@ window.startOpenStore=async(asAdminClient)=>{
 };
 
 window.handleStoreLogoSelected=()=>{const input=document.getElementById("storeLogoFile");const f=input.files[0];if(!f)return;storeLogoImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderStoreLogo();};
+
 window.handleStoreCoverSelected=()=>{const input=document.getElementById("storeCoverFile");const f=input.files[0];if(!f)return;storeCoverImage={file:f,previewUrl:URL.createObjectURL(f)};input.value="";renderStoreCover();};
+
 function renderStoreLogo(){const box=document.getElementById("storeLogoThumbs");box.innerHTML=storeLogoImage?`<div class="imgThumb"><img src="${storeLogoImage.previewUrl}"><button class="rm" onclick="storeLogoImage=null;renderStoreLogo()">×</button></div>`:"";document.getElementById("storeLogoAddTile").classList.toggle("hidden",!!storeLogoImage);}
+
 function renderStoreCover(){const box=document.getElementById("storeCoverThumbs");box.innerHTML=storeCoverImage?`<div class="imgThumb"><img src="${storeCoverImage.previewUrl}"><button class="rm" onclick="storeCoverImage=null;renderStoreCover()">×</button></div>`:"";document.getElementById("storeCoverAddTile").classList.toggle("hidden",!!storeCoverImage);}
 
 window.submitStore=async()=>{
@@ -5769,7 +5805,6 @@ window.submitStore=async()=>{
   const userPhone=(myProfile&&myProfile.phone)||"";
   const phone=isCreatingAsAdmin ? inputPhone : userPhone;
   const receiptPhone=document.getElementById("storeReceiptPhone")?.value.trim()||"";
-
   if(!phone){
     showToast(isRest?"❌ يرجى إدخال رقم الواتساب للمطعم":"❌ يرجى إدخال رقم الهاتف والواتساب للمتجر","error");
     return;
@@ -5838,6 +5873,7 @@ window.submitStore=async()=>{
 /* ============================================
    إدارة المتاجر (أدمن)
    ============================================ */
+
 window.switchStoresTab=(tab)=>{storesModTab=tab;renderStoresModeration();};
 
 window.toggleStoreVerify=async(id)=>{
@@ -5880,8 +5916,11 @@ function renderStoresModeration(){
     return `<div style="border:${border};border-radius:14px;padding:12px;margin-bottom:14px;background:${bg}"><div style="font-size:12px;font-weight:800;margin-bottom:8px">${label} · 📦 ${count} منتج · ${badgeHTML} ${s.verified?'· <span style="color:#1877F2">✓ موثق</span>':''}</div><div style="display:flex;gap:12px;align-items:center">${logo}<div style="flex:1"><div style="font-weight:800;font-size:16px">${escapeHtml(s.name)} ${verifiedBadge}</div><div style="font-size:12px;color:var(--muted);margin-top:4px">📁 ${escapeHtml(s.category)} · 📍 ${escapeHtml(s.city)}</div></div></div><div style="background:#fff;padding:10px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.8;border:1px solid var(--border)">${escapeHtml(s.description||"لا يوجد وصف")}</div><div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">👤 ${escapeHtml(s.ownerUsername?"@"+s.ownerUsername:(s.ownerMemberNo?"#"+s.ownerMemberNo:"—"))} · 💬 واتساب: ${escapeHtml(s.phone||"")}${s.callPhone?" · 📞 هاتف: "+escapeHtml(s.callPhone):""}${s.ownerEmail?" · 📧 "+escapeHtml(s.ownerEmail):" · 📧 الإيميل: <i>فارغ</i>"} · ⏰ ${timeAgo(s.createdAt)}${s.deliveryCompany?"<br>🛵 التوصيل: "+escapeHtml(s.deliveryCompany):""}${s.rejectReason?"<br>📝 <b>سبب الرفض:</b> "+escapeHtml(s.rejectReason):""}${s.receiptPhone?"<br>🧾 واتساب الإيصالات: "+escapeHtml(s.receiptPhone):""}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px">${s.status!=="approved"?`<button onclick="approveStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#16a34a;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">✅ موافقة</button>`:""}${s.status!=="rejected"?`<button onclick="rejectStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#f59e0b;color:#3a2500;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🚫 رفض</button>`:""}<button onclick="openStore('${s.id}',false,'categories')" style="padding:10px;border:none;border-radius:9px;background:#0284c7;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">👁️ عرض المتجر</button><button onclick="openStore('${s.id}',false,'categories');setTimeout(()=>goAddStorePost('${s.id}'),300)" style="padding:10px;border:none;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">➕ إضافة منتج/وجبة</button><button onclick="toggleStoreVerify('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:${s.verified?'#8a93a3':'#1877F2'};color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">${s.verified?'✕ إلغاء توثيق':'✓ توثيق'}</button><button onclick="deleteStore('${s.id}')" style="padding:10px;border:none;border-radius:9px;background:#e5484d;color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">🗑️ حذف</button></div></div>`;
   }).join("");
 }
+
 window.approveStore=async(id)=>{if(!isAdmin)return;try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});showToast("✅ تم قبول المتجر","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.rejectStore=async(id)=>{if(!isAdmin)return;const reason=prompt("سبب الرفض:","معلومات غير كافية");if(reason===null)return;try{await updateDoc(doc(db,"stores",id),{status:"rejected",rejectReason:reason||"مرفوض",rejectedAt:Date.now()});showToast("✅","success");renderStoresModeration();}catch(e){showToast("خطأ: "+e.message,"error");}};
+
 window.deleteStore=async(id)=>{
   if(!isAdmin)return;
   const store=allStores.find(s=>s.id===id);
@@ -5900,13 +5939,16 @@ window.deleteStore=async(id)=>{
     renderStoresModeration();
   }catch(e){showToast("خطأ: "+e.message,"error");}
 };
+
   /* ============================================
    تعديل الإعلان (editPost) — مع خيارات السعر
    ============================================ */
+
 window.editPost=(id)=>{
 if(!auth.currentUser)return;
 const post=allPosts.find(p=>p.id===id);if(!post)return;
 editingPostId=id;
+
 window._isStorePost=!!post.storeId;
 if(post.storeId){const data={id:post.storeId,name:post.storeName||"",category:post.storeCategory||post.category||"سيارات ومركبات",city:post.city||"",phone:post.storePhone||post.phone||"",status:"approved"};_tempStoreData=data;try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}}
 document.getElementById("formHeaderTitle").textContent=post.storeId?"تعديل إعلان المتجر":"تعديل الإعلان";
@@ -5953,12 +5995,14 @@ if(subCatField && subCatInput){
 const existing=(post.images&&post.images.length)?post.images:(post.imageUrl?[post.imageUrl]:[]);
 selectedImages=existing.map(url=>({type:"existing",url}));
 renderImagePicker();onPriceTypeChange();openFormScreen();
+
 window.scrollTo(0,0);
 };
 
 /* ============================================
    فتح نموذج إضافة إعلان (showForm)
    ============================================ */
+
 window.showForm=async(isStorePost)=>{
 if(!auth.currentUser){pendingAction="form";authOverlay.classList.remove("hidden");return;}
 const isStore=!!isStorePost;
@@ -5980,6 +6024,7 @@ if(!isStore && !isAdmin){
   if(stCount>=storeLimit){const msg=`🛒 طلب إعلانات المتجر\n\n🏪 ${storeForPost.name}\n📊 ${stCount}\n⚙️ ${storeLimit}`;const waUrl=`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`;if(confirm(`⚠️ وصلت للحد (${storeLimit})\n\nطلب زيادة الحد؟`))window.open(waUrl,'_blank');return;}
 }
 editingPostId=null;
+
 window._isStorePost=isStore;
 const activeStore=isStore ? storeForPost : null;
 document.getElementById("formHeaderTitle").textContent=isStore?("🏪 إعلان جديد لـ "+activeStore.name):"إضافة إعلان";
@@ -6026,21 +6071,28 @@ selectedImages=[];renderImagePicker();
 currentFormSpecsState={};
 const _dynC=document.getElementById("dynamicSpecsContainer");
 if(_dynC){_dynC.classList.add("hidden");_dynC.innerHTML="";}onCategoryChange();openFormScreen();
+
 window.scrollTo(0,0);
 };
 
 /* ============================================
    شاشات: إعلاناتي + المفضلة + متابَعين
    ============================================ */
+
 function showMyPostsDirect(){if(!auth.currentUser){pendingAction="mine";authOverlay.classList.remove("hidden");return;}showOnlyMine=true;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;const cr=document.getElementById("catsRow");if(cr)cr.classList.add("hidden");renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="إعلاناتي";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("mine");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
+
 window.showMyPostsDirect=showMyPostsDirect;
+
 window.showMyPosts=(skipHistory)=>{showMyPostsDirect();if(!skipHistory&&auth.currentUser)pushNavState({screen:'mine'},'#my-posts');};
 
 function showFavoritesDirect(){if(showOnlyFavorites && !showOnlyMine){showCategoriesScreen();return;}showOnlyFavorites=true;showOnlyMine=false;currentSubCategory="الكل";currentStoreFilter=null;const cr=document.getElementById("catsRow");if(cr)cr.classList.add("hidden");renderSubCats();hideSearchDropdown();const titleEl=document.getElementById("categoryTitle");if(titleEl)titleEl.textContent="❤️ المفضلة";categoriesScreen.classList.add("hidden");home.classList.remove("hidden");form.classList.add("hidden");const ss=document.getElementById("storesScreen");if(ss)ss.classList.add("hidden");const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");closeOverlayDirect();setActiveNav("fav");setTopbarMode("scroll");renderPosts();updateCartUI();window.scrollTo(0,0);hideFloatingButtons();}
+
 window.showFavoritesDirect=showFavoritesDirect;
+
 window.showFavorites=(skipHistory)=>{showFavoritesDirect();if(!skipHistory)pushNavState({screen:'fav'},'#favorites');};
 
 function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
+
 window.showHome=()=>{showCategoriesScreen();};
 
 window.showFollowingPosts=()=>{
@@ -6064,6 +6116,7 @@ window.showFollowingPosts=()=>{
 /* ============================================
    إضافة إعلان (زر ➕)
    ============================================ */
+
 function openFormScreen(skipHistory){
   const _preserved=_tempStoreData;
   home.classList.add("hidden");
@@ -6074,6 +6127,7 @@ function openFormScreen(skipHistory){
   hideFloatingButtons();
   if(!skipHistory) pushNavState({ screen: 'form' }, '#add');
 }
+
 window.startAddPost=async()=>{
   if(!auth.currentUser){pendingAction="postType";authOverlay.classList.remove("hidden");return;}
   const hasApprovedStore=myStore && myStore.status==="approved";
@@ -6083,7 +6137,9 @@ window.startAddPost=async()=>{
   if(openStoreBtn)openStoreBtn.style.display=(!myStore)?"flex":"none";
   postTypeOverlay.classList.remove("hidden");
 };
+
 window.chooseOpenStoreFromPlus=()=>{closeOverlay();setTimeout(()=>startOpenStore(),300);};
+
 window.chooseIndividualPost=()=>{
   if(myStore && myStore.status==="approved"){
     if(!confirm("⚠️ عندك متجر معتمد.\n\nلو كملت كإعلان فردي:\n• مش هيظهر في صفحة المتجر\n• هيتحسب من الحد الشخصي (3 إعلانات)\n\nلو عايز إعلان داخل متجرك، اختر (إعلان متجر).\n\nهل تريد المتابعة كإعلان فردي؟")){
@@ -6095,11 +6151,13 @@ window.chooseIndividualPost=()=>{
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
   showForm();
 };
+
 window.chooseStorePost=()=>{closeOverlay();if(myStore && myStore.status==="approved"){const data={id:myStore.id,name:myStore.name,category:myStore.category,city:myStore.city,phone:myStore.phone||"",status:myStore.status};_tempStoreData=data;try{sessionStorage.setItem('_tempStoreData',JSON.stringify(data));}catch(e){}}showForm(true);};
 
 /* ============================================
    مدينة/قسم/ماركة
    ============================================ */
+
 function populateCitySelects(){
   const g=Object.entries(LIBYA_CITIES).map(([r,c])=>`<optgroup label="${r}">${c.map(x=>`<option value="${x}">${x}</option>`).join("")}</optgroup>`).join("");
   const cf=document.getElementById("cityFilter");if(cf)cf.innerHTML=`<option value="الكل">📍 كل المدن</option>${g}`;
@@ -6133,6 +6191,7 @@ function populateBrandSelect(cat){
   sel.innerHTML=`<option value="">اختر (اختياري)</option>`+brands.map(b=>`<option value="${b}">${b}</option>`).join("");
 }
 populateBrandSelect("سيارات ومركبات");
+
 window.onCategoryChange=()=>{
   const cat=document.getElementById("category").value;
   const bf=document.getElementById("brandField");
@@ -6146,7 +6205,6 @@ window.onCategoryChange=()=>{
   }
   renderDynamicSpecsForm(cat, currentFormSpecsState && currentFormSpecsState._category === cat ? currentFormSpecsState : null);
 };
-
 (function(){
   const cr=document.getElementById("catsRow");
   if(!cr)return;
@@ -6160,7 +6218,9 @@ window.onCategoryChange=()=>{
 })();
 setTimeout(updateClearBtn,500);
 setTimeout(updateCompareUI,300);
+
 window.filterCity=()=>{currentCity=document.getElementById("cityFilter").value;renderPosts();};
+
 window.filterCategory=(cat)=>{
   currentCategory=cat;currentSubCategory="الكل";currentStoreFilter=null;showOnlyMine=false;showOnlyFavorites=false;
   const titleEl=document.getElementById("categoryTitle");
@@ -6170,6 +6230,7 @@ window.filterCategory=(cat)=>{
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")&&!b.classList.contains("restaurantChip")));
   renderSubCats();renderPosts();
 };
+
 function renderSubCats(){
   if(!subCatsRow)return;
   const subs=SUB_CATEGORIES[currentCategory];
@@ -6177,20 +6238,21 @@ function renderSubCats(){
   subCatsRow.classList.remove("hidden");
   subCatsRow.innerHTML=`<span class="subCatTitle">${subs.title}</span><button class="subCatChip ${currentSubCategory==="الكل"?"active":""}" onclick="filterSubCategory('الكل')">الكل</button>${subs.items.map(b=>`<button class="subCatChip ${currentSubCategory===b?"active":""}" onclick="filterSubCategory('${b.replace(/'/g,"\\'")}')">${b}</button>`).join("")}`;
 }
+
 window.filterSubCategory=(sub)=>{currentSubCategory=sub;renderSubCats();renderPosts();};
 
 /* ============================================
    حسابي + Overlay
    ============================================ */
+
 window.openAccount=(skipHistory)=>{
   if(auth.currentUser){
     const me = auth.currentUser;
     const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
     const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
-
     // تحديث كرت الملف الشخصي البارز في أعلى الشاشة
     const avCircle = document.getElementById("accountAvatarCircle");
-    const avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+    let avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
     if(avCircle){
       if(avUrl){
         avCircle.innerHTML = `<img src="${escapeHtml(avUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
@@ -6198,10 +6260,19 @@ window.openAccount=(skipHistory)=>{
         avCircle.textContent = dn ? dn[0].toUpperCase() : '👤';
       }
     }
-
+    if(!avUrl && (window.supabase || supabase)){
+      (window.supabase || supabase).from("feedback").select("message").eq("id", "avatar_" + me.uid).maybeSingle().then(res => {
+        if(res && res.data && res.data.message){
+          const loadedUrl = res.data.message;
+          if(!myProfile) myProfile = {};
+          myProfile.avatar = loadedUrl;
+          try { localStorage.setItem("tasawuq_avatar_" + me.uid, loadedUrl); } catch(e){}
+          if(avCircle) avCircle.innerHTML = `<img src="${escapeHtml(loadedUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
+      }).catch(()=>{});
+    }
     const nameEl = document.getElementById("accountName");
     if(nameEl) nameEl.textContent = dn;
-
     const mnEl = document.getElementById("accountMemberNo");
     if(mnEl){
       if(myProfile && myProfile.memberNo != null){
@@ -6212,7 +6283,6 @@ window.openAccount=(skipHistory)=>{
         mnEl.style.display = "inline-block";
       }
     }
-
     const unEl = document.getElementById("accountUsername");
     if(unEl){
       if(myProfile && myProfile.username){
@@ -6223,11 +6293,9 @@ window.openAccount=(skipHistory)=>{
         unEl.style.display = "block";
       }
     }
-
     const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : me.uid;
     const refDisplay = document.getElementById("myRefLinkDisplay");
     if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
-
     // جلب مباشر لأحدث بيانات البروفايل من قاعدة البيانات
     getDoc(doc(db,"profiles",me.uid)).then(snap=>{
       if(snap.exists()){
@@ -6245,7 +6313,6 @@ window.openAccount=(skipHistory)=>{
         }
       }
     }).catch(()=>{});
-
     const stEl = document.getElementById("accountStore");
     if(stEl){
       if(myStore){
@@ -6256,7 +6323,6 @@ window.openAccount=(skipHistory)=>{
         stEl.style.display = "none";
       }
     }
-
     const openBtn = document.getElementById("openStoreBtn");
     const myBtn = document.getElementById("myStoreBtn");
     if(myStore){
@@ -6277,7 +6343,8 @@ window.openAccount=(skipHistory)=>{
       const myRestBtn = document.getElementById("myRestaurantOrdersBtn");
       if(myRestBtn) myRestBtn.style.display = "none";
     }
-
+    const atb = document.getElementById("adminToolsBox");
+    if(atb) atb.classList.toggle("hidden", !isAdmin);
     if(reportsBtn) reportsBtn.classList.toggle("hidden", !isAdmin);
     if(moderationBtn) moderationBtn.classList.toggle("hidden", !isAdmin);
     const lb = document.getElementById("limitsBtn"); if(lb) lb.classList.toggle("hidden", !isAdmin);
@@ -6288,24 +6355,25 @@ window.openAccount=(skipHistory)=>{
     const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.toggle("hidden", !isAdmin);
     const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.toggle("hidden", !isAdmin);
     const awb = document.getElementById("adminWalletBtn"); if(awb) awb.classList.toggle("hidden", !isAdmin);
-
     if(typeof getUserWallet === 'function'){
       getUserWallet(me.uid).then(wal=>{
         if(typeof updateWalletUI === 'function') updateWalletUI(wal.balance);
       }).catch(()=>{});
     }
-
     accountOverlay.classList.remove("hidden");
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
   }else{pendingAction=null;authOverlay.classList.remove("hidden");}
 };
+
 window.openReports=()=>{renderReports();reportsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+
 window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsListener();renderModeration();moderationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
+
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
 function closeOverlayDirect(){
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
-  moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");sellerOverlay.classList.add("hidden");
+  moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");if(sellerOverlay){sellerOverlay.classList.add("hidden");sellerOverlay.style.zIndex="";}
   const eps = document.getElementById("editProfileScreen"); if(eps) eps.classList.add("hidden");
   warnOverlay.classList.add("hidden");postOverlay.classList.add("hidden");upgradeOverlay.classList.add("hidden");
   postTypeOverlay.classList.add("hidden");
@@ -6331,15 +6399,24 @@ function closeOverlayDirect(){
   document.body.style.overflow="";
   updateCartUI();
 }
+
 window.closeOverlayDirect=closeOverlayDirect;
+
 window.closeOverlay=()=>{
   if(!_isHistoryNavigating && window.history.state && (
+
     window.history.state.screen === 'post' ||
+
     window.history.state.screen === 'cart' ||
+
     window.history.state.screen === 'seller' ||
+    window.history.state.screen === 'chat' ||
     window.history.state.screen === 'account' ||
+    window.history.state.screen === 'restaurantOrders' ||
+
     window.history.state.screen === 'overlay'
   )){
+
     window.history.back();
     return;
   }
@@ -6349,6 +6426,7 @@ window.closeOverlay=()=>{
 /* ============================================
    حسابي - الحفظ
    ============================================ */
+
 window.saveMyName=async()=>{
   const me=auth.currentUser;
   if(!me){authOverlay.classList.remove("hidden");return;}
@@ -6404,25 +6482,21 @@ window.saveMyPhone=async()=>{
   const v=validatePhone(raw);
   if(!v.ok){showToast("❌ "+v.msg,"error");return;}
   const cleanNew=v.value;
-
   showToast("⏳ جاري حفظ الرقم...","info",1500);
   try{
     await setDoc(doc(db,"profiles",me.uid),{phone:cleanNew},{merge:true});
     if(!myProfile) myProfile={};
     myProfile.phone=cleanNew;
     input.value=formatCallPhone(cleanNew);
-
     const mine=allPosts.filter(p=>p.uid===me.uid);
     mine.forEach(p=>p.phone=cleanNew);
     Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{}))).catch(()=>{});
-
     if(myStore){
       try{ await updateDoc(doc(db,"stores",myStore.id),{phone:cleanNew}); myStore.phone=cleanNew; }catch(e){}
     }
     try{
       await setDoc(doc(db,"phones",cleanNew),{uid:me.uid,email:me.email||"",phone:cleanNew,localPhone:formatCallPhone(cleanNew),linkedAt:Date.now()},{merge:true});
     }catch(e){}
-
     showToast("✅ تم حفظ رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
   }catch(e){
     showToast("تعذر حفظ الرقم: "+e.message,"error");
@@ -6432,44 +6506,111 @@ window.saveMyPhone=async()=>{
 /* ============================================
    التواصل + المشاركة
    ============================================ */
+
 window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
+
 window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.priceType==="contact"?'📞 تواصل لمعرفة السعر':(p.price!=null?formatPrice(p.price)+' د.ل':'');const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
 
 /* ============================================
    المتابعة + التقييم
    ============================================ */
+
 function startFollowingListener(user){
   stopFollowingListener();
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
     myFollowing=snap.docs.map(d=>({uid:d.id,...d.data()}));
   },err=>{});
 }
+
 function stopFollowingListener(){if(unsubFollowing){unsubFollowing();unsubFollowing=null;}myFollowing=[];}
+
 function isFollowing(uid){return myFollowing.some(f=>f.uid===uid);}
-window.toggleFollow=async(sellerUid,event)=>{
-  if(event)event.stopPropagation();
-  const me=auth.currentUser;
-  if(!me){pendingAction={type:"follow",sellerUid};authOverlay.classList.remove("hidden");return;}
-  if(me.uid===sellerUid){showToast("لا يمكنك متابعة نفسك 😊","warn");return;}
-  const followRef=doc(db,"users",me.uid,"following",sellerUid);
-  const followerRef=doc(db,"users",sellerUid,"followers",me.uid);
-  try{
-    if(isFollowing(sellerUid)){
-      await deleteDoc(followRef).catch(()=>{});
-      await deleteDoc(followerRef).catch(()=>{});
-      if(sellerPanelUid===sellerUid){setTimeout(()=>openSeller(sellerUid),300);}
-    }else{
-      const now=Date.now();
-      await setDoc(followRef,{followedAt:now});
-      await setDoc(followerRef,{followedAt:now,followerName:(myProfile&&myProfile.name)||me.displayName||"مستخدم"});
-      if(sellerPanelUid===sellerUid){setTimeout(()=>openSeller(sellerUid),300);}
+
+window.toggleFollow = async (sellerUid, event) => {
+  if (event) event.stopPropagation();
+  const me = auth.currentUser;
+  if (!me) {
+    pendingAction = { type: "follow", sellerUid };
+    authOverlay.classList.remove("hidden");
+    return;
+  }
+  if (me.uid === sellerUid) {
+    showToast("لا يمكنك متابعة نفسك 😊", "warn");
+    return;
+  }
+  const currentlyFollowing = isFollowing(sellerUid);
+  const newFollowingState = !currentlyFollowing;
+  // 1) تحديث الذاكرة فوراً (Optimistic UI - Instant 0ms)
+  if (newFollowingState) {
+    if (!myFollowing.some(f => f.uid === sellerUid)) {
+      myFollowing.push({ uid: sellerUid, followedAt: Date.now() });
     }
-  }catch(e){showToast("خطأ: "+e.message,"error");}
+  } else {
+    myFollowing = myFollowing.filter(f => f.uid !== sellerUid);
+  }
+  // 2) تحديث الأزرار على الشاشة لحظياً بدون أي تجميد
+  const updateBtnUI = (btn, isFollowed) => {
+    if (!btn) return;
+    if (isFollowed) {
+      btn.className = "fbBtnAction edit";
+      btn.textContent = "✓ متابَع";
+      btn.style.background = "#e2e8f0";
+      btn.style.color = "#334155";
+    } else {
+      btn.className = "fbBtnAction primary";
+      btn.textContent = "+ متابعة";
+      btn.style.background = "";
+      btn.style.color = "";
+    }
+  };
+  if (event && event.currentTarget) {
+    updateBtnUI(event.currentTarget, newFollowingState);
+  }
+  document.querySelectorAll(`[data-follow-uid="${sellerUid}"]`).forEach(btn => updateBtnUI(btn, newFollowingState));
+  // 3) تحديث عداد المتابعين على البروفايل فورياً
+  const countEl = document.getElementById("sellerFollowersCount_" + sellerUid) || document.getElementById("sellerFollowersCount");
+  if (countEl) {
+    let currentVal = parseInt(countEl.textContent, 10) || 0;
+    countEl.textContent = Math.max(0, currentVal + (newFollowingState ? 1 : -1));
+  }
+  const tabFCount = document.getElementById("tabFollowersCount");
+  if (tabFCount && window._currentFollowersModalUid === sellerUid) {
+    let cur = parseInt(tabFCount.textContent, 10) || 0;
+    tabFCount.textContent = Math.max(0, cur + (newFollowingState ? 1 : -1));
+  }
+  showToast(newFollowingState ? "تمت المتابعة بنجاح ✅" : "تم إلغاء المتابعة", "info", 1200);
+  // 4) المزامنة مع قاعدة البيانات في الخلفية بدون انتظار أو تعطيل للمستخدم
+  const followRef = doc(db, "users", me.uid, "following", sellerUid);
+  const followerRef = doc(db, "users", sellerUid, "followers", me.uid);
+  try {
+    if (newFollowingState) {
+      const now = Date.now();
+      await setDoc(followRef, { followedAt: now });
+      await setDoc(followerRef, { followedAt: now, followerName: (myProfile && myProfile.name) || me.displayName || "مستخدم" });
+    } else {
+      await deleteDoc(followRef).catch(() => {});
+      await deleteDoc(followerRef).catch(() => {});
+    }
+  } catch (e) {
+    console.error("Follow sync error:", e);
+    // التراجع في حال حدوث خطأ
+    if (newFollowingState) {
+      myFollowing = myFollowing.filter(f => f.uid !== sellerUid);
+    } else {
+      myFollowing.push({ uid: sellerUid, followedAt: Date.now() });
+    }
+    if (event && event.currentTarget) updateBtnUI(event.currentTarget, !newFollowingState);
+    document.querySelectorAll(`[data-follow-uid="${sellerUid}"]`).forEach(btn => updateBtnUI(btn, !newFollowingState));
+    showToast("تعذر تحديث المتابعة: " + e.message, "error");
+  }
 };
 
 function starsText(n){const r=Math.max(0,Math.min(5,Math.round(n)));return "★".repeat(r)+"☆".repeat(5-r);}
+
 window.loginToRate=()=>{closeOverlay();authOverlay.classList.remove("hidden");};
+
 window.openMySeller=()=>{if(auth.currentUser)openSeller(auth.currentUser.uid);};
+
 window.openSeller=async(uid,skipHistory)=>{
   if(!uid) return;
   sellerPanelUid=uid;
@@ -6477,23 +6618,20 @@ window.openSeller=async(uid,skipHistory)=>{
   const po = document.getElementById("postOverlay"); if(po) po.classList.add("hidden");
   const so = document.getElementById("sellerOverlay"); if(so) so.classList.remove("hidden");
   if(!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'seller', uid: uid }, '#seller-' + uid);
-
-  const me = auth.currentUser;
-  const isMe = !!me && me.uid === uid;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isMe = (!!me && me.uid === uid) || (typeof myProfile !== "undefined" && myProfile && myProfile.id === uid) || (window.myProfile && window.myProfile.id === uid);
   const titleEl = document.getElementById("sellerHeaderTitle");
   if(titleEl) titleEl.textContent = isMe ? "ملفي الشخصي" : "الملف الشخصي";
-
   const box=document.getElementById("sellerContent");
-
   // 1) بيانات أولية فورية لعرض البروفايل في 0 ثانية دون أي تعليق
   const chatTarget = (window._activeChat && window._activeChat.targetUid === uid) ? window._activeChat : null;
   const existingPost = allPosts.find(p => p.uid === uid);
   const localAvatar = localStorage.getItem("tasawuq_avatar_" + uid);
   const localCover = localStorage.getItem("tasawuq_cover_" + uid);
-
+  const activeProf = (typeof myProfile !== 'undefined' && myProfile) || window.myProfile || null;
   let initialProf = null;
-  if(isMe && myProfile){
-    initialProf = myProfile;
+  if(isMe && activeProf){
+    initialProf = activeProf;
   } else if(chatTarget || existingPost || localAvatar){
     initialProf = {
       id: uid,
@@ -6505,7 +6643,6 @@ window.openSeller=async(uid,skipHistory)=>{
       memberNo: (existingPost && existingPost.memberNo) || null
     };
   }
-
   if(initialProf){
     try {
       renderSeller(uid, initialProf, [], false, [], 0);
@@ -6513,80 +6650,86 @@ window.openSeller=async(uid,skipHistory)=>{
   } else if(box && (!box.children.length || box.querySelector('.reportsEmpty'))){
     box.innerHTML="<div class='reportsEmpty'>⏳ جاري تحميل الملف الشخصي...</div>";
   }
-
   try {
     const sb = window.supabase || supabase;
     let prof = null;
     let avatarUrl = localAvatar || "";
     let coverUrl = localCover || "";
+    let ratings = [];
+    let followersCount = 0;
 
+    const bgTasks = [];
     if(sb){
-      try {
-        const { data: pData } = await sb.from("profiles").select("*").eq("id", uid).maybeSingle();
-        if(pData) prof = pData;
-      } catch(e){}
-
-      try {
-        const { data: avData } = await sb.from("feedback").select("message").eq("id", "avatar_" + uid).maybeSingle();
-        if(avData && avData.message) {
-          avatarUrl = avData.message;
-          try { localStorage.setItem("tasawuq_avatar_" + uid, avData.message); } catch(e){}
-        }
-      } catch(e){}
-
-      try {
-        const { data: covData } = await sb.from("feedback").select("message").eq("id", "cover_" + uid).maybeSingle();
-        if(covData && covData.message) {
-          coverUrl = covData.message;
-          try { localStorage.setItem("tasawuq_cover_" + uid, covData.message); } catch(e){}
-        }
-      } catch(e){}
-
-      try {
-        const { data: uPosts } = await sb.from("posts").select("*").eq("uid", uid).eq("status", "approved");
-        if(uPosts && uPosts.length){
-          uPosts.forEach(up => {
-            const mapped = (typeof objectFromDb === 'function') ? objectFromDb(up) : up;
-            if(!allPosts.some(p => p.id === mapped.id)) allPosts.unshift(mapped);
-          });
-        }
-      } catch(e){}
+      bgTasks.push(
+        sb.from("profiles").select("*").eq("id", uid).maybeSingle().then(res => {
+          if(res && res.data) prof = res.data;
+        }).catch(()=>{})
+      );
+      bgTasks.push(
+        sb.from("feedback").select("message").eq("id", "avatar_" + uid).maybeSingle().then(res => {
+          if(res && res.data && res.data.message){
+            avatarUrl = res.data.message;
+            try { localStorage.setItem("tasawuq_avatar_" + uid, res.data.message); } catch(e){}
+          }
+        }).catch(()=>{})
+      );
+      bgTasks.push(
+        sb.from("feedback").select("message").eq("id", "cover_" + uid).maybeSingle().then(res => {
+          if(res && res.data && res.data.message){
+            coverUrl = res.data.message;
+            try { localStorage.setItem("tasawuq_cover_" + uid, res.data.message); } catch(e){}
+          }
+        }).catch(()=>{})
+      );
+      bgTasks.push(
+        sb.from("posts").select("*").eq("uid", uid).eq("status", "approved").then(res => {
+          if(res && res.data && res.data.length){
+            res.data.forEach(up => {
+              const mapped = (typeof objectFromDb === 'function') ? objectFromDb(up) : up;
+              if(!allPosts.some(p => p.id === mapped.id)) allPosts.unshift(mapped);
+            });
+          }
+        }).catch(()=>{})
+      );
     }
 
-    if(!prof){
+    if(typeof db !== 'undefined' && db){
+      bgTasks.push(
+        getDocs(query(collection(db, "ratings"), where("sellerUid", "==", uid))).then(rS => {
+          if(rS && rS.docs){
+            ratings = rS.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+          }
+        }).catch(()=>{})
+      );
+      bgTasks.push(
+        getDocs(collection(db, "users", uid, "followers")).then(fS => {
+          if(fS) followersCount = fS.size || 0;
+        }).catch(()=>{})
+      );
+    }
+
+    await Promise.allSettled(bgTasks);
+
+    if(!prof && typeof db !== 'undefined' && db){
       try {
         const pS = await getDoc(doc(db, "profiles", uid));
         if(pS && pS.exists()) prof = pS.data();
       } catch(e){}
     }
-
     if(!prof){
-      prof = isMe ? (myProfile || {}) : (initialProf || { id: uid, name: (existingPost && existingPost.sellerName) || "مستخدم" });
+      prof = isMe ? (activeProf || {}) : (initialProf || { id: uid, name: (existingPost && existingPost.sellerName) || "مستخدم" });
     }
     if(avatarUrl) prof.avatar = avatarUrl;
     if(coverUrl) prof.cover = coverUrl;
 
-    let ratings = [];
-    try {
-      const rS = await getDocs(query(collection(db, "ratings"), where("sellerUid", "==", uid)));
-      if(rS && rS.docs){
-        ratings = rS.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-      }
-    } catch(e){}
-
-    let followersCount = 0;
-    try {
-      const fS = await getDocs(collection(db, "users", uid, "followers"));
-      if(fS) followersCount = fS.size || 0;
-    } catch(e){}
-
     renderSeller(uid, prof, ratings, false, ratings, followersCount);
   } catch(err){
     console.error("openSeller error:", err);
-    const fallbackProf = initialProf || (isMe ? myProfile : { id: uid, name: "مستخدم" });
+    const fallbackProf = initialProf || (isMe ? activeProf : { id: uid, name: "مستخدم" });
     renderSeller(uid, fallbackProf, [], false, [], 0);
   }
 };
+
 function renderSeller(uid,prof,ratings,ratingsFailed,allRatings,followersCount){
 const box=document.getElementById("sellerContent");
 const posts=allPosts.filter(p=>p.uid===uid && getStatus(p)==="approved" && !isExpired(p) && !p.sold);
@@ -6596,26 +6739,24 @@ const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"مستخدم";
 const memberNo=prof&&prof.memberNo;
 const uname=prof&&prof.username;
 const ph=prof&&prof.phone;
+const isPhoneHidden = (prof && (prof.hidePhone === true || prof.hide_phone === true)) || localStorage.getItem("tasawuq_hide_phone_" + uid) === "1";
 const avatarUrl=(prof&&prof.avatar)||(localStorage.getItem("tasawuq_avatar_"+uid))||"";
 const coverUrl=(prof&&prof.cover)||(localStorage.getItem("tasawuq_cover_"+uid))||"";
 const count=ratings.length;
 const avg=count?ratings.reduce((s,r)=>s+(r.stars||0),0)/count:0;
-const me=auth.currentUser;
-const isMe=!!me&&me.uid===uid;
+const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+const isMe=(!!me && me.uid === uid) || (typeof myProfile !== "undefined" && myProfile && myProfile.id === uid) || (window.myProfile && window.myProfile.id === uid);
 const mine=me?ratings.find(r=>r.raterUid===me.uid):null;
 const following=isFollowing(uid);
 selectedStars=mine?(mine.stars||0):0;
-
 let rateHtml="";
 if(isMe) rateHtml="";
 else if(!me) rateHtml=`<button class="btnGhost" onclick="loginToRate()">سجّل دخولك لتقييم البائع</button>`;
 else rateHtml=`<div style="font-weight:800;margin:12px 0 4px">${mine?"تحديث تقييمك":"قيّم هذا البائع"}</div><div class="starPick" id="starPick">${[1,2,3,4,5].map(n=>`<button class="${n<=selectedStars?"on":""}" onclick="setStars(${n})">★</button>`).join("")}</div><textarea id="ratingComment" rows="3" maxlength="300" placeholder="تعليق (اختياري)">${escapeHtml(mine?(mine.comment||""):"")}</textarea><button class="btnMain" onclick="submitRating()">${mine?"تحديث التقييم":"إرسال التقييم"}</button>`;
-
 const reviewsHtml=count?ratings.map(r=>{
   const canDel=isAdmin||(me&&r.raterUid===me.uid);
   return `<div class="reviewItem"><div class="rvTop"><span><b>${escapeHtml(r.raterName||"مستخدم")}</b> <span class="starsRow">${starsText(r.stars||0)}</span></span><span>${canDel?`<button class="rvDel" onclick="deleteRating('${escapeHtml(r.id)}')">حذف</button> `:""}${timeAgo(r.createdAt)}</span></div>${r.comment?`<div class="rvText">${escapeHtml(r.comment)}</div>`:""}</div>`;
 }).join(""): `<div class="reportsEmpty">لا توجد تقييمات بعد</div>`;
-
 // تصميم إعلانات المستخدم في صفحته الشخصية بنمط فيسبوك الأنيق والمتتالي
 const postsGridHtml = posts.length ? `
   <div class="fbFeedContainer">
@@ -6650,13 +6791,11 @@ const postsGridHtml = posts.length ? `
               ${escapeHtml(pr)}
             </div>
           </div>
-
           <!-- عنوان الإعلان + الشرح التوضيحي الأنيق تحته -->
           <div class="fbPostText">
             <h4 class="fbPostTitle">${escapeHtml(p.title || 'إعلان')}</h4>
             ${descSnippet ? `<p class="fbPostDesc">${escapeHtml(descSnippet)}</p>` : ''}
           </div>
-
           <!-- صورة الإعلان بحجم أنيق ومتناسق وغير مبالغ فيه -->
           ${img ? `
             <div class="fbPostMediaWrap">
@@ -6664,7 +6803,6 @@ const postsGridHtml = posts.length ? `
               ${imgs.length > 1 ? `<span class="fbPostImgCount">📷 ${imgs.length} صور</span>` : ''}
             </div>
           ` : ''}
-
           <!-- أزرار الإجراءات السريعة فيسبوك ستايل -->
           <div class="fbPostActions">
             <button type="button" class="fbPostActBtn primary" onclick="event.stopPropagation();openPost('${escapeHtml(p.id)}')">
@@ -6675,7 +6813,7 @@ const postsGridHtml = posts.length ? `
                 <span>📱</span> واتساب
               </button>
             ` : ''}
-            <button type="button" class="fbPostActBtn chat" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}', '${escapeHtml(p.id)}', null, '${escapeHtml(name)}')">
+            <button type="button" class="fbPostActBtn chat" data-seller-uid="${escapeHtml(p.uid)}" data-post-id="${escapeHtml(p.id)}" data-seller-name="${escapeHtml(name)}" onclick="event.stopPropagation();openChatWithSeller(this.dataset.sellerUid, this.dataset.postId, null, this.dataset.sellerName)">
               <span>💬</span> دردشة
             </button>
           </div>
@@ -6684,7 +6822,6 @@ const postsGridHtml = posts.length ? `
     }).join("")}
   </div>
 ` : `<div class="reportsEmpty">لا توجد إعلانات نشطة حالياً لهذا المستخدم</div>`;
-
 // أزرار التفاعل والإجراءات
 let actionButtonsHtml = "";
 if(isMe){
@@ -6698,13 +6835,12 @@ if(isMe){
   `;
 } else {
   const followBtn = following 
-    ? `<button class="fbBtnAction edit" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`
-    : `<button class="fbBtnAction primary" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;
-  const chatBtn = `<button class="fbBtnAction chat" onclick="openChatWithSeller('${escapeHtml(uid)}',null,null,'${escapeHtml(name)}')">💬 مراسلة</button>`;
-  const waBtn = ph ? `<button class="fbBtnAction whatsapp" onclick="window.open('https://wa.me/${normalizePhone(ph)}', '_blank')">📱 واتساب</button>` : "";
+    ? `<button class="fbBtnAction edit" data-follow-uid="${uid}" onclick="toggleFollow('${uid}',event)">✓ متابَع</button>`
+    : `<button class="fbBtnAction primary" data-follow-uid="${uid}" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;
+  const chatBtn = `<button class="fbBtnAction chat" data-seller-uid="${escapeHtml(uid)}" data-seller-name="${escapeHtml(name)}" onclick="openChatWithSeller(this.dataset.sellerUid,null,null,this.dataset.sellerName)">💬 مراسلة</button>`;
+  const waBtn = (ph && (!isPhoneHidden || isMe)) ? `<button class="fbBtnAction whatsapp" onclick="window.open('https://wa.me/${normalizePhone(ph)}', '_blank')">📱 واتساب</button>` : "";
   actionButtonsHtml = `${followBtn}${chatBtn}${waBtn}`;
 }
-
 // بناء البروفايل الكامل على نمط الفيسبوك
 box.innerHTML = `
   <div class="fbProfileCard">
@@ -6717,7 +6853,6 @@ box.innerHTML = `
         ${isMe ? `<div class="fbAvatarEditBadge" title="تغيير الصورة">📷</div>` : ''}
       </div>
     </div>
-
     <!-- بيانات المستخدم -->
     <div class="fbProfileDetails">
       <div class="fbNameRow">
@@ -6726,18 +6861,16 @@ box.innerHTML = `
           ${tierBadge}
         </h2>
       </div>
-
       <!-- المعرفات والشارات -->
       <div class="fbUserBadges">
         ${uname ? `<span class="fbUsernameTag">@${escapeHtml(uname)}</span>` : ''}
         ${memberNo ? `<span class="fbMemberTag">#${memberNo}</span>` : ''}
-        ${ph ? `<span class="fbPhoneTag">📱 ${escapeHtml(normalizePhone(ph))}</span>` : ''}
+        ${ph ? (isMe ? (isPhoneHidden ? `<span class="fbPhoneTag" style="background:#fef2f2;color:#dc2626;border:1px solid #fee2e2" title="رقمك مخفي عن الزوار">🔒 ${escapeHtml(normalizePhone(ph))} <small style="font-size:10px;opacity:0.85">(مخفي عن الزوار)</small></span>` : `<span class="fbPhoneTag">📱 ${escapeHtml(normalizePhone(ph))}</span>`) : (!isPhoneHidden ? `<span class="fbPhoneTag">📱 ${escapeHtml(normalizePhone(ph))}</span>` : '')) : ''}
       </div>
-
       <!-- شريط الإحصائيات (Stats) -->
       <div class="fbStatsBar">
-        <div class="fbStatItem" style="cursor:pointer" onclick="openFollowersModal('${uid}')" title="عرض المتابعين">
-          <span class="fbStatNum" style="color:#0284c7">${followersCount}</span>
+        <div class="fbStatItem" style="cursor:pointer" onclick="openFollowersModal('${uid}','followers')" title="عرض المتابعين">
+          <span class="fbStatNum" id="sellerFollowersCount_${uid}" style="color:#0284c7">${followersCount}</span>
           <span class="fbStatLabel" style="color:#0284c7;text-decoration:underline">متابع 👥</span>
         </div>
         <div class="fbStatItem">
@@ -6749,14 +6882,12 @@ box.innerHTML = `
           <span class="fbStatLabel">${count} تقييم</span>
         </div>
       </div>
-
       <!-- أزرار الإجراءات (متابعة / شات / تعديل) -->
       <div class="fbActionsGrid">
         ${actionButtonsHtml}
       </div>
     </div>
   </div>
-
   <!-- التبويبات: إعلاناته / التقييمات -->
   <div class="fbTabsBar">
     <button type="button" class="fbTabBtn active" id="fbTabPostsBtn" onclick="switchFbProfileTab('posts')">
@@ -6766,11 +6897,9 @@ box.innerHTML = `
       ⭐ التقييمات والآراء (${count})
     </button>
   </div>
-
   <div id="fbTabPostsContent">
     ${postsGridHtml}
   </div>
-
   <div id="fbTabReviewsContent" style="display:none">
     ${rateHtml}
     <div style="font-weight:800;margin:14px 0 6px">جميع التقييمات</div>
@@ -6785,7 +6914,6 @@ window.switchFbProfileTab = (tab) => {
   const pContent = document.getElementById("fbTabPostsContent");
   const rContent = document.getElementById("fbTabReviewsContent");
   if(!pBtn || !rBtn || !pContent || !rContent) return;
-
   if(tab === 'posts'){
     pBtn.classList.add("active");
     rBtn.classList.remove("active");
@@ -6800,6 +6928,7 @@ window.switchFbProfileTab = (tab) => {
 };
 
 window.setStars=(n)=>{selectedStars=n;document.querySelectorAll("#starPick button").forEach((b,i)=>b.classList.toggle("on",i<n));};
+
 window.submitRating=async()=>{
   const me=auth.currentUser;
   if(!me){loginToRate();return;}
@@ -6814,14 +6943,16 @@ window.submitRating=async()=>{
     await openSeller(uid);
   }catch(e){showToast("تعذر إرسال التقييم: "+e.message,"error");}
 };
+
 window.deleteRating=async(id)=>{if(!confirm("حذف هذا التقييم؟"))return;try{await deleteDoc(doc(db,"ratings",id));await openSeller(sellerPanelUid);}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
    البروفايل + الترقيم + اسم المستخدم
    ============================================ */
-function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
-function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 
+function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
+
+function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 async function assignMemberNumber(user,customName){
   if(!user)return null;
   const counterRef=doc(db,"counters","users");
@@ -6838,13 +6969,11 @@ async function assignMemberNumber(user,customName){
     }
     const newNumber=currentNumber+1;
     await setDoc(counterRef,{lastNumber:newNumber},{merge:true});
-
     const existingData = (profileSnap && profileSnap.exists()) ? (profileSnap.data() || {}) : {};
     const existingName = customName || existingData.name || (myProfile && myProfile.name) || defaultName(user);
     const existingPhone = existingData.phone || (myProfile && myProfile.phone) || "";
     const existingUsername = existingData.username || (myProfile && myProfile.username) || "";
     const existingStoreId = existingData.storeId || (myProfile && myProfile.storeId) || null;
-
     const updates={
       memberNo:newNumber,
       name:existingName,
@@ -6863,7 +6992,6 @@ async function assignMemberNumber(user,customName){
     return null;
   }
 }
-
 async function reserveUsername(user,newUsername,oldUsername){
   if(!user)return{ok:false,msg:"لست مسجلاً"};
   const v=validateUsername(newUsername);
@@ -6882,7 +7010,6 @@ async function reserveUsername(user,newUsername,oldUsername){
     const now=Date.now();
     await setDoc(usernameRef,{uid:user.uid,createdAt:now},{merge:true});
     await setDoc(profileRef,{username:u},{merge:true});
-
     if(oldUsername && oldUsername!==u){
       try{
         const oldRef=doc(db,"usernames",oldUsername);
@@ -6892,21 +7019,17 @@ async function reserveUsername(user,newUsername,oldUsername){
         }
       }catch(e){}
     }
-
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
       await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerUsername:u}).catch(()=>{})));
     }catch(e){}
-
     if(!myProfile) myProfile={};
     myProfile.username=u;
-
     return{ok:true,value:u};
   }catch(e){
     return{ok:false,msg:"تعذر حفظ اسم المستخدم: "+(e.message||"خطأ")};
   }
 }
-
 async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   if(!user)return{ok:false,msg:"يجب تسجيل الدخول أولاً"};
   const v=validatePhone(newPhoneRaw);
@@ -6914,10 +7037,8 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
   const cleanNew=v.value;
   const cleanOld=oldPhoneRaw?normalizePhone(oldPhoneRaw):"";
   if(cleanOld && cleanOld===cleanNew){return{ok:true,value:cleanNew,unchanged:true};}
-
   const phoneRef=doc(db,"phones",cleanNew);
   const profileRef=doc(db,"profiles",user.uid);
-
   try{
     // فحص ما إذا كان الرقم محجوزاً لحساب شخص آخر
     const phoneSnap=await getDoc(phoneRef);
@@ -6927,7 +7048,6 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
         return{ok:false,msg:"هذا الرقم مربوط بحساب آخر بالفعل ولا يمكن استخدامه"};
       }
     }
-
     const now=Date.now();
     // حفظ في جدول phones
     await setDoc(phoneRef,{
@@ -6937,12 +7057,10 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
       localPhone:formatCallPhone(cleanNew),
       linkedAt:now
     },{merge:true});
-
     // حفظ في جدول profiles عبر upsert
     await setDoc(profileRef,{
       phone:cleanNew
     },{merge:true});
-
     // تحرير الرقم القديم ليصبح متاحاً عند تغييره
     if(cleanOld && cleanOld!==cleanNew){
       try{
@@ -6952,7 +7070,6 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
           await deleteDoc(oldPhoneRef);
         }
       }catch(e){}
-
       const oldLocal=formatCallPhone(cleanOld);
       if(oldLocal && oldLocal!==cleanOld){
         try{
@@ -6964,18 +7081,15 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
         }catch(e){}
       }
     }
-
     try{
       const mine=allPosts.filter(p=>p.uid===user.uid);
       await Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{})));
     }catch(e){}
-
     if(myStore){
       try{
         await updateDoc(doc(db,"stores",myStore.id),{phone:cleanNew});
       }catch(e){}
     }
-
     if(!myProfile) myProfile={};
     myProfile.phone=cleanNew;
     return{ok:true,value:cleanNew};
@@ -6999,8 +7113,35 @@ function startProfileListener(user){
   unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
     if(snap.exists()){
       const prevAvatar = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + user.uid);
+      const prevCover = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + user.uid);
       myProfile=snap.data() || {};
       if(!myProfile.avatar && prevAvatar) myProfile.avatar = prevAvatar;
+      if(!myProfile.cover && prevCover) myProfile.cover = prevCover;
+      // مزامنة الصورة والغلاف من السيرفر السحابي فوراً لتعمل عبر جميع الهواتف والأجهزة
+      const sbClient = window.supabase || supabase;
+      if(sbClient && user && user.uid){
+        sbClient.from("feedback").select("id,message").in("id", ["avatar_" + user.uid, "cover_" + user.uid]).then(res => {
+          if(res && res.data && res.data.length){
+            res.data.forEach(item => {
+              if(item.id === "avatar_" + user.uid && item.message){
+                myProfile.avatar = item.message;
+                try { localStorage.setItem("tasawuq_avatar_" + user.uid, item.message); } catch(e){}
+                const avCircle = document.getElementById("accountAvatarCircle");
+                if(avCircle) avCircle.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+                const heroAv = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
+                if(heroAv) heroAv.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+                const editPreview = document.getElementById("editProfileAvatarPreview");
+                if(editPreview) editPreview.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+              } else if(item.id === "cover_" + user.uid && item.message){
+                myProfile.cover = item.message;
+                try { localStorage.setItem("tasawuq_cover_" + user.uid, item.message); } catch(e){}
+                const coverPreview = document.getElementById("editProfileCoverPreview");
+                if(coverPreview) coverPreview.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+              }
+            });
+          }
+        }).catch(()=>{});
+      }
       const i=document.getElementById("myName");if(i && document.activeElement!==i)i.value=myProfile.name||"";
       const ui=document.getElementById("myUsername");if(ui && document.activeElement!==ui)ui.value=myProfile.username||"";
       const pi=document.getElementById("myPhone");if(pi && document.activeElement!==pi)pi.value=myProfile.phone?formatCallPhone(myProfile.phone):"";
@@ -7022,9 +7163,11 @@ function startProfileListener(user){
     }
   },err=>{});
 }
+
 function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null;}myProfile=null;}
 
 function startStoreListener(uid){stopStoreListener();unsubStore=onSnapshot(query(collection(db,"stores"),where("ownerUid","==",uid)),snap=>{if(!snap.empty){const d=snap.docs[0];myStore={id:d.id,...d.data()};}else{myStore=null;}},err=>{});}
+
 function stopStoreListener(){if(unsubStore){unsubStore();unsubStore=null;}myStore=null;}
 
 /* ============================================
@@ -7059,6 +7202,7 @@ async function loadBanner(){
   }
   renderBanner();
 }
+
 function renderBanner(){
   const carousel=document.getElementById("bannerCarousel");
   const empty=document.getElementById("bannerEmpty");
@@ -7089,8 +7233,11 @@ function renderBanner(){
     if(bannerTimer){clearInterval(bannerTimer);bannerTimer=null;}
   }
 }
+
 window.goToBannerSlide=(i)=>{const slidesBox=document.getElementById("bannerSlides");if(!slidesBox)return;slidesBox.scrollTo({left:i*slidesBox.clientWidth,behavior:"smooth"});bannerCurrentIndex=i;updateBannerDots(i);};
+
 function updateBannerDots(i){bannerCurrentIndex=i;document.querySelectorAll("#bannerDots .bDot").forEach((d,idx)=>d.classList.toggle("active",idx===i));}
+
 function startBannerAuto(){
   if(bannerTimer)clearInterval(bannerTimer);
   const validCount=bannerImages.filter(x=>x&&x.url).length;
@@ -7107,6 +7254,7 @@ function startBannerAuto(){
 /* ============================================
    GPS + إشعارات
    ============================================ */
+
 window.detectCity=async()=>{
   const btn=event?.target;
   if(!btn)return;
@@ -7150,29 +7298,25 @@ window.enableNotifications = async () => {
     showToast("⚠️ المتصفح لا يدعم الإشعارات في هذا الجهاز", "warn");
     return;
   }
-
   try {
     showToast("⏳ جاري طلب إذن الإشعارات...", "info", 1500);
-
     // التحقق من حالة الإذن الحالية
     if(Notification.permission === "denied"){
       alert("⚠️ الإشعارات محظورة في إعدادات المتصفح لـ localhost!\n\nللسماح بها:\n1. اضغط على أيقونة الإعدادات 🔒 بجانب الرابط في الأعلى\n2. غيّر خيار الإشعارات إلى (سماح / Allow)\n3. أعد تحميل الصفحة واضغط الزر مجدداً.");
       return;
     }
-
     let perm = Notification.permission;
     if(perm !== "granted"){
       perm = await Notification.requestPermission();
     }
-
     // مزامنة OneSignal
     if(window.OneSignal && window.OneSignal.Notifications && window.OneSignal.Notifications.requestPermission){
+
       window.OneSignal.Notifications.requestPermission().catch(()=>{});
     }
     if(auth.currentUser && typeof bindOneSignalUser === 'function'){
       bindOneSignalUser(auth.currentUser);
     }
-
     if(perm === "granted"){
       showToast("✅ تم تفعيل الإشعارات بنجاح!", "success", 3000);
       try {
@@ -7204,9 +7348,14 @@ giveWelcomePoints(user.uid);
 startPointsListener(user.uid);
 if(typeof setupUserWalletListener === 'function') setupUserWalletListener(user.uid);
 if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
+// 🔔 تفعيل فوري ودائم لمستمع الإشعارات والرسائل للهاتف بمجرد فتح التطبيق
+if(typeof startChatPushRealtimeListener === 'function') startChatPushRealtimeListener(user.uid);
+if(typeof bindOneSignalUser === 'function') bindOneSignalUser(user);
 setTimeout(()=>syncPendingPoints(),2000);
 if(isAdmin && !reportsListenerStarted){reportsListenerStarted=true;startReportsListener();}
 if(isAdmin && !pendingPostsListenerStarted){startPendingPostsListener();}
+const atb2 = document.getElementById("adminToolsBox");
+if(atb2) atb2.classList.toggle("hidden",!isAdmin);
 if(moderationBtn)moderationBtn.classList.toggle("hidden",!isAdmin);
 const smb=document.getElementById("storesModerationBtn");if(smb)smb.classList.toggle("hidden",!isAdmin);
 const acsb=document.getElementById("adminCreateStoreBtn");if(acsb)acsb.classList.toggle("hidden",!isAdmin);
@@ -7244,6 +7393,7 @@ stopStoreListener();
 stopFollowingListener();
 stopPendingPostsListener();
 if(typeof _walletUnsub === 'function'){ try{ _walletUnsub(); }catch(e){} _walletUnsub = null; }
+if(typeof _chatPushUnsub === 'function'){ try{ _chatPushUnsub(); }catch(e){} _chatPushUnsub = null; }
 if(typeof updateWalletUI === 'function') updateWalletUI(0);
 const chatHb = document.getElementById("chatHeaderBadge"); if(chatHb) chatHb.style.display="none";
 const chatAb = document.getElementById("accountChatBadge"); if(chatAb) chatAb.style.display="none";
@@ -7253,13 +7403,15 @@ renderPosts();
 });
 
 window.logout=async()=>{
+  if(typeof unbindOneSignalUser === 'function') unbindOneSignalUser();
+  if(typeof _chatPushUnsub === 'function'){ try{ _chatPushUnsub(); }catch(e){} _chatPushUnsub = null; }
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
   try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
   await signOut(auth);
 };
-
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:'select_account'});
+
 window.loginWithGoogle=async()=>{
   try{
     await signInWithPopup(auth,googleProvider);
@@ -7295,6 +7447,7 @@ window.loginWithEmail=async()=>{
 /* ============================================
    📢 إشعارات داخل التطبيق (In-App)
    ============================================ */
+
 function listenToAppNotifications(){
   onSnapshot(collection(db,"app_notifications"), snap => {
     if(snap.empty) return;
@@ -7309,13 +7462,10 @@ function listenToAppNotifications(){
 function showInAppBanner(notif){
   const oldBanner = document.getElementById("inAppNotifBanner");
   if(oldBanner) oldBanner.remove();
-
   const banner = document.createElement("div");
   banner.id = "inAppNotifBanner";
   banner.style.cssText = "position:fixed;top:70px;right:12px;left:12px;z-index:99998;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;padding:14px 16px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:flex-start;animation:slideDown .3s ease-out;max-width:480px;margin:0 auto;font-family:'Cairo',sans-serif;";
-  
   const linkHtml = notif.link ? '<a href="'+escapeHtml(notif.link)+'" target="_blank" style="display:inline-block;margin-top:8px;background:rgba(255,255,255,.25);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none">👉 اضغط هنا</a>' : "";
-
   banner.innerHTML = 
     '<div style="font-size:24px;flex:0 0 auto;line-height:1">🔔</div>' +
     '<div style="flex:1;min-width:0">' +
@@ -7324,9 +7474,7 @@ function showInAppBanner(notif){
       linkHtml +
     '</div>' +
     '<button onclick="dismissInAppBanner(\''+notif.id+'\')" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;font-weight:800;cursor:pointer;flex:0 0 auto;display:flex;align-items:center;justify-content:center;line-height:1;padding:0">×</button>';
-  
   document.body.appendChild(banner);
-  
   setTimeout(() => {
     if(document.getElementById("inAppNotifBanner")) dismissInAppBanner(notif.id);
   }, 15000);
@@ -7352,7 +7500,6 @@ startPostsListener();
 startStoresListener();
 loadBanner();
 listenToAppNotifications();
-
 setTimeout(()=>{
   if(!categoriesScreen.classList.contains('hidden')){
     showFloatingButtons();
@@ -7404,14 +7551,11 @@ window.addEventListener('load',()=>{
     }
   }
 });
-
 setTimeout(refreshNavIcons, 500);
 setTimeout(refreshNavIcons, 1500);
 setTimeout(refreshNavIcons, 3000);
-
 // ============================================
 // ربط كافة دوال ووظائف التطبيق بـ window لضمان عمل كافة أحداث الـ HTML (onclick, oninput, onchange)
-
 // ============================================
 // نشر الإعلان تلقائياً في قناة التليجرام @tasawuqnow
 // ============================================
@@ -7419,20 +7563,15 @@ async function sendPostToTelegram(post){
   if(!post) return;
   const token = "8476996485:AAH_06mzTH3V8f-0e-GXEVC2a46hSlz3Yl4";
   const chatId = "@tasawuqnow";
-  
   const priceText = post.priceType === "contact" 
     ? "📞 عند الاتصال" 
     : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
-  
   const cityText = post.city ? "\n📍 المدينة: " + post.city : "";
   const catText = post.category ? "\n🏷️ التصنيف: " + post.category : "";
   const brandText = post.brand ? " (" + post.brand + ")" : "";
   const postUrl = "https://tasawuqnow.com/#post-" + post.id;
-  
   const caption = "🔥 إعلان جديد على تسوق الآن!\n\n📌 " + (post.title || "إعلان") + "\n💰 السعر: " + priceText + cityText + catText + brandText + "\n\n🔗 شاهد باقي الصور وتواصل مع البائع:\n" + postUrl + "\n\n📢 تابعنا لأحدث العروض: @tasawuqnow";
-
   const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
-
   try {
     if (images.length > 0) {
       await fetch("https://api.telegram.org/bot" + token + "/sendPhoto", {
@@ -7451,20 +7590,18 @@ async function sendPostToTelegram(post){
     console.warn("Telegram broadcast error:", err);
   }
 }
-window.sendPostToTelegram = sendPostToTelegram;
 
+window.sendPostToTelegram = sendPostToTelegram;
 // ============================================
 // أداة توليد صورة الستوري (Story Card Generator)
 // ============================================
 let currentStoryDataUrl = null;
 let currentStoryPost = null;
-
 async function generateStoryImage(post) {
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
   canvas.height = 1920;
   const ctx = canvas.getContext("2d");
-
   // خلفية تدرج لوني فخم
   const grad = ctx.createLinearGradient(0, 0, 0, 1920);
   grad.addColorStop(0, "#0b1329");
@@ -7472,7 +7609,6 @@ async function generateStoryImage(post) {
   grad.addColorStop(1, "#0f172a");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 1080, 1920);
-
   // دوائر زخرفية
   ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
   ctx.beginPath();
@@ -7482,17 +7618,14 @@ async function generateStoryImage(post) {
   ctx.beginPath();
   ctx.arc(980, 1680, 420, 0, Math.PI * 2);
   ctx.fill();
-
   // رأس البطاقة - اسم الموقع
   ctx.textAlign = "center";
   ctx.fillStyle = "#38bdf8";
   ctx.font = "bold 46px 'Cairo', sans-serif";
   ctx.fillText("🛒 تـسـوق الآن | TasawuqNow.com", 540, 140);
-
   ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
   ctx.font = "26px 'Cairo', sans-serif";
   ctx.fillText("منصة الإعلانات المبوبة في ليبيا", 540, 195);
-
   // خط فاصل
   ctx.strokeStyle = "rgba(255,255,255,0.15)";
   ctx.lineWidth = 2;
@@ -7500,7 +7633,6 @@ async function generateStoryImage(post) {
   ctx.moveTo(140, 240);
   ctx.lineTo(940, 240);
   ctx.stroke();
-
   // صورة السلعة الرئيسية
   const imgX = 100, imgY = 280, imgW = 880, imgH = 880, radius = 36;
   ctx.save();
@@ -7508,10 +7640,8 @@ async function generateStoryImage(post) {
   if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
   else ctx.rect(imgX, imgY, imgW, imgH);
   ctx.clip();
-
   const images = (post.images && post.images.length > 0) ? post.images : (post.image ? [post.image] : []);
   let imageLoaded = false;
-
   if (images.length > 0) {
     try {
       const img = new Image();
@@ -7532,7 +7662,6 @@ async function generateStoryImage(post) {
       }
     } catch(e) {}
   }
-
   if (!imageLoaded) {
     ctx.fillStyle = "#1e293b";
     ctx.fillRect(imgX, imgY, imgW, imgH);
@@ -7542,7 +7671,6 @@ async function generateStoryImage(post) {
     ctx.fillText("📸 تسوق الآن", imgX + imgW / 2, imgY + imgH / 2);
   }
   ctx.restore();
-
   // إطار الصورة
   ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
   ctx.lineWidth = 4;
@@ -7550,7 +7678,6 @@ async function generateStoryImage(post) {
   if (ctx.roundRect) ctx.roundRect(imgX, imgY, imgW, imgH, radius);
   else ctx.rect(imgX, imgY, imgW, imgH);
   ctx.stroke();
-
   // وسم التصنيف فوق الصورة
   if (post.category) {
     ctx.fillStyle = "rgba(2, 132, 199, 0.92)";
@@ -7563,7 +7690,6 @@ async function generateStoryImage(post) {
     ctx.textAlign = "center";
     ctx.fillText(post.category, 260, 360);
   }
-
   // عنوان الإعلان
   ctx.textAlign = "right";
   ctx.fillStyle = "#ffffff";
@@ -7575,7 +7701,6 @@ async function generateStoryImage(post) {
   } else {
     ctx.fillText(title, 980, 1260);
   }
-
   // شريط السعر والمدينة
   const priceY = 1360;
   ctx.fillStyle = "#f59e0b";
@@ -7583,13 +7708,11 @@ async function generateStoryImage(post) {
   if (ctx.roundRect) ctx.roundRect(100, priceY, 460, 110, 24);
   else ctx.fillRect(100, priceY, 460, 110);
   ctx.fill();
-
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.font = "bold 44px 'Cairo', sans-serif";
   const priceStr = post.priceType === "contact" ? "📞 عند الاتصال" : (post.price != null ? Number(post.price).toLocaleString() + " د.ل" : "للتواصل");
   ctx.fillText(priceStr, 330, priceY + 70);
-
   // شارة المدينة
   if (post.city) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
@@ -7605,7 +7728,6 @@ async function generateStoryImage(post) {
     ctx.font = "bold 36px 'Cairo', sans-serif";
     ctx.fillText("📍 " + post.city, 785, priceY + 70);
   }
-
   // بطاقة أسفل الإعلان (دعوة للتواصل)
   const ctaY = 1520;
   ctx.fillStyle = "rgba(2, 132, 199, 0.2)";
@@ -7616,20 +7738,16 @@ async function generateStoryImage(post) {
   ctx.strokeStyle = "#38bdf8";
   ctx.lineWidth = 2;
   ctx.stroke();
-
   ctx.textAlign = "center";
   ctx.fillStyle = "#38bdf8";
   ctx.font = "bold 38px 'Cairo', sans-serif";
   ctx.fillText("💬 تواصل مباشرة مع المعلن عبر واتساب", 540, ctaY + 75);
-
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 34px 'Cairo', sans-serif";
   ctx.fillText("ابحث عن الإعلان في موقعنا الآن:", 540, ctaY + 140);
-
   ctx.fillStyle = "#fde047";
   ctx.font = "bold 42px 'Cairo', sans-serif";
   ctx.fillText("tasawuqnow.com", 540, ctaY + 215);
-
   try {
     return canvas.toDataURL("image/jpeg", 0.92);
   } catch(err) {
@@ -7679,13 +7797,11 @@ window.openStoryModal = async function(id, skipHistory) {
   const img = document.getElementById("storyPreviewImg");
   const actions = document.getElementById("storyActionsBox");
   if (!overlay) return;
-
   overlay.classList.remove("hidden");
   if(!skipHistory) pushNavState({ screen: 'storyModal', id: id });
   loader.style.display = "block";
   img.style.display = "none";
   actions.style.display = "none";
-
   try {
     currentStoryDataUrl = await generateStoryImage(p);
     img.src = currentStoryDataUrl;
@@ -7701,9 +7817,12 @@ function closeStoryModalDirect(){
   const overlay = document.getElementById("storyModalOverlay");
   if (overlay) overlay.classList.add("hidden");
 }
+
 window.closeStoryModalDirect = closeStoryModalDirect;
+
 window.closeStoryModal = function() {
   if (!_isHistoryNavigating && window.history.state && window.history.state.screen === 'storyModal') {
+
     window.history.back();
     return;
   }
@@ -7742,10 +7861,10 @@ window.shareStoryDirectly = async function() {
     showToast("تم تنزيل الصورة، يمكنك نشرها الآن في ستوري واتساب أو فيسبوك!", "info", 4000);
   }, 1000);
 };
-
 // ============================================
 // دوال برنامج الإحالة والمكافآت (Referrals)
 // ============================================
+
 window.copyRefLink = function() {
   const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
   const link = window.location.origin + window.location.pathname + "?ref=" + refCode;
@@ -7760,10 +7879,9 @@ window.shareRefOnWhatsapp = function() {
   const refCode = (myProfile && myProfile.memberNo) ? myProfile.memberNo : (auth.currentUser ? auth.currentUser.uid : "");
   const link = window.location.origin + window.location.pathname + "?ref=" + refCode;
   const msg = "🔥 تطبيق وموقع تسوق الآن في ليبيا — لبيع وشراء السيارات، العقارات، والأجهزة مجاناً!\n\nسجّل بحساب Google من هذا الرابط واكسب نقاط ترحيبية فورية:\n" + link;
+
   window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
 };
-
-
 // ============================================
 // window.addPoints disabled for security
 if (typeof addRecentView === 'function' && typeof window.addRecentView === 'undefined') window.addRecentView = addRecentView;
@@ -7906,21 +8024,19 @@ if (typeof updateWheelBadge === 'function' && typeof window.updateWheelBadge ===
 if (typeof uploadToImgBB === 'function' && typeof window.uploadToImgBB === 'undefined') window.uploadToImgBB = uploadToImgBB;
 if (typeof validatePhone === 'function' && typeof window.validatePhone === 'undefined') window.validatePhone = validatePhone;
 if (typeof validateUsername === 'function' && typeof window.validateUsername === 'undefined') window.validateUsername = validateUsername;
-
 try {
   Object.defineProperty(window, 'storeLogoImage', { get: () => storeLogoImage, set: (v) => { storeLogoImage = v; }, configurable: true });
   Object.defineProperty(window, 'storeCoverImage', { get: () => storeCoverImage, set: (v) => { storeCoverImage = v; }, configurable: true });
   Object.defineProperty(window, 'editStoreLogoImage', { get: () => editStoreLogoImage, set: (v) => { editStoreLogoImage = v; }, configurable: true });
 } catch(e) {}
-
 // ============================================
 // 💳 نظام المحفظة الإلكترونية وكروت الشحن والسجل المالي للأدمن
 // ============================================
 let _userWalletBalance = 0;
 let _walletUnsub = null;
 const WALLET_THROTTLE_KEY = "tasawuq_wallet_throttle";
-
 // 1. استرجاع بيانات محفظة المستخدم
+
 export async function getUserWallet(uid){
   if(!uid) return { balance: 0.00, updatedAt: Date.now() };
   try{
@@ -7936,9 +8052,10 @@ export async function getUserWallet(uid){
   }
   return { balance: 0.00, updatedAt: Date.now() };
 }
-window.getUserWallet = getUserWallet;
 
+window.getUserWallet = getUserWallet;
 // 2. تسجيل حركة في السجل المالي العام (Audit Ledger)
+
 export async function recordWalletTx(uid, txType, amount, balanceBefore, balanceAfter, reason, meta = {}){
   try{
     const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
@@ -7974,13 +8091,12 @@ export async function recordWalletTx(uid, txType, amount, balanceBefore, balance
   }
 }
 // window.recordWalletTx disabled for security
-
 // 3. إضافة رصيد للمحفظة (Credit) - 🔒 محمي تماماً
+
 export async function creditUserWallet(uid, amount, reason, meta = {}){
   if(!auth.currentUser) return { ok: false, error: "يجب تسجيل الدخول أولاً" };
   amount = Math.max(0, Number(amount) || 0);
   if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
-
   // 🔒 حماية مشددة: لا يمكن لأي مستخدم مناداة الدالة لإضافة رصيد وهمي لنفسه
   // العمليات المسموحة فقط: شحن كارت حقيقي، رد طلبية ملغاة، أو إيداع يدوي من الأدمن المعتمد
   const allowedTxTypes = ["card_recharge", "order_refund", "admin_credit"];
@@ -7995,14 +8111,12 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
   if(meta.txType === "card_recharge" && !meta.cardCode){
     return { ok: false, error: "رمز الكارت مطلوب لإتمام الشحن" };
   }
-
   try{
     const current = await getUserWallet(uid);
     const oldBalance = current.balance;
     const newBalance = Math.round((oldBalance + amount) * 100) / 100;
     const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
     const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-
     await setDoc(doc(db, "feedback", "wallet_" + uid), {
       id: "wallet_" + uid,
       type: "user_wallet",
@@ -8012,7 +8126,6 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
       updatedAt: Date.now()
     }, { merge: true });
-
     const txId = await recordWalletTx(uid, meta.txType, amount, oldBalance, newBalance, reason, meta);
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
@@ -8024,19 +8137,17 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
   }
 }
 // 🔒 تم إلغاء window.creditUserWallet لمنع التلاعب من الكونسول
-
 // 4. خصم رصيد من المحفظة (Debit) - 🔒 محمي تماماً
+
 export async function debitUserWallet(uid, amount, reason, meta = {}){
   if(!auth.currentUser) return { ok: false, error: "يجب تسجيل الدخول أولاً" };
   amount = Math.max(0, Number(amount) || 0);
   if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
-
   // 🔒 حماية: لا يمكن خصم رصيد إلا من محفظة صاحب الحساب الحالي (أو الأدمن)
   if(auth.currentUser.uid !== uid && !isAdmin){
     console.warn("محاولة غير مصرح بها لخصم رصيد من محفظة أخرى.");
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
   }
-
   try{
     const current = await getUserWallet(uid);
     const oldBalance = current.balance;
@@ -8046,7 +8157,6 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     const newBalance = Math.round((oldBalance - amount) * 100) / 100;
     const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
     const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-
     await setDoc(doc(db, "feedback", "wallet_" + uid), {
       id: "wallet_" + uid,
       type: "user_wallet",
@@ -8056,7 +8166,6 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
       updatedAt: Date.now()
     }, { merge: true });
-
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
     if(auth.currentUser && auth.currentUser.uid === uid){
       updateWalletUI(newBalance);
@@ -8068,8 +8177,8 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
   }
 }
 // 🔒 تم إلغاء window.debitUserWallet لمنع التلاعب من الكونسول
-
 // 5. استرجاع قيمة طلبية ملغاة (Refund)
+
 export async function refundOrderToWallet(uid, amount, orderNo, storeName){
   return creditUserWallet(
     uid,
@@ -8078,9 +8187,10 @@ export async function refundOrderToWallet(uid, amount, orderNo, storeName){
     { txType: "order_refund", orderNo, storeName }
   );
 }
-window.refundOrderToWallet = refundOrderToWallet;
 
+window.refundOrderToWallet = refundOrderToWallet;
 // 6. حماية الشحن من المحاولات العشوائية والتخمين (Brute-Force Throttle)
+
 function checkWalletThrottle(){
   try{
     const raw = localStorage.getItem(WALLET_THROTTLE_KEY);
@@ -8119,8 +8229,8 @@ function registerWalletFail(){
 function resetWalletThrottle(){
   try{ localStorage.removeItem(WALLET_THROTTLE_KEY); }catch(e){}
 }
-
 // 7. تحديث واجهات المحفظة محلياً
+
 function updateWalletUI(balance){
   _userWalletBalance = Math.max(0, Number(balance) || 0);
   const balText = _userWalletBalance.toFixed(2);
@@ -8133,9 +8243,10 @@ function updateWalletUI(balance){
   const cartBal = document.getElementById("cartWalletCurrentBalanceBadge");
   if(cartBal) cartBal.textContent = "رصيدك: " + balText + " د.ل";
 }
-window.updateWalletUI = updateWalletUI;
 
+window.updateWalletUI = updateWalletUI;
 // 8. الاستماع المباشر الفوري للرصيد عبر Supabase
+
 export function setupUserWalletListener(uid){
   if(_walletUnsub){
     try{ _walletUnsub(); }catch(e){}
@@ -8158,9 +8269,10 @@ export function setupUserWalletListener(uid){
     getUserWallet(uid).then(w => updateWalletUI(w.balance)).catch(()=>{});
   }
 }
-window.setupUserWalletListener = setupUserWalletListener;
 
+window.setupUserWalletListener = setupUserWalletListener;
 // 9. فتح نافذة المحفظة
+
 window.openWalletModal = ()=>{
   if(!auth.currentUser){
     showToast("⚠️ يرجى تسجيل الدخول للوصول إلى المحفظة", "warn");
@@ -8171,8 +8283,8 @@ window.openWalletModal = ()=>{
   const c = document.getElementById("accountWalletCard");
   if(c) c.scrollIntoView({ behavior: 'smooth' });
 };
-
 // 10. فتح وإغلاق نافذة شحن الرصيد
+
 window.openRechargeModal = ()=>{
   if(!auth.currentUser){
     showToast("⚠️ يرجى تسجيل الدخول أولاً لشحن المحفظة", "warn");
@@ -8189,6 +8301,7 @@ window.openRechargeModal = ()=>{
     if(inp){ inp.value = ""; setTimeout(()=>inp.focus(), 200); }
   }
 };
+
 window.closeRechargeModal = ()=>{
   const ov = document.getElementById("rechargeWalletOverlay");
   if(ov) ov.classList.add("hidden");
@@ -8220,8 +8333,8 @@ window.copyTransferNumber = (num)=>{
     prompt("انسخ رقم التحويل:", num);
   }
 };
-
 // 11. شحن الرصيد بكارت رقمي (Redeem Card)
+
 window.submitCardRecharge = async()=>{
   if(!auth.currentUser){
     showToast("⚠️ يجب تسجيل الدخول لشحن الرصيد", "warn");
@@ -8232,12 +8345,10 @@ window.submitCardRecharge = async()=>{
     showToast(`⚠️ تم قفل محاولات الشحن مؤقتاً لحماية الحساب. يرجى الانتظار ${throttle.waitMinutes} دقيقة قبل المحاولة مجدداً`, "error", 6000);
     return;
   }
-
   const inputEl = document.getElementById("walletCardCodeInput");
   const statusBox = document.getElementById("rechargeStatusBox");
   const btn = document.getElementById("btnSubmitCardRecharge");
   const rawCode = (inputEl ? inputEl.value : "").trim();
-
   let cleanCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
   if(cleanCode.startsWith("TK")) cleanCode = cleanCode.substring(2);
   if(cleanCode.length === 12){
@@ -8245,7 +8356,6 @@ window.submitCardRecharge = async()=>{
   }else{
     cleanCode = rawCode.toUpperCase();
   }
-
   if(!cleanCode || cleanCode.length < 8){
     if(statusBox){
       statusBox.style.display = "block";
@@ -8256,14 +8366,11 @@ window.submitCardRecharge = async()=>{
     }
     return;
   }
-
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التحقق وشحن الكارت..."; }
   if(statusBox) statusBox.style.display = "none";
-
   try{
     const cardDocId = "card_" + cleanCode;
     const snap = await getDoc(doc(db, "feedback", cardDocId));
-
     if(!snap || !snap.exists()){
       const failInfo = registerWalletFail();
       if(statusBox){
@@ -8279,11 +8386,9 @@ window.submitCardRecharge = async()=>{
       }
       return;
     }
-
     const cardRow = snap.data();
     let cardData = {};
     try{ cardData = JSON.parse(cardRow.message || "{}"); }catch(e){}
-
     if(cardData.isUsed){
       const usedDate = cardData.usedAt ? new Date(cardData.usedAt).toLocaleDateString('ar-LY') : "";
       if(statusBox){
@@ -8295,30 +8400,25 @@ window.submitCardRecharge = async()=>{
       }
       return;
     }
-
     // الكارت صالح وغير مستخدم -> حرقه فوراً وإضافة الرصيد للمحفظة
     const cardAmount = Number(cardData.amount || 0);
     if(cardAmount <= 0){
       showToast("خطأ: قيمة الكارت غير صالحة", "error");
       return;
     }
-
     resetWalletThrottle();
-
     // حرق الكارت
     cardData.isUsed = true;
     cardData.usedByUid = auth.currentUser.uid;
     cardData.usedByName = (myProfile && myProfile.name) || auth.currentUser.displayName || "مستخدم";
     cardData.usedByPhone = (myProfile && myProfile.phone) || "";
     cardData.usedAt = Date.now();
-
     await updateDoc(doc(db, "feedback", cardDocId), {
       message: JSON.stringify(cardData),
       userName: cardData.usedByName,
       userPhone: cardData.usedByPhone,
       updatedAt: Date.now()
     });
-
     // إضافة الرصيد لحساب الزبون
     const creditRes = await creditUserWallet(
       auth.currentUser.uid,
@@ -8326,7 +8426,6 @@ window.submitCardRecharge = async()=>{
       `شحن رصيد بواسطة كارت رقمي #${cleanCode}`,
       { txType: "card_recharge", cardCode: cleanCode }
     );
-
     if(inputEl) inputEl.value = "";
     if(statusBox){
       statusBox.style.display = "block";
@@ -8349,8 +8448,8 @@ window.submitCardRecharge = async()=>{
     if(btn){ btn.disabled = false; btn.textContent = "⚡ شحن الرصيد الآن"; }
   }
 };
-
 // 12. كشف حساب المستخدم وسجل عملياته الشخصية
+
 window.openMyWalletHistory = async()=>{
   if(!auth.currentUser){
     showToast("⚠️ يرجى تسجيل الدخول أولاً", "warn");
@@ -8360,10 +8459,8 @@ window.openMyWalletHistory = async()=>{
   const listEl = document.getElementById("myWalletTxList");
   if(ov) ov.classList.remove("hidden");
   if(listEl) listEl.innerHTML = `<div class="reportsEmpty">⏳ جاري جلب سجل المعاملات...</div>`;
-
   const cur = await getUserWallet(auth.currentUser.uid);
   updateWalletUI(cur.balance);
-
   try{
     let txs = [];
     if(window.supabase){
@@ -8376,7 +8473,6 @@ window.openMyWalletHistory = async()=>{
         .limit(60);
       if(!error && data) txs = data;
     }
-
     if(txs.length === 0){
       if(listEl) listEl.innerHTML = `
         <div class="cartEmptyBox" style="padding:20px 0">
@@ -8387,7 +8483,6 @@ window.openMyWalletHistory = async()=>{
       `;
       return;
     }
-
     if(listEl){
       listEl.innerHTML = txs.map(row=>{
         let parsed = {};
@@ -8419,11 +8514,11 @@ window.openMyWalletHistory = async()=>{
     if(listEl) listEl.innerHTML = `<div class="reportsEmpty">خطأ في جلب البيانات: ${e.message}</div>`;
   }
 };
+
 window.closeMyWalletHistory = ()=>{
   const ov = document.getElementById("myWalletHistoryOverlay");
   if(ov) ov.classList.add("hidden");
 };
-
 // 13. لوحة الإدارة المالية للأدمن
 let _admWalActiveTab = "cards";
 let _admAllCards = [];
@@ -8440,6 +8535,7 @@ window.openAdminWallet = ()=>{
     switchAdmWalTab("cards");
   }
 };
+
 window.closeAdminWallet = ()=>{
   const ov = document.getElementById("adminWalletOverlay");
   if(ov) ov.classList.add("hidden");
@@ -8458,8 +8554,8 @@ window.switchAdmWalTab = (tab)=>{
   else if(tab === 'ledger') loadAdminLedger();
   else if(tab === 'stores') loadAdminStoresPayouts();
 };
-
 // إظهار أو إخفاء الفئة المخصصة لكروت الشحن للأدمن
+
 window.toggleAdmCustomDenom = ()=>{
   const sel = document.getElementById("admCardDenom");
   const cust = document.getElementById("admCardCustomDenom");
@@ -8468,8 +8564,8 @@ window.toggleAdmCustomDenom = ()=>{
     if(sel.value === 'custom') cust.focus();
   }
 };
-
 // توليد كروت الشحن للأدمن (عدد مفتوح وفئات مرنة)
+
 window.adminGenerateCardsBatch = async()=>{
   if(!isAdmin) return;
   const selDenom = document.getElementById("admCardDenom")?.value || "20";
@@ -8483,22 +8579,17 @@ window.adminGenerateCardsBatch = async()=>{
   }else{
     denom = parseInt(selDenom, 10);
   }
-
   const countInput = document.getElementById("admCardCount");
   const count = parseInt(countInput?.value || "10", 10);
   if(isNaN(count) || count < 1 || count > 500){
     showToast("⚠️ يرجى إدخال عدد كروت صحيح بين 1 و 500 كارت في الدفعة الواحدة", "warn");
     return;
   }
-
   const btn = document.getElementById("btnAdmGenCards");
   const outBox = document.getElementById("admGeneratedCardsOutput");
   const outText = document.getElementById("admGeneratedCardsText");
-
   if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في المنظومة؟`)) return;
-
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري توليد وحفظ الكروت..."; }
-
   try{
     const generated = [];
     const batchId = "batch_" + Date.now();
@@ -8528,7 +8619,6 @@ window.adminGenerateCardsBatch = async()=>{
       });
       generated.push(code);
     }
-
     if(outBox) outBox.style.display = "block";
     if(outText){
       outText.value = `🌟 كروت شحن تسوق الآن (فئة ${denom} د.ل - إجمالي ${count} كارت):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
@@ -8554,8 +8644,8 @@ window.copyAllGeneratedCards = ()=>{
     showToast("📋 تم النسخ!", "success");
   }
 };
-
 let _admCardsFilter = "all";
+
 window.filterAdminCardsList = (filter)=>{
   _admCardsFilter = filter;
   ['all', 'unused', 'used'].forEach(f=>{
@@ -8564,7 +8654,6 @@ window.filterAdminCardsList = (filter)=>{
   });
   renderAdminCardsTable();
 };
-
 async function loadAdminCardsList(){
   const box = document.getElementById("admCardsListTable");
   if(!box) return;
@@ -8597,12 +8686,10 @@ function renderAdminCardsTable(){
   let filtered = _admAllCards;
   if(_admCardsFilter === 'unused') filtered = _admAllCards.filter(c => !c.isUsed);
   else if(_admCardsFilter === 'used') filtered = _admAllCards.filter(c => c.isUsed);
-
   if(filtered.length === 0){
     box.innerHTML = `<div class="reportsEmpty">لا توجد كروت مطابقة لهذا الفلتر</div>`;
     return;
   }
-
   box.innerHTML = filtered.map(c=>{
     const isUsed = c.isUsed;
     const badge = isUsed
@@ -8619,12 +8706,11 @@ function renderAdminCardsTable(){
     `;
   }).join("");
 }
-
 // السجل المالي العام (Audit Ledger) للأدمن
+
 window.onAdmLedgerSearchChange = ()=>{
   renderAdminLedgerTable();
 };
-
 async function loadAdminLedger(){
   const box = document.getElementById("admLedgerListTable");
   if(!box) return;
@@ -8665,14 +8751,12 @@ function updateAdminLedgerStats(){
   let totalRecharges = 0;
   let totalOrders = 0;
   let totalRefunds = 0;
-
   _admAllLedger.forEach(tx=>{
     const amt = Number(tx.amount || 0);
     if(tx.txType === 'card_recharge' || tx.txType === 'admin_credit') totalRecharges += Math.abs(amt);
     else if(tx.txType === 'order_payment') totalOrders += Math.abs(amt);
     else if(tx.txType === 'order_refund') totalRefunds += Math.abs(amt);
   });
-
   const elR = document.getElementById("admStatRecharges");
   if(elR) elR.textContent = totalRecharges.toFixed(2) + " د.ل";
   const elO = document.getElementById("admStatOrders");
@@ -8686,13 +8770,11 @@ function populateLedgerStoreFilter(storesList = null){
   if(!sel) return;
   const currentVal = sel.value || "all";
   const stores = {};
-
   if(storesList && storesList.length){
     storesList.forEach(s => {
       if(s.storeId) stores[s.storeId] = s.storeName || "مطعم";
     });
   }
-
   if(Array.isArray(_admAllLedger)){
     _admAllLedger.forEach(tx => {
       const sId = tx._storeId || tx.meta?.storeId;
@@ -8702,7 +8784,6 @@ function populateLedgerStoreFilter(storesList = null){
       }
     });
   }
-
   let html = `<option value="all">🍽️ كل المطاعم</option>`;
   Object.keys(stores).forEach(sId => {
     html += `<option value="${escapeHtml(sId)}">🍽️ ${escapeHtml(stores[sId])}</option>`;
@@ -8717,7 +8798,6 @@ function renderAdminLedgerTable(){
   const q = (document.getElementById("admLedgerSearchInput")?.value || "").trim().toLowerCase();
   const typeFilter = document.getElementById("admLedgerTypeFilter")?.value || "all";
   const storeFilter = document.getElementById("admLedgerStoreFilter")?.value || "all";
-
   let filtered = _admAllLedger;
   if(typeFilter !== 'all'){
     filtered = filtered.filter(tx => tx.txType === typeFilter);
@@ -8738,12 +8818,10 @@ function renderAdminLedgerTable(){
       return u.includes(q) || p.includes(q) || r.includes(q) || id.includes(q) || sn.includes(q);
     });
   }
-
   if(filtered.length === 0){
     box.innerHTML = `<div class="reportsEmpty">لا توجد حركات مالية مطابقة للبحث والفلترة</div>`;
     return;
   }
-
   box.innerHTML = filtered.map(tx=>{
     const amt = Number(tx.amount || 0);
     const isIncome = amt >= 0;
@@ -8753,7 +8831,6 @@ function renderAdminLedgerTable(){
     const storeBadge = (tx._storeName || tx.meta?.storeName)
       ? `<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:800;margin-left:4px">🍽️ ${escapeHtml(tx._storeName || tx.meta?.storeName)}</span>`
       : '';
-
     return `
       <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -8775,7 +8852,6 @@ function renderAdminLedgerTable(){
     `;
   }).join("");
 }
-
 // فحص وإيداع يدوي لأي مستخدم
 let _admDepTargetUser = null;
 
@@ -8797,7 +8873,6 @@ window.admLookupUserByPhone = async()=>{
   const box = document.getElementById("admDepUserInfoBox");
   const btn = document.getElementById("btnAdmLookupPhone");
   if(!box) return;
-
   if(!rawQuery || rawQuery.length < 2){
     box.style.display = "block";
     box.style.background = "#fef2f2";
@@ -8810,12 +8885,10 @@ window.admLookupUserByPhone = async()=>{
     box.textContent = "⚠️ يرجى كتابة رقم هاتف أو اسم مستخدم صحيح للبحث";
     return;
   }
-
   if(btn){
     btn.disabled = true;
     btn.textContent = "⏳...";
   }
-
   box.style.display = "block";
   box.style.background = "#f8fafc";
   box.style.color = "var(--text)";
@@ -8824,12 +8897,10 @@ window.admLookupUserByPhone = async()=>{
   box.style.padding = "12px 14px";
   box.style.fontSize = "13px";
   box.textContent = "⏳ جاري البحث عن صاحب الحساب في قاعدة البيانات...";
-
   try{
     let target = null;
     const cleanDigits = rawQuery.replace(/[^0-9]/g, "");
     const cleanUsername = rawQuery.replace(/^@/, "").toLowerCase();
-
     // 1. البحث برقم الهاتف
     if(cleanDigits.length >= 8 && window.supabase){
       const last8 = cleanDigits.slice(-8);
@@ -8840,7 +8911,6 @@ window.admLookupUserByPhone = async()=>{
         .limit(1)
         .maybeSingle();
       if(pData) target = pData;
-
       if(!target){
         const { data: phData } = await window.supabase
           .from("phones")
@@ -8859,7 +8929,6 @@ window.admLookupUserByPhone = async()=>{
         }
       }
     }
-
     // 2. البحث برقم العضوية (1 إلى 6 أرقام)
     if(!target && cleanDigits.length >= 1 && cleanDigits.length <= 6 && !isNaN(parseInt(rawQuery, 10)) && window.supabase){
       const memNo = parseInt(rawQuery, 10);
@@ -8871,7 +8940,6 @@ window.admLookupUserByPhone = async()=>{
         .maybeSingle();
       if(mData) target = mData;
     }
-
     // 3. البحث باسم المستخدم
     if(!target && cleanUsername.length >= 2 && window.supabase){
       const { data: uData } = await window.supabase
@@ -8881,7 +8949,6 @@ window.admLookupUserByPhone = async()=>{
         .limit(1)
         .maybeSingle();
       if(uData) target = uData;
-
       if(!target){
         const { data: unData } = await window.supabase
           .from("usernames")
@@ -8900,7 +8967,6 @@ window.admLookupUserByPhone = async()=>{
         }
       }
     }
-
     // 4. البحث بـ UID أو الاسم
     if(!target && rawQuery.length >= 4 && window.supabase){
       const { data: anyData } = await window.supabase
@@ -8911,7 +8977,6 @@ window.admLookupUserByPhone = async()=>{
         .maybeSingle();
       if(anyData) target = anyData;
     }
-
     if(!target){
       box.style.background = "#fffbeb";
       box.style.color = "#92400e";
@@ -8920,10 +8985,8 @@ window.admLookupUserByPhone = async()=>{
       _admDepTargetUser = null;
       return;
     }
-
     _admDepTargetUser = target;
     const wal = await getUserWallet(target.id);
-
     box.style.background = "#f0fdf4";
     box.style.color = "#166534";
     box.style.border = "1.5px solid #86efac";
@@ -8975,7 +9038,6 @@ window.adminExecuteDeposit = async()=>{
   const type = document.getElementById("admDepType")?.value || "credit";
   const note = (document.getElementById("admDepNote")?.value || "").trim();
   const btn = document.getElementById("btnAdmExecuteDeposit");
-
   if(isNaN(amt) || amt <= 0){
     showToast("⚠️ يرجى إدخال مبلغ صحيح أكبر من 0", "warn");
     return;
@@ -8984,22 +9046,17 @@ window.adminExecuteDeposit = async()=>{
     showToast("⚠️ يرجى الضغط على 'فحص' للتأكد من حساب الزبون أولاً", "warn");
     return;
   }
-
   const targetUid = _admDepTargetUser.id || _admDepTargetUser.uid;
   if(!targetUid){
     showToast("⚠️ تعذر تحديد معرف المستخدم، أعد فحصه بالرقم أو اليوزر", "warn");
     return;
   }
-
   const opLabel = type === 'credit' ? `إيداع مبلغ +${amt} د.ل` : `خصم مبلغ -${amt} د.ل`;
   if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
-
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
-
   try{
     const finalNote = note || (type === 'credit' ? "إيداع يدوي من الإدارة" : "خصم يدوي من الإدارة");
     let res = null;
-
     if(type === 'credit'){
       res = await creditUserWallet(targetUid, amt, finalNote, {
         txType: "admin_credit",
@@ -9015,12 +9072,10 @@ window.adminExecuteDeposit = async()=>{
         adminNote: finalNote
       });
     }
-
     if(!res.ok){
       showToast("❌ فشلت العملية: " + (res.error || "خطأ غير متوقع"), "error");
       return;
     }
-
     showToast(`✅ تمت العملية بنجاح! الرصيد الجديد: ${res.balance.toFixed(2)} د.ل`, "success", 4000);
     document.getElementById("admDepAmount").value = "";
     document.getElementById("admDepNote").value = "";
@@ -9031,8 +9086,8 @@ window.adminExecuteDeposit = async()=>{
     if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
   }
 };
-
 // مستحقات المطاعم (Restaurant Payouts & Ledger Breakdown)
+
 window.filterLedgerByStore = (storeId, storeName)=>{
   switchAdmWalTab('ledger');
   const sel = document.getElementById("admLedgerStoreFilter");
@@ -9048,12 +9103,10 @@ window.filterLedgerByStore = (storeId, storeName)=>{
   }
   renderAdminLedgerTable();
 };
-
 async function loadAdminStoresPayouts(){
   const box = document.getElementById("admStoresPayoutsList");
   if(!box) return;
   box.innerHTML = `<div class="reportsEmpty">⏳ جاري حساب مبيعات ومستحقات المطاعم (أسبوعياً وشهرياً)...</div>`;
-
   try{
     let orders = [];
     if(window.supabase){
@@ -9065,12 +9118,10 @@ async function loadAdminStoresPayouts(){
         .limit(500);
       if(!error && data) orders = data;
     }
-
     const now = Date.now();
     const oneWeekAgo = now - (7 * 24 * 60 * 60 * 1000);
     const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
     const storesMap = {};
-
     orders.forEach(r=>{
       let ord = {};
       try{ ord = JSON.parse(r.message || "{}"); }catch(e){}
@@ -9091,10 +9142,8 @@ async function loadAdminStoresPayouts(){
         }
         const amt = Number(ord.totalPrice || 0);
         const orderTime = Number(ord.createdAt || (r.created_at ? new Date(r.created_at).getTime() : now));
-
         storesMap[sId].countAll += 1;
         storesMap[sId].revenueAll += amt;
-
         if(orderTime >= oneWeekAgo){
           storesMap[sId].countWeek += 1;
           storesMap[sId].revenueWeek += amt;
@@ -9105,15 +9154,12 @@ async function loadAdminStoresPayouts(){
         }
       }
     });
-
     const list = Object.values(storesMap);
     populateLedgerStoreFilter(list);
-
     if(list.length === 0){
       box.innerHTML = `<div class="reportsEmpty">لا توجد طلبيات مطاعم مدفوعة بالمحفظة حتى الآن</div>`;
       return;
     }
-
     box.innerHTML = list.map(st=>`
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
@@ -9128,20 +9174,17 @@ async function loadAdminStoresPayouts(){
             📜 كشف الحساب
           </button>
         </div>
-
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px;text-align:center">
             <div style="font-size:10.5px;color:#166534;font-weight:700">مبيعات هذا الأسبوع</div>
             <div style="font-size:14px;font-weight:900;color:#15803d;margin-top:2px">${st.revenueWeek.toFixed(2)} د.ل</div>
             <div style="font-size:10px;color:#15803d">(${st.countWeek} طلب)</div>
           </div>
-
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;text-align:center">
             <div style="font-size:10.5px;color:#1e40af;font-weight:700">مبيعات هذا الشهر</div>
             <div style="font-size:14px;font-weight:900;color:#1d4ed8;margin-top:2px">${st.revenueMonth.toFixed(2)} د.ل</div>
             <div style="font-size:10px;color:#1d4ed8">(${st.countMonth} طلب)</div>
           </div>
-
           <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:8px;text-align:center">
             <div style="font-size:10.5px;color:#6b21a8;font-weight:700">الإجمالي الكلي</div>
             <div style="font-size:14px;font-weight:900;color:#7e22ce;margin-top:2px">${st.revenueAll.toFixed(2)} د.ل</div>
@@ -9154,8 +9197,8 @@ async function loadAdminStoresPayouts(){
     box.innerHTML = `<div class="reportsEmpty">خطأ: ${e.message}</div>`;
   }
 }
-
 // 14. دوال التحكم بالدفع من السلة
+
 window.toggleRestPaymentMethod = ()=>{
   const pMethod = document.querySelector('input[name="restPaymentMethod"]:checked')?.value || "cash";
   const lblCash = document.getElementById("lblPayCash");
@@ -9175,7 +9218,6 @@ export async function updateCartWalletBalance(){
   const noticeBox = document.getElementById("cartWalletNotice");
   const pMethod = document.querySelector('input[name="restPaymentMethod"]:checked')?.value || "cash";
   const total = cartTotalPrice();
-
   if(!auth.currentUser){
     const cartBal = document.getElementById("cartWalletCurrentBalanceBadge");
     if(cartBal) cartBal.textContent = "سجّل دخولك للدفع بالمحفظة";
@@ -9190,12 +9232,9 @@ export async function updateCartWalletBalance(){
     }
     return;
   }
-
   const wal = await getUserWallet(auth.currentUser.uid);
   updateWalletUI(wal.balance);
-
   if(!noticeBox) return;
-
   if(pMethod === 'wallet'){
     noticeBox.style.display = "block";
     if(wal.balance < total){
@@ -9216,6 +9255,7 @@ export async function updateCartWalletBalance(){
     noticeBox.style.display = "none";
   }
 }
+
 window.updateCartWalletBalance = updateCartWalletBalance;
 
 /* ============================================================
@@ -9227,10 +9267,9 @@ let _chatChannel = null;
 
 function chatConvId(a, b){ return [a, b].sort().join("_"); }
 
-
 window._chatSelectMode = false;
-window._selectedChatMsgIds = new Set();
 
+window._selectedChatMsgIds = new Set();
 let _chatLongPressTimer = null;
 let _chatTouchStartX = 0;
 let _chatTouchStartY = 0;
@@ -9238,7 +9277,6 @@ let _chatTouchStartY = 0;
 function _attachBubbleEvents(bubble){
   if(!bubble || bubble._eventsAttached) return;
   bubble._eventsAttached = true;
-
   // 1) لمس مطول للشاشات التي تعمل باللمس (موبايل وتابلت)
   bubble.addEventListener('touchstart', (e) => {
     if(!e.touches || e.touches.length > 1) return;
@@ -9253,7 +9291,6 @@ function _attachBubbleEvents(bubble){
       }
     }, 450);
   }, { passive: true });
-
   bubble.addEventListener('touchmove', (e) => {
     if(!_chatLongPressTimer) return;
     const dx = Math.abs(e.touches[0].clientX - _chatTouchStartX);
@@ -9263,21 +9300,18 @@ function _attachBubbleEvents(bubble){
       _chatLongPressTimer = null;
     }
   }, { passive: true });
-
   bubble.addEventListener('touchend', () => {
     if(_chatLongPressTimer){
       clearTimeout(_chatLongPressTimer);
       _chatLongPressTimer = null;
     }
   });
-
   bubble.addEventListener('touchcancel', () => {
     if(_chatLongPressTimer){
       clearTimeout(_chatLongPressTimer);
       _chatLongPressTimer = null;
     }
   });
-
   // 2) النقر عند تفعيل وضع التحديد
   bubble.addEventListener('click', (e) => {
     if(window._chatSelectMode){
@@ -9286,7 +9320,6 @@ function _attachBubbleEvents(bubble){
       toggleSelectBubble(bubble);
     }
   });
-
   // 3) كليك يمين للكمبيوتر (Desktop)
   bubble.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -9305,10 +9338,13 @@ export function toggleChatSelectionMode(){
     enterChatSelectMode();
   }
 }
+
 window.toggleChatSelectionMode = toggleChatSelectionMode;
 
 export function enterChatSelectMode(initialBubble){
+
   window._chatSelectMode = true;
+
   window._selectedChatMsgIds.clear();
   const box = document.getElementById("chatMessagesBox");
   if(box) box.classList.add("chatSelectMode");
@@ -9316,20 +9352,23 @@ export function enterChatSelectMode(initialBubble){
   if(bar) bar.style.display = "flex";
   const delBtn = document.getElementById("chatHeaderDeleteBtn");
   if(delBtn) delBtn.classList.add("active");
-
   if(initialBubble){
     const msgId = initialBubble.getAttribute("data-msg-id");
     if(msgId){
+
       window._selectedChatMsgIds.add(String(msgId));
       initialBubble.classList.add("msgSelected");
     }
   }
   _updateSelectionBarUI();
 }
+
 window.enterChatSelectMode = enterChatSelectMode;
 
 export function cancelChatSelection(){
+
   window._chatSelectMode = false;
+
   window._selectedChatMsgIds.clear();
   const box = document.getElementById("chatMessagesBox");
   if(box){
@@ -9341,6 +9380,7 @@ export function cancelChatSelection(){
   const delBtn = document.getElementById("chatHeaderDeleteBtn");
   if(delBtn) delBtn.classList.remove("active");
 }
+
 window.cancelChatSelection = cancelChatSelection;
 
 export function toggleSelectBubble(bubble){
@@ -9350,14 +9390,17 @@ export function toggleSelectBubble(bubble){
     return;
   }
   if(window._selectedChatMsgIds.has(String(msgId))){
+
     window._selectedChatMsgIds.delete(String(msgId));
     bubble.classList.remove("msgSelected");
   } else {
+
     window._selectedChatMsgIds.add(String(msgId));
     bubble.classList.add("msgSelected");
   }
   _updateSelectionBarUI();
 }
+
 window.toggleSelectBubble = toggleSelectBubble;
 
 export function selectAllChatMessages(){
@@ -9365,14 +9408,15 @@ export function selectAllChatMessages(){
   if(!box) return;
   const bubbles = box.querySelectorAll(".chatBubble[data-msg-id]");
   const allSelected = bubbles.length > 0 && Array.from(bubbles).every(b => window._selectedChatMsgIds.has(String(b.getAttribute("data-msg-id"))));
-  
   if(allSelected){
+
     window._selectedChatMsgIds.clear();
     bubbles.forEach(b => b.classList.remove("msgSelected"));
   } else {
     bubbles.forEach(b => {
       const id = b.getAttribute("data-msg-id");
       if(id){
+
         window._selectedChatMsgIds.add(String(id));
         b.classList.add("msgSelected");
       }
@@ -9380,6 +9424,7 @@ export function selectAllChatMessages(){
   }
   _updateSelectionBarUI();
 }
+
 window.selectAllChatMessages = selectAllChatMessages;
 
 function _updateSelectionBarUI(){
@@ -9415,7 +9460,6 @@ function _updateSelectionBarUI(){
 export function confirmDeleteSelectedChatMessages(){
   const count = window._selectedChatMsgIds.size;
   if(count === 0) return;
-
   const box = document.getElementById("chatMessagesBox");
   let myMessagesCount = 0;
   let otherMessagesCount = 0;
@@ -9430,11 +9474,9 @@ export function confirmDeleteSelectedChatMessages(){
       }
     }
   });
-
   const textEl = document.getElementById("deleteChatConfirmText");
   const btnEveryone = document.getElementById("btnDeleteForEveryone");
   const btnForMe = document.getElementById("btnDeleteForMe");
-
   // 🔒 قاعدة أساسية: كل شخص يحذف رسائله هو فقط من الطرفين!
   // رسائل الطرف الآخر تُحذف من عندك فقط ولا يمكن حذفها من الطرفين
   if(btnEveryone){
@@ -9451,11 +9493,9 @@ export function confirmDeleteSelectedChatMessages(){
       btnEveryone.innerHTML = `<span>🗑️</span><span>الحذف لدى الجميع (من الطرفين) (${count})</span>`;
     }
   }
-
   if(btnForMe){
     btnForMe.innerHTML = `<span>👁️‍🗨️</span><span>الحذف لدي فقط (${count})</span>`;
   }
-
   if(textEl){
     if(otherMessagesCount > 0 && myMessagesCount === 0){
       textEl.textContent = count === 1 ? "هذه الرسالة مرسلة من الطرف الآخر، يمكنك حذفها من عندك فقط." : "الرسائل المحددة مرسلة من الطرف الآخر، يمكنك حذفها من عندك فقط.";
@@ -9463,45 +9503,41 @@ export function confirmDeleteSelectedChatMessages(){
       textEl.textContent = "اختر هل تريد حذف الرسائل من عندك فقط أم من الطرفين:";
     }
   }
-
   const modal = document.getElementById("deleteChatConfirmModal");
   if(modal) modal.classList.remove("hidden");
 }
+
 window.confirmDeleteSelectedChatMessages = confirmDeleteSelectedChatMessages;
 
 export function closeDeleteChatConfirmModal(){
   const modal = document.getElementById("deleteChatConfirmModal");
   if(modal) modal.classList.add("hidden");
 }
+
 window.closeDeleteChatConfirmModal = closeDeleteChatConfirmModal;
 
 export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
   const modal = document.getElementById("deleteChatConfirmModal");
   if(modal) modal.classList.add("hidden");
-
   const ids = Array.from(window._selectedChatMsgIds).map(x => Number(x)).filter(Boolean);
   if(ids.length === 0) return;
-
   const box = document.getElementById("chatMessagesBox");
   const activeChat = window._activeChat;
   const convId = activeChat ? activeChat.convId : null;
   const myUid = auth.currentUser ? auth.currentUser.uid : "";
   const sb = window.supabase || supabase;
-
   try {
     if(mode === 'for_me'){
       // ============================================
       // 1) الحذف لدي فقط (من عندي مثل ماسنجر)
       // ============================================
       showToast("⏳ جاري حذف الرسائل من عندك...", "info");
-
       // حفظ محلياً في localStorage
       const localKey = "tasawuq_hidden_msgs_" + myUid;
       let localHidden = [];
       try { localHidden = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
       const updatedHidden = Array.from(new Set([...localHidden, ...ids]));
       localStorage.setItem(localKey, JSON.stringify(updatedHidden));
-
       // حفظ في سوبابيز داخل store_context.hidden_for
       if(convId && myUid){
         try{
@@ -9514,7 +9550,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
         }catch(e){}
       }
-
       // إزالة من الشاشة فوراً
       ids.forEach(id => {
         const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
@@ -9525,16 +9560,19 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           setTimeout(() => el.remove(), 250);
         }
       });
-
+      try {
+        const cKey = "tasawuq_chat_cache_" + convId;
+        const cur = JSON.parse(localStorage.getItem(cKey) || "[]");
+        const idSet = new Set(ids.map(Number));
+        localStorage.setItem(cKey, JSON.stringify(cur.filter(m => !idSet.has(Number(m.id)))));
+      } catch(e){}
       cancelChatSelection();
       showToast("تم حذف الرسائل من عندك بنجاح 🗑️", "success");
-
     } else {
       // ============================================
       // 2) الحذف لدى الجميع (من الطرفين مثل ماسنجر)
       // ============================================
       showToast("⏳ جاري حذف الرسائل من الطرفين...", "info");
-
       // 🔒 فحص أمني: كل شخص يحذف رسائله هو فقط من جدول chat_messages للطرفين
       const myMsgIds = [];
       const otherMsgIds = [];
@@ -9546,7 +9584,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           otherMsgIds.push(id);
         }
       });
-
       if(myMsgIds.length > 0){
         const { error } = await sb
           .from("chat_messages")
@@ -9555,7 +9592,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           .eq("sender_uid", myUid);
         if(error) throw error;
       }
-
       // إذا كانت هناك رسائل أخرى محددة للطرف الآخر، تُحذف من عندي فقط
       if(otherMsgIds.length > 0 && convId && myUid){
         try{
@@ -9563,7 +9599,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           let localHidden = [];
           try { localHidden = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
           localStorage.setItem(localKey, JSON.stringify(Array.from(new Set([...localHidden, ...otherMsgIds]))));
-
           const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
           let sc = conv?.store_context;
           if(!sc || typeof sc !== 'object') sc = {};
@@ -9573,7 +9608,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
         }catch(e){}
       }
-
       // إزالة الرسائل فورياً من الشاشة
       ids.forEach(id => {
         const el = box ? box.querySelector(`[data-msg-id="${id}"]`) : null;
@@ -9584,9 +9618,7 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           setTimeout(() => el.remove(), 250);
         }
       });
-
       cancelChatSelection();
-
       // تحديث آخر رسالة في المحادثة
       if(convId){
         const { data: latest } = await sb
@@ -9595,7 +9627,6 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           .eq("conv_id", convId)
           .order("created_at", { ascending: false })
           .limit(1);
-
         if(latest && latest.length > 0){
           let preview = latest[0].text;
           if(preview.startsWith("[صورة] ")) preview = "📷 صورة";
@@ -9613,10 +9644,14 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           }).eq("conv_id", convId);
         }
       }
-
+      try {
+        const cKey = "tasawuq_chat_cache_" + convId;
+        const cur = JSON.parse(localStorage.getItem(cKey) || "[]");
+        const idSet = new Set(ids.map(Number));
+        localStorage.setItem(cKey, JSON.stringify(cur.filter(m => !idSet.has(Number(m.id)))));
+      } catch(e){}
       showToast("تم حذف الرسائل من الطرفين بنجاح 🗑️", "success");
     }
-
     // فحص إذا فرغت المحادثة
     setTimeout(() => {
       if(box && !box.querySelector(".chatBubble")){
@@ -9628,18 +9663,17 @@ export async function executeDeleteSelectedChatMessages(mode = 'everyone'){
           </div>`;
       }
     }, 300);
-
   } catch(err) {
     console.error("خطأ في حذف الرسائل:", err);
     showToast("⚠️ تعذر حذف الرسائل، يرجى المحاولة ثانية", "warn");
   }
 }
+
 window.executeDeleteSelectedChatMessages = executeDeleteSelectedChatMessages;
-
-
 // ============================================================
 // 👁️ نظام علامات القراءة الفورية (Read Receipts مثل واتساب وماسنجر)
 // ============================================================
+
 window._chatOtherReadTime = 0;
 
 export async function markChatAsRead(convId, myUid){
@@ -9657,6 +9691,7 @@ export async function markChatAsRead(convId, myUid){
     console.warn("markChatAsRead error:", e);
   }
 }
+
 window.markChatAsRead = markChatAsRead;
 
 function _updateMessagesReadStatus(readTime){
@@ -9675,23 +9710,27 @@ function _updateMessagesReadStatus(readTime){
     }
   });
 }
+
 window._updateMessagesReadStatus = _updateMessagesReadStatus;
 
 function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
   const msgKey = (m.id ? 'id_' + m.id : '') || ('t_' + (m.created_at || '') + '_' + (m.sender_uid || ''));
   if(box.querySelector('[data-msg-key="' + msgKey + '"]')) return;
-
   const isMe = m.sender_uid === myUid;
   const msgTime = Number(m.created_at) || Date.now();
   const d = new Date(msgTime);
   const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement("div");
   div.className = "chatBubble " + (isMe ? "outgoing" : "incoming");
+  if(!isMe){
+    div.style.setProperty("background", "#ffffff", "important");
+    div.style.setProperty("color", "#0f172a", "important");
+    div.style.setProperty("border", "1.5px solid #cbd5e1", "important");
+  }
   div.setAttribute("data-msg-key", msgKey);
   if(m.id) div.setAttribute("data-msg-id", m.id);
   div.setAttribute("data-created-at", msgTime);
   div.setAttribute("data-sender-uid", m.sender_uid || (isMe ? myUid : ""));
-
   let bodyHtml = escapeHtml(m.text || '');
   if(m.text && m.text.startsWith("[صورة] ")){
     const imgUrl = m.text.replace("[صورة] ", "").trim();
@@ -9707,7 +9746,6 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
         </audio>
       </div>`;
   }
-
   // 👁️ تحديد شكل السهمين: رمادي عند الإرسال (غير مقروء)، وأزرق مضيء ✓✓ عند قراءة المستلم
   let checkHtml = "";
   if(isMe){
@@ -9719,7 +9757,6 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
       checkHtml = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>';
     }
   }
-
   div.innerHTML = `${bodyHtml}<div class="chatTime">${checkHtml}${timeStr}</div>`;
   _attachBubbleEvents(div);
   if(animate){
@@ -9735,7 +9772,6 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
     });
   }
 }
-
 async function _loadChatIntoBox(convId){
   cancelChatSelection();
   const box = document.getElementById("chatMessagesBox");
@@ -9751,7 +9787,6 @@ async function _loadChatIntoBox(convId){
       const localHidden = JSON.parse(localStorage.getItem(localKey) || "[]");
       localHidden.forEach(id => hiddenIdsSet.add(Number(id)));
     } catch(e){}
-
     const targetUid = window._activeChat ? window._activeChat.targetUid : null;
     const { data: convData } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
     if(convData && convData.store_context){
@@ -9762,11 +9797,10 @@ async function _loadChatIntoBox(convId){
         convData.store_context.hidden_for[myUid].forEach(id => hiddenIdsSet.add(Number(id)));
       }
     }
-    window._chatOtherReadTime = otherReadTime;
 
+    window._chatOtherReadTime = otherReadTime;
     // 2) تسجيل أنني قرأت المحادثة الآن
     if(myUid) markChatAsRead(convId, myUid);
-
     // 3) جلب أحدث 250 رسالة تنازلياً
     const { data, error } = await sb
       .from("chat_messages")
@@ -9800,13 +9834,16 @@ async function _loadChatIntoBox(convId){
     box.innerHTML = "";
     unique.forEach(m => _appendBubble(box, m, myUid, false, otherReadTime));
     box.scrollTop = box.scrollHeight;
+    try {
+      localStorage.setItem("tasawuq_chat_cache_" + convId, JSON.stringify(unique.slice(-80)));
+    } catch(e){}
   }catch(err){
     console.error("خطأ في تحميل الرسائل:", err);
     box.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل الرسائل</div>`;
   }
 }
-
 let _chatPollInterval = null;
+
 function _unsubscribeChat(){
   if(_chatChannel){
     try{ (window.supabase || supabase).removeChannel(_chatChannel); }catch(e){}
@@ -9818,23 +9855,29 @@ function _unsubscribeChat(){
   }
 }
 
-export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName){
+export async function openChatWithSeller(sellerUid, postId, storeId, targetCustomName, skipHistory){
   if(!auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً للدردشة مع البائع 💬", "warn");
     const ao = document.getElementById("authOverlay");
-    if(ao) ao.classList.remove("hidden");
+    if(ao) { ao.classList.remove("hidden"); ao.style.zIndex = "2500"; }
     return;
   }
   const myUid = auth.currentUser.uid;
+  if(!sellerUid){
+    showToast("تعذر تحديد البائع للدردشة معه", "warn");
+    return;
+  }
   if(myUid === sellerUid){
     showToast("هذا إعلانك أو متجرك، لا يمكنك مراسلة نفسك!", "info");
     return;
   }
-
   let targetName = targetCustomName || "";
+  // جلب اسم المستخدم الحقيقي من الكاش أو الحساب إن وجد
+  const cachedRealName = localStorage.getItem("tasawuq_name_" + sellerUid);
+  if(!targetName && cachedRealName) targetName = cachedRealName;
   if(!targetName && postId){
     const p = allPosts.find(x => x.id === postId);
-    if(p) targetName = p.storeName || p.sellerName || "";
+    if(p && p.sellerName && p.sellerName !== "البائع") targetName = p.sellerName;
   }
   if(!targetName && storeId){
     const s = allStores.find(x => x.id === storeId);
@@ -9844,12 +9887,11 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     const sOwner = allStores.find(x => x.ownerUid === sellerUid);
     if(sOwner) targetName = sOwner.name || "";
     else {
-      const pOwner = allPosts.find(x => x.uid === sellerUid);
-      if(pOwner) targetName = pOwner.storeName || pOwner.sellerName || "";
+      const pOwner = allPosts.find(x => x.uid === sellerUid && x.sellerName && x.sellerName !== "البائع");
+      if(pOwner) targetName = pOwner.sellerName;
     }
   }
-  if(!targetName) targetName = "البائع";
-
+  if(!targetName) targetName = "مستخدم";
   let targetPhone = "";
   if(postId){
     const p = allPosts.find(x => x.id === postId);
@@ -9867,7 +9909,6 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
       if(sOwner) targetPhone = sOwner.phone;
     }
   }
-
   let isCurrentUserSeller = false;
   if(postId){
     const p = allPosts.find(x => x.id === postId);
@@ -9877,21 +9918,17 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
     const s = allStores.find(x => x.id === storeId);
     if(s && (s.ownerUid === myUid || s.owner_uid === myUid)) isCurrentUserSeller = true;
   }
-
   const convId = chatConvId(myUid, sellerUid);
-  window._activeChat = { convId, targetUid: sellerUid, targetName, targetPhone, postId: postId || null, storeId: storeId || null, isSeller: isCurrentUserSeller };
 
+  window._activeChat = { convId, targetUid: sellerUid, targetName, targetPhone, postId: postId || null, storeId: storeId || null, isSeller: isCurrentUserSeller };
   const callBtn = document.getElementById("chatHeaderCallBtn");
   const waBtn = document.getElementById("chatHeaderWaBtn");
-  if(callBtn) callBtn.style.display = targetPhone ? "inline-flex" : "none";
+  if(callBtn) callBtn.style.display = "inline-flex";
   if(waBtn) waBtn.style.display = targetPhone ? "inline-flex" : "none";
-
   renderChatQuickReplies(isCurrentUserSeller);
-
   const elName = document.getElementById("chatTargetName");
   const elAvatar = document.getElementById("chatTargetAvatar");
   if(elName) elName.textContent = targetName;
-
   // جلب وتعيين صورة الطرف الآخر إن وجدت
   let targetAvatarUrl = localStorage.getItem("tasawuq_avatar_" + sellerUid) || "";
   if(elAvatar){
@@ -9924,13 +9961,11 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
       }).catch(()=>{});
     }
   }
-
   const ctxBar = document.getElementById("chatPostContextBar");
   const ctxImg = document.getElementById("chatContextImg");
   const ctxTitle = document.getElementById("chatContextTitle");
   const ctxPrice = document.getElementById("chatContextPrice");
   const ctxBtn = document.getElementById("chatContextViewBtn");
-
   if(ctxBar){
     if(postId){
       const p = allPosts.find(x => x.id === postId);
@@ -9953,18 +9988,45 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
       }else ctxBar.style.display = "none";
     }else ctxBar.style.display = "none";
   }
-
   const chatOverlay = document.getElementById("userChatOverlay");
-  if(chatOverlay) chatOverlay.classList.remove("hidden");
+  if(chatOverlay) {
+    chatOverlay.classList.remove("hidden");
+    chatOverlay.style.zIndex = "1300";
+  }
+  const so = document.getElementById("sellerOverlay");
+  if(so) so.style.zIndex = "1000";
   if(typeof closeInbox === "function") closeInbox();
-
+  if(!skipHistory && typeof pushNavState === 'function') {
+    pushNavState({ screen: 'chat', convId: convId }, '#chat-' + convId);
+  }
+  const box = document.getElementById("chatMessagesBox");
+  let hasCachedMsgs = false;
+  if(box){
+    try {
+      const cachedRaw = localStorage.getItem("tasawuq_chat_cache_" + convId);
+      if(cachedRaw){
+        const cachedList = JSON.parse(cachedRaw);
+        if(Array.isArray(cachedList) && cachedList.length > 0){
+          box.innerHTML = "";
+          cachedList.forEach(m => _appendBubble(box, m, myUid, false, window._chatOtherReadTime || 0));
+          box.scrollTop = box.scrollHeight;
+          hasCachedMsgs = true;
+        }
+      }
+    } catch(e){}
+    if(!hasCachedMsgs){
+      box.innerHTML = `
+        <div style="text-align:center;padding:50px 20px;color:var(--muted)">
+          <div style="font-size:32px;margin-bottom:8px">⏳</div>
+          <div style="font-weight:800;font-size:14px;color:var(--text)">جاري فتح المحادثة...</div>
+        </div>`;
+    }
+  }
   setTimeout(() => {
     const input = document.getElementById("chatMessageInput");
     if(input) input.focus();
   }, 100);
-
   await _loadChatIntoBox(convId);
-
   // ✅ التحديث الفوري: Realtime عبر WebSocket
   _unsubscribeChat();
   const sb = window.supabase || supabase;
@@ -9984,6 +10046,12 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         if(emptyNotice) box.innerHTML = "";
         _appendBubble(box, payload.new, myUid2, true);
         box.scrollTop = box.scrollHeight;
+        try {
+          const cKey = "tasawuq_chat_cache_" + convId;
+          const cur = JSON.parse(localStorage.getItem(cKey) || "[]");
+          cur.push(payload.new);
+          localStorage.setItem(cKey, JSON.stringify(cur.slice(-80)));
+        } catch(e){}
       })
     .on("postgres_changes",
       { event: "DELETE", schema: "public", table: "chat_messages" },
@@ -10019,12 +10087,12 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         const targetUid = window._activeChat ? window._activeChat.targetUid : null;
         if(sc && sc.read_by && targetUid && sc.read_by[targetUid]){
           const newReadTime = Number(sc.read_by[targetUid]);
+
           window._chatOtherReadTime = newReadTime;
           _updateMessagesReadStatus(newReadTime);
         }
       })
     .subscribe();
-
   // فحص احتياطي سريع كل 1.5 ثانية لتحديث علامات القراءة الفورية
   _chatPollInterval = setInterval(async () => {
     if(!window._activeChat || window._activeChat.convId !== convId) {
@@ -10053,19 +10121,18 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         });
         if(hasNew) box.scrollTop = box.scrollHeight;
       }
-
       // فحص إذا قرأ الطرف الآخر الرسائل وتحديث الأسهم إلى زرقاء ✓✓
       if(window._activeChat && window._activeChat.targetUid){
         const { data: convCheck } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
         if(convCheck && convCheck.store_context && convCheck.store_context.read_by){
           const rt = Number(convCheck.store_context.read_by[window._activeChat.targetUid]) || 0;
           if(rt > (window._chatOtherReadTime || 0)){
+
             window._chatOtherReadTime = rt;
             _updateMessagesReadStatus(rt);
           }
         }
       }
-
       // فحص الرسائل المحذوفة من الطرف الآخر وإزالتها
       const visibleBubbles = box.querySelectorAll('.chatBubble[data-msg-id]');
       if(visibleBubbles.length > 0){
@@ -10108,14 +10175,19 @@ export async function sendUserChatMessage(){
   const text = (input.value || "").trim();
   if(!text) return;
 
+  // 🛡️ حماية ضد الإغراق والرسائل المزعجة (Anti-Spam Rate Limit)
+  const now = Date.now();
+  if(window._lastChatSendTime && (now - window._lastChatSendTime < 1000)){
+    showToast("⏳ يرجى التمهل قليلاً قبل إرسال رسالة أخرى", "warn");
+    return;
+  }
+  window._lastChatSendTime = now;
   const me = auth.currentUser;
   const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
   const convId = chatConvId(me.uid, activeChat.targetUid);
-
   input.value = "";
   input.focus();
-
   // عرض فوري مؤقت (يتم استبداله برسالة السيرفر عبر Realtime)
   const box = document.getElementById("chatMessagesBox");
   let tempBubble = null;
@@ -10130,8 +10202,6 @@ export async function sendUserChatMessage(){
     box.appendChild(tempBubble);
     box.scrollTop = box.scrollHeight;
   }
-
-  const now = Date.now();
   const sb = window.supabase || supabase;
   try{
     // 1) حفظ الرسالة في جدول الرسائل المخصص
@@ -10146,10 +10216,17 @@ export async function sendUserChatMessage(){
       created_at: now
     }).select().single();
     if(msgErr) throw msgErr;
-
     // 🔔 إرسال إشعار فوري (Push Notification) لهاتف المستلم حتى لو كان هاتفه مقفلاً
     dispatchChatPushNotification(activeChat.targetUid, senderName, text, convId);
-
+    // حفظ الرسالة في الكاش المحلي فوراً للسرعة اللحظية
+    if(insertedMsg){
+      try {
+        const cKey = "tasawuq_chat_cache_" + convId;
+        const cur = JSON.parse(localStorage.getItem(cKey) || "[]");
+        cur.push(insertedMsg);
+        localStorage.setItem(cKey, JSON.stringify(cur.slice(-80)));
+      } catch(e){}
+    }
     // تأكيد الحفظ فوراً على الفقاعة حتى لا تظل معلقة
     if(tempBubble){
       tempBubble.removeAttribute("data-temp");
@@ -10164,14 +10241,12 @@ export async function sendUserChatMessage(){
         tEl.innerHTML = '<span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>' + new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
     }
-
     // 2) تحديث ملخص المحادثة (مع الحفاظ على read_by وجميع البيانات السابقة)
     const postTitle = document.getElementById("chatContextTitle")?.textContent || "";
     const postPrice = document.getElementById("chatContextPrice")?.textContent || "";
     const postImage = document.getElementById("chatContextImg")?.src || "";
     const p1 = [me.uid, activeChat.targetUid].sort()[0];
     const p2 = [me.uid, activeChat.targetUid].sort()[1];
-
     let sc = {};
     try {
       const { data: curConv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
@@ -10185,7 +10260,6 @@ export async function sendUserChatMessage(){
     }
     if(!sc.read_by || typeof sc.read_by !== 'object') sc.read_by = {};
     sc.read_by[me.uid] = now; // المرسل قرأ حتى هذه اللحظة
-
     const { error: convErr } = await sb.from("chat_conversations").upsert({
       conv_id: convId,
       p1: p1,
@@ -10199,7 +10273,6 @@ export async function sendUserChatMessage(){
       store_context: sc
     });
     if(convErr) console.warn("تعذر تحديث ملخص المحادثة:", convErr);
-
     // ✅ لا ننتظر إعادة تحميل — الـ Realtime سيرسل الرسالة للطرفين فوراً
   }catch(err){
     console.error("فشل إرسال الرسالة:", err);
@@ -10208,10 +10281,21 @@ export async function sendUserChatMessage(){
   }
 }
 
-export function closeUserChat(){
+export function closeUserChat(skipHistory){
+  if(!skipHistory && !_isHistoryNavigating && window.history.state && window.history.state.screen === 'chat'){
+    window.history.back();
+    return;
+  }
+  closeUserChatDirect();
+}
+
+export function closeUserChatDirect(){
   cancelChatSelection();
   const chatOverlay = document.getElementById("userChatOverlay");
-  if(chatOverlay) chatOverlay.classList.add("hidden");
+  if(chatOverlay) {
+    chatOverlay.classList.add("hidden");
+    chatOverlay.style.zIndex = "";
+  }
   _unsubscribeChat();
   window._activeChat = null;
 }
@@ -10226,15 +10310,22 @@ export async function openInbox(){
   const overlay = document.getElementById("userInboxOverlay");
   const list = document.getElementById("userInboxList");
   if(!overlay || !list) return;
-
   overlay.classList.remove("hidden");
-  list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
-
+  const myUid = auth.currentUser.uid;
+  let hasCachedInbox = false;
+  try {
+    const cachedHtml = localStorage.getItem("tasawuq_inbox_cache_" + myUid);
+    if(cachedHtml && cachedHtml.trim()){
+      list.innerHTML = cachedHtml;
+      hasCachedInbox = true;
+    }
+  } catch(e){}
+  if(!hasCachedInbox){
+    list.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل المحادثات...</div>`;
+  }
   try{
     localStorage.setItem("tasawuq_chat_last_seen", String(Date.now()));
     updateGlobalUnreadChatCount();
-
-    const myUid = auth.currentUser.uid;
     const sb = window.supabase || supabase;
     const { data: convs, error } = await sb
       .from("chat_conversations")
@@ -10243,18 +10334,15 @@ export async function openInbox(){
       .order("updated_at", { ascending: false })
       .limit(50);
     if(error) throw error;
-
     const localKey = "tasawuq_deleted_convs_" + myUid;
     let localDeleted = [];
     try { localDeleted = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
     const deletedSet = new Set(localDeleted);
-
     const activeConvs = (convs || []).filter(c => {
       if(deletedSet.has(c.conv_id)) return false;
       if(c.store_context && c.store_context.deleted_by && c.store_context.deleted_by[myUid]) return false;
       return true;
     });
-
     if(!activeConvs || activeConvs.length === 0){
       list.innerHTML = `
         <div style="text-align:center;padding:40px 20px;color:var(--muted)">
@@ -10265,62 +10353,115 @@ export async function openInbox(){
         </div>`;
       return;
     }
-
-    list.innerHTML = activeConvs.map(c => {
-      const otherUid = c.p1 === myUid ? c.p2 : c.p1;
-      let otherName = "البائع";
-      if(c.last_sender_uid !== myUid && c.last_sender_name){
-        otherName = c.last_sender_name;
-      }else if(c.post_context && c.post_context.title){
-        otherName = c.post_context.title;
-      }else if(c.store_context && c.store_context.name){
-        otherName = c.store_context.name;
+    // 1) جمع معرّفات جميع الأطراف الأخرى في المحادثات
+    const uniqueOtherUids = Array.from(new Set(activeConvs.map(c => c.p1 === myUid ? c.p2 : c.p1).filter(Boolean)));
+    const profilesMap = {};
+    // فحص الكاش المحلي أولاً للسرعة اللحظية
+    uniqueOtherUids.forEach(uid => {
+      const cachedAv = localStorage.getItem("tasawuq_avatar_" + uid);
+      const cachedName = localStorage.getItem("tasawuq_name_" + uid);
+      if (cachedAv || cachedName) {
+        profilesMap[uid] = { avatar: cachedAv || "", name: cachedName || "" };
       }
-      if(otherName === "البائع"){
-        const s = allStores.find(x => x.ownerUid === otherUid);
-        if(s) otherName = s.name;
+    });
+    // 2) جلب الملفات الشخصية الحقيقية (الاسم، اليوزر، الصورة) دفعة واحدة
+    try {
+      const { data: profs } = await sb
+        .from("profiles")
+        .select("id, name, username, avatar")
+        .in("id", uniqueOtherUids);
+      if (profs && profs.length) {
+        profs.forEach(p => {
+          profilesMap[p.id] = { ...(profilesMap[p.id] || {}), ...p };
+          if (p.avatar) try { localStorage.setItem("tasawuq_avatar_" + p.id, p.avatar); } catch(e){}
+          if (p.name) try { localStorage.setItem("tasawuq_name_" + p.id, p.name); } catch(e){}
+        });
+      }
+    } catch(e) {}
+    // للملفات المتبقية (إن وجدت)، جلبها بالتوازي من فايرستور
+    const missingUids = uniqueOtherUids.filter(uid => !profilesMap[uid] || !profilesMap[uid].name);
+    if (missingUids.length > 0) {
+      await Promise.all(missingUids.map(async (uid) => {
+        try {
+          const snap = await getDoc(doc(db, "profiles", uid));
+          if (snap && snap.exists()) {
+            const d = snap.data();
+            profilesMap[uid] = { ...(profilesMap[uid] || {}), id: uid, name: d.name, username: d.username, avatar: d.avatar };
+            if (d.avatar) try { localStorage.setItem("tasawuq_avatar_" + uid, d.avatar); } catch(e){}
+            if (d.name) try { localStorage.setItem("tasawuq_name_" + uid, d.name); } catch(e){}
+          }
+        } catch(e) {}
+      }));
+    }
+    const freshInboxHtml = activeConvs.map(c => {
+      const otherUid = c.p1 === myUid ? c.p2 : c.p1;
+      const prof = profilesMap[otherUid] || {};
+      // الاسم الحقيقي للطرف الآخر (بدون عنوان الإعلان ولا كلمة بائع)
+      let otherName = "";
+      if (prof.name && prof.name.trim()) {
+        otherName = prof.name.trim();
+      } else if (prof.username && prof.username.trim()) {
+        otherName = "@" + prof.username.trim();
+      } else if (c.last_sender_uid !== myUid && c.last_sender_name && c.last_sender_name !== "البائع") {
+        otherName = c.last_sender_name;
+      } else {
+        const s = allStores.find(x => x.ownerUid === otherUid || x.owner_uid === otherUid);
+        if (s && s.name) otherName = s.name;
         else {
-          const p = allPosts.find(x => x.uid === otherUid);
-          if(p) otherName = p.storeName || p.sellerName || "البائع";
+          const p = allPosts.find(x => x.uid === otherUid && x.sellerName && x.sellerName !== "البائع");
+          if (p) otherName = p.sellerName;
         }
       }
+      if (!otherName) otherName = "مستخدم";
+      // الصورة الشخصية الحقيقية (أو الحرف كحل أخير)
+      const avUrl = prof.avatar || localStorage.getItem("tasawuq_avatar_" + otherUid) || "";
       const initial = otherName ? otherName.trim()[0].toUpperCase() : '👤';
-      const postTag = (c.post_context && c.post_context.title) ? `<span style="font-size:10.5px;color:#0284c7;background:#f0f9ff;padding:2px 6px;border-radius:4px;border:1px solid #bae6fd">📦 ${escapeHtml(c.post_context.title)}</span>` : '';
-      const storeTag = (c.store_context && c.store_context.name) ? `<span style="font-size:10.5px;color:#16a34a;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0">🏪 ${escapeHtml(c.store_context.name)}</span>` : '';
+      const avatarHtml = avUrl
+        ? `<img src="${escapeHtml(avUrl)}" alt="${escapeHtml(otherName)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" loading="lazy" onerror="this.parentElement.innerHTML='${initial}'">`
+        : initial;
+      // سياق الإعلان أو المتجر يظهر كوسم منفصل أنيق تحت الاسم
+      const postTag = (c.post_context && c.post_context.title) ? `<span style="font-size:11px;color:#0284c7;background:#f0f9ff;padding:2px 7px;border-radius:6px;border:1px solid #bae6fd;display:inline-flex;align-items:center;gap:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📦 ${escapeHtml(c.post_context.title)}</span>` : '';
+      const storeTag = (c.store_context && c.store_context.name) ? `<span style="font-size:11px;color:#16a34a;background:#f0fdf4;padding:2px 7px;border-radius:6px;border:1px solid #bbf7d0;display:inline-flex;align-items:center;gap:3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🏪 ${escapeHtml(c.store_context.name)}</span>` : '';
       const tagHtml = postTag || storeTag;
       const lastSeenTxt = c.last_message || '';
+      const unameSub = (prof.username && prof.name && prof.username !== prof.name) ? `<span style="font-size:11.5px;color:#0284c7;font-weight:600;margin-right:6px">@${escapeHtml(prof.username)}</span>` : '';
       return `
-        <div class="inboxRow" onclick="openChatWithSeller('${escapeHtml(otherUid || '')}', '${escapeHtml((c.post_context && c.post_context.id) || '')}', '${escapeHtml((c.store_context && c.store_context.id) || '')}', '${escapeHtml(otherName)}')">
-          <div class="inboxAvatar">${initial}</div>
+        <div class="inboxRow" data-uid="${escapeHtml(otherUid || '')}" data-post-id="${escapeHtml((c.post_context && c.post_context.id) || '')}" data-store-id="${escapeHtml((c.store_context && c.store_context.id) || '')}" data-name="${escapeHtml(otherName)}" onclick="openChatWithSeller(this.dataset.uid, this.dataset.postId, this.dataset.storeId, this.dataset.name)">
+          <div class="inboxAvatar">${avatarHtml}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-              <div style="font-weight:800;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(otherName)}</div>
+              <div style="font-weight:800;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px">
+                <span>${escapeHtml(otherName)}</span>
+                ${unameSub}
+              </div>
               <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updated_at)}</div>
             </div>
-            ${tagHtml ? `<div style="margin-bottom:3px">${tagHtml}</div>` : ''}
+            ${tagHtml ? `<div style="margin-bottom:4px">${tagHtml}</div>` : ''}
             <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              ${c.last_sender_uid === myUid ? 'أنت: ' : ''}${escapeHtml(lastSeenTxt)}
+              ${c.last_sender_uid === myUid ? '<span style="color:#0284c7;font-weight:700">أنت: </span>' : ''}${escapeHtml(lastSeenTxt)}
             </div>
           </div>
-          <button type="button" onclick="event.stopPropagation();deleteConversationForMe('${escapeHtml(c.conv_id)}')" title="حذف المحادثة من عندي" style="background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;flex:0 0 auto;opacity:0.6;transition:all .2s" onmouseover="this.style.opacity='1';this.style.color='#ef4444'" onmouseout="this.style.opacity='0.6';this.style.color='var(--muted)'">🗑️</button>
+          <button type="button" onclick="event.stopPropagation();deleteConversationForMe('${escapeHtml(c.conv_id)}')" title="حذف المحادثة من عندي" style="background:none;border:none;font-size:16px;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;flex:0 0 auto;opacity:0.6;transition:all .2s" onmouseover="this.style.opacity='1';this.style.color='#ef4444'" onmouseout="this.style.opacity='0.6';this.style.color='var(--muted)'">🗑️</button>
         </div>`;
     }).join("");
+    list.innerHTML = freshInboxHtml;
+    try {
+      localStorage.setItem("tasawuq_inbox_cache_" + myUid, freshInboxHtml);
+    } catch(e){}
   }catch(err){
     console.error("خطأ في تحميل المحادثات:", err);
     list.innerHTML = `<div class="reportsEmpty">⚠️ تعذر تحميل المحادثات</div>`;
   }
 }
-
-
 // ============================================================
 // 🗑️ حذف محادثة كاملة من صندوق الرسائل (من عندي فقط)
 // ============================================================
+
 export async function deleteConversationForMe(convId){
   if(!auth.currentUser || !convId) return;
   if(!confirm("هل تريد بالتأكيد حذف هذه المحادثة من صندوق بريدك؟\n(ستختفي من عندك فقط وستبقى محفوظة لدى الطرف الآخر بشكل طبيعي)")) return;
   const myUid = auth.currentUser.uid;
   const sb = window.supabase || supabase;
-  
   try{
     // 1) حفظ محلياً في localStorage
     const localKey = "tasawuq_deleted_convs_" + myUid;
@@ -10328,7 +10469,10 @@ export async function deleteConversationForMe(convId){
     try { localList = JSON.parse(localStorage.getItem(localKey) || "[]"); } catch(e){}
     localList.push(convId);
     localStorage.setItem(localKey, JSON.stringify(Array.from(new Set(localList))));
-
+    try {
+      localStorage.removeItem('tasawuq_chat_cache_' + convId);
+      localStorage.removeItem('tasawuq_inbox_cache_' + myUid);
+    } catch(e){}
     // 2) حفظ في سوبابيز داخل store_context.deleted_by
     const { data: conv } = await sb.from("chat_conversations").select("store_context").eq("conv_id", convId).maybeSingle();
     let sc = conv?.store_context;
@@ -10336,7 +10480,6 @@ export async function deleteConversationForMe(convId){
     if(!sc.deleted_by || typeof sc.deleted_by !== 'object') sc.deleted_by = {};
     sc.deleted_by[myUid] = true;
     await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
-
     openInbox();
     showToast("تم حذف المحادثة من عندك بنجاح 🗑️", "success");
   }catch(e){
@@ -10344,6 +10487,7 @@ export async function deleteConversationForMe(convId){
     showToast("تعذر حذف المحادثة", "warn");
   }
 }
+
 window.deleteConversationForMe = deleteConversationForMe;
 
 export function closeInbox(){
@@ -10368,7 +10512,6 @@ export async function updateGlobalUnreadChatCount(){
       .limit(50);
     if(error) return;
     const unreadCount = (data || []).length;
-
     if(hBadge){
       if(unreadCount > 0){
         hBadge.style.display = "flex";
@@ -10383,27 +10526,41 @@ export async function updateGlobalUnreadChatCount(){
     }
   }catch(e){}
 }
+// 🔄 فحص دوري ذكي كل 10 ثوانٍ لضمان عدم فوات أي إشعار حتى مع ضعف النت
+let _lastNotifUnreadCount = 0;
+setInterval(async () => {
+  if(auth.currentUser){
+    const prev = _lastNotifUnreadCount;
+    await updateGlobalUnreadChatCount();
+    // إذا وصل إشعار جديد في الخلفية
+    const hBadge = document.getElementById("chatHeaderBadge");
+    const countNow = (hBadge && hBadge.style.display !== "none") ? parseInt(hBadge.textContent || "0", 10) : 0;
+    if(countNow > prev && prev > 0){
+      if(typeof playChatNotificationSound === 'function') playChatNotificationSound();
+    }
+    _lastNotifUnreadCount = countNow;
+  }
+}, 10000);
 
-// فحص دوري خفيف للرسائل غير المقروءة كل دقيقة
-setInterval(() => {
-  if(auth.currentUser) updateGlobalUnreadChatCount();
-}, 60000);
-
+// 📱 إعادة ربط الإشعارات فوراً عند فتح قفل الهاتف أو العودة للتطبيق
+document.addEventListener("visibilitychange", () => {
+  if(!document.hidden && auth.currentUser){
+    if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
+    if(typeof startChatPushRealtimeListener === 'function') startChatPushRealtimeListener(auth.currentUser.uid);
+  }
+});
 // تصدير الأسماء المستخدمة في HTML والكود القديم
-
 // الدخول المباشر إلى الملف الشخصي أو المتجر لصاحب الحساب عند الضغط على صورته في الشات
+
 export function openChatTargetProfile(){
   if(!window._activeChat || !window._activeChat.targetUid) return;
   const targetUid = window._activeChat.targetUid;
   const storeId = window._activeChat.storeId;
-
   // رفع طبقة البروفايل لتظهر فوق نافذة الشات بسلاسة
   const so = document.getElementById("sellerOverlay");
-  if(so) so.style.zIndex = "1025";
-
+  if(so) so.style.zIndex = "1400";
   const sto = document.getElementById("storeOverlay");
-  if(sto) sto.style.zIndex = "1025";
-
+  if(sto) sto.style.zIndex = "1400";
   if(storeId){
     openStore(storeId, false, 'chat');
   } else {
@@ -10415,25 +10572,30 @@ export function openChatTargetProfile(){
     }
   }
 }
+
 window.openChatTargetProfile = openChatTargetProfile;
 
 window.openChatWithSeller = openChatWithSeller;
+
 window.closeUserChat = closeUserChat;
+window.closeUserChatDirect = closeUserChatDirect;
+
 window.sendUserChatMessage = sendUserChatMessage;
+
 window.openInbox = openInbox;
+
 window.closeInbox = closeInbox;
+
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
+
 window.loadChatMessages = _loadChatIntoBox;
-
-
 
 /* ========================================================
    🚀 المميزات المتطورة: الملف الشخصي + الشات الفائق
    ======================================================== */
-
 // 1. فتح شاشة تعديل الملف الشخصي
-
 // معالجة وحفظ صورة غلاف الملف الشخصي
+
 window.triggerProfileCoverChange = () => {
   const input = document.getElementById("directProfileCoverInput") || document.getElementById("profileCoverInput");
   if(input) input.click();
@@ -10442,6 +10604,71 @@ window.triggerProfileCoverChange = () => {
 window.triggerProfileAvatarChange = () => {
   const input = document.getElementById("profileAvatarInput");
   if(input) input.click();
+};
+
+/* ========================================================
+   🔒 إظهار / إخفاء رقم الهاتف في الملف الشخصي
+   ======================================================== */
+window.updatePhoneVisibilityUI = (isHidden) => {
+  const btn = document.getElementById("btnTogglePhoneVisibility");
+  const icon = document.getElementById("phoneVisibilityIcon");
+  const title = document.getElementById("phoneVisibilityTitle");
+  const desc = document.getElementById("phoneVisibilityDesc");
+  if(btn){
+    if(isHidden){
+      btn.innerHTML = "مخفي 🔒";
+      btn.style.background = "#fef2f2";
+      btn.style.color = "#dc2626";
+    } else {
+      btn.innerHTML = "ظاهر 🟢";
+      btn.style.background = "#e0f2fe";
+      btn.style.color = "#0284c7";
+    }
+  }
+  if(icon) icon.textContent = isHidden ? "🔒" : "👁️";
+  if(title) title.textContent = isHidden ? "رقم الهاتف مخفي في الملف الشخصي" : "ظهور رقم الهاتف في الملف الشخصي";
+  if(desc) desc.textContent = isHidden ? "الرقم محمي ومخفي عن الزوار" : "الرقم ظاهر للزوار تحت اسمك في بروفايلك";
+};
+
+window.togglePhoneVisibility = async (forcedState) => {
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const uid = me ? me.uid : ((typeof myProfile !== 'undefined' && myProfile && myProfile.id) || (window.myProfile && window.myProfile.id) || null);
+  if(!uid){
+    showToast("⚠️ يرجى تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const targetProf = (typeof myProfile !== 'undefined' && myProfile) ? myProfile : (window.myProfile || {});
+  const currentHidden = targetProf.hidePhone === true || targetProf.hide_phone === true || localStorage.getItem("tasawuq_hide_phone_" + uid) === "1";
+  const newHidden = (typeof forcedState === "boolean") ? forcedState : !currentHidden;
+  targetProf.hidePhone = newHidden;
+  targetProf.hide_phone = newHidden;
+  if(window.myProfile){
+    window.myProfile.hidePhone = newHidden;
+    window.myProfile.hide_phone = newHidden;
+  }
+  try {
+    localStorage.setItem("tasawuq_hide_phone_" + uid, newHidden ? "1" : "0");
+  } catch(e){}
+  window.updatePhoneVisibilityUI(newHidden);
+  try {
+    const sb = window.supabase || supabase;
+    if(sb){
+      await sb.from("profiles").upsert({ id: uid, hide_phone: newHidden }, { onConflict: "id" });
+      await sb.from("feedback").upsert({
+        id: "hide_phone_" + uid,
+        type: "phone_privacy",
+        uid: uid,
+        message: newHidden ? "1" : "0",
+        created_at: Date.now()
+      });
+    }
+  } catch(e){}
+  try {
+    if(typeof db !== 'undefined' && db && typeof setDoc === 'function' && typeof doc === 'function'){
+      await setDoc(doc(db, "profiles", uid), { hidePhone: newHidden }, { merge: true });
+    }
+  } catch(e){}
+  showToast(newHidden ? "🔒 تم إخفاء رقم الهاتف عن الزوار في ملفك الشخصي" : "👁️ تم إظهار رقم الهاتف للزوار في ملفك الشخصي", "success", 2500);
 };
 
 window.handleDirectProfileCoverUpload = async (event) => {
@@ -10453,78 +10680,65 @@ window.handleDirectProfileCoverUpload = async (event) => {
     return;
   }
   event.target.value = "";
-  showToast("⏳ جاري حفظ وتثبيت صورة الغلاف...", "info", 2000);
+  
+  // ⚡ 1. عرض فوري في جزء من الثانية (0ms Instant Preview)
+  const instantBlobUrl = URL.createObjectURL(file);
+  const editPreview = document.getElementById("editProfileCoverPreview");
+  if(editPreview){
+    editPreview.innerHTML = `<img src="${instantBlobUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+  }
+  const fbCoverArea = document.querySelector(".fbCoverArea");
+  if(fbCoverArea){
+    const img = fbCoverArea.querySelector(".fbCoverImg");
+    if(img) img.src = instantBlobUrl;
+    else {
+      const pattern = fbCoverArea.querySelector(".fbCoverPattern");
+      if(pattern) pattern.outerHTML = `<img src="${instantBlobUrl}" class="fbCoverImg" alt="غلاف البروفايل">`;
+    }
+  }
+  showToast("⏳ جاري حفظ صورة الغلاف سحابياً لتعمل على كل الأجهزة...", "info", 3500);
 
+  // ⚡ 2. رفع حقيقي سحابي عبر ImgBB مع التحويل الكامل لصورة قياسية
   try {
-    const photoUrl = (typeof compressFileToDataUrl === 'function')
-      ? await compressFileToDataUrl(file, 900, 0.82)
-      : await compressImageToDataUrl(file, 900, 0.82);
-    if(!photoUrl) throw new Error("تعذر قراءة ملف الصورة من جهازك");
-
-    if(!myProfile) myProfile = {};
-    myProfile.cover = photoUrl;
+    let photoUrl = null;
     try {
-      localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl);
-    } catch(e){}
-
-    const editPreview = document.getElementById("editProfileCoverPreview");
-    if(editPreview){
-      editPreview.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
-    }
-
-    const fbCoverArea = document.querySelector(".fbCoverArea");
-    if(fbCoverArea){
-      const img = fbCoverArea.querySelector(".fbCoverImg");
-      if(img) img.src = photoUrl;
-      else {
-        const pattern = fbCoverArea.querySelector(".fbCoverPattern");
-        if(pattern) pattern.outerHTML = `<img src="${escapeHtml(photoUrl)}" class="fbCoverImg" alt="غلاف البروفايل">`;
+      if(typeof uploadToImgBB === 'function'){
+        photoUrl = await uploadToImgBB(file, 1200, 0.85);
       }
+    } catch(err){
+      console.warn("ImgBB cover upload error:", err);
     }
-
-    showToast("✅ تم تحديث صورة غلاف الحساب بنجاح!", "success");
-
-    // الحفظ في الخلفية دون أي تعطيل أو إشعار خطأ
-    (async () => {
-      try {
-        await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
-      } catch(e){}
-
-      try {
-        const sb = window.supabase || supabase;
-        if(sb){
+    if(!photoUrl){
+      photoUrl = (typeof compressImageToDataUrl === 'function')
+        ? await compressImageToDataUrl(file, 800, 0.78)
+        : await compressFileToDataUrl(file, 800, 0.78);
+    }
+    if(photoUrl){
+      if(!myProfile) myProfile = {};
+      myProfile.cover = photoUrl;
+      try { localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl); } catch(e){}
+      const sb = window.supabase || supabase;
+      if(sb){
+        try {
           await sb.from("feedback").upsert({
             id: "cover_" + me.uid,
             type: "profile_cover",
             uid: me.uid,
+            user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+            user_phone: (myProfile && myProfile.phone) || "",
             message: photoUrl,
             created_at: Date.now()
           });
-        }
-      } catch(e){}
-
+        } catch(e){}
+      }
       try {
-        const cloudUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file, 900, 0.85) : null;
-        if(cloudUrl && cloudUrl.startsWith('http')){
-          myProfile.cover = cloudUrl;
-          try { localStorage.setItem("tasawuq_cover_" + me.uid, cloudUrl); } catch(e){}
-          try { await setDoc(doc(db, "profiles", me.uid), { cover: cloudUrl }, { merge: true }); } catch(e){}
-          const sb = window.supabase || supabase;
-          if(sb){
-            await sb.from("feedback").upsert({
-              id: "cover_" + me.uid,
-              type: "profile_cover",
-              uid: me.uid,
-              message: cloudUrl,
-              created_at: Date.now()
-            });
-          }
-        }
+        await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
       } catch(e){}
-    })();
-
-  } catch(e) {
-    showToast("❌ تعذر حفظ الغلاف: " + (e.message || ""), "error");
+      showToast("✅ تم حفظ صورة الغلاف بنجاح على حسابك!", "success", 2500);
+    }
+  } catch(e){
+    console.warn("Cover compress error:", e);
+    showToast("⚠️ حدث خطأ أثناء حفظ صورة الغلاف", "error");
   }
 };
 
@@ -10545,18 +10759,14 @@ window.openEditProfileScreen = () => {
     if(sheetBody) sheetBody.scrollTop = 0;
   }
   if(typeof pushNavState === 'function') pushNavState({ screen: 'editProfile' }, '#edit-profile');
-
   const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
   const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
   const myNameInput = document.getElementById("myName");
   if(myNameInput) myNameInput.value = dn;
-
   const myUserInput = document.getElementById("myUsername");
   if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
-
   const myPhoneInput = document.getElementById("myPhone");
   if(myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? (typeof formatCallPhone === 'function' ? formatCallPhone(myProfile.phone) : myProfile.phone) : "";
-
   const editPreview = document.getElementById("editProfileAvatarPreview");
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
   const avatarUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
@@ -10567,7 +10777,6 @@ window.openEditProfileScreen = () => {
   } else {
     if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
   }
-
   const editCoverPreview = document.getElementById("editProfileCoverPreview");
   const coverUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid);
   if(editCoverPreview){
@@ -10577,6 +10786,8 @@ window.openEditProfileScreen = () => {
       editCoverPreview.innerHTML = `🌄 اضغط لاختيار صورة غلاف لملفك الشخصي`;
     }
   }
+  const isPhoneHidden = (myProfile && (myProfile.hidePhone === true || myProfile.hide_phone === true)) || localStorage.getItem("tasawuq_hide_phone_" + me.uid) === "1";
+  if(typeof window.updatePhoneVisibilityUI === "function") window.updatePhoneVisibilityUI(isPhoneHidden);
 };
 
 window.backFromEditProfile = () => {
@@ -10589,8 +10800,8 @@ window.backFromEditProfile = () => {
     openSeller(auth.currentUser.uid, true);
   }
 };
-
 // رفع وحفظ الصورة الشخصية بجودة فائقة وحفظ دائم فوري 100%
+
 window.handleProfileAvatarSelected = async (event) => {
   const file = event.target.files && event.target.files[0];
   if(!file) return;
@@ -10600,57 +10811,47 @@ window.handleProfileAvatarSelected = async (event) => {
     return;
   }
   event.target.value = "";
-  const statusEl = document.getElementById("avatarUploadStatus");
+  
+  // ⚡ 1. عرض فوري في جزء من الثانية دون أي انتظار (0ms Instant Preview)
+  const instantBlobUrl = URL.createObjectURL(file);
+  const imgHtml = `<img src="${instantBlobUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
   const editPreview = document.getElementById("editProfileAvatarPreview");
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
   const circleAvatar = document.getElementById("accountAvatarCircle");
+  if(editPreview) editPreview.innerHTML = imgHtml;
+  if(heroAvatar) heroAvatar.innerHTML = imgHtml;
+  if(circleAvatar) circleAvatar.innerHTML = `<img src="${instantBlobUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  const fbAvatar = document.querySelector(".fbAvatarWrapper");
+  if(fbAvatar){
+    fbAvatar.innerHTML = imgHtml + `<div class="fbAvatarEditBadge" title="تغيير الصورة">📷</div>`;
+  }
+  const statusEl = document.getElementById("avatarUploadStatus");
+  if(statusEl) statusEl.textContent = "⏳ جاري رفع وحفظ الصورة سحابياً...";
+  showToast("⏳ جاري رفع وحفظ صورتك الشخصية سحابياً...", "info", 3500);
 
-  if(statusEl) statusEl.textContent = "⏳ جاري حفظ وتثبيت صورتك الشخصية...";
-
+  // ⚡ 2. رفع حقيقي سحابي دائم عبر ImgBB لضمان ظهور الصورة على كل الهواتف والأجهزة
   try {
-    // 1) ضغط الصورة فورياً إلى Data URL فائق الدقة وخفيف الحجم (~30KB)
-    const photoUrl = (typeof compressFileToDataUrl === 'function')
-      ? await compressFileToDataUrl(file, 400, 0.85)
-      : await compressImageToDataUrl(file, 400, 0.85);
-
-    if(!photoUrl){
-      throw new Error("تعذر قراءة ملف الصورة من جهازك");
-    }
-
-    if(!myProfile) myProfile = {};
-    myProfile.avatar = photoUrl;
+    let photoUrl = null;
     try {
-      localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl);
-    } catch(e){
-      console.warn("localStorage quota warn:", e);
-    }
-
-    // تحديث كافة عناصر الواجهة فوراً دون أي تأخير
-    const imgHtml = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
-    if(editPreview) editPreview.innerHTML = imgHtml;
-    if(heroAvatar) heroAvatar.innerHTML = imgHtml;
-    if(circleAvatar) circleAvatar.innerHTML = `<img src="${escapeHtml(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    const fbAvatar = document.querySelector(".fbAvatarWrapper");
-    if(fbAvatar){
-      fbAvatar.innerHTML = imgHtml + (me ? `<div class="fbAvatarEditBadge" title="تغيير الصورة">📷</div>` : '');
-    }
-
-    if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح بدقة ممتازة!";
-    showToast("✅ تم تحديث صورتك الشخصية بنجاح", "success");
-
-    // 2) حفظ في الخلفية دون تعطيل المستخدم إطلاقاً
-    (async () => {
-      // حفظ في profiles
-      try {
-        await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
-      } catch(e){
-        console.warn("setDoc avatar warn:", e);
+      if(typeof uploadToImgBB === 'function'){
+        photoUrl = await uploadToImgBB(file, 800, 0.85);
       }
-
-      // حفظ في feedback كنسخة احتياطية دائمة
-      try {
-        const sb = window.supabase || supabase;
-        if(sb){
+    } catch(err){
+      console.warn("ImgBB avatar upload error:", err);
+    }
+    if(!photoUrl){
+      photoUrl = (typeof compressImageToDataUrl === 'function')
+        ? await compressImageToDataUrl(file, 400, 0.78)
+        : await compressFileToDataUrl(file, 400, 0.78);
+    }
+    if(photoUrl){
+      if(!myProfile) myProfile = {};
+      myProfile.avatar = photoUrl;
+      try { localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl); } catch(e){}
+      
+      const sb = window.supabase || supabase;
+      if(sb){
+        try {
           await sb.from("feedback").upsert({
             id: "avatar_" + me.uid,
             type: "profile_avatar",
@@ -10660,62 +10861,36 @@ window.handleProfileAvatarSelected = async (event) => {
             message: photoUrl,
             created_at: Date.now()
           });
-        }
-      } catch(e){
-        console.warn("Feedback avatar backup error:", e);
+        } catch(e){}
       }
-
-      // 3) محاولة رفع سحابي إضافي إلى ImgBB إذا توفر الاتصال
       try {
-        const cloudUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(file, 600, 0.88) : null;
-        if(cloudUrl && cloudUrl.startsWith('http')){
-          myProfile.avatar = cloudUrl;
-          try { localStorage.setItem("tasawuq_avatar_" + me.uid, cloudUrl); } catch(e){}
-          try { await setDoc(doc(db, "profiles", me.uid), { avatar: cloudUrl }, { merge: true }); } catch(e){}
-          const sb = window.supabase || supabase;
-          if(sb){
-            await sb.from("feedback").upsert({
-              id: "avatar_" + me.uid,
-              type: "profile_avatar",
-              uid: me.uid,
-              user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
-              user_phone: (myProfile && myProfile.phone) || "",
-              message: cloudUrl,
-              created_at: Date.now()
-            });
-          }
-        }
+        await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
       } catch(e){}
-    })();
-
-  } catch(e) {
-    console.error("handleProfileAvatarSelected error:", e);
-    if(statusEl) statusEl.textContent = "❌ تعذر حفظ الصورة: " + (e.message || "");
-    showToast("تعذر حفظ الصورة: " + e.message, "error");
+      if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح على حسابك!";
+      showToast("✅ تم حفظ صورتك الشخصية بنجاح على حسابك!", "success", 2500);
+    }
+  } catch(e){
+    console.warn("Avatar upload error:", e);
+    showToast("⚠️ حدث خطأ أثناء حفظ صورتك الشخصية", "error");
   }
 };
-
 // حفظ جميع بيانات الملف الشخصي (الاسم، المعرف، الهاتف)
+
 window.saveAllProfileData = async () => {
   const me = auth.currentUser;
   if (!me) { 
     if(typeof authOverlay !== 'undefined' && authOverlay) authOverlay.classList.remove("hidden");
     return; 
   }
-  
   const nameInput = document.getElementById("myName");
   const usernameInput = document.getElementById("myUsername");
   const phoneInput = document.getElementById("myPhone");
-  
   const newName = (nameInput?.value || "").trim();
   const rawUsername = (usernameInput?.value || "").trim().toLowerCase();
   const rawPhone = (phoneInput?.value || "").trim();
-  
   let changes = [];
   let errors = [];
-  
   showToast("⏳ جاري حفظ جميع بيانات الحساب...", "info", 2000);
-
   if (newName && newName.length >= 2 && newName.length <= 40) {
     const oldName = (myProfile && myProfile.name) || "";
     if (newName !== oldName) {
@@ -10732,7 +10907,6 @@ window.saveAllProfileData = async () => {
       }
     }
   }
-
   const oldUsername = (myProfile && myProfile.username) || "";
   if (rawUsername && rawUsername !== oldUsername) {
     try {
@@ -10749,7 +10923,6 @@ window.saveAllProfileData = async () => {
       errors.push("اسم المستخدم: " + e.message);
     }
   }
-
   const oldPhone = (myProfile && myProfile.phone) || "";
   if (rawPhone && rawPhone !== oldPhone) {
     try {
@@ -10765,7 +10938,6 @@ window.saveAllProfileData = async () => {
       errors.push("رقم الهاتف: " + e.message);
     }
   }
-
   if (errors.length > 0) {
     showToast("⚠️ " + errors.join(" | "), "error", 4000);
   } else if (changes.length > 0) {
@@ -10780,40 +10952,35 @@ window.saveAllProfileData = async () => {
     }, 500);
   }
 };
-
 // 2. نغمة تنبيه الدردشة
+
 export function playChatNotificationSound(){
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if(!AudioContext) return;
     const ctx = new AudioContext();
     if(ctx.state === 'suspended') ctx.resume();
-
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, now);
     osc.frequency.exponentialRampToValueAtTime(1318.5, now + 0.12);
-
     gain.gain.setValueAtTime(0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
-
     osc.connect(gain);
     gain.connect(ctx.destination);
-
     osc.start(now);
     osc.stop(now + 0.28);
   } catch(e){}
 }
-window.playChatNotificationSound = playChatNotificationSound;
 
+window.playChatNotificationSound = playChatNotificationSound;
 // 3. كبسولات الردود السريعة
+
 export function renderChatQuickReplies(isSeller){
   const bar = document.getElementById("chatQuickRepliesBar");
   if(!bar) return;
-
   const buyerChips = [
     "هل متاح حالياً؟ 📦",
     "كم السعر النهائي؟ 💰",
@@ -10822,7 +10989,6 @@ export function renderChatQuickReplies(isSeller){
     "ممكن صور أوضح؟ 📷",
     "أنا جاد وجاهز للشراء اليوم 🤝"
   ];
-
   const sellerChips = [
     "نعم متوفر تفضل 🤝",
     "السعر نهائي يا غالي 🏷️",
@@ -10830,10 +10996,10 @@ export function renderChatQuickReplies(isSeller){
     "تواصل معي واتساب أو اتصال 📞",
     "تم البيع والحمد لله 🔒"
   ];
-
   const chips = isSeller ? sellerChips : buyerChips;
   bar.innerHTML = chips.map(c => `<button type="button" class="chatQuickChip" onclick="sendQuickReply('${escapeHtml(c)}')">${escapeHtml(c)}</button>`).join("");
 }
+
 window.renderChatQuickReplies = renderChatQuickReplies;
 
 export function sendQuickReply(text){
@@ -10841,18 +11007,21 @@ export function sendQuickReply(text){
   if(input) input.value = text;
   sendUserChatMessage();
 }
-window.sendQuickReply = sendQuickReply;
 
+window.sendQuickReply = sendQuickReply;
 // 4. إجراءات رأس شاشة الشات: اتصال - واتساب - إبلاغ
+
 export function chatActionCall(){
   if(!window._activeChat) return;
   const phone = window._activeChat.targetPhone;
   if(phone){
+
     window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
   } else {
     showToast("رقم الهاتف غير مسجل لدى الطرف الآخر، يمكنك سؤاله داخل الشات", "info");
   }
 }
+
 window.chatActionCall = chatActionCall;
 
 export function chatActionWa(){
@@ -10862,11 +11031,13 @@ export function chatActionWa(){
     let clean = phone.replace(/[^0-9]/g, "");
     if(!clean.startsWith("218") && clean.startsWith("0")) clean = "218" + clean.slice(1);
     else if(!clean.startsWith("218")) clean = "218" + clean;
+
     window.open(`https://wa.me/${clean}`, "_blank");
   } else {
     showToast("رقم الهاتف غير مسجل لدى الطرف الآخر", "info");
   }
 }
+
 window.chatActionWa = chatActionWa;
 
 export async function chatActionReport(){
@@ -10874,7 +11045,6 @@ export async function chatActionReport(){
   const targetName = window._activeChat.targetName || "المستخدم";
   const reason = prompt(`يرجى كتابة سبب الإبلاغ عن المحادثة مع (${targetName}) لحمايتك وحماية مستخدمي التطبيق:`);
   if(!reason || !reason.trim()) return;
-
   try {
     const sb = window.supabase || supabase;
     await sb.from("feedback").insert({
@@ -10895,23 +11065,26 @@ export async function chatActionReport(){
     showToast("تم تسجيل البلاغ", "info");
   }
 }
-window.chatActionReport = chatActionReport;
 
+window.chatActionReport = chatActionReport;
 // 5. إرسال صورة داخل الشات
+
 export async function handleChatPhotoSelected(event){
   const file = event.target?.files?.[0];
   if(!file) return;
   event.target.value = "";
-
+  // 🛡️ فحص حجم الصورة لمنع الملفات الضخمة (بحد أقصى 15 ميجابايت)
+  if(file.size > 15 * 1024 * 1024){
+    showToast("⚠️ حجم الصورة كبير جداً، الحد الأقصى 15 ميجابايت", "warn");
+    return;
+  }
   if(!window._activeChat || !auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لإرسال الصور", "warn");
     return;
   }
-
   const me = auth.currentUser;
   const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
-
   const box = document.getElementById("chatMessagesBox");
   let tempDiv = null;
   if(box){
@@ -10924,13 +11097,11 @@ export async function handleChatPhotoSelected(event){
     box.appendChild(tempDiv);
     box.scrollTop = box.scrollHeight;
   }
-
   try {
     showToast("⏳ جاري رفع الصورة...", "info");
     const compressed = (typeof compressImage === 'function') ? await compressImage(file, 800, 0.8) : file;
     const photoUrl = (typeof uploadToImgBB === 'function') ? await uploadToImgBB(compressed) : null;
     if(!photoUrl) throw new Error("فشل رفع الصورة");
-
     const now = Date.now();
     const sb = window.supabase || supabase;
     const { data: insertedMsg, error: msgErr } = await sb.from("chat_messages").insert({
@@ -10944,7 +11115,6 @@ export async function handleChatPhotoSelected(event){
       created_at: now
     }).select().single();
     if(msgErr) throw msgErr;
-
     if(tempDiv){
       tempDiv.removeAttribute("data-temp");
       if(insertedMsg && insertedMsg.id){
@@ -10954,7 +11124,6 @@ export async function handleChatPhotoSelected(event){
       }
       tempDiv.innerHTML = `<a href="${escapeHtml(photoUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(photoUrl)}" style="max-width:200px;max-height:200px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a><div class="chatTime"><span class="chatCheck sent" title="تم الإرسال (غير مقروءة بعد)">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>`;
     }
-
     const p1 = [me.uid, activeChat.targetUid].sort()[0];
     const p2 = [me.uid, activeChat.targetUid].sort()[1];
     await sb.from("chat_conversations").upsert({
@@ -10972,34 +11141,34 @@ export async function handleChatPhotoSelected(event){
     showToast("تعذر إرسال الصورة: " + e.message, "error");
   }
 }
-window.handleChatPhotoSelected = handleChatPhotoSelected;
 
+window.handleChatPhotoSelected = handleChatPhotoSelected;
 // 6. مشاركة رقم هاتفي داخل الشات
+
 export function shareMyPhoneInChat(){
   if(!window._activeChat || !auth.currentUser){
     showToast("يرجى تسجيل الدخول أولاً لمشاركة رقمك", "warn");
     return;
   }
-
   let myPhone = (myProfile && (myProfile.phone || myProfile.phoneNumber)) || (auth.currentUser && auth.currentUser.phoneNumber) || "";
   if(!myPhone){
     myPhone = prompt("أدخل رقم هاتفك لمشاركته في المحادثة:");
     if(!myPhone || !myPhone.trim()) return;
     myPhone = myPhone.trim();
   }
-
   const input = document.getElementById("chatMessageInput");
   if(input){
     input.value = "📱 رقم هاتفي للتواصل: " + myPhone;
     sendUserChatMessage();
   }
 }
+
 window.shareMyPhoneInChat = shareMyPhoneInChat;
 
-
-
 window.openMyProfile = () => {
-  if(!auth.currentUser){
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const uid = me ? me.uid : ((typeof myProfile !== "undefined" && myProfile && myProfile.id) || (window.myProfile && window.myProfile.id) || null);
+  if(!uid){
     pendingAction = "profile";
     const ao = document.getElementById("authOverlay");
     if(ao) ao.classList.remove("hidden");
@@ -11007,43 +11176,70 @@ window.openMyProfile = () => {
   }
   const accOv = document.getElementById("accountOverlay");
   if(accOv) accOv.classList.add("hidden");
-  openSeller(auth.currentUser.uid);
+  openSeller(uid);
 };
+
 window.openMySeller = window.openMyProfile;
-
-
 
 window.closeFollowersModal = () => {
   const fo = document.getElementById("followersOverlay");
   if(fo) fo.classList.add("hidden");
 };
 
-window.openFollowersModal = async (targetUid) => {
-  if(!targetUid) return;
-  const fo = document.getElementById("followersOverlay");
-  const list = document.getElementById("followersModalList");
-  if(fo) fo.classList.remove("hidden");
-  if(list) list.innerHTML = "<div class='reportsEmpty'>⏳ جاري تحميل المتابعين...</div>";
+window._currentFollowersModalUid = null;
 
+window._currentFollowersTab = "followers";
+
+window.switchFollowersTab = (tab) => {
+
+  window._currentFollowersTab = tab;
+  const tabF = document.getElementById("tabFollowers");
+  const tabFg = document.getElementById("tabFollowing");
+  if (tab === "followers") {
+    if (tabF) { tabF.style.fontWeight = "800"; tabF.style.color = "var(--teal-dark)"; tabF.style.borderBottom = "2.5px solid var(--teal-dark)"; }
+    if (tabFg) { tabFg.style.fontWeight = "700"; tabFg.style.color = "var(--muted)"; tabFg.style.borderBottom = "2.5px solid transparent"; }
+  } else {
+    if (tabFg) { tabFg.style.fontWeight = "800"; tabFg.style.color = "var(--teal-dark)"; tabFg.style.borderBottom = "2.5px solid var(--teal-dark)"; }
+    if (tabF) { tabF.style.fontWeight = "700"; tabF.style.color = "var(--muted)"; tabF.style.borderBottom = "2.5px solid transparent"; }
+  }
+  if (window._currentFollowersModalUid) {
+    loadFollowersModalContent(window._currentFollowersModalUid, tab);
+  }
+};
+async function loadFollowersModalContent(targetUid, tab) {
+  const list = document.getElementById("followersModalList");
+  if (!list) return;
+  list.innerHTML = "<div class='reportsEmpty'>⏳ جاري التحميل...</div>";
   try {
-    const fSnap = await getDocs(collection(db, "users", targetUid, "followers")).catch(() => null);
-    if(!fSnap || fSnap.empty){
-      list.innerHTML = "<div class='reportsEmpty'>👥 لا يوجد متابعون بعد</div>";
+    const subCol = tab === "following" ? "following" : "followers";
+    const snap = await getDocs(collection(db, "users", targetUid, subCol)).catch(() => null);
+    // تحديث أرقام التبويبات
+    const tabFCount = document.getElementById("tabFollowersCount");
+    const tabFgCount = document.getElementById("tabFollowingCount");
+    if (tab === "followers" && tabFCount && snap) tabFCount.textContent = snap.size || 0;
+    if (tab === "following" && tabFgCount && snap) tabFgCount.textContent = snap.size || 0;
+    if (!snap || snap.empty) {
+      list.innerHTML = `<div class='reportsEmpty'>${tab === "following" ? "🔍 لا يتابع أحداً بعد" : "👥 لا يوجد متابعون بعد"}</div>`;
       return;
     }
-
-    const followerUids = fSnap.docs.map(d => d.id);
-    // جلب ملفات المتابعين الشخصية
-    const profPromises = followerUids.map(uid => getDoc(doc(db, "profiles", uid)).then(s => ({ uid, ...(s.exists() ? s.data() : {}) })).catch(() => ({ uid })));
+    const uids = snap.docs.map(d => d.id);
+    const profPromises = uids.map(uid => getDoc(doc(db, "profiles", uid)).then(s => ({ uid, ...(s.exists() ? s.data() : {}) })).catch(() => ({ uid })));
     const profiles = await Promise.all(profPromises);
-
+    const me = auth.currentUser;
     list.innerHTML = profiles.map(p => {
       const name = p.name || "مستخدم";
       const uname = p.username ? "@" + p.username : "";
       const avUrl = p.avatar || localStorage.getItem("tasawuq_avatar_" + p.uid) || "";
       const initial = name ? name.trim()[0].toUpperCase() : '👤';
+      const isMe = me && me.uid === p.uid;
+      const followingHim = isFollowing(p.uid);
+      const actionBtn = (!isMe && me) ? `
+        <button class="fbBtnAction ${followingHim ? 'edit' : 'primary'}" data-follow-uid="${p.uid}" onclick="event.stopPropagation();toggleFollow('${p.uid}',event)" style="padding:6px 14px;font-size:12px;margin:0">
+          ${followingHim ? '✓ متابَع' : '+ متابعة'}
+        </button>
+      ` : `<div style="font-size:12px;color:var(--muted)">عرض البروفايل ›</div>`;
       return `
-        <div class="followerUserRow" onclick="closeFollowersModal();openSeller('${escapeHtml(p.uid)}')">
+        <div class="followerUserRow" style="cursor:pointer" onclick="closeFollowersModal();openSeller('${escapeHtml(p.uid)}')">
           <div class="followerAvatar">
             ${avUrl ? `<img src="${escapeHtml(avUrl)}" alt="${escapeHtml(name)}">` : initial}
           </div>
@@ -11051,28 +11247,48 @@ window.openFollowersModal = async (targetUid) => {
             <div class="followerName">${escapeHtml(name)}</div>
             ${uname ? `<div class="followerUsername">${escapeHtml(uname)}</div>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--muted)">عرض الإعلانات ›</div>
+          ${actionBtn}
         </div>
       `;
     }).join("");
-  } catch(err){
-    console.error("openFollowersModal error:", err);
-    list.innerHTML = "<div class='reportsEmpty'>⚠️ تعذر تحميل المتابعين</div>";
+  } catch(err) {
+    console.error("loadFollowersModalContent error:", err);
+    list.innerHTML = "<div class='reportsEmpty'>⚠️ تعذر تحميل القائمة</div>";
   }
+}
+
+window.openFollowersModal = async (targetUid, initialTab = "followers") => {
+  if(!targetUid) return;
+
+  window._currentFollowersModalUid = targetUid;
+
+  window._currentFollowersTab = initialTab;
+  const fo = document.getElementById("followersOverlay");
+  if(fo) fo.classList.remove("hidden");
+  // جلب كلا العدادين فورياً
+  getDocs(collection(db, "users", targetUid, "followers")).then(s => {
+    const el = document.getElementById("tabFollowersCount");
+    if(el) el.textContent = s.size || 0;
+  }).catch(()=>{});
+  getDocs(collection(db, "users", targetUid, "following")).then(s => {
+    const el = document.getElementById("tabFollowingCount");
+    if(el) el.textContent = s.size || 0;
+  }).catch(()=>{});
+  switchFollowersTab(initialTab);
 };
-
-
 
 /* ========================================================
    🔔 نظام إشعارات OneSignal الحقيقي (Web Push Notifications)
    ======================================================== */
+
 export const DEFAULT_ONESIGNAL_APP_ID = "7030f4d7-c06e-41a9-a601-8d42965023b3";
+
 export const DEFAULT_ONESIGNAL_REST_KEY = "os_v2_app_oaypjv6anza2tjqbrvbjmubdwpvxh6svcgkenzngim3kq4ddjazv3lso5f3aynddjakwakbul77jznflu4bu5u4xpvtc5hdusuetaaa";
-
 let _onesignalRestKey = localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
-window._onesignalRestKey = _onesignalRestKey;
 
+window._onesignalRestKey = _onesignalRestKey;
 // ربط المستخدم بـ OneSignal لتلقي الإشعارات حتى عندما يكون الهاتف أو الشاشة مقفلة
+
 export function bindOneSignalUser(user){
   if(!user) return;
   startChatPushRealtimeListener(user.uid);
@@ -11101,31 +11317,33 @@ export function bindOneSignalUser(user){
       console.warn("OneSignal binding:", err);
     }
   };
-
   if(window.OneSignal){
     setupOneSignal(window.OneSignal);
   } else {
+
     window.OneSignalDeferred = window.OneSignalDeferred || [];
+
     window.OneSignalDeferred.push(setupOneSignal);
   }
 }
+
 window.bindOneSignalUser = bindOneSignalUser;
 
 export function unbindOneSignalUser(){
   try {
-    if(window.OneSignal && window.OneSignal.logout){
-      window.OneSignal.logout();
+    if(window.OneSignal && typeof window.OneSignal.logout === 'function'){
+      window.OneSignal.logout().catch(()=>{});
     }
   } catch(e){}
 }
-window.unbindOneSignalUser = unbindOneSignalUser;
 
+window.unbindOneSignalUser = unbindOneSignalUser;
 // إرسال Push Notification فوري للمستلم عبر OneSignal REST API لإيقاظ هاتفه حتى لو كان مقفلاً
+
 export async function dispatchChatPushNotification(receiverUid, senderName, textPreview, convId){
   if(!receiverUid || !auth.currentUser) return;
   const cleanSnippet = (textPreview || "أرسل لك رسالة جديدة").slice(0, 140);
   const myName = senderName || auth.currentUser.displayName || (myProfile && myProfile.name) || "مستخدم";
-
   try {
     const restKey = window._onesignalRestKey || localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
     if (restKey) {
@@ -11149,7 +11367,6 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
           senderUid: auth.currentUser.uid
         }
       };
-
       fetch("https://onesignal.com/api/v1/notifications", {
         method: "POST",
         headers: {
@@ -11163,9 +11380,8 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
     console.warn("dispatchChatPushNotification err:", err);
   }
 }
+
 window.dispatchChatPushNotification = dispatchChatPushNotification;
-
-
 
 /* ========================================================
    🔔 نظام الاستماع الفوري لإشعارات الرسائل (Realtime & Push)
@@ -11173,12 +11389,14 @@ window.dispatchChatPushNotification = dispatchChatPushNotification;
 let _chatPushUnsub = null;
 
 export function startChatPushRealtimeListener(myUid){
-  if(!myUid || _chatPushUnsub) return;
-
+  if(!myUid) return;
+  if(_chatPushUnsub){
+    try{ _chatPushUnsub(); }catch(e){}
+    _chatPushUnsub = null;
+  }
   const startTimestamp = Date.now();
   const processedEventIds = new Set();
   const sb = window.supabase || supabase;
-
   try {
     // استماع فوري لأي رسالة جديدة موجهة لي في جدول chat_messages
     const channel = sb
@@ -11192,18 +11410,15 @@ export function startChatPushRealtimeListener(myUid){
         const msg = payload.new;
         if(!msg || processedEventIds.has(msg.id)) return;
         processedEventIds.add(msg.id);
-
         const isActiveHere = window._activeChat && window._activeChat.convId === msg.conv_id && !document.hidden;
         if(!isActiveHere){
           // 1. تشغيل التنبيه الصوتي
           if(typeof playChatNotificationSound === 'function') playChatNotificationSound();
           // 2. تحديث عداد الرسائل
           if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
-
           // 3. عرض إشعار النظام المباشر
           const title = `💬 ${msg.sender_name || 'رسالة جديدة'}`;
           const body = (msg.text || "وصلتك رسالة جديدة").replace('[صورة] ', '📷 صورة: ');
-
           if(window.Notification && Notification.permission === "granted"){
             if(navigator.serviceWorker && navigator.serviceWorker.ready){
               navigator.serviceWorker.ready.then(reg => {
@@ -11225,7 +11440,6 @@ export function startChatPushRealtimeListener(myUid){
         }
       })
       .subscribe();
-
     _chatPushUnsub = () => {
       try { sb.removeChannel(channel); } catch(e){}
     };
@@ -11233,9 +11447,8 @@ export function startChatPushRealtimeListener(myUid){
     console.warn("startChatPushRealtimeListener error:", e);
   }
 }
+
 window.startChatPushRealtimeListener = startChatPushRealtimeListener;
-
-
 
 /* ========================================================
    🎙️ نظام التسجيل الصوتي المباشر والتبديل مثل Messenger
@@ -11245,8 +11458,8 @@ let _audioChunks = [];
 let _voiceRecordTimer = null;
 let _voiceRecordSeconds = 0;
 let _recordedAudioBlob = null;
-
 // التبديل الذكي بين الميكروفون وزر الإرسال عند الكتابة
+
 window.handleChatInputTyping = (input) => {
   const text = (input?.value || "").trim();
   const micBtn = document.getElementById("btnChatVoiceRecord");
@@ -11259,30 +11472,26 @@ window.handleChatInputTyping = (input) => {
     if(sendBtn) sendBtn.style.display = "none";
   }
 };
-
 // بدء أو إيقاف التسجيل الصوتي
+
 window.toggleVoiceRecording = async () => {
   if(_mediaRecorder && _mediaRecorder.state === "recording"){
     // تم الانتهاء من التسجيل -> تجهيز الإرسال
     stopVoiceRecordingAndSend();
     return;
   }
-
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     showToast("⚠️ جهازك لا يدعم تسجيل الصوت من المتصفح", "warn");
     return;
   }
-
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     _mediaRecorder = new MediaRecorder(stream);
     _audioChunks = [];
     _recordedAudioBlob = null;
-
     _mediaRecorder.ondataavailable = (e) => {
       if(e.data.size > 0) _audioChunks.push(e.data);
     };
-
     _mediaRecorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
       clearInterval(_voiceRecordTimer);
@@ -11293,11 +11502,9 @@ window.toggleVoiceRecording = async () => {
       }
       resetVoiceRecordingUI();
     };
-
     _mediaRecorder.start();
     _voiceRecordSeconds = 0;
     showVoiceRecordingUI();
-
     _voiceRecordTimer = setInterval(() => {
       _voiceRecordSeconds++;
       const m = Math.floor(_voiceRecordSeconds / 60);
@@ -11308,7 +11515,6 @@ window.toggleVoiceRecording = async () => {
         stopVoiceRecordingAndSend();
       }
     }, 1000);
-
   } catch(err){
     console.error("Mic error:", err);
     showToast("يرجى السماح بالوصول للميكروفون لتسجيل الصوت 🎙️", "warn");
@@ -11321,7 +11527,6 @@ function showVoiceRecordingUI(){
   const voiceBar = document.getElementById("chatVoiceRecordingBar");
   const micBtn = document.getElementById("btnChatVoiceRecord");
   const sendBtn = document.getElementById("btnSendUserChat");
-
   if(input) input.style.display = "none";
   if(attachBtns) attachBtns.style.display = "none";
   if(voiceBar) voiceBar.style.display = "flex";
@@ -11341,7 +11546,6 @@ function resetVoiceRecordingUI(){
   const voiceBar = document.getElementById("chatVoiceRecordingBar");
   const micBtn = document.getElementById("btnChatVoiceRecord");
   const sendBtn = document.getElementById("btnSendUserChat");
-
   if(input) input.style.display = "block";
   if(attachBtns) attachBtns.style.display = "flex";
   if(voiceBar) voiceBar.style.display = "none";
@@ -11356,8 +11560,8 @@ function resetVoiceRecordingUI(){
     sendBtn.style.display = (input && input.value.trim().length > 0) ? "flex" : "none";
   }
 }
-
 // إلغاء التسجيل وحذفه في سلة المهملات
+
 window.cancelVoiceRecording = () => {
   _audioChunks = [];
   _recordedAudioBlob = null;
@@ -11381,7 +11585,6 @@ function stopVoiceRecordingAndSend(){
     _mediaRecorder.stop();
   }
 }
-
 // رفع الرسالة الصوتية وإرسالها في الشات
 async function uploadAndSendVoiceMessage(blob, durationSec){
   if(!blob || !window._activeChat || !auth.currentUser) return;
@@ -11389,7 +11592,6 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
   const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
   const activeChat = window._activeChat;
   const convId = activeChat.convId;
-
   const box = document.getElementById("chatMessagesBox");
   let tempDiv = null;
   if(box){
@@ -11402,7 +11604,6 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
     box.appendChild(tempDiv);
     box.scrollTop = box.scrollHeight;
   }
-
   try {
     // تحويل الـ Blob إلى Base64 Data URL لنقله وتشغيله مباشرة
     const reader = new FileReader();
@@ -11412,7 +11613,6 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
       const now = Date.now();
       const textPayload = `[صوت:${durationSec || 1}] ` + base64Audio;
       const sb = window.supabase || supabase;
-
       const { data: insertedMsg, error: msgErr } = await sb.from("chat_messages").insert({
         conv_id: convId,
         sender_uid: me.uid,
@@ -11423,9 +11623,7 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
         store_id: activeChat.storeId,
         created_at: now
       }).select().single();
-
       if(msgErr) throw msgErr;
-
       if(tempDiv){
         tempDiv.removeAttribute("data-temp");
         if(insertedMsg && insertedMsg.id){
@@ -11443,7 +11641,6 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
           <div class="chatTime"><span style="opacity:0.85;margin-inline-end:3px">✓✓</span>${new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
         `;
       }
-
       // تحديث ملخص المحادثة لصندوق الرسائل
       const p1 = [me.uid, activeChat.targetUid].sort()[0];
       const p2 = [me.uid, activeChat.targetUid].sort()[1];
@@ -11457,7 +11654,6 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
         last_sender_name: senderName,
         updated_at: now
       });
-
       // إشعار فوري
       if(typeof dispatchChatPushNotification === 'function'){
         dispatchChatPushNotification(activeChat.targetUid, senderName, "🎙️ أرسل لك رسالة صوتية", convId);
@@ -11468,3 +11664,133 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
     showToast("تعذر إرسال الصوت: " + e.message, "error");
   }
 }
+
+/* ========================================================
+   📲 إدارة تثبيت التطبيق PWA الذكي (Android & iOS)
+   ======================================================== */
+let _deferredPwaPrompt = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredPwaPrompt = e;
+    const dismissedTime = Number(localStorage.getItem('tasawuq_pwa_dismissed') || 0);
+    if (Date.now() - dismissedTime > 24 * 60 * 60 * 1000) {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) banner.style.display = 'flex';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    _deferredPwaPrompt = null;
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    if (typeof showToast === 'function') {
+      showToast("🎉 تم تثبيت تطبيق تسوق الآن بنجاح على هاتفك!", "success", 4000);
+    }
+  });
+}
+
+export function triggerPwaInstall() {
+  const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) {
+    showToast("✅ التطبيق مثبت بالفعل وتعمل عليه الآن!", "info");
+    return;
+  }
+  if (isIos) {
+    const iosModal = document.getElementById('iosInstallOverlay');
+    if (iosModal) iosModal.classList.remove('hidden');
+    return;
+  }
+  if (_deferredPwaPrompt) {
+    _deferredPwaPrompt.prompt();
+    _deferredPwaPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+      }
+      _deferredPwaPrompt = null;
+    });
+  } else {
+    showToast("📲 يمكنك تثبيت التطبيق من قائمة خيارات المتصفح (⋮) -> تثبيت التطبيق", "info", 5000);
+  }
+}
+
+export function dismissPwaBanner() {
+  const banner = document.getElementById('pwaInstallBanner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('tasawuq_pwa_dismissed', String(Date.now()));
+}
+
+export function closeIosInstallModal() {
+  const iosModal = document.getElementById('iosInstallOverlay');
+  if (iosModal) iosModal.classList.add('hidden');
+}
+
+window.triggerPwaInstall = triggerPwaInstall;
+window.dismissPwaBanner = dismissPwaBanner;
+window.closeIosInstallModal = closeIosInstallModal;
+
+/* ========================================================
+   🗑️ حذف الحساب بالكامل (مطلب إلزامي لمتجري Google Play و App Store)
+   ======================================================== */
+export async function confirmDeleteMyAccount() {
+  if (!auth.currentUser) {
+    showToast("يرجى تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const uEmail = auth.currentUser.email || "";
+  const confirmMsg = `⚠️ تحذير نهائي لحماية خصوصيتك:
+
+هل أنت متأكد تماماً من رغبتك في حذف حسابك (${uEmail}) نهائياً؟
+
+- سيتم حذف جميع إعلاناتك المنشورة فوراً.
+- سيتم مسح ملفك الشخصي ومحادثاتك ورصيد محفظتك بالكامل.
+- هذا الإجراء نهائي ولا يمكن التراجع عنه.
+
+هل توافق على حذف الحساب وجميع البيانات؟`;
+  
+  if (!confirm(confirmMsg)) return;
+
+  const confirmText = prompt("لتأكيد الحذف النهائي، اكتب كلمة (حذف) في المربع بالأسفل:");
+  if (confirmText !== "حذف" && confirmText !== "delete") {
+    showToast("تم إلغاء عملية حذف الحساب.", "info");
+    return;
+  }
+
+  showToast("⏳ جاري حذف الحساب وجميع البيانات المرتبطة به...", "info", 6000);
+  const myUid = auth.currentUser.uid;
+  const sb = window.supabase || supabase;
+  try {
+    if (sb) {
+      await sb.from("posts").delete().eq("uid", myUid).catch(() => {});
+      await sb.from("profiles").delete().eq("id", myUid).catch(() => {});
+      await sb.from("feedback").delete().eq("uid", myUid).catch(() => {});
+    }
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("tasawuq_") || k.includes(myUid))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    if (typeof logout === 'function') {
+      await logout();
+    } else {
+      await auth.signOut();
+    }
+    if (typeof closeOverlayDirect === 'function') closeOverlayDirect();
+    showToast("✅ تم حذف حسابك وجميع بياناتك نهائياً بنجاح وفق معايير الخصوصية.", "success", 6000);
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  } catch (err) {
+    console.error("deleteMyAccount err:", err);
+    showToast("تعذر استكمال حذف الحساب: " + (err.message || err), "error");
+  }
+}
+
+window.confirmDeleteMyAccount = confirmDeleteMyAccount;
