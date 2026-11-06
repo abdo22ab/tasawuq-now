@@ -2053,12 +2053,15 @@ html.dark-mode .inboxRow {
   border-color: var(--border);
 }
 html.dark-mode .chatBubble.incoming {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #ffffff !important;
 }
 html.dark-mode .chatBubble.incoming * {
-  color: #0f172a !important;
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.incoming .chatTime {
+  color: #94a3b8 !important;
 }
 
 /* ========================================================
@@ -3074,4 +3077,1685 @@ html.dark-mode .searchUserCard:hover .sucBtn {
 
 #authOverlay {
   z-index: 2500 !important;
+}
+
+
+/* ==========================================================================
+   🌙 الوضع الليلي الفائق: توحيد الخط الأبيض الفاتح النقي في كل أرجاء المنصة
+   ========================================================================== */
+
+html.dark-mode {
+  --bg: #0b0f19 !important;
+  --card: #151d2e !important;
+  --text: #ffffff !important;
+  --muted: #cbd5e1 !important;
+  --border: #232f46 !important;
+  --teal-light: #0e2a47 !important;
+  --amber-light: #3a2f11 !important;
+}
+
+html.dark-mode,
+html.dark-mode body {
+  background-color: #0b0f19 !important;
+  color: #ffffff !important;
+}
+
+/* 🌟 نصوص وعناوين بيضاء ناصعة 100% ومريحة للعين */
+html.dark-mode h1,
+html.dark-mode h2,
+html.dark-mode h3,
+html.dark-mode h4,
+html.dark-mode h5,
+html.dark-mode h6,
+html.dark-mode strong,
+html.dark-mode b,
+html.dark-mode label,
+html.dark-mode .screenHeader h3,
+html.dark-mode .sectionTitle,
+html.dark-mode .sheet h3,
+html.dark-mode .screenTitle {
+  color: #ffffff !important;
+}
+
+/* نصوص الشروحات والتواريخ أبيض فضي فاتح ومقروء جداً */
+html.dark-mode .muted,
+html.dark-mode small,
+html.dark-mode .charCount,
+html.dark-mode .meta,
+html.dark-mode .time,
+html.dark-mode .storeMeta,
+html.dark-mode .storeMetaLine,
+html.dark-mode .card .meta,
+html.dark-mode .card .time,
+html.dark-mode .fbPostMetaTime,
+html.dark-mode .fbPostDesc,
+html.dark-mode .fbStatLabel {
+  color: #cbd5e1 !important;
+}
+
+/* 💬 1. الشات والرسائل في الوضع الليلي */
+html.dark-mode #userChatOverlay {
+  background: #0b0f19 !important;
+}
+html.dark-mode #chatMessagesBox {
+  background: #0b0f19 !important;
+}
+html.dark-mode #chatHeaderBar {
+  background: #151d2e !important;
+  border-bottom: 1.5px solid #232f46 !important;
+}
+html.dark-mode #chatTargetName {
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.incoming {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.incoming * {
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.incoming .chatTime {
+  color: #94a3b8 !important;
+}
+html.dark-mode .chatBubble.incoming a {
+  color: #38bdf8 !important;
+}
+html.dark-mode .chatBubble.outgoing {
+  background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.outgoing * {
+  color: #ffffff !important;
+}
+html.dark-mode .chatBubble.outgoing .chatTime {
+  color: #e0f2fe !important;
+}
+html.dark-mode #chatInputArea {
+  background: #151d2e !important;
+  border-top: 1.5px solid #232f46 !important;
+}
+html.dark-mode #chatMessageInput {
+  background: #0f172a !important;
+  border: 1.5px solid #334155 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+html.dark-mode #chatMessageInput::placeholder {
+  color: #94a3b8 !important;
+}
+html.dark-mode #btnChatVoiceRecord {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode .chatAttachBtn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode .chatQuickRepliesBar {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .chatQuickChip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+html.dark-mode #chatPostContextBar {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode #chatContextTitle {
+  color: #ffffff !important;
+}
+html.dark-mode #chatContextPrice {
+  color: #38bdf8 !important;
+}
+
+/* 🏦 2. التحويل المصرفي وشحن الرصيد والمحفظة والدفع المصرفي في الوضع الليلي */
+html.dark-mode #rechargeWalletOverlay .sheet,
+html.dark-mode #myWalletHistoryOverlay .sheet {
+  background: #151d2e !important;
+  color: #ffffff !important;
+  border: 1.5px solid #232f46 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* عناوين ونصوص نافذة الشحن والمحفظة */
+html.dark-mode #rechargeWalletOverlay h3,
+html.dark-mode #rechargeWalletOverlay label,
+html.dark-mode #myWalletHistoryOverlay h3 {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* تبويبات طرق الشحن في الوضع الليلي */
+html.dark-mode .walletTabNav .filterBtn {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border: 1.5px solid #334155 !important;
+  font-weight: 800 !important;
+}
+html.dark-mode .walletTabNav .filterBtn.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.45) !important;
+}
+
+/* بطاقة التحويل المصرفي الإرشادية الخضراء */
+html.dark-mode #rechargeTabCardBox > div:first-child,
+html.dark-mode #rechargeTabTransferBox > div:first-child,
+html.dark-mode .rechargeTransferBanner {
+  background: #064e3b !important;
+  border: 1.5px solid #10b981 !important;
+  border-radius: 14px !important;
+}
+html.dark-mode #rechargeTabCardBox > div:first-child *,
+html.dark-mode #rechargeTabTransferBox > div:first-child *,
+html.dark-mode .rechargeTransferBanner * {
+  color: #ffffff !important;
+}
+html.dark-mode .rechargeTransferBannerTitle {
+  color: #4ade80 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+html.dark-mode .rechargeTransferBannerDesc,
+html.dark-mode .rechargeTransferBannerDesc b {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  line-height: 1.7 !important;
+}
+
+/* بطاقة رقم واتساب الإدارة للشحن */
+html.dark-mode .rechargeTransferCard,
+html.dark-mode #rechargeTabTransferBox [style*="background:var(--card)"],
+html.dark-mode #rechargeTabTransferBox [style*="background: var(--card)"] {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  border-radius: 12px !important;
+}
+html.dark-mode .rechargeTransferLabel,
+html.dark-mode #rechargeTabTransferBox [style*="color:var(--muted)"],
+html.dark-mode #rechargeTabCardBox [style*="color:var(--muted)"] {
+  color: #f1f5f9 !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+html.dark-mode #adminWhatsappNumberText,
+html.dark-mode .rechargeTransferNumber {
+  color: #4ade80 !important;
+  font-size: 19px !important;
+  font-weight: 900 !important;
+  letter-spacing: 1px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+html.dark-mode .rechargeCopyBtn,
+html.dark-mode #rechargeTabTransferBox .btnGhost {
+  background: #0f172a !important;
+  border: 1.5px solid #475569 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+html.dark-mode .rechargeCopyBtn:hover {
+  background: #1e293b !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+html.dark-mode .rechargeCloseBtn,
+html.dark-mode #rechargeWalletOverlay .btnGhost[onclick*="closeRechargeModal"],
+html.dark-mode #myWalletHistoryOverlay .btnGhost[onclick*="closeMyWalletHistory"] {
+  color: #e2e8f0 !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+
+/* حقل كود كارت الشحن */
+html.dark-mode #walletCardCodeInput {
+  background: #0f172a !important;
+  border: 2px solid #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* بطاقة المحفظة للمستخدم */
+html.dark-mode .userWalletCard {
+  background: linear-gradient(135deg, #0c2942, #131a28) !important;
+  border: 1.5px solid #1c3a5c !important;
+  color: #ffffff !important;
+}
+html.dark-mode .userWalletCard .uwcTitle,
+html.dark-mode .userWalletCard .uwcNum {
+  color: #ffffff !important;
+}
+html.dark-mode .userWalletCard .uwcSubtitle,
+html.dark-mode .userWalletCard .uwcLabel {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .historyTxItem {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode .historyTxItem * {
+  color: #f8fafc !important;
+}
+
+/* 💳 2.2 بيانات الدفع والتحويل المصرفي في صفحة المتجر والإعلانات */
+html.dark-mode .storeBankInfoCard,
+html.dark-mode [style*="linear-gradient(135deg,#f0f9ff,#e0f2fe)"],
+html.dark-mode [style*="linear-gradient(135deg, #f0f9ff, #e0f2fe)"] {
+  background: #0f172a !important;
+  border: 2px solid #0284c7 !important;
+  border-radius: 14px !important;
+  color: #ffffff !important;
+}
+html.dark-mode .storeBankTitle,
+html.dark-mode [style*="color:#0369a1;font-size:14px"] {
+  color: #38bdf8 !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+}
+html.dark-mode .storeBankSubtitle,
+html.dark-mode [style*="color:#0369a1;margin-bottom:12px"],
+html.dark-mode [style*="color: #0369a1; margin-bottom: 12px"] {
+  color: #e2e8f0 !important;
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+}
+html.dark-mode .storeBankRow,
+html.dark-mode .storeBankInfoCard > div[style*="background:#fff"],
+html.dark-mode .storeBankInfoCard > div[style*="background: #fff"],
+html.dark-mode [style*="linear-gradient(135deg,#f0f9ff,#e0f2fe)"] > div[style*="background:#fff"],
+html.dark-mode [style*="linear-gradient(135deg,#f0f9ff,#e0f2fe)"] > div[style*="background: #fff"] {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+}
+html.dark-mode .storeBankLabel,
+html.dark-mode .storeBankInfoCard .storeBankLabel,
+html.dark-mode [style*="linear-gradient(135deg,#f0f9ff,#e0f2fe)"] [style*="color:var(--muted)"] {
+  color: #cbd5e1 !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  opacity: 1 !important;
+}
+html.dark-mode .storeBankVal {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  font-size: 14.5px !important;
+}
+html.dark-mode .storeBankIban,
+html.dark-mode .storeBankAcc {
+  color: #38bdf8 !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+}
+html.dark-mode .storeBankCopyBtn {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* أزرار واصل التحويل المصرفي في المطاعم والإعلانات */
+html.dark-mode .receiptWaBtn,
+html.dark-mode button[onclick*="sendReceiptToSeller"] {
+  background: #0c4a6e !important;
+  border: 1.5px dashed #38bdf8 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+html.dark-mode .receiptWaBtn:hover,
+html.dark-mode button[onclick*="sendReceiptToSeller"]:hover {
+  background: #075985 !important;
+  border-color: #7dd3fc !important;
+  color: #ffffff !important;
+}
+
+/* حقول بيانات المصرف عند إنشاء أو تعديل متجر */
+html.dark-mode #openStoreOverlay [style*="background:#f0f9ff"],
+html.dark-mode #editStoreOverlay [style*="background:#f0f9ff"] {
+  background: #0f172a !important;
+  border: 1.5px solid #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode #openStoreOverlay [style*="background:#f0f9ff"] > div > div,
+html.dark-mode #editStoreOverlay [style*="background:#f0f9ff"] > div > div {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* 🏪 3. صفحة المتاجر في الوضع الليلي */
+html.dark-mode #storesScreen,
+html.dark-mode #storeScreen {
+  background: #0b0f19 !important;
+  color: #ffffff !important;
+}
+html.dark-mode #storesScreenTitle,
+html.dark-mode #storeScreenTitle {
+  color: #ffffff !important;
+}
+html.dark-mode #storeSearch {
+  background: #151d2e !important;
+  border: 1.5px solid #232f46 !important;
+  color: #ffffff !important;
+}
+html.dark-mode #storeSearch::placeholder {
+  color: #94a3b8 !important;
+}
+html.dark-mode .storeCard {
+  background: #151d2e !important;
+  border: 1.5px solid #232f46 !important;
+}
+html.dark-mode .storeCard .storeName {
+  color: #ffffff !important;
+}
+html.dark-mode .storeCard .storeMeta {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .storeCard .storeStats {
+  color: #38bdf8 !important;
+}
+html.dark-mode .storeTitle {
+  color: #ffffff !important;
+}
+html.dark-mode .storeMetaLine {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .storeDesc {
+  background: #151d2e !important;
+  border: 1.5px solid #232f46 !important;
+  color: #f8fafc !important;
+}
+html.dark-mode .storeHeader .logoWrap {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode #storeSubCategoryTags button {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode #openStoreOverlay .sheet {
+  background: #151d2e !important;
+  color: #ffffff !important;
+}
+html.dark-mode #openStoreRegularNotice {
+  background: #064e3b !important;
+  color: #ffffff !important;
+}
+html.dark-mode #adminStoreCreationNotice {
+  background: #3a2f11 !important;
+  color: #fde047 !important;
+  border-color: #5a4a1a !important;
+}
+
+/* 👤 4. الملف الشخصي في الوضع الليلي */
+html.dark-mode .fbProfileCard {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .fbUserName {
+  color: #ffffff !important;
+}
+html.dark-mode .fbUsernameTag,
+html.dark-mode .fbMemberTag {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+html.dark-mode .fbStatNum {
+  color: #ffffff !important;
+}
+html.dark-mode .fbStatLabel {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .fbPostCard {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .fbPostAuthorName {
+  color: #ffffff !important;
+}
+html.dark-mode .fbPostTitle {
+  color: #ffffff !important;
+}
+html.dark-mode .fbPostDesc {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .fbPostMetaTime {
+  color: #94a3b8 !important;
+}
+html.dark-mode .fbPostPriceBadge {
+  background: #0e2a47 !important;
+  color: #38bdf8 !important;
+}
+html.dark-mode .fbPostActBtn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* 📑 5. حقول الإدخال والاختيار في كل مكان */
+html.dark-mode input:not([type="checkbox"]):not([type="radio"]),
+html.dark-mode textarea,
+html.dark-mode select {
+  background: #0f172a !important;
+  border: 1.5px solid #334155 !important;
+  color: #ffffff !important;
+}
+html.dark-mode input::placeholder,
+html.dark-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 👤 تنسيق خانات البحث عن الأشخاص في القائمة المنسدلة */
+.sdUserItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+.sdUserItem:hover {
+  background: var(--bg);
+}
+.sdUserAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  flex: 0 0 36px;
+  overflow: hidden;
+}
+.sdUserAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sdUserTag {
+  font-size: 12px;
+  color: #0284c7;
+  font-weight: 700;
+  margin-right: 6px;
+  direction: ltr;
+  display: inline-block;
+}
+.sdMemberTag {
+  font-size: 10.5px;
+  background: #f1f5f9;
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  font-weight: 700;
+}
+.sdUserBadge {
+  font-size: 11px;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.sdUserAction {
+  font-size: 11.5px;
+  color: #0284c7;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* الوضع الليلي لخانات الأشخاص في البحث */
+html.dark-mode .sdUserItem:hover {
+  background: #1e293b !important;
+}
+html.dark-mode .sdUserTag {
+  color: #38bdf8 !important;
+}
+html.dark-mode .sdMemberTag {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+}
+html.dark-mode .sdUserBadge {
+  background: #0c4a6e !important;
+  color: #38bdf8 !important;
+}
+html.dark-mode .sdUserAction {
+  color: #38bdf8 !important;
+}
+
+/* ==========================================================================
+   📸 شريط الستوريات (Stories Bar)
+   ========================================================================== */
+.storiesBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--border);
+  margin-bottom: 12px;
+}
+.storiesBar::-webkit-scrollbar {
+  display: none;
+}
+.storyBubble {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  user-select: none;
+}
+.storyRing {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 2.5px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6, #0284c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.storyBubble:hover .storyRing {
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+.storyRing.myStoryRing {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+}
+.storyAvatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 2px solid var(--card);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+}
+.storyAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.storyAddBadge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  background: #0284c7;
+  color: #fff;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.45);
+}
+.storyName {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 66px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* زر إضافة فيديو في شاشة إضافة إعلان */
+.videoAddTile {
+  background: #f0fdf4;
+  border: 2px dashed #22c55e;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #166534;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+.videoAddTile:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+html.dark-mode .videoAddTile {
+  background: #064e3b !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   🎥 مشغل الريلز والستوري (Reels Viewer Overlay)
+   ========================================================================== */
+.reelsOverlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reelsOverlay.hidden {
+  display: none !important;
+}
+.reelsContainer {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  max-height: 100vh;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.reelsVideoWrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  cursor: pointer;
+}
+.reelsMainVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.reelsPlayPauseNotice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: popIn 0.2s ease;
+}
+.reelsDoubleTapHeart {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.4);
+  font-size: 80px;
+  pointer-events: none;
+  animation: heartBurst 0.6s ease forwards;
+}
+@keyframes heartBurst {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+/* الشريط العلوي */
+.reelsTopBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  z-index: 10;
+}
+.reelsTopBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.reelsTopBtn:hover {
+  transform: scale(1.08);
+}
+.reelsHeaderTitle {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* شارة الانتقال التلقائي بين الحسابات */
+.reelsAccountSwitchNotice {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(2, 132, 199, 0.85);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  z-index: 15;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  pointer-events: none;
+  animation: fadeInDown 0.3s ease;
+}
+
+/* أزرار التفاعل الجانبية (TikTok Style) */
+.reelsSideActions {
+  position: absolute;
+  bottom: 120px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+}
+.reelsProfileWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.reelsAvatarRing {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  overflow: hidden;
+  cursor: pointer;
+  background: #1e293b;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+.reelsAvatar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+.reelsAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* زر المتابعة الموجب (+) أسفل الأفاتار */
+.reelsFollowPlusBtn {
+  position: absolute;
+  bottom: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.6);
+}
+.reelsFollowPlusBtn.following {
+  background: #22c55e;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.6);
+  transform: scale(0.9);
+}
+
+.reelsActionBtn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  color: #fff;
+  padding: 0;
+}
+.reelsActionIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+.reelsActionBtn:hover .reelsActionIcon {
+  transform: scale(1.1);
+}
+.reelsActionCount {
+  font-size: 11px;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+.reelsWaBtn .reelsActionIcon {
+  background: rgba(37, 211, 102, 0.7);
+  border-color: #25d366;
+}
+
+/* الكرت السفلي الشفاف للإعلان */
+.reelsBottomCard {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 16px 16px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  color: #fff;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.reelsSellerInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.reelsSellerName {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+}
+.reelsSellerBadge {
+  font-size: 10.5px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 800;
+}
+.reelsPostTitle {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.reelsPriceAndCity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reelsPriceTag {
+  font-size: 16px;
+  font-weight: 900;
+  color: #4ade80;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.reelsCityTag {
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.reelsCardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.reelsMainCTA {
+  flex: 1;
+  background: #25d366;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+  transition: transform 0.15s ease;
+}
+.reelsMainCTA:hover {
+  transform: translateY(-1px);
+}
+.reelsSecondaryCTA {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+/* أسهم التنقل على أجهزة الكمبيوتر */
+.reelsNavArrows {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+.reelsArrowBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.reelsArrowBtn:hover {
+  background: #0284c7;
+  border-color: #38bdf8;
+  transform: scale(1.1);
+}
+
+/* درج التعليقات السريع */
+.reelsCommentsSheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: var(--card);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.25s ease;
+}
+.reelsCommentsSheet.hidden {
+  display: none !important;
+}
+.reelsCommentsHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reelsCommentsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.reelsCommentItem {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+}
+.reelsCommentAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0284c7;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex: 0 0 32px;
+}
+.reelsCommentContent {
+  flex: 1;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.reelsCommentAuthor {
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.reelsCommentText {
+  color: var(--text);
+  line-height: 1.4;
+}
+.reelsCommentInputBox {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  background: var(--card);
+}
+.reelsCommentInputBox input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   🔔 مركز الإشعارات وقائمة المتابعين
+   ========================================================================== */
+.notifItem {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.notifItem:hover {
+  background: var(--bg);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+.notifItem.unread {
+  background: rgba(2, 132, 199, 0.05);
+  border-color: rgba(2, 132, 199, 0.3);
+}
+.notifIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex: 0 0 42px;
+  background: #f0f9ff;
+  color: #0284c7;
+}
+.notifIconWrap.follow {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.notifIconWrap.like {
+  background: #fdf2f8;
+  color: #ec4899;
+}
+.notifIconWrap.comment {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.notifBody {
+  flex: 1;
+  min-width: 0;
+}
+.notifTitle {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.notifText {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.notifTime {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.notifUnreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  position: absolute;
+  top: 14px;
+  left: 14px;
+}
+
+/* تنسيق قائمة المتابعين */
+.followerUserRow {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  transition: all 0.15s ease;
+}
+.followerUserRow:hover {
+  border-color: #0284c7;
+}
+.followerAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  flex: 0 0 42px;
+}
+.followerAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.followerInfo {
+  flex: 1;
+  min-width: 0;
+}
+.followerName {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.followerUsername {
+  font-size: 11.5px;
+  color: #0284c7;
+  font-weight: 700;
+  direction: ltr;
+  text-align: right;
+}
+
+/* Dark mode */
+html.dark-mode .notifItem {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .notifItem.unread {
+  background: #1a2538 !important;
+  border-color: #38bdf8 !important;
+}
+html.dark-mode .notifTitle {
+  color: #ffffff !important;
+}
+html.dark-mode .notifText {
+  color: #cbd5e1 !important;
+}
+html.dark-mode .notifIconWrap {
+  background: #1e293b !important;
+}
+html.dark-mode .followerUserRow {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .followerName {
+  color: #ffffff !important;
+}
+
+/* بطاقة الإشعارات الخارجية المدمجة داخل مركز الإشعارات */
+.externalPushNotifBanner {
+  background: linear-gradient(135deg, #f0fdf4, #e0f2fe);
+  border: 1.5px solid #38bdf8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.epnContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.epnIcon {
+  font-size: 24px;
+  flex: 0 0 auto;
+}
+.epnTextWrap {
+  flex: 1;
+  min-width: 0;
+}
+.epnTitle {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0369a1;
+  margin-bottom: 2px;
+}
+.epnDesc {
+  font-size: 11.5px;
+  color: #0369a1;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+.epnActionBtn {
+  background: #0284c7;
+  color: #fff;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+  transition: transform 0.15s ease;
+}
+.epnActionBtn:hover {
+  transform: scale(1.04);
+}
+.epnActionBtn.active {
+  background: #16a34a;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+}
+
+/* Dark mode */
+html.dark-mode .externalPushNotifBanner {
+  background: #0f172a !important;
+  border-color: #0284c7 !important;
+}
+html.dark-mode .epnTitle {
+  color: #38bdf8 !important;
+}
+html.dark-mode .epnDesc {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================================================
+   🔄 مؤشر السحب للتحديث للآيفون والأندرويد (Pull to Refresh)
+   ========================================================================== */
+.pullToRefreshIndicator {
+  position: fixed;
+  top: -65px;
+  left: 0;
+  right: 0;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--border);
+  z-index: 999999;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  opacity: 0;
+}
+.pullToRefreshIndicator.visible {
+  opacity: 1;
+}
+.ptrIcon {
+  font-size: 20px;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.ptrText {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--teal-dark);
+}
+.pullToRefreshIndicator.refreshing .ptrIcon {
+  animation: ptrSpin 0.7s linear infinite;
+}
+@keyframes ptrSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+html.dark-mode .pullToRefreshIndicator {
+  background: #151d2e !important;
+  border-color: #232f46 !important;
+}
+html.dark-mode .ptrText {
+  color: #38bdf8 !important;
+}
+
+
+/* عداد المنتجات والإعلانات داخل مربعات الأقسام */
+.catBox .catCount {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.25;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  transition: all 0.2s ease;
+}
+.catBox .catCount.zero {
+  color: #94a3b8;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  opacity: 0.85;
+}
+html.dark-mode .catBox .catCount {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+html.dark-mode .catBox .catCount.zero {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.12);
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+
+.catBox.allBox .catCount {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.catBox.allBox .catCount.zero {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+
+/* قسم الإعلانات المقترحة في الصفحة الرئيسية */
+.suggestedCard {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+.suggestedCard:active {
+  transform: scale(0.97);
+}
+html.dark-mode .suggestedCard {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+
+/* شريط الإعلانات المقترحة الأفقي المدمج */
+.suggestedScroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 14px 8px;
+}
+.suggestedScroll::-webkit-scrollbar {
+  display: none;
+}
+.suggestedItem {
+  flex: 0 0 115px;
+  max-width: 115px;
+  background: var(--card, #fff);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border, #e2e8f0);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.suggestedItem:active {
+  transform: scale(0.96);
+}
+.suggestedItem .sugThumbWrap {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: var(--bg-light, #f1f5f9);
+  overflow: hidden;
+  position: relative;
+}
+.suggestedItem .sugThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.suggestedItem .sugInfo {
+  padding: 6px 7px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.suggestedItem .sugTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.suggestedItem .sugPrice {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--teal, #0d9488);
+}
+.suggestedItem .sugCity {
+  font-size: 9.5px;
+  color: var(--muted, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.suggestedItem .sugFeatBadge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+html.dark-mode .suggestedItem {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+
+/* 📍 أنماط الأشخاص والإعلانات القريبة (GPS) */
+.nearbyUsersScroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 14px 8px;
+}
+.nearbyUsersScroll::-webkit-scrollbar {
+  display: none;
+}
+.nearbyUserCard {
+  flex: 0 0 130px;
+  max-width: 130px;
+  background: var(--card, #fff);
+  border-radius: 14px;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.nearbyUserCard:active {
+  transform: scale(0.96);
+}
+.nearbyUserAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--teal-light, #ccfbf1);
+  color: var(--teal-dark, #0f766e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 6px;
+  position: relative;
+}
+.nearbyUserName {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.3;
+}
+.nearbyDistBadge {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.nearbyUserSub {
+  font-size: 9.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nearbyUserAction {
+  margin-top: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  background: var(--primary, #0284c7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gpsPromptCard {
+  margin: 4px 14px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 1px dashed #38bdf8;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+html.dark-mode .nearbyUserCard {
+  background: var(--card);
+  border-color: var(--border);
+}
+html.dark-mode .nearbyUserAvatar {
+  border-color: var(--card);
+}
+html.dark-mode .nearbyDistBadge {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+html.dark-mode .gpsPromptCard {
+  background: linear-gradient(135deg, #0c2942, #131a28);
+  border-color: #0284c7;
 }
