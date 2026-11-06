@@ -43,7 +43,7 @@ OneSignalDeferred.push(async function(OneSignal){
   });
 });
 </script>
-<link rel="stylesheet" href="style.css?v=123">
+<link rel="stylesheet" href="style.css?v=140">
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 <meta name="description" content="تسوق الآن - منصتك الأولى للإعلانات المبوبة، بيع وشراء السيارات، العقارات، الأجهزة، والمزيد في ليبيا.">
 <meta property="og:type" content="website">
@@ -53,6 +53,12 @@ OneSignalDeferred.push(async function(OneSignal){
 <meta property="og:image" content="https://tasawuqnow.com/icon-512.png">
 </head>
 <body>
+<!-- 🔄 مؤشر السحب للأسفل للتحديث (Pull to Refresh - iOS & Android) -->
+<div id="pullToRefreshIndicator" class="pullToRefreshIndicator">
+  <div class="ptrIcon" id="ptrIcon">🔄</div>
+  <div class="ptrText" id="ptrText">اسحب للأسفل للتحديث...</div>
+</div>
+
 <!-- 🎬 شاشة البداية بالفيديو -->
 <div id="videoSplash" style="position:fixed;inset:0;background:#0284c7;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .4s ease,visibility .4s ease;overflow:hidden;">
 <button onclick="skipVideoSplash()" style="position:absolute;top:20px;left:20px;z-index:1000000;background:rgba(0,0,0,0.6);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:8px 16px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">تخطي ✕</button>
@@ -125,10 +131,9 @@ OneSignalDeferred.push(async function(OneSignal){
 </div>
 <select id="cityFilterCat" class="cityFilter" onchange="filterCityCat()"></select>
 </div>
-<div class="recentSection" id="recentSection">
-<div class="recentTitle">🕘 تصفحتها حديثاً</div>
-<div class="recentScroll" id="recentScroll"></div>
-</div>
+
+<!-- 📸 شريط الستوريات في الشاشة الرئيسية -->
+<div id="storiesBarCat" class="storiesBar"></div>
 <div class="bannerCarousel hidden" id="bannerCarousel">
 <div class="bSlides" id="bannerSlides"></div>
 <div class="bDots" id="bannerDots"></div>
@@ -140,6 +145,51 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="catHeader">الأقسام</div>
 <div class="catSubtitle">اختر القسم لعرض الإعلانات</div>
 <div class="categoriesGrid" id="categoriesGrid"></div>
+
+<!-- 👥 قسم أشخاص وبائعون قريبون منك (GPS) -->
+<div class="nearbyUsersSection" id="nearbyUsersSection" style="margin-top: 18px; margin-bottom: 14px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 14px 8px;">
+    <div style="font-weight:800;font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:6px;">
+      <span>👥 أشخاص وبائعون قريبون منك</span>
+    </div>
+    <button type="button" onclick="requestAppGpsLocation(true)" style="background:rgba(2,132,199,0.08);border:1px solid rgba(2,132,199,0.25);color:var(--primary,#0284c7);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;padding:3px 8px;border-radius:8px;">
+      📍 تفعيل GPS
+    </button>
+  </div>
+  <div id="nearbyUsersList" class="nearbyUsersScroll"></div>
+</div>
+
+<!-- 📍 قسم إعلانات قريبة منك (GPS) -->
+<div class="nearbyAdsSection" id="nearbyAdsSection" style="margin-top: 14px; margin-bottom: 18px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 14px 8px;">
+    <div style="font-weight:800;font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:6px;">
+      <span>📍 إعلانات قريبة منك</span>
+    </div>
+    <button type="button" onclick="openCategory('الكل')" style="background:none;border:none;color:var(--primary,#0284c7);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:2px 4px;">
+      عرض الكل ←
+    </button>
+  </div>
+  <div id="nearbyAdsList" class="suggestedScroll"></div>
+</div>
+
+<!-- 🕘 تصفحتها حديثاً (تحت الأقسام مباشرة) -->
+<div class="recentSection" id="recentSection" style="margin-top: 18px;">
+<div class="recentTitle">🕘 تصفحتها حديثاً</div>
+<div class="recentScroll" id="recentScroll"></div>
+</div>
+
+<!-- 🔥 إعلانات مقترحة لك (شريط تمرير أفقي أنيق ومدمج) -->
+<div class="suggestedSection" id="suggestedSection" style="margin-top: 18px; margin-bottom: 24px; display: none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 14px 8px;">
+    <div style="font-weight:800;font-size:13.5px;color:var(--text);display:flex;align-items:center;gap:6px;">
+      <span>🔥 إعلانات مقترحة لك</span>
+    </div>
+    <button type="button" onclick="openCategory('الكل')" style="background:none;border:none;color:var(--primary,#0284c7);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:2px 4px;">
+      عرض الكل ←
+    </button>
+  </div>
+  <div id="suggestedAdsGrid" class="suggestedScroll"></div>
+</div>
 </div>
 <!-- ============================================ -->
 <!-- شاشة عرض الإعلانات -->
@@ -149,6 +199,10 @@ OneSignalDeferred.push(async function(OneSignal){
 <button class="backBtn" onclick="showCategoriesScreen()">→</button>
 <h3 id="categoryTitle">الإعلانات</h3>
 </div>
+
+<!-- 📸 شريط الستوريات والقصص (Stories Bar) -->
+<div id="storiesBar" class="storiesBar"></div>
+
 <div class="searchWrap">
 <div class="searchBox">
 <span class="ic">🔎</span>
@@ -241,6 +295,20 @@ OneSignalDeferred.push(async function(OneSignal){
 <div id="imgThumbs" class="imgThumbs"></div>
 <div id="imgAddTile" class="imgAddTile" onclick="document.getElementById('imageFile').click()">📷 إضافة صورة</div>
 <input id="imageFile" type="file" accept="image/*" multiple class="hidden" onchange="handleFilesSelected()"></div>
+
+<!-- 🎥 حقل إضافة فيديو ريلز / ستوري -->
+<div class="field">
+  <label>🎥 فيديو الإعلان / ريلز وستوري (اختياري - حتى 30 ثانية كحد أقصى)</label>
+  <div id="postVideoAddTile" class="videoAddTile" onclick="document.getElementById('postVideoFile').click()">
+    <span style="font-size:24px">🎬</span>
+    <span id="postVideoPromptText" style="font-size:13px;font-weight:800">اضغط لإضافة فيديو ريلز وستوري (الحد الأقصى 30 ثانية)</span>
+  </div>
+  <input id="postVideoFile" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" class="hidden" onchange="handlePostVideoSelected()">
+  <div id="postVideoPreviewBox" class="postVideoPreviewBox hidden" style="margin-top:10px">
+    <video id="postVideoPreviewEl" controls playsinline style="width:100%;max-height:220px;border-radius:12px;background:#000;display:block"></video>
+    <button type="button" class="btnGhost" onclick="removePostVideo()" style="color:#ef4444;border-color:#fca5a5;margin-top:8px;width:100%;font-weight:800">🗑️ إزالة الفيديو</button>
+  </div>
+</div>
 <div id="termsBox" class="termsBox">
 <div class="termsTitle">📋 شروط نشر الإعلان</div>
 <ul>
@@ -374,7 +442,11 @@ OneSignalDeferred.push(async function(OneSignal){
     <span id="accountChatBadge" class="inboxBadge" style="display:none">0</span>
   </button>
   <!-- 🔔 الإشعارات والشكاوى -->
-  <button class="btnGhost accountBtn" onclick="enableNotifications()">🔔 تفعيل الإشعارات</button>
+  <!-- 🔔 مركز الإشعارات الشامل (المتابعين + التفاعل + إعدادات التنبيهات الخارجية) -->
+  <button class="btnGhost accountBtn" onclick="openNotificationsCenter()" style="background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;position:relative">
+    <span>🔔 مركز الإشعارات والتنبيهات</span>
+    <span id="accountNotifBadge" class="inboxBadge" style="display:none;background:#ef4444;color:#fff;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:900">0</span>
+  </button>
   <button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
   <!-- 🏪 المتجر -->
   <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
@@ -425,6 +497,18 @@ OneSignalDeferred.push(async function(OneSignal){
     <span>📲</span>
     <span>تثبيت تطبيق تسوق الآن على الهاتف</span>
   </button>
+  <!-- 📍 كرت الموقع الجغرافي والبحث القريب (GPS) فوق تسجيل الخروج -->
+  <div class="accountGpsCard" onclick="requestAppGpsLocation(true)" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-top:10px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:20px;">📍</div>
+      <div>
+        <div style="font-weight:800;font-size:13.5px;color:var(--text);">الموقع الجغرافي (GPS)</div>
+        <div id="accountGpsStatusText" style="font-size:11px;color:var(--muted);margin-top:2px;">اضغط لتفعيل موقعك وعرض الأقرب لك بالكيلومتر</div>
+      </div>
+    </div>
+    <span id="accountGpsBadge" style="font-size:11px;padding:3px 8px;border-radius:8px;font-weight:700;background:#f1f5f9;color:#64748b;">تحديث 🔄</span>
+  </div>
+
   <!-- زر تسجيل الخروج -->
   <button class="btnMain" style="background:var(--danger);margin-top:10px" onclick="logout();closeOverlay()">تسجيل الخروج</button>
   <!-- 🗑️ خيار حذف الحساب نهائياً (تصميم صغير وأنيق) -->
@@ -787,26 +871,26 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
     <!-- تبويب التحويل المصرفي وشراء كروت الشحن عبر الواتساب -->
     <div id="rechargeTabTransferBox" style="display:none">
-      <div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:14px;padding:14px;margin-bottom:14px">
-        <div style="font-weight:900;color:#15803d;font-size:13.5px;margin-bottom:4px">📲 تحويل مصرفي وشراء كروت شحن المنصة</div>
-        <div style="font-size:12px;color:#166534;line-height:1.6">
+      <div class="rechargeTransferBanner" style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:14px;padding:14px;margin-bottom:14px">
+        <div class="rechargeTransferBannerTitle" style="font-weight:900;color:#15803d;font-size:13.5px;margin-bottom:4px">📲 تحويل مصرفي وشراء كروت شحن المنصة</div>
+        <div class="rechargeTransferBannerDesc" style="font-size:12px;color:#166534;line-height:1.6">
           يمكنك شحن رصيدك عبر <b>التحويل المصرفي المباشر</b> أو <b>شراء كروت شحن المنصة</b> بالتواصل مباشرة مع الإدارة عبر الواتساب.
         </div>
       </div>
-      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div class="rechargeTransferCard" style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:11.5px;color:var(--muted);font-weight:700">📱 رقم واتساب الإدارة المعتمد للشحن:</div>
+            <div class="rechargeTransferLabel" style="font-size:11.5px;color:var(--muted);font-weight:700">📱 رقم واتساب الإدارة المعتمد للشحن:</div>
             <div style="font-size:17px;font-weight:900;color:var(--text);direction:ltr;text-align:right;margin-top:2px" id="adminWhatsappNumberText">0928476784</div>
           </div>
-          <button type="button" class="btnGhost" onclick="copyTransferNumber('0928476784')" style="padding:6px 12px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;font-weight:800">📋 نسخ الرقم</button>
+          <button type="button" class="btnGhost rechargeCopyBtn" onclick="copyTransferNumber('0928476784')" style="padding:6px 12px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;font-weight:800">📋 نسخ الرقم</button>
         </div>
       </div>
       <a href="https://wa.me/218928476784?text=%D8%A7%D9%84%D8%B3%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%B4%D8%AD%D9%86%20%D9%85%D8%AD%D9%81%D8%B8%D8%AA%D9%8A%20%D9%81%D9%8A%20%D8%AA%D8%B3%D9%88%D9%82%20%D8%A7%D9%84%D8%A2%D9%86%20(%D8%AA%D8%AD%D9%88%D9%8A%D9%84%20%D9%85%D8%B5%D8%B1%D9%81%D9%8A%20%D8%A3%D9%88%20%D8%B4%D8%B1%D8%A7%D8%A1%20%D9%83%D8%B1%D9%88%D8%AA%20%D8%B4%D8%AD%D9%86)" target="_blank" rel="noopener" class="btnMain" style="background:#25d366;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;font-size:13.5px;border-radius:10px">
         💬 تواصل مع الأدمن عبر واتساب لشحن المحفظة
       </a>
     </div>
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:10px" onclick="closeRechargeModal()">إغلاق</button>
+    <button type="button" class="btnGhost rechargeCloseBtn" style="background:transparent;color:var(--muted);margin-top:10px" onclick="closeRechargeModal()">إغلاق</button>
   </div>
 </div>
 <!-- ============================================ -->
@@ -1403,7 +1487,7 @@ OneSignalDeferred.push(async function(OneSignal){
         autocomplete="off"
         oninput="handleChatInputTyping(this)"
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
-        style="flex:1;height:46px;box-sizing:border-box;padding:8px 18px;border-radius:23px;border:1.5px solid #cbd5e1;background:#ffffff;color:#0f172a;font-size:16px;outline:none;transition:all .2s ease;box-shadow:inset 0 1px 3px rgba(0,0,0,0.03)"
+        style="flex:1;height:46px;box-sizing:border-box;padding:8px 18px;border-radius:23px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:16px;outline:none;transition:all .2s ease"
       >
       <!-- شريط التسجيل الصوتي المباشر مثل ماسنجر -->
       <div id="chatVoiceRecordingBar" style="display:none;flex:1;align-items:center;gap:12px;background:#fef2f2;border:1px solid #fecdd3;border-radius:23px;padding:6px 14px;height:46px;box-sizing:border-box">
@@ -1412,23 +1496,23 @@ OneSignalDeferred.push(async function(OneSignal){
         <div style="flex:1;font-size:12px;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">جاري تسجيل رسالة صوتية...</div>
         <button type="button" id="btnCancelVoice" onclick="cancelVoiceRecording()" title="حذف التسجيل" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;color:#b91c1c">🗑️</button>
       </div>
-      <!-- زر الميكروفون الفاخر -->
+      <!-- زر الميكروفون الفاخر (ظاهر دائماً بجانب زر الإرسال) -->
       <button 
         type="button" 
         id="btnChatVoiceRecord" 
         onclick="toggleVoiceRecording()" 
         title="تسجيل رسالة صوتية 🎙️"
-        style="width:46px;height:46px;border-radius:50%;background:#f1f5f9;color:#0f172a;border:1.5px solid #cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-size:19px;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,0.03)"
+        style="width:44px;height:44px;border-radius:50%;background:var(--card);color:var(--text);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-size:19px;transition:all .2s"
       >
         🎙️
       </button>
-      <!-- زر الإرسال الفاخر -->
+      <!-- زر الإرسال الفاخر (ظاهر دائماً بجانب الميكروفون) -->
       <button 
         type="button" 
         id="btnSendUserChat" 
         onclick="sendUserChatMessage()" 
-        title="إرسال"
-        style="display:none;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;border:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all .2s ease"
+        title="إرسال الرسالة"
+        style="display:flex;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;border:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all .2s ease"
       >
         <span style="font-size:18px">🚀</span>
       </button>
@@ -1461,7 +1545,7 @@ OneSignalDeferred.push(async function(OneSignal){
     </div>
   </div>
 </div>
-<script type="module" src="app.js?v=123"></script>
+<script type="module" src="app.js?v=140"></script>
 <!-- 🎬 Script شاشة الفيديو -->
 <script>
 (function(){
@@ -1531,5 +1615,139 @@ OneSignalDeferred.push(async function(OneSignal){
     <button type="button" class="btnMain" onclick="closeIosInstallModal()" style="margin:0;width:100%">فهمت ذلك ✓</button>
   </div>
 </div>
+
+<!-- ============================================ -->
+<!-- 🎥 مشغل الريلز والستوري التفاعلي (Reels Overlay) -->
+<!-- ============================================ -->
+<div id="reelsOverlay" class="overlay fullscreen hidden reelsOverlay">
+  <div class="reelsContainer" id="reelsContainer">
+    <!-- مشغل الفيديو والشاشة الكاملة -->
+    <div class="reelsVideoWrapper" id="reelsVideoWrapper" onclick="handleReelsVideoTap(event)">
+      <video id="reelsMainVideo" class="reelsMainVideo" playsinline loop preload="auto"></video>
+      <div id="reelsPlayPauseNotice" class="reelsPlayPauseNotice hidden">▶</div>
+      <div id="reelsDoubleTapHeart" class="reelsDoubleTapHeart hidden">❤️</div>
+    </div>
+
+    <!-- الشريط العلوي الشفاف -->
+    <div class="reelsTopBar">
+      <button type="button" class="reelsTopBtn" onclick="closeReelsModal()" title="إغلاق">✕</button>
+      <div class="reelsHeaderTitle" id="reelsHeaderTitle">🎥 ريلز الإعلانات</div>
+      <button type="button" class="reelsTopBtn" id="reelsMuteToggleBtn" onclick="toggleReelsMute()" title="كتم/تشغيل الصوت">🔊</button>
+    </div>
+
+    <!-- شارة الانتقال التلقائي بين الحسابات -->
+    <div id="reelsAccountSwitchNotice" class="reelsAccountSwitchNotice hidden">
+      <span id="reelsAccountSwitchText">انتقال إلى إعلانات: معلن</span>
+    </div>
+
+    <!-- العمود الجانبي للأزرار التفاعلية (TikTok Style) -->
+    <div class="reelsSideActions">
+      <!-- صورة المعلن مع زر المتابعة الموجب (+) التيك توك -->
+      <div class="reelsProfileWrap">
+        <div class="reelsAvatarRing" onclick="openReelsSellerProfile()">
+          <div class="reelsAvatar" id="reelsSellerAvatar">👤</div>
+        </div>
+        <button type="button" class="reelsFollowPlusBtn" id="reelsFollowPlusBtn" onclick="toggleReelsFollow(event)" title="متابعة">+</button>
+      </div>
+
+      <!-- زر الإعجاب -->
+      <button type="button" class="reelsActionBtn" id="reelsLikeBtn" onclick="toggleReelsLike()">
+        <span class="reelsActionIcon" id="reelsLikeIcon">🤍</span>
+        <span class="reelsActionCount" id="reelsLikeCount">0</span>
+      </button>
+
+      <!-- زر التعليقات -->
+      <button type="button" class="reelsActionBtn" onclick="openReelsComments()">
+        <span class="reelsActionIcon">💬</span>
+        <span class="reelsActionCount" id="reelsCommentsCount">0</span>
+      </button>
+
+      <!-- زر الواتساب المباشر -->
+      <button type="button" class="reelsActionBtn reelsWaBtn" onclick="contactReelsSeller()" title="تواصل عبر واتساب">
+        <span class="reelsActionIcon">📲</span>
+        <span class="reelsActionCount">واتساب</span>
+      </button>
+
+      <!-- زر المشاركة -->
+      <button type="button" class="reelsActionBtn" onclick="shareCurrentReel()" title="مشاركة">
+        <span class="reelsActionIcon">📤</span>
+        <span class="reelsActionCount">مشاركة</span>
+      </button>
+    </div>
+
+    <!-- الكرت السفلي الشفاف لبيانات الإعلان والمنتج -->
+    <div class="reelsBottomCard">
+      <div class="reelsSellerInfo" onclick="openReelsSellerProfile()">
+        <span class="reelsSellerName" id="reelsSellerName">اسم المعلن</span>
+        <span class="reelsSellerBadge" id="reelsSellerBadge">معلن موثق ✓</span>
+      </div>
+      <div class="reelsPostTitle" id="reelsPostTitle" onclick="openReelsFullPost()">عنوان الإعلان</div>
+      <div class="reelsPriceAndCity">
+        <span class="reelsPriceTag" id="reelsPriceTag">0 د.ل</span>
+        <span class="reelsCityTag" id="reelsCityTag">📍 المدينة</span>
+      </div>
+      <div class="reelsCardActions">
+        <button type="button" class="reelsMainCTA" onclick="contactReelsSeller()">💬 تواصل عبر واتساب</button>
+        <button type="button" class="reelsSecondaryCTA" onclick="openReelsFullPost()">تفاصيل الإعلان ›</button>
+      </div>
+    </div>
+
+    <!-- أزرار التنقل السريع على الكمبيوتر (السابق والتالي) -->
+    <div class="reelsNavArrows">
+      <button type="button" class="reelsArrowBtn reelsPrevBtn" onclick="reelsGoPrev()" title="الفيديو السابق">▲</button>
+      <button type="button" class="reelsArrowBtn reelsNextBtn" onclick="reelsGoNext()" title="الفيديو التالي">▼</button>
+    </div>
+
+    <!-- درج التعليقات السريع المنبثق للريلز -->
+    <div id="reelsCommentsSheet" class="reelsCommentsSheet hidden">
+      <div class="reelsCommentsHeader">
+        <h4 style="margin:0;font-size:15px;color:var(--text)">💬 التعليقات (<span id="reelsCommentsHeaderCount">0</span>)</h4>
+        <button type="button" class="reelsTopBtn" style="background:#f1f5f9;color:#333;width:28px;height:28px;font-size:13px" onclick="closeReelsComments()">✕</button>
+      </div>
+      <div class="reelsCommentsList" id="reelsCommentsList">
+        <div class="reportsEmpty" style="padding:20px;text-align:center">لا توجد تعليقات بعد، كن أول من يعلق!</div>
+      </div>
+      <div class="reelsCommentInputBox">
+        <input type="text" id="reelsCommentInput" placeholder="أضف تعليقاً على هذا الفيديو..." maxlength="300" onkeypress="if(event.key==='Enter')submitReelComment()">
+        <button type="button" class="btnMain" onclick="submitReelComment()" style="padding:8px 14px;border-radius:10px;font-size:13px">نشر</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- 🔔 نافذة مركز الإشعارات للمستخدم (Notifications Overlay) -->
+<!-- ============================================ -->
+<div id="notificationsOverlay" class="overlay fullscreen hidden">
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeNotificationsCenter()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px" title="رجوع">‹</button>
+      <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:6px">
+        <span>🔔</span> مركز الإشعارات
+      </h3>
+      <button type="button" onclick="clearAllNotifications()" style="background:none;border:none;color:#0284c7;font-size:12px;font-weight:800;cursor:pointer">مسح الكل</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px;background:var(--bg)">
+      <!-- 📱 بطاقة إعدادات وتفعيل الإشعارات الخارجية المدمجة -->
+      <div id="externalPushNotifBanner" class="externalPushNotifBanner">
+        <div class="epnContent">
+          <span class="epnIcon" id="epnStatusIcon">🔔</span>
+          <div class="epnTextWrap">
+            <div class="epnTitle" id="epnStatusTitle">إشعارات الهاتف وشاشة القفل</div>
+            <div class="epnDesc" id="epnStatusDesc">فعّل التنبيهات الخارجية لتصلك إشعارات المتابعين والرسائل فوراً حتى لو كان الموقع مغلقاً.</div>
+          </div>
+        </div>
+        <button type="button" class="epnActionBtn" id="epnActionBtn" onclick="handleExternalNotifToggle()">تفعيل الآن</button>
+      </div>
+
+      <div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:14px 2px 8px">سجل الإشعارات والتنبيهات:</div>
+      <div id="notificationsList" style="display:flex;flex-direction:column;gap:10px">
+        <div class="reportsEmpty">لا توجد إشعارات جديدة حالياً</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
