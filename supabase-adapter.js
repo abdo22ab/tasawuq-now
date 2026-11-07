@@ -42,6 +42,8 @@ function getTableName(col) {
 function toSnake(str) {
   if (str === "memberNo") return "member_no";
   if (str === "storeLimit") return "store_limit";
+  if (str === "videoUrl") return "video_url";
+  if (str === "videoPlacement") return "video_placement";
   if (str === "priceType") return "price_type";
   if (str === "originalPrice") return "original_price";
   if (str === "subCategory") return "sub_category";
@@ -90,6 +92,8 @@ function toSnake(str) {
 function toCamel(str) {
   if (str === "member_no") return "memberNo";
   if (str === "store_limit") return "storeLimit";
+  if (str === "video_url") return "videoUrl";
+  if (str === "video_placement") return "videoPlacement";
   if (str === "price_type") return "priceType";
   if (str === "original_price") return "originalPrice";
   if (str === "sub_category") return "subCategory";
