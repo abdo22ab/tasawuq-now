@@ -30,6 +30,10 @@ body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);c
 .searchBox input{border:none;outline:none;flex:1;font-family:inherit;font-size:16px;background:transparent;min-width:0}
 .searchBox .ic{color:var(--muted)}
 .clearSearchBtn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:none;background:#e5e7eb;color:#4b5563;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit}
+.voiceSearchBtn{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:none;background:rgba(2,132,199,0.09);color:#0284c7;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .2s ease;font-family:inherit}
+.voiceSearchBtn:active{transform:scale(.92);background:rgba(2,132,199,0.2)}
+.voiceSearchBtn.recording{background:#fee2e2!important;color:#ef4444!important;animation:pulseMic .9s infinite alternate}
+@keyframes pulseMic{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,0.4)}100%{transform:scale(1.15);box-shadow:0 0 0 7px rgba(239,68,68,0)}}
 .searchDropdown{position:absolute;top:calc(100% + 6px);right:0;left:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.15);max-height:340px;overflow-y:auto;z-index:45;padding:6px 0}
 .searchDropdown.hidden{display:none!important}
 .sdSection{padding:6px 14px 4px;font-size:11px;font-weight:800;color:var(--muted)}
@@ -480,6 +484,8 @@ html.dark-mode body{background:var(--bg);color:var(--text)}
 html.dark-mode .topbar{background:#0c2942}
 html.dark-mode .searchBox{background:var(--card);border-color:var(--border)}
 html.dark-mode .searchBox input{color:var(--text);background:transparent}
+html.dark-mode .voiceSearchBtn{background:#1e293b;color:#38bdf8}
+html.dark-mode .voiceSearchBtn.recording{background:#450a0a!important;color:#f87171!important}
 html.dark-mode .searchDropdown{background:var(--card);color:var(--text)}
 html.dark-mode .sdItem{color:var(--text)}
 html.dark-mode .sdItem:hover{background:#232d42}
@@ -2452,6 +2458,7 @@ html.dark-mode .chatBubble.incoming .chatTime {
 .followerUserRow:hover {
   transform: translateY(-2px);
   border-color: #0284c7;
+}
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .followerAvatar {
@@ -2511,6 +2518,7 @@ html.dark-mode .chatBubble.incoming .chatTime {
 .inboxRow:hover {
   transform: translateY(-2px);
   border-color: #0284c7;
+}
   box-shadow: 0 4px 14px rgba(2,132,199,0.1);
 }
 .inboxAvatar {
@@ -4296,6 +4304,7 @@ html.dark-mode .videoAddTile {
 .followerUserRow:hover {
   border-color: #0284c7;
 }
+}
 .followerAvatar {
   width: 42px;
   height: 42px;
@@ -4759,3 +4768,10 @@ html.dark-mode .gpsPromptCard {
   background: linear-gradient(135deg, #0c2942, #131a28);
   border-color: #0284c7;
 }
+}
+
+/* خيارات مكان ظهور الفيديو */
+.videoPlacementChoice:hover { filter: brightness(0.97); }
+.videoPlacementChoice:active { transform: scale(0.97); }
+html.dark-mode .videoPlacementChoice { background: var(--card) !important; border-color: var(--border) !important; }
+html.dark-mode .videoPlacementChoice.active { border-color: var(--teal) !important; background: rgba(13, 148, 136, 0.18) !important; }
