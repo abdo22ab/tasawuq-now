@@ -1,10 +1,11 @@
 // تسوق الآن - Service Worker للعمل أوفلاين ومتوافق مع معايير PWA
-const CACHE_NAME = 'tasawuq-cache-v8';
+const CACHE_NAME = 'tasawuq-cache-v9';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
   '/manifest.json',
+  '/lucide.min.js',
   '/icon-192.png',
   '/icon-512.png',
   '/icon-maskable-192.png',
