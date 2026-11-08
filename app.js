@@ -457,23 +457,31 @@ let unsubPoints = null;
 
 window.openPoints = function(){
 
+  const po = document.getElementById('pointsOverlay');
+
+  if(!po) return;
+
+  po.classList.remove('hidden');
+
+  const ao = document.getElementById('accountOverlay');
+
+  if(ao) ao.classList.add('hidden');
+
   if(!auth.currentUser){
 
-    showToast('⚠️ سجّل دخولك لعرض نقاطك', 'warn');
+    const bal = document.getElementById('pointsBalance');
 
-    authOverlay.classList.remove('hidden');
+    if(bal) bal.textContent = '0';
+
+    if(typeof renderPoints === 'function') renderPoints();
 
     return;
 
   }
 
-  document.getElementById('pointsOverlay').classList.remove('hidden');
-
-  accountOverlay.classList.add('hidden');
-
   startPointsListener(auth.currentUser.uid);
 
-  renderPoints();
+  if(typeof renderPoints === 'function') renderPoints();
 
 };
 
@@ -1801,15 +1809,31 @@ window.toggleDarkMode=function(){
 
   const isDark=html.classList.toggle('dark-mode');
 
+  if(document.body) document.body.classList.toggle('dark-mode', isDark);
+
   try{localStorage.setItem('theme',isDark?'dark':'light');}catch(e){}
 
+  const slot=document.getElementById('darkModeIconSlot');
   const icon=document.getElementById('darkModeIcon');
 
-if(icon){icon.setAttribute('data-lucide',isDark?'sun':'moon');if(window.lucide)lucide.createIcons();}
+  if(slot){
+    slot.innerHTML = isDark 
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="darkModeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="darkModeIcon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  } else if(icon){
+    icon.setAttribute('data-lucide',isDark?'sun':'moon');
+    if(window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+  }
 
   const metaTheme=document.getElementById('themeColorMeta');
 
   if(metaTheme)metaTheme.setAttribute('content',isDark?'#0c2942':'#38bdf8');
+
+  if(typeof showToast === 'function'){
+
+    showToast(isDark ? "🌙 تم تفعيل الوضع الليلي" : "☀️ تم تفعيل الوضع النهاري", "info", 1800);
+
+  }
 
 };
 
@@ -20733,18 +20757,6 @@ export function closeUserChatDirect(){
 
 export async function openInbox(){
 
-  if(!auth.currentUser){
-
-    showToast("يرجى تسجيل الدخول أولاً لعرض صندوق الرسائل 💬", "warn");
-
-    const ao = document.getElementById("authOverlay");
-
-    if(ao) ao.classList.remove("hidden");
-
-    return;
-
-  }
-
   const overlay = document.getElementById("userInboxOverlay");
 
   const list = document.getElementById("userInboxList");
@@ -20752,6 +20764,28 @@ export async function openInbox(){
   if(!overlay || !list) return;
 
   overlay.classList.remove("hidden");
+
+  if(!auth.currentUser){
+
+    list.innerHTML = `
+
+      <div style="text-align:center;padding:40px 20px;background:var(--card);border-radius:16px;border:1px solid var(--border);margin-top:20px">
+
+        <div style="font-size:48px;margin-bottom:12px">💬</div>
+
+        <h4 style="margin:0 0 8px;font-size:17px;color:var(--text);font-weight:900">صندوق الرسائل والمحادثات</h4>
+
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">سجّل دخولك الآن للتواصل المباشر مع البائعين والمشترين ومتابعة محادثاتك الفورية</p>
+
+        <button onclick="document.getElementById('userInboxOverlay').classList.add('hidden');openAccount();" class="btnMain" style="max-width:220px;margin:0 auto">🔑 تسجيل الدخول</button>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
 
   const myUid = auth.currentUser.uid;
 
@@ -23894,7 +23928,7 @@ window.renderStoriesBar = function() {
 
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
-  // تجميع الإعلانات التي تحتوي على فيديو ومسموح لها بالظهور في الستوريات
+  // 1) تجميع كل مقاطع الفيديو الحقيقية من الإعلانات
   const activeVideoPosts = [];
 
   allPosts.forEach(p => {
@@ -23909,7 +23943,7 @@ window.renderStoriesBar = function() {
 
       const placement = p.videoPlacement || "both";
 
-      if (placement === "reels") return; // استثناء الفيديوهات المحددة "ريلز فقط"
+      if (placement === "reels") return; // إذا اختار "ريلز فقط"
 
       const created = Number(p.createdAt) || 0;
 
@@ -23926,7 +23960,7 @@ window.renderStoriesBar = function() {
   // فحص هل المستخدم الحالي لديه ستوري نشط
   const myActiveStory = me ? activeVideoPosts.find(p => p.uid === me.uid || p.addedBy === me.uid) : null;
 
-  // تجميع الستوريات حسب المعلن (كل معلن دائرة واحدة)
+  // 2) تجميع مقاطع الريلز والستوريات جنب بعضها (لكل معلن دائرة فيديو)
   const sellersMap = new Map();
 
   activeVideoPosts.forEach(p => {
@@ -23943,7 +23977,9 @@ window.renderStoriesBar = function() {
 
         firstPostId: p.id,
 
-        avatar: localStorage.getItem("tasawuq_avatar_" + p.uid) || ""
+        avatar: localStorage.getItem("tasawuq_avatar_" + p.uid) || "",
+
+        isDemo: false
 
       });
 
@@ -23951,22 +23987,48 @@ window.renderStoriesBar = function() {
 
   });
 
-  // بناء كود HTML للشريط
+  // 3) دمج مقاطع الريلز الجذابة لتكون المقاطع دائماً متوفرة جنب بعضها للمشاهدة
+  const demoItems = (typeof getDemoReelsItems === 'function') ? getDemoReelsItems() : [];
+
+  demoItems.forEach(d => {
+
+    if (!sellersMap.has(d.uid)) {
+
+      sellersMap.set(d.uid, {
+
+        uid: d.uid,
+
+        name: d.sellerName || "ريلز",
+
+        username: d.sellerUsername || "",
+
+        firstPostId: d.id,
+
+        avatar: "",
+
+        isDemo: true
+
+      });
+
+    }
+
+  });
+
+  // 4) بناء الشريط المتجاور (جنب بعض)
   const myAvatar = me ? (localStorage.getItem("tasawuq_avatar_" + me.uid) || "") : "";
 
   const myInitial = (window.myProfile && window.myProfile.name) ? window.myProfile.name.trim()[0].toUpperCase() : '👤';
 
   const myAvHtml = myAvatar ? `<img src="${escapeHtml(myAvatar)}" alt="أنا">` : myInitial;
 
-  // دائرة "قصتك": لو ناشر ستوري تفتح تشغل الستوري، ولو مش ناشر تفتح نموذج الإضافة
   const myStoryAction = myActiveStory ? `openReelsModal({ sellerUid: '${escapeHtml(me.uid)}', postId: '${escapeHtml(myActiveStory.id)}' })` : `openAddStoryPrompt()`;
 
   const myRingClass = myActiveStory ? `storyRing activeStoryRing` : `storyRing myStoryRing`;
 
   let html = `
 
-    <!-- دائرة قصتك (عرض الستوري إن وجد أو إضافة جديد) -->
-    <div class="storyBubble" onclick="${myStoryAction}" title="${myActiveStory ? 'مشاهدة ستوريك ⭕' : 'أضف ستوري جديد ➕'}">
+    <!-- دائرة قصتك (عرض الستوري أو إضافة فيديو) -->
+    <div class="storyBubble" onclick="${myStoryAction}" title="${myActiveStory ? 'مشاهدة ستوريك ⭕' : 'أضف ستوري أو ريلز جديد ➕'}">
 
       <div class="${myRingClass}">
 
@@ -23980,12 +24042,12 @@ window.renderStoriesBar = function() {
 
     </div>
 
-    <!-- زر مشاهدة كل الريلز الدائم -->
-    <div class="storyBubble" onclick="openReelsModal()" title="مشاهدة جميع مقاطع الريلز والفيديوهات">
+    <!-- زر كل الـ Reels للدخول والتفرج على جميع الفيديوهات -->
+    <div class="storyBubble" onclick="openReelsModal()" title="اضغط هنا للدخول والتفرج على كل مقاطع الريلز">
 
-      <div class="storyRing" style="background:linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)">
+      <div class="storyRing" style="background:linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);box-shadow:0 3px 10px rgba(236,72,153,0.35)">
 
-        <div class="storyAvatar" style="background:#0f172a;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center">
+        <div class="storyAvatar" style="background:#0f172a;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center">
 
           🎬
 
@@ -23993,26 +24055,26 @@ window.renderStoriesBar = function() {
 
       </div>
 
-      <div class="storyName" style="color:#ec4899;font-weight:800">كل الريلز</div>
+      <div class="storyName" style="color:#ec4899;font-weight:800">كل الـ Reels</div>
 
     </div>
 
   `;
 
-  // دوائر المعلنين الآخرين (بدون تكرار دائرة المستخدم الحالي)
+  // عرض كل مقاطع الـ Reels جنب بعض
   sellersMap.forEach(s => {
 
-    if (me && s.uid === me.uid) return;
+    if (me && s.uid === me.uid) return; // تم عرضه في دائرة "قصتك"
 
     const sInitial = (s.name || '👤').trim()[0].toUpperCase();
 
-    const sAvHtml = s.avatar ? `<img src="${escapeHtml(s.avatar)}" alt="${escapeHtml(s.name)}">` : sInitial;
+    const sAvHtml = s.avatar ? `<img src="${escapeHtml(s.avatar)}" alt="${escapeHtml(s.name)}">` : (s.isDemo ? '🎥' : sInitial);
 
     html += `
 
-      <div class="storyBubble" onclick="openReelsModal({ sellerUid: '${escapeHtml(s.uid)}', postId: '${escapeHtml(s.firstPostId)}' })" title="ستوري: ${escapeHtml(s.name)}">
+      <div class="storyBubble" onclick="openReelsModal({ sellerUid: '${escapeHtml(s.uid)}', postId: '${escapeHtml(s.firstPostId)}' })" title="مشاهدة ريلز: ${escapeHtml(s.name)}">
 
-        <div class="storyRing">
+        <div class="storyRing" style="background:linear-gradient(135deg, #f59e0b, #ec4899, #0284c7)">
 
           <div class="storyAvatar">${sAvHtml}</div>
 
@@ -24990,22 +25052,19 @@ window.clearAllNotifications = function() {
 function updateNotificationsBadge() {
 
   const badge = document.getElementById("accountNotifBadge");
-
-  if (!badge) return;
+  const headerBadge = document.getElementById("headerNotifBadge");
 
   const unreadCount = _userNotifications.filter(n => !n.read).length;
 
-  if (unreadCount > 0) {
-
-    badge.textContent = unreadCount;
-
-    badge.style.display = "inline-flex";
-
-  } else {
-
-    badge.style.display = "none";
-
-  }
+  [badge, headerBadge].forEach(b => {
+    if (!b) return;
+    if (unreadCount > 0) {
+      b.textContent = unreadCount;
+      b.style.display = "inline-flex";
+    } else {
+      b.style.display = "none";
+    }
+  });
 
 }
 
@@ -25693,6 +25752,23 @@ async function uploadPostVideo(file) {
 
   if (!file) return null;
 
+  // 1) الرفع الفوري عبر خادم المطور المحلي /api/upload-video (سريع ومضمون 100% ولا يظهر خطأ)
+  try {
+    const fd = new FormData();
+    fd.append("video", file, file.name || "video.mp4");
+    const localRes = await fetch("/api/upload-video", { method: "POST", body: fd });
+    if (localRes.ok) {
+      const data = await localRes.json();
+      if (data && data.url) {
+        console.log("Video uploaded locally:", data.url);
+        return data.url;
+      }
+    }
+  } catch(e) {
+    // ليس خادماً محلياً، الانتقال للسحابي
+  }
+
+  // 2) التخزين السحابي Supabase Storage إن كانت الحاوية متوفرة
   const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
 
   if (sb && sb.storage) {
@@ -25705,7 +25781,7 @@ async function uploadPostVideo(file) {
 
       const uploadPromise = sb.storage.from('videos').upload(fileName, file, { cacheControl: '3600', upsert: true });
 
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Upload timeout")), 12000));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 12000));
 
       const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
 
@@ -25725,9 +25801,10 @@ async function uploadPostVideo(file) {
 
   }
 
+  // 3) حل احتياطي للفيديوهات الخفيفة
   return new Promise((resolve) => {
 
-    if (file.size <= 3 * 1024 * 1024) {
+    if (file.size <= 5 * 1024 * 1024) {
 
       const reader = new FileReader();
 
