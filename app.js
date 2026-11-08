@@ -7219,19 +7219,15 @@ if(!subCategory){
 
 const postKeywords=generateKeywords(title, description, brand, category, city, specs);
 
-if(wasEditing){
+const oldPost=wasEditing?allPosts.find(p=>p.id===editingPostId):null;
 
-const oldPost=allPosts.find(p=>p.id===editingPostId);
-
-const originalData=oldPost?{title:oldPost.title,price:oldPost.price,category:oldPost.category,brand:oldPost.brand||"",city:oldPost.city,description:oldPost.description||"",phone:oldPost.phone}:null;
-
-const newExpires=Date.now()+POST_DURATION_MS;
+const selectedPlacement = document.querySelector('input[name="videoPlacement"]:checked')?.value || (wasEditing && oldPost && oldPost.videoPlacement) || "both";
 
 let finalVideoUrl = null;
 
 if (_postSelectedVideoFile) {
 
-  saveBtn.textContent = "جاري معالجة الفيديو...";
+  saveBtn.textContent = "⏳ جاري رفع ومعالجة الفيديو...";
 
   try {
 
@@ -7251,7 +7247,7 @@ if (_postSelectedVideoFile) {
 
 }
 
-const selectedPlacement = document.querySelector('input[name="videoPlacement"]:checked')?.value || (wasEditing && oldPost && oldPost.videoPlacement) || "both";
+if(wasEditing){
 
 const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
 
@@ -22545,28 +22541,55 @@ async function loadFollowersModalContent(targetUid, tab) {
 
     }
 
-    // 3) جلب معلومات المستخدمين
-
+    // 3) جلب معلومات المستخدمين الحقيقية من قاعدة البيانات ومنع ظهور كلمة مستخدم
     const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+    let profileMap = {};
+    try {
+      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if (sb && uids.length > 0) {
+        const { data: profData } = await sb
+          .from("profiles")
+          .select("id, name, full_name, username, avatar")
+          .in("id", uids);
+        if (profData && Array.isArray(profData)) {
+          profData.forEach(pr => {
+            profileMap[pr.id] = {
+              name: (pr.name || pr.full_name || "").trim(),
+              username: (pr.username || "").trim(),
+              avatar: pr.avatar || ""
+            };
+          });
+        }
+      }
+    } catch(e) {
+      console.warn("Profiles batch load error:", e);
+    }
 
     const profiles = uids.map(uid => {
-
-      const existingP = allPosts.find(p => p.uid === uid);
-
+      const existingP = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.find(p => p.uid === uid || p.addedBy === uid) : null;
+      const storeMatch = (typeof allStores !== 'undefined' && Array.isArray(allStores)) ? allStores.find(s => s.ownerUid === uid || s.id === uid) : null;
+      const fromDb = profileMap[uid] || {};
       const localAv = localStorage.getItem("tasawuq_avatar_" + uid);
+      const isMe = me && me.uid === uid;
+      const myName = (typeof myProfile !== 'undefined' && myProfile && myProfile.name) || (me && me.displayName) || localStorage.getItem("tasawuq_my_name");
+
+      let resolvedName = fromDb.name;
+      if (!resolvedName && isMe && myName) resolvedName = myName;
+      if (!resolvedName && existingP) resolvedName = existingP.sellerName || existingP.storeName;
+      if (!resolvedName && storeMatch) resolvedName = storeMatch.name;
+      if (!resolvedName && fromDb.username) resolvedName = "@" + fromDb.username;
+      if (!resolvedName && existingP && existingP.sellerUsername) resolvedName = "@" + existingP.sellerUsername;
+      if (!resolvedName) resolvedName = "عضو " + uid.substring(0, 5);
+
+      const resolvedUsername = fromDb.username || (existingP && existingP.sellerUsername) || "";
+      const resolvedAvatar = fromDb.avatar || localAv || (existingP && (existingP.sellerAvatar || (existingP.images && existingP.images[0]))) || (storeMatch && storeMatch.logo) || "";
 
       return {
-
         uid: uid,
-
-        name: (existingP && existingP.sellerName) || "مستخدم",
-
-        username: (existingP && existingP.sellerUsername) || "",
-
-        avatar: localAv || ""
-
+        name: resolvedName,
+        username: resolvedUsername,
+        avatar: resolvedAvatar
       };
-
     });
 
     list.innerHTML = profiles.map(p => {
@@ -23755,15 +23778,21 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
   const seenIds = new Set();
 
-  // 1) الفيديوهات الحقيقية من إعلانات المنصة (استثناء الفيديوهات التي حددها صاحبها "ستوري فقط")
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+
+  // 1) الفيديوهات الحقيقية من إعلانات المنصة (تشمل فيديوهات المستخدم والريلز المعتمدة)
 
   allPosts.forEach(p => {
 
-    if ((p.videoUrl || p.video) && !seenIds.has(p.id) && getStatus(p) === "approved") {
+    if ((p.videoUrl || p.video) && !seenIds.has(p.id)) {
+
+      const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
+
+      const isApproved = getStatus(p) === "approved" || p.status === "approved" || !p.status || p.status === "pending";
+
+      if (!isApproved && !isMine) return;
 
       const placement = p.videoPlacement || "both";
-
-      // إذا اختار المعلن "ستوري فقط"، لا يدخل في قائمة تشغيل الريلز الدائمة
 
       if (placement === "story") return;
 
@@ -23863,25 +23892,28 @@ window.renderStoriesBar = function() {
 
   const DAY_MS = 24 * 60 * 60 * 1000;
 
-  const demoItems = getDemoReelsItems();
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
-  // تجميع الإعلانات التي تحتوي على فيديو ومسموح لها بالظهور في الستوريات خلال آخر 24 ساعة
-
+  // تجميع الإعلانات التي تحتوي على فيديو ومسموح لها بالظهور في الستوريات
   const activeVideoPosts = [];
 
   allPosts.forEach(p => {
 
-    if ((p.videoUrl || p.video) && getStatus(p) === "approved") {
+    if (p.videoUrl || p.video) {
+
+      const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
+
+      const isApproved = getStatus(p) === "approved" || p.status === "approved" || !p.status || p.status === "pending";
+
+      if (!isApproved && !isMine) return;
 
       const placement = p.videoPlacement || "both";
 
-      // إذا اختار المعلن "ريلز فقط"، لا يظهر في شريط الستوريات العلوي
-
-      if (placement === "reels") return;
+      if (placement === "reels") return; // استثناء الفيديوهات المحددة "ريلز فقط"
 
       const created = Number(p.createdAt) || 0;
 
-      if (now - created <= DAY_MS) {
+      if (now - created <= DAY_MS || isMine) {
 
         activeVideoPosts.push(p);
 
@@ -23891,12 +23923,10 @@ window.renderStoriesBar = function() {
 
   });
 
-  // فقط الفيديوهات الحقيقية للمستخدمين، وتظل الدائرة الأولى "قصتك" (+) ثابتة دائماً
-
-  // (تم إلغاء الاستوريات التجريبية الإضافية حسب طلبك)
+  // فحص هل المستخدم الحالي لديه ستوري نشط
+  const myActiveStory = me ? activeVideoPosts.find(p => p.uid === me.uid || p.addedBy === me.uid) : null;
 
   // تجميع الستوريات حسب المعلن (كل معلن دائرة واحدة)
-
   const sellersMap = new Map();
 
   activeVideoPosts.forEach(p => {
@@ -23921,39 +23951,58 @@ window.renderStoriesBar = function() {
 
   });
 
-  // بناء كود HTML
-
-  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-
+  // بناء كود HTML للشريط
   const myAvatar = me ? (localStorage.getItem("tasawuq_avatar_" + me.uid) || "") : "";
 
   const myInitial = (window.myProfile && window.myProfile.name) ? window.myProfile.name.trim()[0].toUpperCase() : '👤';
 
   const myAvHtml = myAvatar ? `<img src="${escapeHtml(myAvatar)}" alt="أنا">` : myInitial;
 
+  // دائرة "قصتك": لو ناشر ستوري تفتح تشغل الستوري، ولو مش ناشر تفتح نموذج الإضافة
+  const myStoryAction = myActiveStory ? `openReelsModal({ sellerUid: '${escapeHtml(me.uid)}', postId: '${escapeHtml(myActiveStory.id)}' })` : `openAddStoryPrompt()`;
+
+  const myRingClass = myActiveStory ? `storyRing activeStoryRing` : `storyRing myStoryRing`;
+
   let html = `
 
-    <!-- دائرة قصتك مع زر الإضافة الموجب (+) -->
+    <!-- دائرة قصتك (عرض الستوري إن وجد أو إضافة جديد) -->
+    <div class="storyBubble" onclick="${myStoryAction}" title="${myActiveStory ? 'مشاهدة ستوريك ⭕' : 'أضف ستوري جديد ➕'}">
 
-    <div class="storyBubble" onclick="openAddStoryPrompt()">
-
-      <div class="storyRing myStoryRing">
+      <div class="${myRingClass}">
 
         <div class="storyAvatar">${myAvHtml}</div>
 
-        <div class="storyAddBadge">+</div>
+        <div class="storyAddBadge" onclick="event.stopPropagation();openAddStoryPrompt();" title="إضافة فيديو جديد">+</div>
 
       </div>
 
-      <div class="storyName">قصتك</div>
+      <div class="storyName" style="${myActiveStory ? 'color:var(--teal-dark);font-weight:800' : ''}">${myActiveStory ? 'ستوريك ⭕' : 'قصتك'}</div>
+
+    </div>
+
+    <!-- زر مشاهدة كل الريلز الدائم -->
+    <div class="storyBubble" onclick="openReelsModal()" title="مشاهدة جميع مقاطع الريلز والفيديوهات">
+
+      <div class="storyRing" style="background:linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)">
+
+        <div class="storyAvatar" style="background:#0f172a;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center">
+
+          🎬
+
+        </div>
+
+      </div>
+
+      <div class="storyName" style="color:#ec4899;font-weight:800">كل الريلز</div>
 
     </div>
 
   `;
 
-  // دوائر المعلنين الآخرين
-
+  // دوائر المعلنين الآخرين (بدون تكرار دائرة المستخدم الحالي)
   sellersMap.forEach(s => {
+
+    if (me && s.uid === me.uid) return;
 
     const sInitial = (s.name || '👤').trim()[0].toUpperCase();
 
@@ -23961,7 +24010,7 @@ window.renderStoriesBar = function() {
 
     html += `
 
-      <div class="storyBubble" onclick="openReelsModal({ sellerUid: '${escapeHtml(s.uid)}', postId: '${escapeHtml(s.firstPostId)}' })">
+      <div class="storyBubble" onclick="openReelsModal({ sellerUid: '${escapeHtml(s.uid)}', postId: '${escapeHtml(s.firstPostId)}' })" title="ستوري: ${escapeHtml(s.name)}">
 
         <div class="storyRing">
 
@@ -23977,13 +24026,11 @@ window.renderStoriesBar = function() {
 
   });
 
-  if(bar1) bar1.innerHTML = html;
+  if (bar1) bar1.innerHTML = html;
 
-  if(bar2) bar2.innerHTML = html;
+  if (bar2) bar2.innerHTML = html;
 
 };
-
-// الضغط على دائرة "قصتك"
 
 window.openAddStoryPrompt = function() {
 
@@ -24675,9 +24722,13 @@ window.handlePostVideoSelected = function() {
 
   const file = input.files[0];
 
-  if (file.size > 50 * 1024 * 1024) {
+  if (file.size > 15 * 1024 * 1024) {
 
-    if (typeof showToast === 'function') showToast("⚠️ حجم الفيديو كبير جداً، يرجى اختيار فيديو أقل من 50 ميجابايت", "warn");
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+
+    if (typeof showToast === 'function') showToast("⚠️ حجم الفيديو (" + sizeMb + " ميجابايت) كبير جداً! لتسريع الستوري والريلز، اختر فيديو أقل من 15 ميجابايت", "warn", 5000);
+
+    removePostVideo();
 
     return;
 
@@ -24770,49 +24821,64 @@ window.removePostVideo = function() {
 let _userNotifications = [];
 
 function loadUserNotifications() {
-
   try {
-
     const raw = localStorage.getItem("tasawuq_user_notifications");
-
     _userNotifications = raw ? JSON.parse(raw) : [];
-
   } catch(e) {
-
     _userNotifications = [];
-
   }
 
-  // إضافة إشعار ترحيبي بالريلز والمتابعة إن كانت القائمة فارغة
+  // جلب الإشعارات الموجهة لي من المستخدمين الآخرين (مثل المتابعات الجديدة)
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sb && me && me.uid) {
+    sb.from("feedback")
+      .select("*")
+      .eq("type", "user_notification")
+      .eq("target_uid", me.uid)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          let updated = false;
+          data.forEach(row => {
+            if (!_userNotifications.some(n => n.id === row.id)) {
+              _userNotifications.unshift({
+                id: row.id,
+                type: 'follow',
+                title: row.title || 'متابع جديد 👤',
+                text: row.message || '',
+                senderUid: row.sender_uid,
+                senderName: row.sender_name || '',
+                timestamp: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+                read: false
+              });
+              updated = true;
+            }
+          });
+          if (updated) {
+            saveUserNotifications();
+            if (typeof renderNotificationsList === 'function') renderNotificationsList();
+          }
+        }
+      }).catch(()=>{});
+  }
 
   if (_userNotifications.length === 0) {
-
     _userNotifications = [
-
       {
-
         id: "notif_welcome_reels",
-
         type: "system",
-
         title: "🎉 ميزة جديدة في حسابك",
-
         text: "تم تفعيل شريط الستوريات ونظام الريلز لمقاطع الفيديو حتى 30 ثانية، ومتابعة الحسابات!",
-
         timestamp: Date.now() - 3600 * 1000,
-
         read: false
-
       }
-
     ];
-
     saveUserNotifications();
-
   }
 
   updateNotificationsBadge();
-
 }
 
 function saveUserNotifications() {
@@ -24828,57 +24894,53 @@ function saveUserNotifications() {
 }
 
 window.addSystemNotification = function(notif) {
-
   if (!notif) return;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
+  const myUid = me ? me.uid : null;
+
+  // إذا كان الإشعار موجهاً لشخص آخر (مثل متابعة بائع)، يُرسل للشخص الآخر سحابياً ولا يظهر للتابع!
+  if (notif.targetUid && myUid && notif.targetUid !== myUid) {
+    const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+    if (sb) {
+      sb.from("feedback").insert([{
+        id: "notif_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
+        type: "user_notification",
+        target_uid: notif.targetUid,
+        sender_uid: myUid,
+        sender_name: notif.senderName || "",
+        title: notif.title || "متابع جديد 👤",
+        message: notif.text || "",
+        created_at: new Date().toISOString()
+      }]).then(()=>{}).catch(()=>{});
+    }
+    return; // لا يظهر للشخص الذي قام بالمتابعة أبداً!
+  }
 
   const item = {
-
     id: "notif_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
-
     type: notif.type || "system",
-
     title: notif.title || "تنبيه جديد 🔔",
-
     text: notif.text || "",
-
     senderUid: notif.senderUid || null,
-
     senderName: notif.senderName || "",
-
     postId: notif.postId || null,
-
     timestamp: Date.now(),
-
     read: false
-
   };
 
   _userNotifications.unshift(item);
-
   if (_userNotifications.length > 50) _userNotifications = _userNotifications.slice(0, 50);
-
   saveUserNotifications();
 
-  // إظهار تنبيه فوري
-
-  // إرسال إشعار حقيقي لشاشة الجهاز لو كانت الإشعارات مفعلة
-
   try {
-
     if ("Notification" in window && Notification.permission === "granted") {
-
       new Notification(item.title, { body: item.text, icon: "favicon.ico" });
-
     }
-
   } catch(e){}
 
   if (typeof showToast === 'function') {
-
     showToast(`🔔 ${item.title}: ${item.text}`, "info", 3500);
-
   }
-
 };
 
 window.openNotificationsCenter = function() {
@@ -25273,6 +25335,8 @@ window.performAppRefresh = async function() {
 
     if (typeof renderStoriesBar === "function") renderStoriesBar();
 
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(regs => { regs.forEach(r => r.update()); }).catch(()=>{}); }
+
     if (typeof fetchCategoryCounts === "function") await fetchCategoryCounts();
 
     if (typeof renderSuggestedAds === "function") renderSuggestedAds();
@@ -25639,7 +25703,11 @@ async function uploadPostVideo(file) {
 
       const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-      const { data, error } = await sb.storage.from('videos').upload(fileName, file, { cacheControl: '3600', upsert: true });
+      const uploadPromise = sb.storage.from('videos').upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Upload timeout")), 12000));
+
+      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
 
       if (!error && data) {
 
@@ -25651,7 +25719,7 @@ async function uploadPostVideo(file) {
 
     } catch(err) {
 
-      console.warn("Supabase video storage upload error:", err);
+      console.warn("Supabase video storage upload warning:", err);
 
     }
 
@@ -25659,7 +25727,7 @@ async function uploadPostVideo(file) {
 
   return new Promise((resolve) => {
 
-    if (file.size <= 15 * 1024 * 1024) {
+    if (file.size <= 3 * 1024 * 1024) {
 
       const reader = new FileReader();
 
