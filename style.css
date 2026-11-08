@@ -4775,3 +4775,14 @@ html.dark-mode .gpsPromptCard {
 .videoPlacementChoice:active { transform: scale(0.97); }
 html.dark-mode .videoPlacementChoice { background: var(--card) !important; border-color: var(--border) !important; }
 html.dark-mode .videoPlacementChoice.active { border-color: var(--teal) !important; background: rgba(13, 148, 136, 0.18) !important; }
+
+/* 🎬 ستايل زر الستوري النشط والمميز */
+.storyRing.activeStoryRing {
+  background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6, #0284c7) !important;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+  animation: pulseStoryRing 2.2s infinite;
+}
+@keyframes pulseStoryRing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
