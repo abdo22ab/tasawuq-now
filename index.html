@@ -33,76 +33,19 @@ window.location.replace("https://tasawuqnow.com"+window.location.hash+window.loc
 <script>
 
 if ('serviceWorker' in navigator) {
-
   window.addEventListener('load', function() {
-
-    navigator.serviceWorker.register('/sw.js?v=148').catch(function(e){ console.warn('SW reg error:', e); });
-
+    navigator.serviceWorker.register('./sw.js?v=150').then(function(reg) {
+      reg.update();
+    }).catch(function(e){ console.warn('SW reg error:', e); });
   });
-
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
 }
 
 </script>
 
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-W5Y2E609TP"></script>
-
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-W5Y2E609TP');</script>
-
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<script>
-
-window.OneSignalDeferred=window.OneSignalDeferred||[];
-
-OneSignalDeferred.push(async function(OneSignal){
-
-  if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'){
-
-    return;
-
-  }
-
-  try {
-
-    await OneSignal.init({
-
-      appId:"7030f4d7-c06e-41a9-a601-8d42965023b3",
-
-      safari_web_id:"",
-
-      notifyButton:{enable:false},
-
-      allowLocalhostAsSecureOrigin:true,
-
-      serviceWorkerParam:{scope:"/"},
-
-      serviceWorkerPath:"/OneSignalSDKWorker.js"
-
-    });
-
-  } catch(e) {
-
-    console.warn("OneSignal init bypassed:", e);
-
-  }
-
-});
-
-</script>
-
-<link rel="stylesheet" href="style.css?v=148">
+<link rel="stylesheet" href="style.css?v=150">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -213,6 +156,10 @@ OneSignalDeferred.push(async function(OneSignal){
 <div class="topbar" id="mainTopbar">
 
 <div class="topbarActions">
+
+<button class="bellBtn" id="reelsHeaderBtn" onclick="openReelsModal()" title="مشاهدة الريلز والفيديوهات" style="background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(139,92,246,0.15));border:1.5px solid rgba(236,72,153,0.35);color:#ec4899;font-weight:800;position:relative">
+  <span style="font-size:16px">🎬</span>
+</button>
 
 <button class="bellBtn" id="pointsBtn" onclick="openPoints()" title="نقاطي">
 
@@ -3192,7 +3139,7 @@ OneSignalDeferred.push(async function(OneSignal){
 
 </div>
 
-<script type="module" src="app.js?v=148"></script>
+<script type="module" src="app.js?v=150"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
