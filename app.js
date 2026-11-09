@@ -7412,29 +7412,59 @@ if (_postSelectedVideoFile) {
 }
 
 if(wasEditing){
+  const existingExpires = (oldPost && oldPost.expiresAt) ? Number(oldPost.expiresAt) : (Date.now() + POST_DURATION_MS);
+  const existingOrigData = (oldPost && oldPost.originalData && typeof oldPost.originalData === "object") ? oldPost.originalData : {};
 
-const upd={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,keywords:postKeywords,status:"pending",rejectReason:null,wasEdited:true,originalData:{...(originalData||{}),specs},editedAt:Date.now(),expiresAt:newExpires,sold:false,soldAt:null};
+  const upd = {
+    title,
+    price: priceType === "contact" ? null : Number(price),
+    priceType: priceType,
+    negotiable: negotiable,
+    originalPrice: finalOriginalPrice,
+    category,
+    brand,
+    city,
+    description,
+    phone,
+    images,
+    adType,
+    subCategory,
+    specs,
+    keywords: postKeywords,
+    status: "pending",
+    rejectReason: null,
+    wasEdited: true,
+    originalData: { ...existingOrigData, specs },
+    editedAt: Date.now(),
+    expiresAt: existingExpires,
+    sold: false,
+    soldAt: null
+  };
 
-if (finalVideoUrl) {
+  if (finalVideoUrl) {
+    upd.videoUrl = finalVideoUrl;
+    upd.videoPlacement = selectedPlacement;
+  } else {
+    upd.videoUrl = null;
+    upd.videoPlacement = null;
+  }
 
-  upd.videoUrl = finalVideoUrl;
+  if (oldPost && !oldPost.storeId) {
+    upd.sellerName = sellerName;
+    upd.sellerMemberNo = sellerMemberNo;
+    upd.sellerUsername = sellerUsername;
+  }
 
-  upd.videoPlacement = selectedPlacement;
+  await updateDoc(doc(db, "posts", editingPostId), upd);
 
-}
+  const exIdx = allPosts.findIndex(p => p.id === editingPostId);
+  if (exIdx !== -1) {
+    Object.assign(allPosts[exIdx], upd);
+  }
 
-if(!oldPost.storeId){upd.sellerName=sellerName;upd.sellerMemberNo=sellerMemberNo;upd.sellerUsername=sellerUsername;}
-
-await updateDoc(doc(db,"posts",editingPostId),upd);
-
-const exIdx=allPosts.findIndex(p=>p.id===editingPostId);
-
-if(exIdx!==-1){Object.assign(allPosts[exIdx],upd);}
-
-allPosts=sortPosts(allPosts);
-
-renderPosts();
-
+  allPosts = sortPosts(allPosts);
+  renderPosts();
+  showToast("✅ تم حفظ وتحديث الإعلان بنجاح", "success");
 }
 
 else{
@@ -12490,29 +12520,23 @@ const existing=(post.images&&post.images.length)?post.images:(post.imageUrl?[pos
 selectedImages=existing.map(url=>({type:"existing",url}));
 
 if (post.videoUrl || post.video) {
+  _postSelectedVideoUrl = post.videoUrl || post.video;
+  _postSelectedVideoFile = null;
 
   const prevBox = document.getElementById("postVideoPreviewBox");
-
   const prevEl = document.getElementById("postVideoPreviewEl");
-
   const promptTxt = document.getElementById("postVideoPromptText");
-
   const optionsBox = document.getElementById("videoPlacementOptions");
 
   if (prevEl) prevEl.src = post.videoUrl || post.video;
-
   if (prevBox) prevBox.classList.remove("hidden");
-
   if (promptTxt) promptTxt.textContent = "✅ تم إرفاق فيديو الإعلان";
-
   if (optionsBox) optionsBox.classList.remove("hidden");
-
   if (typeof setVideoPlacement === 'function') setVideoPlacement(post.videoPlacement || 'both');
-
 } else {
-
+  _postSelectedVideoUrl = null;
+  _postSelectedVideoFile = null;
   if (typeof removePostVideo === 'function') removePostVideo();
-
 }
 
 renderImagePicker();onPriceTypeChange();openFormScreen();
