@@ -198,6 +198,12 @@ export function objectFromDb(obj) {
   if (!res.specs && res.originalData && res.originalData.specs) {
     res.specs = res.originalData.specs;
   }
+  if (!res.videoUrl && res.specs && typeof res.specs === "object" && res.specs.video_url) {
+    res.videoUrl = res.specs.video_url;
+  }
+  if (!res.videoPlacement && res.specs && typeof res.specs === "object" && res.specs.video_placement) {
+    res.videoPlacement = res.specs.video_placement;
+  }
   if (res.price != null) res.price = Number(res.price);
   if (res.originalPrice != null) res.originalPrice = Number(res.originalPrice);
   if (res.views != null) res.views = Number(res.views);
@@ -398,13 +404,28 @@ export async function getDocs(target) {
     if (error || !data) return makeQuerySnap([]);
 
     const docs = data.map(item => {
-      const id = item.id || item.phone || item.username || item.uid;
+      let id = item.id || item.phone || item.username || item.uid;
+      if (table === "user_follows" && target && target.defaultFilter) {
+        if (target.defaultFilter.key === "follower_uid") id = item.seller_uid || id;
+        else if (target.defaultFilter.key === "seller_uid") id = item.follower_uid || id;
+      }
       return makeDocSnap(id, objectFromDb(item));
     });
     return makeQuerySnap(docs);
   } catch (err) {
     return makeQuerySnap([]);
   }
+}
+
+function extractMissingColumn(msg) {
+  if (!msg) return null;
+  let m = msg.match(/Could not find the '([^']+)' column/i);
+  if (m) return m[1];
+  m = msg.match(/column (?:[a-zA-Z0-9_]+\.)?"?([a-zA-Z0-9_]+)"? does not exist/i);
+  if (m) return m[1];
+  m = msg.match(/column "([^"]+)" of relation "[^"]+" does not exist/i);
+  if (m) return m[1];
+  return null;
 }
 
 export async function setDoc(docRef, data, options = {}) {
@@ -424,9 +445,17 @@ export async function setDoc(docRef, data, options = {}) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).upsert(payload);
     if (!error) return true;
-    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
-    if (match && match[1] && match[1] in payload) {
-      delete payload[match[1]];
+    const missingCol = extractMissingColumn(error.message);
+    if (missingCol && missingCol in payload) {
+      if (missingCol === "video_url" || missingCol === "video_placement") {
+        let sp = payload.specs || {};
+        if (typeof sp === "string") {
+          try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
+        }
+        sp[missingCol] = payload[missingCol];
+        payload.specs = sp;
+      }
+      delete payload[missingCol];
       continue;
     }
     throw new Error(error.message);
@@ -444,9 +473,17 @@ export async function addDoc(colRef, data) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
-    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
-    if (match && match[1] && match[1] in payload) {
-      delete payload[match[1]];
+    const missingCol = extractMissingColumn(error.message);
+    if (missingCol && missingCol in payload) {
+      if (missingCol === "video_url" || missingCol === "video_placement") {
+        let sp = payload.specs || {};
+        if (typeof sp === "string") {
+          try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
+        }
+        sp[missingCol] = payload[missingCol];
+        payload.specs = sp;
+      }
+      delete payload[missingCol];
       continue;
     }
     throw new Error(error.message);
@@ -478,9 +515,17 @@ export async function updateDoc(docRef, data) {
     const { error } = await req;
     if (!error) return true;
 
-    const match = error.message && error.message.match(/Could not find the '([^']+)' column/);
-    if (match && match[1] && match[1] in payload) {
-      delete payload[match[1]];
+    const missingCol = extractMissingColumn(error.message);
+    if (missingCol && missingCol in payload) {
+      if (missingCol === "video_url" || missingCol === "video_placement") {
+        let sp = payload.specs || {};
+        if (typeof sp === "string") {
+          try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
+        }
+        sp[missingCol] = payload[missingCol];
+        payload.specs = sp;
+      }
+      delete payload[missingCol];
       continue;
     }
     throw new Error(error.message);
