@@ -2601,42 +2601,180 @@ function updateGpsUI() {
 
 window.updateGpsUI = updateGpsUI;
 
-// جلب وتخزين بروفايلات المستخدمين الحقيقية
+// ============================================
+// 👤 نظام حل أسماء المستخدمين الحقيقيين والكاش الشامل الدائم (بدون كلمة مستخدم)
+// ============================================
+window.sellersProfileCache = window.sellersProfileCache || {};
 
-async function ensureSellersProfilesLoaded(uids) {
-
-  if (!uids || uids.length === 0 || typeof supabase === "undefined" || !supabase) return;
-
-  const missingUids = uids.filter(uid => uid && !window.sellersProfileCache[uid]);
-
-  if (missingUids.length === 0) return;
-
-  try {
-
-    const { data, error } = await supabase
-
-      .from('profiles')
-
-      .select('id, name, username, store_id')
-
-      .in('id', missingUids);
-
-    if (!error && Array.isArray(data)) {
-
-      data.forEach(p => {
-
-        if (p.id) window.sellersProfileCache[p.id] = p;
-
-      });
-
+export function resolveDisplayName(uid, fallbackPost = null, fallbackStore = null) {
+  if (!uid) {
+    if (fallbackPost && fallbackPost.sellerName && fallbackPost.sellerName !== "مستخدم" && fallbackPost.sellerName !== "البائع") {
+      return fallbackPost.sellerName.trim();
     }
-
-  } catch (err) {
-
-    console.warn("ensureSellersProfilesLoaded error:", err);
-
+    if (fallbackStore && fallbackStore.name) return fallbackStore.name.trim();
+    return "معلن";
   }
 
+  // 1) إذا كان هو المستخدم الحالي
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  if (me && me.uid === uid) {
+    if (typeof myProfile !== 'undefined' && myProfile && myProfile.name && myProfile.name !== "مستخدم") return myProfile.name.trim();
+    if (window.myProfile && window.myProfile.name && window.myProfile.name !== "مستخدم") return window.myProfile.name.trim();
+    if (me.displayName && me.displayName !== "مستخدم") return me.displayName.trim();
+    const mySaved = localStorage.getItem("tasawuq_my_name");
+    if (mySaved && mySaved !== "مستخدم") return mySaved.trim();
+  }
+
+  // 2) فحص كاش البروفايلات العام
+  const prof = window.sellersProfileCache[uid];
+  if (prof && prof.name && prof.name.trim() && prof.name !== "مستخدم" && prof.name !== "البائع") {
+    return prof.name.trim();
+  }
+
+  // 3) فحص كاش التخزين المحلي للاسم
+  const localName = localStorage.getItem("tasawuq_name_" + uid);
+  if (localName && localName.trim() && localName !== "مستخدم" && localName !== "البائع") {
+    return localName.trim();
+  }
+
+  // 4) فحص اسم المتجر
+  const postStore = (fallbackStore && fallbackStore.name) ? fallbackStore : (Array.isArray(window.allStores) ? window.allStores.find(s => s.id === fallbackPost?.storeId || s.ownerUid === uid || s.owner_uid === uid || s.id === uid) : null);
+  if (postStore && postStore.name && postStore.name.trim()) {
+    return postStore.name.trim();
+  }
+
+  // 5) فحص اسم البائع في الإعلان الممرر
+  if (fallbackPost && fallbackPost.sellerName && fallbackPost.sellerName.trim() && fallbackPost.sellerName !== "مستخدم" && fallbackPost.sellerName !== "البائع") {
+    return fallbackPost.sellerName.trim();
+  }
+
+  // 6) فحص اسم المستخدم (اليوزر نيم @username)
+  if (prof && prof.username && prof.username.trim()) {
+    return "@" + prof.username.trim().replace(/^@/, '');
+  }
+  const localUname = localStorage.getItem("tasawuq_uname_" + uid);
+  if (localUname && localUname.trim()) {
+    return "@" + localUname.trim().replace(/^@/, '');
+  }
+  if (fallbackPost && fallbackPost.sellerUsername && fallbackPost.sellerUsername.trim()) {
+    return "@" + fallbackPost.sellerUsername.trim().replace(/^@/, '');
+  }
+
+  // 7) البحث في جميع الإعلانات المحملة
+  if (Array.isArray(window.allPosts)) {
+    const postWithSeller = window.allPosts.find(p => p.uid === uid && p.sellerName && p.sellerName !== "مستخدم" && p.sellerName !== "البائع");
+    if (postWithSeller) return postWithSeller.sellerName.trim();
+    const postWithUser = window.allPosts.find(p => p.uid === uid && p.sellerUsername);
+    if (postWithUser) return "@" + postWithUser.sellerUsername.trim().replace(/^@/, '');
+    const postWithStore = window.allPosts.find(p => p.uid === uid && p.storeName);
+    if (postWithStore) return postWithStore.storeName.trim();
+  }
+
+  // 8) إذا كان لديه رقم هاتف مسجل، نظهره بشكل أنيق بدلاً من كلمة مستخدم
+  if (prof && prof.phone) {
+    return "عضو (" + (typeof formatCallPhone === 'function' ? formatCallPhone(prof.phone) : prof.phone.slice(-4)) + ")";
+  }
+
+  // 9) رقم العضوية
+  const memNo = prof?.member_no || prof?.memberNo;
+  if (memNo) return "عضو #" + memNo;
+
+  return "عضو " + uid.slice(0, 5);
+}
+window.resolveDisplayName = resolveDisplayName;
+
+export function hydratePostsSellerInfo(postsList) {
+  if (!Array.isArray(postsList)) return;
+  postsList.forEach(p => {
+    if (!p) return;
+    const uid = p.uid || p.addedBy;
+    const prof = (uid && window.sellersProfileCache) ? window.sellersProfileCache[uid] : null;
+    const store = (p.storeId && Array.isArray(window.allStores)) ? window.allStores.find(s => s.id === p.storeId) : (uid && Array.isArray(window.allStores) ? window.allStores.find(s => s.ownerUid === uid || s.owner_uid === uid) : null);
+
+    if (store && store.name) {
+      p.storeName = store.name;
+    }
+
+    if (!p.sellerName || p.sellerName === "مستخدم" || p.sellerName === "البائع") {
+      if (prof && prof.name && prof.name !== "مستخدم" && prof.name !== "البائع") {
+        p.sellerName = prof.name;
+      } else if (store && store.name) {
+        p.sellerName = store.name;
+      } else if (prof && prof.username) {
+        p.sellerName = "@" + prof.username;
+      }
+    }
+    if (!p.sellerUsername && prof && prof.username) {
+      p.sellerUsername = prof.username;
+    }
+    if (!p.sellerAvatar && prof && prof.avatar) {
+      p.sellerAvatar = prof.avatar;
+    }
+  });
+}
+window.hydratePostsSellerInfo = hydratePostsSellerInfo;
+
+export async function initGlobalProfilesCache() {
+  try {
+    const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+    if (!sb) return;
+    const { data, error } = await sb
+      .from('profiles')
+      .select('*');
+    if (!error && Array.isArray(data)) {
+      data.forEach(p => {
+        if (p.id) {
+          const cleanName = (p.name || p.full_name || '').trim();
+          const cleanUname = (p.username || '').trim().replace(/^@/, '');
+          window.sellersProfileCache[p.id] = {
+            ...p,
+            name: cleanName,
+            username: cleanUname
+          };
+          if (cleanName && cleanName !== 'مستخدم') {
+            try { localStorage.setItem('tasawuq_name_' + p.id, cleanName); } catch(e){}
+          }
+          if (cleanUname) {
+            try { localStorage.setItem('tasawuq_uname_' + p.id, cleanUname); } catch(e){}
+          }
+          if (p.avatar) {
+            try { localStorage.setItem('tasawuq_avatar_' + p.id, p.avatar); } catch(e){}
+          }
+        }
+      });
+      if (Array.isArray(window.allPosts) && window.allPosts.length > 0) {
+        hydratePostsSellerInfo(window.allPosts);
+        if (typeof renderPosts === 'function') renderPosts();
+      }
+    }
+  } catch (err) {
+    console.warn("initGlobalProfilesCache error:", err);
+  }
+}
+window.initGlobalProfilesCache = initGlobalProfilesCache;
+
+async function ensureSellersProfilesLoaded(uids) {
+  if (!uids || uids.length === 0 || typeof supabase === "undefined" || !supabase) return;
+  const missingUids = uids.filter(uid => uid && !window.sellersProfileCache[uid]);
+  if (missingUids.length === 0) return;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', missingUids);
+    if (!error && Array.isArray(data)) {
+      data.forEach(p => {
+        if (p.id) {
+          window.sellersProfileCache[p.id] = p;
+          if (p.name && p.name !== "مستخدم") try { localStorage.setItem('tasawuq_name_' + p.id, p.name); } catch(e){}
+          if (p.username) try { localStorage.setItem('tasawuq_uname_' + p.id, p.username); } catch(e){}
+          if (p.avatar) try { localStorage.setItem('tasawuq_avatar_' + p.id, p.avatar); } catch(e){}
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("ensureSellersProfilesLoaded error:", err);
+  }
 }
 
 // توفير دالة موحدة لفتح صفحة البائع لضمان عدم حدوث أي خطأ
@@ -4023,7 +4161,7 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
 
         results.unshift({
 
-          title: u.name || "مستخدم",
+          title: u.name || resolveDisplayName(u.id),
 
           username: u.username ? "@" + u.username : "",
 
@@ -4055,7 +4193,7 @@ function getSuggestions(term){const t=(term||"").trim().toLowerCase();const seen
 
           matchedUsers.set(p.uid, {
 
-            title: p.sellerName || "مستخدم",
+            title: p.sellerName || resolveDisplayName(p.uid, p),
 
             username: p.sellerUsername ? "@" + p.sellerUsername : "",
 
@@ -5643,6 +5781,8 @@ async function loadPostsBatch(isInitial = false) {
 
     }
 
+    hydratePostsSellerInfo(allPosts);
+
     allPosts = sortPosts(allPosts); window.allPosts = allPosts;
 
     _postsLoadedOnce = true;
@@ -6763,7 +6903,7 @@ const sellerPostsCount=!p.storeId && p.uid ? allPosts.filter(x=>x.uid===p.uid &&
 
 const tierTag=!p.storeId && sellerPostsCount>0 ? renderSellerTierBadge(p.uid,sellerPostsCount) : "";
 
-const sellerLineHtml=p.storeId?`<div class="sellerLine" onclick="event.stopPropagation();openStore('${p.storeId}',false,'home')">${storeTag} ›</div>`:(p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName||"البائع")} ${memberTag} ${userTag}${tierTag} ›</div>`:"");
+const sellerLineHtml=p.storeId?`<div class="sellerLine" onclick="event.stopPropagation();openStore('${p.storeId}',false,'home')">${storeTag} ›</div>`:(p.uid?`<div class="sellerLine" onclick="openSeller('${escapeHtml(p.uid)}')">👤 ${escapeHtml(p.sellerName || resolveDisplayName(p.uid, p))} ${memberTag} ${userTag}${tierTag} ›</div>`:"");
 
 let expiryLine="";
 
@@ -6881,7 +7021,7 @@ else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMe
 
 if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
 
-const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName||"البائع")}${sellerTags} ›</div>`:"");
+const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName || resolveDisplayName(p.uid, p))}${sellerTags} ›</div>`:"");
 
 const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
 
@@ -12819,9 +12959,12 @@ window.openAccount=(skipHistory)=>{
 
     const me = auth.currentUser;
 
-    const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
-
-    const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
+    let rawName = (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "";
+    if (!rawName || rawName === "مستخدم") {
+      const cached = window.sellersProfileCache && window.sellersProfileCache[me.uid];
+      if (cached && cached.name && cached.name !== "مستخدم") rawName = cached.name;
+    }
+    const dn = rawName.replace(/^👤\s*/, '').trim() || (me.email ? me.email.split('@')[0] : "عضو");
 
     // تحديث كرت الملف الشخصي البارز في أعلى الشاشة
 
@@ -12926,6 +13069,11 @@ window.openAccount=(skipHistory)=>{
         myProfile = snap.data() || {};
 
         if(!myProfile.avatar && prevAvatar) myProfile.avatar = prevAvatar;
+
+        if(nameEl && myProfile.name && myProfile.name !== "مستخدم"){
+          const freshDn = myProfile.name.replace(/^👤\s*/, '').trim();
+          if (freshDn) nameEl.textContent = freshDn;
+        }
 
         if(unEl){
 
@@ -13047,22 +13195,38 @@ window.openAccount=(skipHistory)=>{
 
     if (_sbAcc && me && me.uid) {
 
-      _sbAcc.from("feedback").select("id", { count: 'exact', head: true }).eq("type", "user_follow").eq("seller_uid", me.uid).then(res => {
+      _sbAcc.from("user_follows").select("id", { count: 'exact', head: true }).eq("seller_uid", me.uid).then(res => {
 
         const el = document.getElementById("accountFollowersCount");
 
-        if (el && typeof res.count === 'number') el.textContent = res.count;
+        if (el && typeof res.count === 'number') {
+          el.textContent = res.count;
+          try { localStorage.setItem("tasawuq_follow_count_followers_" + me.uid, String(res.count)); } catch(e){}
+        }
 
       }).catch(()=>{});
 
-      _sbAcc.from("feedback").select("id", { count: 'exact', head: true }).eq("type", "user_follow").eq("follower_uid", me.uid).then(res => {
+      _sbAcc.from("user_follows").select("id", { count: 'exact', head: true }).eq("follower_uid", me.uid).then(res => {
 
         const el = document.getElementById("accountFollowingCount");
 
-        if (el && typeof res.count === 'number') el.textContent = res.count;
+        if (el && typeof res.count === 'number') {
+          el.textContent = res.count;
+          try { localStorage.setItem("tasawuq_follow_count_following_" + me.uid, String(res.count)); } catch(e){}
+        }
 
       }).catch(()=>{});
 
+    }
+
+    const savedFollowers = localStorage.getItem("tasawuq_follow_count_followers_" + me.uid);
+    const savedFollowing = localStorage.getItem("tasawuq_follow_count_following_" + me.uid);
+    const elF = document.getElementById("accountFollowersCount");
+    const elFg = document.getElementById("accountFollowingCount");
+    if (elF && savedFollowers != null) elF.textContent = savedFollowers;
+    if (elFg) {
+      if (savedFollowing != null) elFg.textContent = savedFollowing;
+      else if (Array.isArray(myFollowing) && myFollowing.length > 0) elFg.textContent = myFollowing.length;
     }
 
     accountOverlay.classList.remove("hidden");
@@ -13148,7 +13312,17 @@ window.backFromSeller = function() {
 };
 
 window.openSellerFromFollowers = function(uid) {
+  if (!uid) return;
   window._sellerBackTarget = 'followers';
+  const fo = document.getElementById("followersOverlay");
+  if (fo) {
+    fo.classList.add("hidden");
+    fo.style.zIndex = "";
+  }
+  const so = document.getElementById("sellerOverlay");
+  if (so) {
+    so.style.zIndex = "3600";
+  }
   openSeller(uid);
 };
 
@@ -13380,9 +13554,42 @@ function startFollowingListener(user){
 
   unsubFollowing=onSnapshot(collection(db,"users",user.uid,"following"),snap=>{
 
-    myFollowing=snap.docs.map(d=>({uid:d.id,...d.data()}));
+    myFollowing = snap.docs.map(d => {
+      const dat = d.data() || {};
+      const sellerId = dat.sellerUid || dat.seller_uid || (d.id && d.id.includes('_') ? d.id.split('_')[1] : d.id);
+      return { uid: sellerId, ...dat };
+    });
+    const el = document.getElementById("accountFollowingCount");
+    if (el) el.textContent = myFollowing.length;
+    try { localStorage.setItem("tasawuq_follow_count_following_" + user.uid, String(myFollowing.length)); } catch(e){}
 
   },err=>{});
+
+  // مزامنة فورية مباشرة من جدول user_follows لضمان الدقة والسرعة 100%
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sb && user && user.uid) {
+    sb.from("user_follows").select("*").eq("follower_uid", user.uid).then(res => {
+      if (res && res.data && Array.isArray(res.data)) {
+        res.data.forEach(row => {
+          const suid = row.seller_uid || row.sellerUid;
+          if (suid && !myFollowing.some(f => f.uid === suid)) {
+            myFollowing.push({ uid: suid, seller_uid: suid, follower_uid: user.uid, created_at: row.created_at });
+          }
+        });
+        const el = document.getElementById("accountFollowingCount");
+        if (el) el.textContent = myFollowing.length;
+        try { localStorage.setItem("tasawuq_follow_count_following_" + user.uid, String(myFollowing.length)); } catch(e){}
+      }
+    }).catch(()=>{});
+
+    sb.from("user_follows").select("id", { count: 'exact', head: true }).eq("seller_uid", user.uid).then(res => {
+      const el = document.getElementById("accountFollowersCount");
+      if (el && typeof res.count === 'number') {
+        el.textContent = res.count;
+        try { localStorage.setItem("tasawuq_follow_count_followers_" + user.uid, String(res.count)); } catch(e){}
+      }
+    }).catch(()=>{});
+  }
 
 }
 
@@ -13508,7 +13715,7 @@ window.toggleFollow = async (sellerUid, event) => {
 
       const now = Date.now();
 
-      const myName = (myProfile && myProfile.name) || (me && me.displayName) || "مستخدم";
+      const myName = (myProfile && myProfile.name) || (me && me.displayName) || localStorage.getItem("tasawuq_my_name") || "عضو";
 
       await setDoc(followRef, { followedAt: now, seller_uid: sellerUid, follower_uid: me.uid });
 
@@ -13536,11 +13743,9 @@ window.toggleFollow = async (sellerUid, event) => {
 
       if (_sb) {
 
-        _sb.from("feedback").upsert([{
+        _sb.from("user_follows").upsert([{
 
-          id: `follow_${me.uid}_${sellerUid}`,
-
-          type: 'user_follow',
+          id: `${me.uid}_${sellerUid}`,
 
           seller_uid: sellerUid,
 
@@ -13584,7 +13789,7 @@ window.toggleFollow = async (sellerUid, event) => {
 
       if (_sbDel) {
 
-        _sbDel.from("feedback").delete().eq("id", `follow_${me.uid}_${sellerUid}`).then(()=>{}).catch(()=>{});
+        _sbDel.from("user_follows").delete().eq("id", `${me.uid}_${sellerUid}`).then(()=>{}).catch(()=>{});
 
       }
 
@@ -13652,7 +13857,7 @@ window.openSeller=async(uid,skipHistory)=>{
     fo.classList.add("hidden");
   }
   const po = document.getElementById("postOverlay"); if(po) po.classList.add("hidden");
-  const so = document.getElementById("sellerOverlay"); if(so) { so.classList.remove("hidden"); so.style.zIndex = "2500"; }
+  const so = document.getElementById("sellerOverlay"); if(so) { so.classList.remove("hidden"); so.style.zIndex = "3600"; }
 
   if(!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'seller', uid: uid }, '#seller-' + uid);
 
@@ -13684,23 +13889,31 @@ window.openSeller=async(uid,skipHistory)=>{
 
     initialProf = activeProf;
 
-  } else if(chatTarget || existingPost || localAvatar){
+  } else {
+
+    const cachedProf = (window.sellersProfileCache && window.sellersProfileCache[uid]) || null;
+    const resolvedSellerName = (cachedProf && cachedProf.name && cachedProf.name !== "مستخدم") || (chatTarget && chatTarget.targetName && chatTarget.targetName !== "مستخدم") || resolveDisplayName(uid, existingPost);
+    const resolvedSellerUname = (cachedProf && cachedProf.username) || (existingPost && existingPost.sellerUsername) || "";
+    const resolvedSellerPhone = (cachedProf && cachedProf.phone) || (chatTarget && chatTarget.targetPhone) || (existingPost && existingPost.phone) || "";
+    const resolvedSellerAv = (cachedProf && cachedProf.avatar) || localAvatar || (chatTarget && chatTarget.targetAvatar) || "";
+    const resolvedSellerCover = (cachedProf && cachedProf.cover) || localCover || "";
+    const resolvedSellerMember = (cachedProf && (cachedProf.member_no || cachedProf.memberNo)) || (existingPost && existingPost.memberNo) || null;
 
     initialProf = {
 
       id: uid,
 
-      name: (chatTarget && chatTarget.targetName) || (existingPost && existingPost.sellerName) || "مستخدم",
+      name: resolvedSellerName,
 
-      phone: (chatTarget && chatTarget.targetPhone) || (existingPost && existingPost.phone) || "",
+      phone: resolvedSellerPhone,
 
-      avatar: localAvatar || (chatTarget && chatTarget.targetAvatar) || "",
+      avatar: resolvedSellerAv,
 
-      cover: localCover || "",
+      cover: resolvedSellerCover,
 
-      username: (existingPost && existingPost.sellerUsername) || "",
+      username: resolvedSellerUname,
 
-      memberNo: (existingPost && existingPost.memberNo) || null
+      memberNo: resolvedSellerMember
 
     };
 
@@ -13838,6 +14051,14 @@ window.openSeller=async(uid,skipHistory)=>{
 
       );
 
+      if(sb){
+        bgTasks.push(
+          sb.from("user_follows").select("id", { count: 'exact', head: true }).eq("seller_uid", uid).then(res => {
+            if(res && typeof res.count === 'number') followersCount = res.count;
+          }).catch(()=>{})
+        );
+      }
+
     }
 
     await Promise.allSettled(bgTasks);
@@ -13856,7 +14077,7 @@ window.openSeller=async(uid,skipHistory)=>{
 
     if(!prof){
 
-      prof = isMe ? (activeProf || {}) : (initialProf || { id: uid, name: (existingPost && existingPost.sellerName) || "مستخدم" });
+      prof = isMe ? (activeProf || {}) : (initialProf || { id: uid, name: resolveDisplayName(uid, existingPost) });
 
     }
 
@@ -13889,7 +14110,7 @@ const totalPostsBySeller=allPosts.filter(p=>p.uid===uid && getStatus(p)==="appro
 
 const tierBadge=renderSellerTierBadge(uid,totalPostsBySeller);
 
-const name=(prof&&prof.name)||(posts[0]&&posts[0].sellerName)||"مستخدم";
+const name = (prof && prof.name && prof.name !== "مستخدم" && prof.name !== "البائع") ? prof.name : resolveDisplayName(uid, posts[0]);
 
 const memberNo=prof&&prof.memberNo;
 
@@ -14305,7 +14526,7 @@ window.deleteRating=async(id)=>{if(!confirm("حذف هذا التقييم؟"))re
 
    ============================================ */
 
-function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2)return dn;if(u.phoneNumber)return "مستخدم "+u.phoneNumber.slice(-4);const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2)return e;return "مستخدم "+u.uid.slice(0,4);}
+function defaultName(u){const dn=(u.displayName||"").trim().slice(0,30);if(dn.length>=2 && dn!=="مستخدم")return dn;if(u.phoneNumber)return "عضو ("+u.phoneNumber.slice(-4)+")";const e=(u.email||"").split("@")[0].slice(0,30);if(e.length>=2 && e!=="مستخدم")return e;return "عضو "+u.uid.slice(0,4);}
 
 function profileCreatedAt(u){const t=Date.parse(u.metadata&&u.metadata.creationTime);return isNaN(t)?Date.now():t;}
 
@@ -15350,6 +15571,8 @@ window.dismissInAppBanner = (id) => {
    Start Listeners
 
    ============================================ */  
+
+initGlobalProfilesCache();
 
 startPostsListener();
 
@@ -19913,45 +20136,9 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   let targetName = targetCustomName || "";
 
-  // جلب اسم المستخدم الحقيقي من الكاش أو الحساب إن وجد
-
-  const cachedRealName = localStorage.getItem("tasawuq_name_" + sellerUid);
-
-  if(!targetName && cachedRealName) targetName = cachedRealName;
-
-  if(!targetName && postId){
-
-    const p = allPosts.find(x => x.id === postId);
-
-    if(p && p.sellerName && p.sellerName !== "البائع") targetName = p.sellerName;
-
+  if (!targetName || targetName === "مستخدم" || targetName === "البائع") {
+    targetName = resolveDisplayName(sellerUid, (postId ? allPosts.find(x => x.id === postId) : null), (storeId ? allStores.find(x => x.id === storeId) : null));
   }
-
-  if(!targetName && storeId){
-
-    const s = allStores.find(x => x.id === storeId);
-
-    if(s) targetName = s.name || "";
-
-  }
-
-  if(!targetName){
-
-    const sOwner = allStores.find(x => x.ownerUid === sellerUid);
-
-    if(sOwner) targetName = sOwner.name || "";
-
-    else {
-
-      const pOwner = allPosts.find(x => x.uid === sellerUid && x.sellerName && x.sellerName !== "البائع");
-
-      if(pOwner) targetName = pOwner.sellerName;
-
-    }
-
-  }
-
-  if(!targetName) targetName = "مستخدم";
 
   let targetPhone = "";
 
@@ -20527,13 +20714,15 @@ export async function sendUserChatMessage(){
 
   const me = auth.currentUser;
 
-  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const senderName = (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "أنا";
 
   const activeChat = window._activeChat;
 
   const convId = chatConvId(me.uid, activeChat.targetUid);
 
   input.value = "";
+
+  resetVoiceRecordingUI();
 
   input.focus();
 
@@ -20901,7 +21090,7 @@ export async function openInbox(){
 
         .from("profiles")
 
-        .select("id, name, username, avatar")
+        .select("*")
 
         .in("id", uniqueOtherUids);
 
@@ -20989,7 +21178,7 @@ export async function openInbox(){
 
       }
 
-      if (!otherName) otherName = "مستخدم";
+      if (!otherName || otherName === "مستخدم") otherName = resolveDisplayName(otherUid);
 
       // الصورة الشخصية الحقيقية (أو الحرف كحل أخير)
 
@@ -21569,7 +21758,7 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
             uid: me.uid,
 
-            user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+            user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
 
             user_phone: (myProfile && myProfile.phone) || "",
 
@@ -21821,7 +22010,7 @@ window.handleProfileAvatarSelected = async (event) => {
 
             uid: me.uid,
 
-            user_name: (myProfile && myProfile.name) || me.displayName || "مستخدم",
+            user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
 
             user_phone: (myProfile && myProfile.phone) || "",
 
@@ -22181,7 +22370,7 @@ export async function chatActionReport(){
 
       uid: auth.currentUser.uid,
 
-      user_name: auth.currentUser.displayName || (myProfile && myProfile.name) || "مستخدم",
+      user_name: (myProfile && myProfile.name) || auth.currentUser.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
 
       user_phone: (myProfile && myProfile.phone) || "",
 
@@ -22243,7 +22432,7 @@ export async function handleChatPhotoSelected(event){
 
   const me = auth.currentUser;
 
-  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const senderName = (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "أنا";
 
   const activeChat = window._activeChat;
 
@@ -22481,11 +22670,11 @@ async function loadFollowersModalContent(targetUid, tab) {
 
     let uids = [];
 
-    // 1) جلب المتابعين من سوبابيس (جدول feedback بنوع user_follow)
+    // 1) جلب المتابعين من سوبابيس (جدول user_follows)
 
     try {
 
-      const sb = window.supabase || supabase;
+      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
 
       if (sb) {
 
@@ -22493,11 +22682,9 @@ async function loadFollowersModalContent(targetUid, tab) {
 
         const { data, error } = await sb
 
-          .from("feedback")
+          .from("user_follows")
 
           .select("*")
-
-          .eq("type", "user_follow")
 
           .eq(filterCol, targetUid);
 
@@ -22583,7 +22770,7 @@ async function loadFollowersModalContent(targetUid, tab) {
       if (sb && uids.length > 0) {
         const { data: profData } = await sb
           .from("profiles")
-          .select("id, name, full_name, username, avatar")
+          .select("*")
           .in("id", uids);
         if (profData && Array.isArray(profData)) {
           profData.forEach(pr => {
@@ -22616,7 +22803,8 @@ async function loadFollowersModalContent(targetUid, tab) {
       if (!resolvedName) resolvedName = "عضو " + uid.substring(0, 5);
 
       const resolvedUsername = fromDb.username || (existingP && existingP.sellerUsername) || "";
-      const resolvedAvatar = fromDb.avatar || localAv || (existingP && (existingP.sellerAvatar || (existingP.images && existingP.images[0]))) || (storeMatch && storeMatch.logo) || "";
+      const cachedProf = (window.sellersProfileCache && window.sellersProfileCache[uid]) || null;
+      const resolvedAvatar = (cachedProf && cachedProf.avatar) || fromDb.avatar || localAv || (storeMatch && storeMatch.logo) || (existingP && existingP.sellerAvatar) || "";
 
       return {
         uid: uid,
@@ -22627,53 +22815,31 @@ async function loadFollowersModalContent(targetUid, tab) {
     });
 
     list.innerHTML = profiles.map(p => {
-
-      const name = p.name || "مستخدم";
-
+      const name = p.name || resolveDisplayName(p.uid);
       const uname = p.username ? "@" + p.username : "";
-
       const avUrl = p.avatar || localStorage.getItem("tasawuq_avatar_" + p.uid) || "";
-
       const initial = name ? name.trim()[0].toUpperCase() : '👤';
-
       const isMe = me && me.uid === p.uid;
-
       const followingHim = (typeof isFollowing === 'function') ? isFollowing(p.uid) : false;
 
       const actionBtn = (!isMe && me) ? `
-
         <button class="fbBtnAction ${followingHim ? 'edit' : 'primary'}" data-follow-uid="${p.uid}" onclick="event.stopPropagation();toggleFollow('${p.uid}',event)" style="padding:6px 14px;font-size:12px;margin:0">
-
           ${followingHim ? '✓ متابَع' : '+ متابعة'}
-
         </button>
-
       ` : `<div style="font-size:12px;color:var(--muted)">عرض البروفايل ›</div>`;
 
       return `
-
-        <div class="followerUserRow" style="cursor:pointer" onclick="openSellerFromFollowers('${escapeHtml(p.uid)}')">
-
-          <div class="followerAvatar">
-
-            ${avUrl ? `<img src="${escapeHtml(avUrl)}" alt="${escapeHtml(name)}">` : initial}
-
+        <div class="followerUserRow" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);" onclick="openSellerFromFollowers('${escapeHtml(p.uid)}')">
+          <div class="followerAvatar" style="width:44px;height:44px;min-width:44px;max-width:44px;min-height:44px;max-height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:800;font-size:16px;">
+            ${avUrl ? `<img src="${escapeHtml(avUrl)}" alt="${escapeHtml(name)}" style="width:100%;height:100%;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.parentElement.innerHTML='${initial}'">` : initial}
           </div>
-
-          <div class="followerInfo">
-
-            <div class="followerName">${escapeHtml(name)}</div>
-
-            ${uname ? `<div class="followerUsername">${escapeHtml(uname)}</div>` : ''}
-
+          <div class="followerInfo" style="flex:1;min-width:0;">
+            <div class="followerName" style="font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
+            ${uname ? `<div class="followerUsername" style="font-size:12px;color:#166534;font-weight:700;direction:ltr;text-align:right;">${escapeHtml(uname)}</div>` : ''}
           </div>
-
           ${actionBtn}
-
         </div>
-
       `;
-
     }).join("");
 
   } catch(err) {
@@ -22706,7 +22872,7 @@ window.openFollowersModal = async (targetUid, initialTab = "followers", skipHist
     if(!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'followers' }, '#followers');
   }
 
-  // جلب كلا العدادين فورياً
+  // جلب كلا العدادين فورياً من قاعدة البيانات
 
   getDocs(collection(db, "users", targetUid, "followers")).then(s => {
 
@@ -22723,6 +22889,19 @@ window.openFollowersModal = async (targetUid, initialTab = "followers", skipHist
     if(el) el.textContent = s.size || 0;
 
   }).catch(()=>{});
+
+  const sbCounts = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sbCounts) {
+    sbCounts.from("user_follows").select("id", { count: 'exact', head: true }).eq("seller_uid", targetUid).then(res => {
+      const el = document.getElementById("tabFollowersCount");
+      if (el && typeof res.count === 'number') el.textContent = res.count;
+    }).catch(()=>{});
+
+    sbCounts.from("user_follows").select("id", { count: 'exact', head: true }).eq("follower_uid", targetUid).then(res => {
+      const el = document.getElementById("tabFollowingCount");
+      if (el && typeof res.count === 'number') el.textContent = res.count;
+    }).catch(()=>{});
+  }
 
   switchFollowersTab(initialTab);
 
@@ -22840,7 +23019,7 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
 
   const cleanSnippet = (textPreview || "أرسل لك رسالة جديدة").slice(0, 140);
 
-  const myName = senderName || auth.currentUser.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const myName = senderName || (myProfile && myProfile.name) || auth.currentUser.displayName || localStorage.getItem("tasawuq_my_name") || "عضو";
 
   try {
 
@@ -23060,28 +23239,53 @@ let _voiceRecordSeconds = 0;
 
 let _recordedAudioBlob = null;
 
-// التبديل الذكي بين الميكروفون وزر الإرسال عند الكتابة
-
-window.handleChatInputTyping = (input) => {
-
+// زر الأكشن الموحد: ميكروفون افتراضياً -> تسجيل عند النقر، ويتحول إلى إرسال عند الكتابة
+window.handleChatActionButton = () => {
+  const input = document.getElementById("chatMessageInput");
   const text = (input?.value || "").trim();
 
-  const micBtn = document.getElementById("btnChatVoiceRecord");
-
-  const sendBtn = document.getElementById("btnSendUserChat");
-
-  // كلا الزرين ظاهرين دائماً جنباً إلى جنب دون اختفاء الميكروفون
-
-  if(micBtn) micBtn.style.display = "flex";
-
-  if(sendBtn){
-
-    sendBtn.style.display = "flex";
-
-    sendBtn.style.opacity = text.length > 0 ? "1" : "0.75";
-
+  // 1) لو كان جاري تسجيل الصوت -> إيقاف وإرسال التسجيل الصوتي
+  if (_mediaRecorder && _mediaRecorder.state === "recording") {
+    stopVoiceRecordingAndSend();
+    return;
   }
 
+  // 2) لو في كلام مكتوب في الحقل -> إرسال الرسالة النصية فوراً
+  if (text.length > 0) {
+    sendUserChatMessage();
+    return;
+  }
+
+  // 3) لو الحقل فارغ -> فتح وبدء تسجيل الصوت
+  toggleVoiceRecording();
+};
+
+window.handleChatInputTyping = (input) => {
+  const text = (input?.value || "").trim();
+  const btn = document.getElementById("btnChatAction");
+  if (!btn) return;
+
+  if (_mediaRecorder && _mediaRecorder.state === "recording") return;
+
+  if (text.length > 0) {
+    // يتحول الزر إلى إرسال 🚀
+    btn.innerHTML = "🚀";
+    btn.style.background = "linear-gradient(135deg, #0284c7, #38bdf8)";
+    btn.style.color = "#ffffff";
+    btn.style.border = "none";
+    btn.style.boxShadow = "0 3px 12px rgba(2, 132, 199, 0.35)";
+    btn.classList.remove("voiceRecordingActive");
+    btn.title = "إرسال الرسالة 🚀";
+  } else {
+    // الحقل فارغ -> الزر هو ميكروفون 🎙️
+    btn.innerHTML = "🎙️";
+    btn.style.background = "rgba(2, 132, 199, 0.1)";
+    btn.style.color = "#0284c7";
+    btn.style.border = "1.5px solid rgba(2, 132, 199, 0.25)";
+    btn.style.boxShadow = "none";
+    btn.classList.remove("voiceRecordingActive");
+    btn.title = "تسجيل صوتي 🎙️";
+  }
 };
 
 // بدء أو إيقاف التسجيل الصوتي
@@ -23178,80 +23382,53 @@ window.toggleVoiceRecording = async () => {
 
 };
 
-function showVoiceRecordingUI(){
+window.showVoiceRecordingUI = function showVoiceRecordingUI(){
 
   const input = document.getElementById("chatMessageInput");
-
   const attachBtns = document.getElementById("chatNormalAttachBtns");
-
   const voiceBar = document.getElementById("chatVoiceRecordingBar");
-
-  const micBtn = document.getElementById("btnChatVoiceRecord");
-
-  const sendBtn = document.getElementById("btnSendUserChat");
+  const btn = document.getElementById("btnChatAction");
 
   if(input) input.style.display = "none";
-
   if(attachBtns) attachBtns.style.display = "none";
-
   if(voiceBar) voiceBar.style.display = "flex";
 
-  if(micBtn){
-
-    micBtn.innerHTML = "🚀";
-
-    micBtn.style.background = "#0284c7";
-
-    micBtn.style.color = "#fff";
-
-    micBtn.title = "إرسال التسجيل الصوتي";
-
+  if(btn){
+    btn.innerHTML = "🚀";
+    btn.style.background = "#ef4444";
+    btn.style.color = "#ffffff";
+    btn.style.border = "none";
+    btn.style.boxShadow = "0 3px 14px rgba(239, 68, 68, 0.45)";
+    btn.classList.add("voiceRecordingActive");
+    btn.title = "إيقاف وإرسال التسجيل الصوتي 🚀";
   }
 
   const timerEl = document.getElementById("chatVoiceTimer");
-
   if(timerEl) timerEl.textContent = "0:00";
 
 }
 
-function resetVoiceRecordingUI(){
+window.resetVoiceRecordingUI = function resetVoiceRecordingUI(){
 
   const input = document.getElementById("chatMessageInput");
-
   const attachBtns = document.getElementById("chatNormalAttachBtns");
-
   const voiceBar = document.getElementById("chatVoiceRecordingBar");
-
-  const micBtn = document.getElementById("btnChatVoiceRecord");
-
-  const sendBtn = document.getElementById("btnSendUserChat");
+  const btn = document.getElementById("btnChatAction");
 
   if(input) input.style.display = "block";
-
   if(attachBtns) attachBtns.style.display = "flex";
-
   if(voiceBar) voiceBar.style.display = "none";
 
-  if(micBtn){
-
-    micBtn.innerHTML = "🎙️";
-
-    micBtn.style.background = "";
-
-    micBtn.style.color = "";
-
-    micBtn.style.display = "flex";
-
-    micBtn.title = "تسجيل رسالة صوتية 🎙️";
-
-  }
-
-  if(sendBtn){
-
-    sendBtn.style.display = "flex";
-
-    sendBtn.style.opacity = (input && input.value.trim().length > 0) ? "1" : "0.75";
-
+  if(input){
+    handleChatInputTyping(input);
+  } else if(btn){
+    btn.classList.remove("voiceRecordingActive");
+    btn.innerHTML = "🎙️";
+    btn.style.background = "rgba(2, 132, 199, 0.1)";
+    btn.style.color = "#0284c7";
+    btn.style.border = "1.5px solid rgba(2, 132, 199, 0.25)";
+    btn.style.boxShadow = "none";
+    btn.title = "تسجيل صوتي 🎙️";
   }
 
 }
@@ -23310,7 +23487,7 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
 
   const me = auth.currentUser;
 
-  const senderName = me.displayName || (myProfile && myProfile.name) || "مستخدم";
+  const senderName = (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "أنا";
 
   const activeChat = window._activeChat;
 
@@ -23846,9 +24023,9 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
         phone: p.phone || "",
 
-        sellerName: p.sellerName || "معلن",
+        sellerName: resolveDisplayName(p.uid, p),
 
-        sellerUsername: p.sellerUsername || "",
+        sellerUsername: p.sellerUsername || (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.username) || "",
 
         videoUrl: p.videoUrl || p.video,
 
@@ -23971,13 +24148,13 @@ window.renderStoriesBar = function() {
 
         uid: p.uid,
 
-        name: p.sellerName || "معلن",
+        name: resolveDisplayName(p.uid, p),
 
-        username: p.sellerUsername || "",
+        username: p.sellerUsername || (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.username) || "",
 
         firstPostId: p.id,
 
-        avatar: localStorage.getItem("tasawuq_avatar_" + p.uid) || "",
+        avatar: (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.avatar) || localStorage.getItem("tasawuq_avatar_" + p.uid) || "",
 
         isDemo: false
 
@@ -25752,7 +25929,51 @@ async function uploadPostVideo(file) {
 
   if (!file) return null;
 
-  // 1) الرفع الفوري عبر خادم المطور المحلي /api/upload-video (سريع ومضمون 100% ولا يظهر خطأ)
+  // 1) التخزين السحابي الدائم Supabase Storage (يعمل على الهاتف، الموقع المباشر، ومحلياً للجميع)
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+
+  if (sb && sb.storage) {
+
+    try {
+
+      const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop().toLowerCase() : 'mp4';
+
+      const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+      const mimeType = ext === 'webm' ? 'video/webm' : (ext === 'mov' ? 'video/quicktime' : 'video/mp4');
+
+      const uploadPromise = sb.storage.from('videos').upload(fileName, file, { 
+        cacheControl: '3600', 
+        upsert: true,
+        contentType: mimeType
+      });
+
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 25000));
+
+      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
+
+      if (!error && data) {
+
+        const { data: pData } = sb.storage.from('videos').getPublicUrl(fileName);
+
+        if (pData && pData.publicUrl) {
+          console.log("Video uploaded to Supabase successfully:", pData.publicUrl);
+          return pData.publicUrl;
+        }
+
+      } else if (error) {
+        console.warn("Supabase video upload error:", error);
+      }
+
+    } catch(err) {
+
+      console.warn("Supabase video storage upload warning:", err);
+
+    }
+
+  }
+
+  // 2) الرفع الفوري عبر خادم المطور المحلي /api/upload-video كخيار احتياطي محلي
   try {
     const fd = new FormData();
     fd.append("video", file, file.name || "video.mp4");
@@ -25765,40 +25986,7 @@ async function uploadPostVideo(file) {
       }
     }
   } catch(e) {
-    // ليس خادماً محلياً، الانتقال للسحابي
-  }
-
-  // 2) التخزين السحابي Supabase Storage إن كانت الحاوية متوفرة
-  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-
-  if (sb && sb.storage) {
-
-    try {
-
-      const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : 'mp4';
-
-      const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-
-      const uploadPromise = sb.storage.from('videos').upload(fileName, file, { cacheControl: '3600', upsert: true });
-
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 12000));
-
-      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
-
-      if (!error && data) {
-
-        const { data: pData } = sb.storage.from('videos').getPublicUrl(fileName);
-
-        if (pData && pData.publicUrl) return pData.publicUrl;
-
-      }
-
-    } catch(err) {
-
-      console.warn("Supabase video storage upload warning:", err);
-
-    }
-
+    // ليس خادماً محلياً
   }
 
   // 3) حل احتياطي للفيديوهات الخفيفة
