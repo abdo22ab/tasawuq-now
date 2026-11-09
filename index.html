@@ -34,7 +34,7 @@ window.location.replace("https://tasawuqnow.com"+window.location.hash+window.loc
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=151').then(function(reg) {
+    navigator.serviceWorker.register('./sw.js?v=153').then(function(reg) {
       reg.update();
     }).catch(function(e){ console.warn('SW reg error:', e); });
   });
@@ -45,7 +45,7 @@ if ('serviceWorker' in navigator) {
 
 </script>
 
-<script src="lucide.min.js?v=151"></script>
+<script src="lucide.min.js?v=153"></script>
 
 <script>
 window.openPoints = window.openPoints || function() {
@@ -76,7 +76,7 @@ window.openInbox = window.openInbox || function() {
 };
 </script>
 
-<link rel="stylesheet" href="style.css?v=151">
+<link rel="stylesheet" href="style.css?v=155">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -3020,94 +3020,46 @@ window.openInbox = window.openInbox || function() {
 
     <!-- شريط إرسال الرسائل والأزرار التفاعلية الفاخر -->
 
-    <div id="chatInputArea" style="padding:12px 14px calc(12px + env(safe-area-inset-bottom, 0px));background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center;flex:0 0 auto;position:relative;box-shadow:0 -4px 16px rgba(0,0,0,0.03)">
+    <div id="chatInputArea" style="padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));background:var(--card);border-top:1.5px solid var(--border);display:flex;gap:8px;align-items:center;flex:0 0 auto;position:relative;box-shadow:0 -4px 16px rgba(0,0,0,0.03);width:100%;box-sizing:border-box;">
 
       <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="handleChatPhotoSelected(event)">
 
       <!-- أزرار الإرفاق الفاخرة (كاميرا ورقم هاتف) -->
-
-      <div id="chatNormalAttachBtns" style="display:flex;gap:7px;align-items:center">
-
+      <div id="chatNormalAttachBtns" style="display:flex;gap:6px;align-items:center;flex-shrink:0">
         <button type="button" class="chatAttachBtn luxuryCam" onclick="document.getElementById('chatPhotoInput').click()" title="إرسال صورة 📷">📷</button>
-
         <button type="button" class="chatAttachBtn luxuryPhone" onclick="shareMyPhoneInChat()" title="مشاركة رقم هاتفي 📱">📱</button>
-
       </div>
 
-      <!-- حقل الكتابة الراقي -->
-
+      <!-- حقل الكتابة الراقي (الفراغ: عند الضغط عليه تفتح لوحة المفاتيح للكتابة) -->
       <input 
-
         type="text" 
-
         id="chatMessageInput" 
-
         placeholder="اكتب رسالتك..." 
-
         dir="auto" 
-
         autocomplete="off"
-
+        inputmode="text"
         oninput="handleChatInputTyping(this)"
-
-        onkeydown="if(event.key==='Enter'){event.preventDefault();sendUserChatMessage();}"
-
-        style="flex:1;height:46px;box-sizing:border-box;padding:8px 18px;border-radius:23px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:16px;outline:none;transition:all .2s ease"
-
+        onkeydown="if(event.key==='Enter'){event.preventDefault();handleChatActionButton();}"
+        style="flex:1;min-width:0;height:44px;box-sizing:border-box;padding:0 16px;border-radius:22px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:16px;outline:none;transition:all .2s ease;cursor:text;"
       >
 
-      <!-- شريط التسجيل الصوتي المباشر مثل ماسنجر -->
-
-      <div id="chatVoiceRecordingBar" style="display:none;flex:1;align-items:center;gap:12px;background:#fef2f2;border:1px solid #fecdd3;border-radius:23px;padding:6px 14px;height:46px;box-sizing:border-box">
-
-        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulseRed 1s infinite"></span>
-
-        <span id="chatVoiceTimer" style="font-weight:800;color:#ef4444;font-size:13.5px;direction:ltr">0:00</span>
-
-        <div style="flex:1;font-size:12px;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">جاري تسجيل رسالة صوتية...</div>
-
-        <button type="button" id="btnCancelVoice" onclick="cancelVoiceRecording()" title="حذف التسجيل" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px;color:#b91c1c">🗑️</button>
-
+      <!-- شريط التسجيل الصوتي المباشر (يظهر فور الضغط على الميكروفون) -->
+      <div id="chatVoiceRecordingBar" style="display:none;flex:1;min-width:0;align-items:center;gap:10px;background:#fef2f2;border:1.5px solid #fecdd3;border-radius:22px;padding:4px 14px;height:44px;box-sizing:border-box">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulseRed 1s infinite;flex-shrink:0"></span>
+        <span id="chatVoiceTimer" style="font-weight:800;color:#ef4444;font-size:14px;direction:ltr;flex-shrink:0">0:00</span>
+        <div style="flex:1;font-size:13px;font-weight:700;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">تسجيل صوتي... 🎙️</div>
+        <button type="button" id="btnCancelVoice" onclick="cancelVoiceRecording()" title="حذف وإلغاء التسجيل" style="background:none;border:none;font-size:19px;cursor:pointer;padding:2px 6px;color:#b91c1c;flex-shrink:0">🗑️</button>
       </div>
 
-      <!-- زر الميكروفون الفاخر (ظاهر دائماً بجانب زر الإرسال) -->
-
+      <!-- زر الأكشن الموحد: ميكروفون افتراضياً، وبضغطة عليه يبدأ التسجيل، وعند الكتابة يتحول لإرسال -->
       <button 
-
         type="button" 
-
-        id="btnChatVoiceRecord" 
-
-        onclick="toggleVoiceRecording()" 
-
-        title="تسجيل رسالة صوتية 🎙️"
-
-        style="width:44px;height:44px;border-radius:50%;background:var(--card);color:var(--text);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-size:19px;transition:all .2s"
-
+        id="btnChatAction" 
+        onclick="handleChatActionButton()" 
+        title="تسجيل صوتي 🎙️"
+        style="width:44px;height:44px;border-radius:50%;background:rgba(2,132,199,0.1);color:#0284c7;border:1.5px solid rgba(2,132,199,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 44px;font-size:19px;transition:all .2s ease;user-select:none;-webkit-user-select:none;"
       >
-
         🎙️
-
-      </button>
-
-      <!-- زر الإرسال الفاخر (ظاهر دائماً بجانب الميكروفون) -->
-
-      <button 
-
-        type="button" 
-
-        id="btnSendUserChat" 
-
-        onclick="sendUserChatMessage()" 
-
-        title="إرسال الرسالة"
-
-        style="display:flex;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;border:none;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all .2s ease"
-
-      >
-
-        <span style="font-size:18px">🚀</span>
-
       </button>
 
     </div>
@@ -3168,7 +3120,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=151"></script>
+<script type="module" src="app.js?v=155"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
