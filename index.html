@@ -76,7 +76,7 @@ window.openInbox = window.openInbox || function() {
 };
 </script>
 
-<link rel="stylesheet" href="style.css?v=157">
+<link rel="stylesheet" href="style.css?v=167">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -965,6 +965,10 @@ window.openInbox = window.openInbox || function() {
   </button>
 
   <button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
+
+  <a href="promo-video.html" class="btnGhost accountBtn" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;padding:12px;border-radius:12px">
+    🎬 استوديو وصانع الفيديو الإعلاني (3D)
+  </a>
 
   <!-- 🏪 المتجر -->
 
@@ -3120,7 +3124,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=157"></script>
+<script type="module" src="app.js?v=167"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
@@ -3276,7 +3280,7 @@ window.openInbox = window.openInbox || function() {
 
     <div class="reelsVideoWrapper" id="reelsVideoWrapper" onclick="handleReelsVideoTap(event)">
 
-      <video id="reelsMainVideo" class="reelsMainVideo" playsinline loop preload="auto"></video>
+      <video id="reelsMainVideo" class="reelsMainVideo" playsinline webkit-playsinline x5-playsinline loop preload="auto"></video>
 
       <div id="reelsPlayPauseNotice" class="reelsPlayPauseNotice hidden">▶</div>
 
@@ -3289,13 +3293,12 @@ window.openInbox = window.openInbox || function() {
     <!-- الشريط العلوي الشفاف -->
 
     <div class="reelsTopBar">
-
       <button type="button" class="reelsTopBtn" onclick="closeReelsModal()" title="إغلاق">✕</button>
-
       <div class="reelsHeaderTitle" id="reelsHeaderTitle">🎥 ريلز الإعلانات</div>
-
-      <button type="button" class="reelsTopBtn" id="reelsMuteToggleBtn" onclick="toggleReelsMute()" title="كتم/تشغيل الصوت">🔊</button>
-
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="reelsTopBtn" onclick="closeReelsModal();openAddStoryPrompt();" title="أضف فيديو ريلز / ستوري جديد" style="font-size:16px;background:linear-gradient(135deg, #ec4899, #8b5cf6);border-color:transparent">➕</button>
+        <button type="button" class="reelsTopBtn" id="reelsMuteToggleBtn" onclick="toggleReelsMute()" title="كتم/تشغيل الصوت">🔊</button>
+      </div>
     </div>
 
 
@@ -3426,32 +3429,22 @@ window.openInbox = window.openInbox || function() {
 
 
 
-    <!-- درج التعليقات السريع المنبثق للريلز -->
+        <!-- خلفية معتمة لإغلاق درج التعليقات عند النقر بالخارج -->
+    <div id="reelsCommentsBackdrop" class="reelsCommentsBackdrop hidden" onclick="closeReelsComments()"></div>
 
-    <div id="reelsCommentsSheet" class="reelsCommentsSheet hidden">
-
+    <!-- درج التعليقات السريع المنبثق للريلز والستوري -->
+    <div id="reelsCommentsSheet" class="reelsCommentsSheet hidden" onclick="event.stopPropagation()">
       <div class="reelsCommentsHeader">
-
-        <h4 style="margin:0;font-size:15px;color:var(--text)">💬 التعليقات (<span id="reelsCommentsHeaderCount">0</span>)</h4>
-
-        <button type="button" class="reelsTopBtn" style="background:#f1f5f9;color:#333;width:28px;height:28px;font-size:13px" onclick="closeReelsComments()">✕</button>
-
+        <h4 style="margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px">💬 التعليقات (<span id="reelsCommentsHeaderCount">0</span>)</h4>
+        <button type="button" class="reelsTopBtn" style="background:#f1f5f9;color:#333;width:28px;height:28px;font-size:13px" onclick="closeReelsComments()" title="إغلاق التعليقات">✕</button>
       </div>
-
       <div class="reelsCommentsList" id="reelsCommentsList">
-
         <div class="reportsEmpty" style="padding:20px;text-align:center">لا توجد تعليقات بعد، كن أول من يعلق!</div>
-
       </div>
-
       <div class="reelsCommentInputBox">
-
-        <input type="text" id="reelsCommentInput" placeholder="أضف تعليقاً على هذا الفيديو..." maxlength="300" onkeypress="if(event.key==='Enter')submitReelComment()">
-
-        <button type="button" class="btnMain" onclick="submitReelComment()" style="padding:8px 14px;border-radius:10px;font-size:13px">نشر</button>
-
+        <input type="text" id="reelsCommentInput" placeholder="أضف تعليقاً على هذا الفيديو..." maxlength="300" enterkeyhint="send" onkeydown="if(event.key==='Enter'){event.preventDefault();submitReelComment();}">
+        <button type="button" id="reelsSendCommentBtn" class="btnMain" onclick="submitReelComment()" style="padding:8px 16px;border-radius:10px;font-size:13px;font-weight:700">نشر</button>
       </div>
-
     </div>
 
   </div>
