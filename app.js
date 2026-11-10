@@ -3318,6 +3318,8 @@ function getActiveTopView() {
   if (sm && !sm.classList.contains("hidden")) return { type: 'storyModal' };
   const uco = document.getElementById("userChatOverlay");
   if (uco && !uco.classList.contains("hidden")) return { type: 'chat' };
+  const uio = document.getElementById("userInboxOverlay");
+  if (uio && !uio.classList.contains("hidden")) return { type: 'inbox' };
   const tp = document.getElementById("transferPostsOverlay");
   if (tp) return { type: 'customOverlay', el: tp };
   if (typeof postOverlay !== 'undefined' && postOverlay && !postOverlay.classList.contains("hidden")) return { type: 'post' };
@@ -3390,6 +3392,10 @@ function performBackAction() {
       window._sellerBackTarget = null;
       const ao = document.getElementById("accountOverlay");
       if (ao) { ao.classList.remove("hidden"); return true; }
+    } else if (window._sellerBackTarget === 'chat') {
+      window._sellerBackTarget = null;
+      const uco = document.getElementById("userChatOverlay");
+      if (uco) { uco.classList.remove("hidden"); uco.style.zIndex = "6000"; return true; }
     }
     return true;
   }
@@ -3415,6 +3421,11 @@ function performBackAction() {
   if (top.type === 'chat') {
     if (typeof closeUserChatDirect === 'function') closeUserChatDirect();
     else if (typeof closeUserChat === 'function') closeUserChat(true);
+    return true;
+  }
+  if (top.type === 'inbox') {
+    if (typeof closeInboxDirect === 'function') closeInboxDirect();
+    else if (typeof closeInbox === 'function') closeInbox(true);
     return true;
   }
   if (top.type === 'restaurantOrders') {
@@ -5789,6 +5800,9 @@ async function loadPostsBatch(isInitial = false) {
 
     renderPosts();
 
+    if (typeof renderStoriesBar === "function") renderStoriesBar();
+    if (typeof syncActiveStoriesFromSupabase === "function") syncActiveStoriesFromSupabase();
+
     updateLoadMoreButton();
 
     updateModBadge();
@@ -6939,7 +6953,10 @@ if(p.priceType==="contact"){
 
 }
 
-return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
+const hasPostVideo = !!(p.videoUrl || p.video || (p.specs && p.specs.video_url));
+const postVideoBadge = hasPostVideo ? `<span class="videoCardBadge" onclick="event.stopPropagation();openReelsModal({ postId: '${p.id}' })" style="position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-size:11px;font-weight:900;padding:3px 8px;border-radius:8px;z-index:2;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer">🎬 فيديو</span>` : "";
+
+return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><div class="imgWrap" onclick="openPost('${p.id}')">${carouselHtml(images)}${dots}${discBadge}${postVideoBadge}<button class="compareCheckbox ${inCompare?'active':''}" onclick="toggleCompare('${p.id}',event)">${inCompare?'✓':'⚖'}</button><button class="favBtn ${fav?'active':''}" onclick="toggleFavorite('${p.id}',event)">${fav?'❤️':'🤍'}</button></div><div class="body"><h4 style="cursor:pointer" onclick="openPost('${p.id}')">${escapeHtml(p.title||"بدون عنوان")}</h4>${priceHTML}${renderCardSpecs(p)}${p.city?`<div class="cityLine">📍 ${escapeHtml(p.city)}</div>`:""}${sellerLineHtml}<div class="meta">${brandTag}<span class="time">${timeAgo(p.createdAt)}</span></div>${viewsLine}${expiryLine}<div class="actions">${contactBtn}${feat}${soldToggle}${edit}${del}${renewBtn}</div></div></div>`;
 
 }).join("");
 
@@ -6951,259 +6968,216 @@ return `<div class="card ${cardClass}" data-title="${escapeHtml(p.title||"")}"><
 
    ============================================ */
 
-window.openPost=async(id,skipHistory)=>{
-
-if(!id) return;
-
-let p = (Array.isArray(window.allPosts) && window.allPosts.find(x => String(x.id) === String(id))) || allPosts.find(x => String(x.id) === String(id));
-
-if(!p && typeof supabase !== 'undefined' && supabase){
+window.openPost = async (id, skipHistory) => {
+  if (!id) return;
 
   try {
+    let p = (Array.isArray(window.allPosts) && window.allPosts.find(x => String(x.id) === String(id))) || 
+            (Array.isArray(allPosts) && allPosts.find(x => String(x.id) === String(id)));
 
-    const { data, error } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
-
-    if(data && !error){
-
-      p = (typeof objectFromDb === 'function') ? objectFromDb(data) : data;
-
-      if(!allPosts.some(x=>String(x.id)===String(p.id))) allPosts.unshift(p);
-
+    // إذا لم يكن الإعلان في الذاكرة، نجلبه فوراً من Supabase
+    if (!p && typeof supabase !== 'undefined' && supabase) {
+      try {
+        const { data, error } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
+        if (data && !error) {
+          p = (typeof objectFromDb === 'function') ? objectFromDb(data) : data;
+          if (Array.isArray(allPosts) && !allPosts.some(x => String(x.id) === String(p.id))) {
+            allPosts.unshift(p);
+          }
+        }
+      } catch(e) {
+        console.warn("Supabase fetch post error in openPost:", e);
+      }
     }
 
-  }catch(e){}
-
-}
-
-if(!p){
-
-  showToast("تعذر العثور على الإعلان المطلوب", "warn");
-
-  return;
-
-}
-
-const status=getStatus(p);
-
-const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-
-const isOwner=(me && me.uid===p.uid) || (typeof myProfile !== 'undefined' && myProfile && myProfile.id===p.uid) || (window.myProfile && window.myProfile.id===p.uid);
-
-const isMyStorePost=myStore&&p.storeId===myStore.id;
-
-const expired=isExpired(p);const isSold=!!p.sold;
-
-const wanted=isWanted(p);
-
-if(expired && !isOwner && !isAdmin && !isMyStorePost){showToast("⏰ هذا الإعلان منتهي.","warn");return;}
-
-if(status!=="approved" && !isOwner && !isAdmin && !isMyStorePost){showToast("هذا الإعلان غير متاح حالياً.","warn");return;}
-
-if(!isOwner && !isMyStorePost){incrementViews(id);addRecentView(id);}
-
-const days=daysLeft(p);
-
-const images=getImages(p);const dots=dotsHtml(images);
-
-const thumbsHtml=images.length>1?`<div class="thumbsRow" id="postThumbs">${images.map((u,i)=>`<div class="thumbItem${i===0?' active':''}" onclick="event.stopPropagation();scrollToPostImage('${p.id}',${i})"><img src="${escapeHtml(u)}" loading="lazy"></div>`).join("")}</div>`:"";
-
-const desc=p.description?`<div class="pDesc">${escapeHtml(p.description)}</div>`:`<div class="pDesc" style="color:var(--muted)">لا يوجد وصف.</div>`;
-
-const postStore=p.storeId?allStores.find(s=>s.id===p.storeId):null;
-
-const isRestaurantPost=postStore?isRestaurantStore(postStore):isRestaurantCategory(p.category);
-
-let sellerTags="";
-
-if(p.storeId){sellerTags+=` <span class="storeBadge">🏪 ${escapeHtml(p.storeName||"متجر")}</span>`;}
-
-else{if(p.sellerMemberNo)sellerTags+=` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
-
-if(p.sellerUsername)sellerTags+=` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;}
-
-const sellerHtml=p.storeId?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName||"المتجر")}${sellerTags} ›</div>`:(p.uid?`<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName || resolveDisplayName(p.uid, p))}${sellerTags} ›</div>`:"");
-
-const cleanPPhone=String(p.phone||'').replace(/[^0-9+]/g,'');
-
-const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
-
-const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
-
-const chatSellerBtn=(!isSold && p.uid && !isOwner)
-
-  ? `<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}','${escapeHtml(p.id)}')">💬 دردشة فورية مع البائع</button>`
-
-  : "";
-
-const contactBtn=(p.phone && !isSold)
-
-  ? (isRestaurantPost
-
-      ? `${postCallPhone ? `<a href="tel:${formatCallPhone(postCallPhone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي لطلب الأوردر (${formatCallPhone(postCallPhone)})</a>` : ''}
-
-         ${receiptWaPhone ? `<button class="btnGhost receiptWaBtn" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-weight:700" onclick="event.stopPropagation();sendReceiptToSeller('${escapeHtml(receiptWaPhone)}','${escapeHtml(p.storeName||'المطعم')}')">🧾 دفع مصرفي؟ إرسال واصل التحويل عبر واتساب</button>` : ''}`
-
-      : `<div style="display:flex;gap:8px;margin-bottom:8px">
-
-          <button class="btnMain" style="flex:1;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
-
-          <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي</a>
-
-        </div>`)
-
-  : "";
-
-const cartBtn=(!isSold && canHaveCart(p))?`<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`:"";
-
-const shareBtn=(status==="approved" && !expired)?`<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`:"";
-
-const viewsBadge=(isOwner||isAdmin||isMyStorePost)?`<div class="pViewsBadge">👁️ ${p.views||0} مشاهدة</div>`:"";
-
-let statusBadge="";
-
-if(isOwner||isAdmin||isMyStorePost){if(status==="pending")statusBadge=`<span class="statusBadge pending">⏳ قيد المراجعة</span>`;else if(status==="rejected")statusBadge=`<span class="statusBadge rejected">❌ مرفوض${p.rejectReason?' — '+escapeHtml(p.rejectReason):''}</span>`;}
-
-let soldBadge=isSold?`<span class="soldBadge">✅ تم البيع</span>`:"";
-
-let wantedBadge=wanted?`<span class="soldBadge" style="background:#fff7ed;color:#9a3412;border-color:#f97316">🎯 إعلان مطلوب</span>`:"";
-
-let expiryBadge="";
-
-if(!isSold && (isOwner||isAdmin||isMyStorePost)&&days!=null){
-
-  if(days<=0)expiryBadge=`<span class="expiryBadge" style="background:#fdeceb;color:#b91c1c;border:1px solid #e5484d">⏰ منتهي</span>`;
-
-  else if(days<=5)expiryBadge=`<span class="expiryBadge" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b">⏳ باقي ${days} يوم</span>`;
-
-  else expiryBadge=`<span class="expiryBadge" style="background:#dcfce7;color:#166534;border:1px solid #16a34a">⏳ باقي ${days} يوم</span>`;
-
-}
-
-let brandBadge=p.brand?`<span class="brandBadge">🏷️ ${escapeHtml(p.brand)}</span>`:"";
-
-let featBadge="";
-
-if(status==="approved" && !expired && !isSold && isPostFeatured(p)){const daysF=featuredDaysLeft(p);if(isOwner)featBadge=`<span class="featBadgeOwner">⭐ مميز — ${daysF} ${daysF===1?'يوم':'أيام'} متبقية</span>`;else if(isAdmin)featBadge=`<span class="featBadge">⭐ مميز — ${daysF} ${daysF===1?'يوم':'أيام'}</span>`;else featBadge=`<span class="featBadge">⭐ إعلان مميز</span>`;}
-
-const renewBtnBig=(isOwner||isAdmin||isMyStorePost) && !isSold?`<button class="renewBtnBig" onclick="renewPost('${p.id}')">🔄 تجديد 30 يوم إضافية</button>`:"";
-
-const soldBtnBig=(isOwner||isAdmin||isMyStorePost)?(isSold?`<button class="unsoldBtnBig" onclick="toggleSold('${p.id}')">↩️ إلغاء (تم البيع)</button>`:`<button class="soldBtnBig" onclick="toggleSold('${p.id}')">✅ تم البيع</button>`):"";
-
-let upgradeBtn="";
-
-if(isOwner && status==="approved" && !expired && !isSold){if(isPostFeatured(p))upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;else upgradeBtn=`<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;}
-
-let adminPanel="";
-
-if(isAdmin){
-
-if(status==="pending")adminPanel=`<div class="reviewBox"><div class="rbTitle">⏳ بانتظار المراجعة</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button><button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button></div></div>`;
-
-else if(status==="rejected")adminPanel=`<div class="reviewBox" style="background:#fdeceb;border-color:#e5484d"><div class="rbTitle" style="color:#b91c1c">❌ إعلان مرفوض</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ قبول الإعلان</button></div></div>`;
-
-adminPanel+=`<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div><div class="adminPlans"><button onclick="adminFeature('${p.id}',7)">7 أيام</button><button onclick="adminFeature('${p.id}',15)">15 يوم</button><button onclick="adminFeature('${p.id}',30)">30 يوم</button>${isPostFeatured(p)?`<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>`:""}</div></div>`;
-
-}
-
-let analyticsHtml="";
-
-if(isOwner||isAdmin||isMyStorePost){
-
-  const favsCount=p.favoritesCount||0;
-
-  const waClicks=p.whatsappClicks||0;
-
-  const views=p.views||0;
-
-  analyticsHtml=`<div class="analyticsBox">
-
-    <div class="analyticsTitle">📊 إحصائيات هذا الإعلان</div>
-
-    <div class="analyticsGrid">
-
-      <div class="analyticsCard"><div class="anVal">${views}</div><div class="anLbl">👁️ مشاهدة</div></div>
-
-      <div class="analyticsCard"><div class="anVal">${waClicks}</div><div class="anLbl">📱 ضغطات واتساب</div></div>
-
-      <div class="analyticsCard"><div class="anVal">${favsCount}</div><div class="anLbl">❤️ مفضلة</div></div>
-
-    </div>
-
-  </div>`;
-
-}
-
-const similar=allPosts.filter(x=>x.id!==p.id && x.category===p.category && getStatus(x)==="approved" && !isExpired(x) && !x.sold).slice(0,4);
-
-const similarHtml=similar.length?`<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s=>{const imgs=getImages(s);const th=imgs[0]||"";const simPrice=s.priceType==="contact"?"📞 تواصل":(s.price!=null?formatPrice(s.price)+" د.ل":"");return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th?`<img src="${escapeHtml(th)}" style="width:100%;height:100%;object-fit:cover">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title||"بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${simPrice}</div></div></div>`;}).join("")}</div></div>`:"";
-
-const discPct=getDiscountPercent(p);
-
-const negotiableBadgeBig=p.negotiable?`<span style="background:#dcfce7;color:#166534;font-weight:800;padding:5px 12px;border-radius:9px;font-size:12.5px;border:1px solid #16a34a;margin-right:8px;display:inline-block;margin-top:6px">🤝 قابل للنقاش</span>`:"";
-
-let priceHtml="";
-
-if(p.priceType==="contact"){
-
-  priceHtml=`<div style="margin:8px 0;background:var(--teal-light);border:2px solid var(--teal);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--teal-dark)">📞 تواصل لمعرفة السعر</div><div style="font-size:12px;color:var(--muted);margin-top:4px">السعر متاح عند التواصل مع البائع</div>${negotiableBadgeBig}</div>`;
-
-}else if(discPct>0){
-
-  priceHtml=`<div style="margin:6px 0"><span class="originalPrice" style="font-size:15px">${formatPrice(p.originalPrice)} د.ل</span><span class="discountPrice" style="font-size:24px">${formatPrice(p.price)} د.ل</span><span style="background:#e5484d;color:#fff;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;margin-right:8px">🔥 خصم ${discPct}%</span>${negotiableBadgeBig}</div>`;
-
-}else{
-
-  priceHtml=`<div class="price" style="font-size:20px">${p.price!=null?formatPrice(p.price)+" د.ل":""}${negotiableBadgeBig}</div>`;
-
-}
-
-updateSEOMeta(p);
-
-document.getElementById("postContent").innerHTML=`<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselHtml(images,true)}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title||"بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city?"📍 "+escapeHtml(p.city)+" · ":""}${escapeHtml(p.category||"")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${renderDetailsSpecs(p)}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
-
-const so = document.getElementById("sellerOverlay");
-
-if(so && !so.classList.contains("hidden")){
-
-  postOverlay.style.zIndex = "3000";
-
-} else {
-
-  postOverlay.style.zIndex = "1200";
-
-}
-
-postOverlay.classList.remove("hidden");
-
-postOverlay.scrollTop = 0;
-
-if(window.lucide) lucide.createIcons();
-
-window.scrollTo(0,0);
-
-if(!skipHistory) pushNavState({ screen: 'post', id: id }, '#post-' + id);
-
-setTimeout(()=>{
-
-  const carousel=document.querySelector("#postContent .carousel");
-
-  if(carousel){
-
-    carousel.addEventListener("scroll",()=>{
-
-      const idx=Math.round(carousel.scrollLeft/(carousel.clientWidth||1));
-
-      document.querySelectorAll(".thumbItem").forEach((t,i)=>t.classList.toggle("active",i===idx));
-
-    },{passive:true});
-
+    if (!p) {
+      if (typeof showToast === 'function') showToast("تعذر العثور على الإعلان المطلوب", "warn");
+      return;
+    }
+
+    const status = getStatus(p);
+    const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+    const isOwner = (me && me.uid === p.uid) || 
+                    (typeof myProfile !== 'undefined' && myProfile && myProfile.id === p.uid) || 
+                    (window.myProfile && window.myProfile.id === p.uid);
+    const isMyStorePost = (typeof myStore !== 'undefined' && myStore && p.storeId === myStore.id);
+    const expired = isExpired(p);
+    const isSold = !!p.sold;
+    const wanted = isWanted(p);
+
+    // لا يتم منع فتح الإعلان إلا إذا كان مرفوضاً صراحة لغير صاحبه
+    if (status === "rejected" && !isOwner && !isAdmin && !isMyStorePost) {
+      if (typeof showToast === 'function') showToast("هذا الإعلان غير متاح حالياً.", "warn");
+      return;
+    }
+
+    // تسجيل المشاهدات
+    try {
+      if (!isOwner && !isMyStorePost) {
+        if (typeof incrementViews === 'function') incrementViews(id);
+        if (typeof addRecentView === 'function') addRecentView(id);
+      }
+    } catch(e) {}
+
+    const days = daysLeft(p);
+    const images = (typeof getImages === 'function') ? getImages(p) : (p.images || []);
+    const dots = (typeof dotsHtml === 'function') ? dotsHtml(images) : "";
+    const thumbsHtml = (images && images.length > 1)
+      ? `<div class="thumbsRow" id="postThumbs">${images.map((u, i) => `<div class="thumbItem${i === 0 ? ' active' : ''}" onclick="event.stopPropagation();scrollToPostImage('${p.id}',${i})"><img src="${escapeHtml(u)}" loading="lazy"></div>`).join("")}</div>`
+      : "";
+
+    const desc = p.description
+      ? `<div class="pDesc">${escapeHtml(p.description)}</div>`
+      : `<div class="pDesc" style="color:var(--muted)">لا يوجد وصف مضاف لهذا الإعلان.</div>`;
+
+    const postStore = (p.storeId && Array.isArray(allStores)) ? allStores.find(s => s.id === p.storeId) : null;
+    const isRestaurantPost = postStore ? isRestaurantStore(postStore) : isRestaurantCategory(p.category);
+
+    let sellerTags = "";
+    if (p.storeId) {
+      sellerTags += ` <span class="storeBadge">🏪 ${escapeHtml(p.storeName || "متجر")}</span>`;
+    } else {
+      if (p.sellerMemberNo) sellerTags += ` <span class="memberNoBadge">#${p.sellerMemberNo}</span>`;
+      if (p.sellerUsername) sellerTags += ` <span class="usernameBadge">@${escapeHtml(p.sellerUsername)}</span>`;
+    }
+
+    const sellerHtml = p.storeId
+      ? `<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openStore('${p.storeId}',false,'categories'),200)">${escapeHtml(p.storeName || "المتجر")}${sellerTags} ›</div>`
+      : (p.uid ? `<div class="sellerLine" style="font-size:13px;margin:6px 0" onclick="closeOverlay();setTimeout(()=>openSeller('${escapeHtml(p.uid)}'),200)">👤 ${escapeHtml(p.sellerName || resolveDisplayName(p.uid, p))}${sellerTags} ›</div>` : "");
+
+    const cleanPPhone = String(p.phone || '').replace(/[^0-9+]/g, '');
+    const postCallPhone = (isRestaurantPost && (p.callPhone || (postStore && postStore.callPhone))) || p.phone;
+    const receiptWaPhone = (postStore && (postStore.receiptPhone || postStore.phone)) || p.phone;
+
+    const chatSellerBtn = (!isSold && p.uid && !isOwner)
+      ? `<button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(p.uid)}','${escapeHtml(p.id)}')">💬 دردشة فورية مع البائع</button>`
+      : "";
+
+    const contactBtn = (p.phone && !isSold)
+      ? (isRestaurantPost
+          ? `${postCallPhone ? `<a href="tel:${formatCallPhone(postCallPhone)}" class="btnMain" style="background:var(--call);margin-bottom:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:13px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي لطلب الأوردر (${formatCallPhone(postCallPhone)})</a>` : ''}
+             ${receiptWaPhone ? `<button class="btnGhost receiptWaBtn" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-weight:700" onclick="event.stopPropagation();sendReceiptToSeller('${escapeHtml(receiptWaPhone)}','${escapeHtml(p.storeName||'المطعم')}')">🧾 دفع مصرفي؟ إرسال واصل التحويل عبر واتساب</button>` : ''}`
+          : `<div style="display:flex;gap:8px;margin-bottom:8px">
+               <button class="btnMain" style="flex:1;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();contactSeller('${escapeHtml(p.id)}')">💬 تواصل عبر واتساب</button>
+               <a href="tel:${formatCallPhone(p.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(p.id)}','post')">📞 اتصال هاتفي</a>
+             </div>`)
+      : "";
+
+    const reelWatchBtn = (p.videoUrl || p.video)
+      ? `<button class="btnMain" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:8px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openReelsModal({ postId: '${p.id}' })">🎬 شاهد فيديو الريلز / الستوري لهذا الإعلان</button>`
+      : "";
+
+    const cartBtn = (!isSold && typeof canHaveCart === 'function' && canHaveCart(p))
+      ? `<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`
+      : "";
+
+    const shareBtn = (!expired)
+      ? `<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`
+      : "";
+
+    const viewsBadge = (isOwner || isAdmin || isMyStorePost) ? `<div class="pViewsBadge">👁️ ${p.views || 0} مشاهدة</div>` : "";
+
+    let statusBadge = "";
+    if (isOwner || isAdmin || isMyStorePost) {
+      if (status === "pending") statusBadge = `<span class="statusBadge pending">⏳ قيد المراجعة</span>`;
+      else if (status === "rejected") statusBadge = `<span class="statusBadge rejected">❌ مرفوض${p.rejectReason ? ' — ' + escapeHtml(p.rejectReason) : ''}</span>`;
+    }
+
+    let soldBadge = isSold ? `<span class="soldBadge">✅ تم البيع</span>` : "";
+    let wantedBadge = wanted ? `<span class="soldBadge" style="background:#fff7ed;color:#9a3412;border-color:#f97316">🎯 إعلان مطلوب</span>` : "";
+    let expiryBadge = "";
+    if (!isSold && (isOwner || isAdmin || isMyStorePost) && days != null) {
+      if (days <= 0) expiryBadge = `<span class="expiryBadge" style="background:#fdeceb;color:#b91c1c;border:1px solid #e5484d">⏰ منتهي</span>`;
+      else if (days <= 5) expiryBadge = `<span class="expiryBadge" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b">⏳ باقي ${days} يوم</span>`;
+      else expiryBadge = `<span class="expiryBadge" style="background:#dcfce7;color:#166534;border:1px solid #16a34a">⏳ باقي ${days} يوم</span>`;
+    }
+
+    let brandBadge = p.brand ? `<span class="brandBadge">🏷️ ${escapeHtml(p.brand)}</span>` : "";
+    let featBadge = "";
+    if (status === "approved" && !expired && !isSold && typeof isPostFeatured === 'function' && isPostFeatured(p)) {
+      const daysF = (typeof featuredDaysLeft === 'function') ? featuredDaysLeft(p) : 0;
+      if (isOwner) featBadge = `<span class="featBadgeOwner">⭐ مميز — ${daysF} ${daysF === 1 ? 'يوم' : 'أيام'} متبقية</span>`;
+      else if (isAdmin) featBadge = `<span class="featBadge">⭐ مميز — ${daysF} ${daysF === 1 ? 'يوم' : 'أيام'}</span>`;
+      else featBadge = `<span class="featBadge">⭐ إعلان مميز</span>`;
+    }
+
+    const renewBtnBig = (isOwner || isAdmin || isMyStorePost) && !isSold ? `<button class="renewBtnBig" onclick="renewPost('${p.id}')">🔄 تجديد 30 يوم إضافية</button>` : "";
+    const soldBtnBig = (isOwner || isAdmin || isMyStorePost) ? (isSold ? `<button class="unsoldBtnBig" onclick="toggleSold('${p.id}')">↩️ إلغاء (تم البيع)</button>` : `<button class="soldBtnBig" onclick="toggleSold('${p.id}')">✅ تم البيع</button>`) : "";
+
+    let upgradeBtn = "";
+    if (isOwner && !expired && !isSold) {
+      if (typeof isPostFeatured === 'function' && isPostFeatured(p)) upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">🔄 تجديد / تمديد الترقية</button>`;
+      else upgradeBtn = `<button class="upgradeBtn" onclick="openUpgrade('${p.id}')">⭐ ترقية إعلاني</button>`;
+    }
+
+    let adminPanel = "";
+    if (isAdmin) {
+      if (status === "pending") adminPanel = `<div class="reviewBox"><div class="rbTitle">⏳ بانتظار المراجعة</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ موافقة</button><button class="reject" onclick="rejectPost('${p.id}')">❌ رفض</button></div></div>`;
+      else if (status === "rejected") adminPanel = `<div class="reviewBox" style="background:#fdeceb;border-color:#e5484d"><div class="rbTitle" style="color:#b91c1c">❌ إعلان مرفوض</div><div class="rbBtns"><button class="approve" onclick="approvePost('${p.id}')">✅ قبول الإعلان</button></div></div>`;
+      adminPanel += `<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:12px;padding:12px;margin-top:8px"><div style="font-weight:800;color:#92400e;margin-bottom:8px;font-size:13px">⭐ التحكم بالتمييز (أدمن)</div><div class="adminPlans"><button onclick="adminFeature('${p.id}',7)">7 أيام</button><button onclick="adminFeature('${p.id}',15)">15 يوم</button><button onclick="adminFeature('${p.id}',30)">30 يوم</button>${(typeof isPostFeatured === 'function' && isPostFeatured(p)) ? `<button class="cancel" onclick="adminFeature('${p.id}',0)">❌ إلغاء التمييز</button>` : ""}</div></div>`;
+    }
+
+    let analyticsHtml = "";
+    if (isOwner || isAdmin || isMyStorePost) {
+      const favsCount = p.favoritesCount || 0;
+      const waClicks = p.whatsappClicks || 0;
+      const views = p.views || 0;
+      analyticsHtml = `<div class="analyticsBox"><div class="analyticsTitle">📊 إحصائيات هذا الإعلان</div><div class="analyticsGrid"><div class="analyticsCard"><div class="anVal">${views}</div><div class="anLbl">👁️ مشاهدة</div></div><div class="analyticsCard"><div class="anVal">${waClicks}</div><div class="anLbl">📱 ضغطات واتساب</div></div><div class="analyticsCard"><div class="anVal">${favsCount}</div><div class="anLbl">❤️ مفضلة</div></div></div></div>`;
+    }
+
+    const similar = Array.isArray(allPosts) ? allPosts.filter(x => x.id !== p.id && x.category === p.category && !x.sold).slice(0, 4) : [];
+    const similarHtml = similar.length ? `<div style="margin-top:24px;padding-top:16px;border-top:2px dashed #edeff2"><div style="font-weight:800;font-size:15px;margin-bottom:12px">🔄 إعلانات مشابهة</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${similar.map(s => { const imgs = (typeof getImages === 'function') ? getImages(s) : (s.images || []); const th = imgs[0] || ""; const simPrice = s.priceType === "contact" ? "📞 تواصل" : (s.price != null ? (typeof formatPrice === 'function' ? formatPrice(s.price) : s.price) + " د.ل" : ""); return `<div onclick="closeOverlay();setTimeout(()=>openPost('${s.id}'),200)" style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer"><div style="width:100%;aspect-ratio:1/1;background:var(--teal-light);overflow:hidden">${th ? `<img src="${escapeHtml(th)}" style="width:100%;height:100%;object-fit:cover">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px;opacity:.5">🖼️</div>`}</div><div style="padding:8px 10px"><div style="font-size:12.5px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em">${escapeHtml(s.title || "بدون عنوان")}</div><div style="font-size:13px;font-weight:800;color:var(--teal-dark)">${simPrice}</div></div></div>`; }).join("")}</div></div>` : "";
+
+    const discPct = (typeof getDiscountPercent === 'function') ? getDiscountPercent(p) : 0;
+    const negotiableBadgeBig = p.negotiable ? `<span style="background:#dcfce7;color:#166534;font-weight:800;padding:5px 12px;border-radius:9px;font-size:12.5px;border:1px solid #16a34a;margin-right:8px;display:inline-block;margin-top:6px">🤝 قابل للنقاش</span>` : "";
+
+    let priceHtml = "";
+    if (p.priceType === "contact") {
+      priceHtml = `<div style="margin:8px 0;background:var(--teal-light);border:2px solid var(--teal);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:900;color:var(--teal-dark)">📞 تواصل لمعرفة السعر</div><div style="font-size:12px;color:var(--muted);margin-top:4px">السعر متاح عند التواصل مع البائع</div>${negotiableBadgeBig}</div>`;
+    } else if (discPct > 0) {
+      priceHtml = `<div style="margin:6px 0"><span class="originalPrice" style="font-size:15px">${formatPrice(p.originalPrice)} د.ل</span><span class="discountPrice" style="font-size:24px">${formatPrice(p.price)} د.ل</span><span style="background:#e5484d;color:#fff;font-weight:800;padding:4px 10px;border-radius:8px;font-size:12px;margin-right:8px">🔥 خصم ${discPct}%</span>${negotiableBadgeBig}</div>`;
+    } else {
+      priceHtml = `<div class="price" style="font-size:20px">${p.price != null ? formatPrice(p.price) + " د.ل" : ""}${negotiableBadgeBig}</div>`;
+    }
+
+    if (typeof updateSEOMeta === 'function') updateSEOMeta(p);
+
+    const postContentEl = document.getElementById("postContent");
+    if (postContentEl) {
+      const carouselElHtml = (typeof carouselHtml === 'function') ? carouselHtml(images, true) : "";
+      const specsHtml = (typeof renderDetailsSpecs === 'function') ? renderDetailsSpecs(p) : "";
+      postContentEl.innerHTML = `<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselElHtml}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title || "بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city ? "📍 " + escapeHtml(p.city) + " · " : ""}${escapeHtml(p.category || "")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${specsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${reelWatchBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+    }
+
+    const postOverlayEl = document.getElementById("postOverlay");
+    if (postOverlayEl) {
+      // رفع طبقة تفاصيل الإعلان فوق أي نافذة أخرى بما فيها البروفايل والمتابعين
+      postOverlayEl.style.zIndex = "5500";
+      postOverlayEl.classList.remove("hidden");
+      postOverlayEl.scrollTop = 0;
+    }
+
+    if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+    window.scrollTo(0, 0);
+    if (!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'post', id: id }, '#post-' + id);
+
+    setTimeout(() => {
+      const carousel = document.querySelector("#postContent .carousel");
+      if (carousel) {
+        carousel.addEventListener("scroll", () => {
+          const idx = Math.round(carousel.scrollLeft / (carousel.clientWidth || 1));
+          document.querySelectorAll(".thumbItem").forEach((t, i) => t.classList.toggle("active", i === idx));
+        }, { passive: true });
+      }
+    }, 50);
+
+  } catch(err) {
+    console.error("Critical error in openPost:", err);
+    if (typeof showToast === 'function') showToast("حدث خطأ أثناء فتح الإعلان", "warn");
   }
-
-},50);
-
 };
 
-  /* ============================================
+/* ============================================
 
    حفظ الإعلان (savePost) — مع priceType + negotiable
 
@@ -7444,6 +7418,10 @@ if(wasEditing){
   if (finalVideoUrl) {
     upd.videoUrl = finalVideoUrl;
     upd.videoPlacement = selectedPlacement;
+    if (!upd.specs || typeof upd.specs !== 'object') upd.specs = {};
+    upd.specs.video_url = finalVideoUrl;
+    upd.specs.video_placement = selectedPlacement;
+    upd.status = "approved"; // اعتماد فوري عند إضافة أو تعديل فيديو
   } else {
     upd.videoUrl = null;
     upd.videoPlacement = null;
@@ -7463,8 +7441,12 @@ if(wasEditing){
   }
 
   allPosts = sortPosts(allPosts);
+  window.allPosts = allPosts;
   renderPosts();
-  showToast("✅ تم حفظ وتحديث الإعلان بنجاح", "success");
+  if (typeof renderStoriesBar === 'function') renderStoriesBar();
+  if (typeof buildReelsPlaylist === 'function') buildReelsPlaylist();
+  if (typeof syncActiveStoriesFromSupabase === 'function') syncActiveStoriesFromSupabase();
+  showToast("✅ تم حفظ وتحديث الإعلان بنجاح 🎬", "success");
 }
 
 else{
@@ -7474,11 +7456,14 @@ else{
   const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
 
   if (finalVideoUrl) {
-
     base.videoUrl = finalVideoUrl;
-
     base.videoPlacement = selectedPlacement;
-
+    if (!base.specs || typeof base.specs !== 'object') base.specs = {};
+    base.specs.video_url = finalVideoUrl;
+    base.specs.video_placement = selectedPlacement;
+    // اعتماد فوري لأي إعلان يحتوي على ستوري أو ريلز ليظهر للجميع فوراً
+    base.status = "approved";
+    base.approvedAt = now;
   }
 
   if(isStore){
@@ -7532,10 +7517,16 @@ else{
   allPosts.unshift(base);
 
   allPosts=sortPosts(allPosts);
+  window.allPosts = allPosts;
 
   renderPosts();
 
-  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":"✅ تم إرسال إعلانك بنجاح","success");
+  // تحديث شريط الستوريات والريلز فوراً بعد النشر ليظهر الفيديو للجميع بدون انتظار
+  if (typeof renderStoriesBar === 'function') renderStoriesBar();
+  if (typeof buildReelsPlaylist === 'function') buildReelsPlaylist();
+  if (typeof syncActiveStoriesFromSupabase === 'function') syncActiveStoriesFromSupabase();
+
+  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":((finalVideoUrl)?"🎬 تم نشر الفيديو بنجاح في الستوري والريلز! 🌟":"✅ تم إرسال إعلانك بنجاح"),"success", 3500);
 
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
 
@@ -11352,6 +11343,10 @@ function backFromStoreDirect(){
   if(window._storeBackTo==="stores"){const ss=document.getElementById("storesScreen");if(ss)ss.classList.remove("hidden");}
 
   else if(window._storeBackTo==="home"){home.classList.remove("hidden");showFloatingButtons();}
+  else if(window._storeBackTo==="chat"){
+    const uco = document.getElementById("userChatOverlay");
+    if(uco) { uco.classList.remove("hidden"); uco.style.zIndex = "6000"; }
+  }
 
   else if(window._storeBackTo==="post"){const so = document.getElementById("sellerOverlay");
 
@@ -13279,6 +13274,8 @@ function closeOverlayDirect(){
 
   const _fo = document.getElementById("followersOverlay"); if(_fo){ _fo.classList.add("hidden"); _fo.style.zIndex=""; }
 
+  const _uio = document.getElementById("userInboxOverlay"); if(_uio){ _uio.classList.add("hidden"); _uio.style.zIndex=""; }
+
   postTypeOverlay.classList.add("hidden");
 
   openStoreOverlay.classList.add("hidden");storesModerationOverlay.classList.add("hidden");expiredOverlay.classList.add("hidden");
@@ -13880,6 +13877,11 @@ window.openSeller=async(uid,skipHistory)=>{
     window._sellerBackTarget = 'followers';
     fo.classList.add("hidden");
   }
+  const uco = document.getElementById("userChatOverlay");
+  if(uco && !uco.classList.contains("hidden")) {
+    if(!window._sellerBackTarget) window._sellerBackTarget = 'chat';
+    uco.classList.add("hidden");
+  }
   const po = document.getElementById("postOverlay"); if(po) po.classList.add("hidden");
   const so = document.getElementById("sellerOverlay"); if(so) { so.classList.remove("hidden"); so.style.zIndex = "3600"; }
 
@@ -14193,10 +14195,12 @@ const postsGridHtml = posts.length ? `
       const descSnippet = (p.description || "").trim().slice(0, 160);
 
       const postPhone = p.phone || ph || "";
+      const postSellerUid = p.uid || uid;
+      const safeSellerName = (name || "").replace(/'/g, "\\'");
 
       return `
 
-        <div class="fbPostCard" data-post-id="${escapeHtml(p.id)}" onclick="openPost(this.dataset.postId || '${escapeHtml(p.id)}')">
+        <div class="fbPostCard" data-post-id="${escapeHtml(p.id)}">
 
           <!-- رأس البوست: صاحب الإعلان + الوقت والمدينة + السعر -->
 
@@ -14248,7 +14252,7 @@ const postsGridHtml = posts.length ? `
 
           <div class="fbPostText">
 
-            <h4 class="fbPostTitle" style="cursor:pointer" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();openPost(this.dataset.postId || '${escapeHtml(p.id)}')">${escapeHtml(p.title || 'إعلان')}</h4>
+            <h4 class="fbPostTitle" style="cursor:pointer" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();event.preventDefault();openPost('${escapeHtml(p.id)}')">${escapeHtml(p.title || 'إعلان')}</h4>
 
             ${descSnippet ? `<p class="fbPostDesc">${escapeHtml(descSnippet)}</p>` : ''}
 
@@ -14258,7 +14262,7 @@ const postsGridHtml = posts.length ? `
 
           ${img ? `
 
-            <div class="fbPostMediaWrap" style="cursor:pointer" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();openPost(this.dataset.postId || '${escapeHtml(p.id)}')">
+            <div class="fbPostMediaWrap" style="cursor:pointer" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();event.preventDefault();openPost('${escapeHtml(p.id)}')">
 
               <img src="${escapeHtml(img)}" alt="${escapeHtml(p.title || '')}" loading="lazy">
 
@@ -14272,15 +14276,15 @@ const postsGridHtml = posts.length ? `
 
           <div class="fbPostActions">
 
-            <button type="button" class="fbPostActBtn primary" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();openPost(this.dataset.postId || '${escapeHtml(p.id)}')">
+            <button type="button" class="fbPostActBtn primary" data-post-id="${escapeHtml(p.id)}" onclick="event.stopPropagation();event.preventDefault();openPost('${escapeHtml(p.id)}')">
 
-              <span>👁️</span> عرض التفاصيل
+              <span>👁️</span> تفاصيل الإعلان
 
             </button>
 
             ${postPhone ? `
 
-              <button type="button" class="fbPostActBtn wa" onclick="event.stopPropagation();window.open('https://wa.me/${normalizePhone(postPhone)}', '_blank')">
+              <button type="button" class="fbPostActBtn wa" onclick="event.stopPropagation();event.preventDefault();window.open('https://wa.me/${normalizePhone(postPhone)}', '_blank')">
 
                 <span>📱</span> واتساب
 
@@ -14288,7 +14292,7 @@ const postsGridHtml = posts.length ? `
 
             ` : ''}
 
-            <button type="button" class="fbPostActBtn chat" data-seller-uid="${escapeHtml(p.uid)}" data-post-id="${escapeHtml(p.id)}" data-seller-name="${escapeHtml(name)}" onclick="event.stopPropagation();openChatWithSeller(this.dataset.sellerUid, this.dataset.postId, null, this.dataset.sellerName)">
+            <button type="button" class="fbPostActBtn chat" onclick="event.stopPropagation();event.preventDefault();openChatWithSeller('${escapeHtml(postSellerUid)}', '${escapeHtml(p.id)}', null, '${safeSellerName}')">
 
               <span>💬</span> دردشة
 
@@ -14336,9 +14340,10 @@ if(isMe){
 
     : `<button class="fbBtnAction primary" data-follow-uid="${uid}" onclick="toggleFollow('${uid}',event)">+ متابعة</button>`;
 
-  const chatBtn = `<button class="fbBtnAction chat" data-seller-uid="${escapeHtml(uid)}" data-seller-name="${escapeHtml(name)}" onclick="openChatWithSeller(this.dataset.sellerUid,null,null,this.dataset.sellerName)">💬 مراسلة</button>`;
+  const safeSellerNameTop = (name || "").replace(/'/g, "\\'");
+  const chatBtn = `<button class="fbBtnAction chat" onclick="event.stopPropagation();event.preventDefault();openChatWithSeller('${escapeHtml(uid)}',null,null,'${safeSellerNameTop}')">💬 مراسلة</button>`;
 
-  const waBtn = (ph && (!isPhoneHidden || isMe)) ? `<button class="fbBtnAction whatsapp" onclick="window.open('https://wa.me/${normalizePhone(ph)}', '_blank')">📱 واتساب</button>` : "";
+  const waBtn = (ph && (!isPhoneHidden || isMe)) ? `<button class="fbBtnAction whatsapp" onclick="event.stopPropagation();event.preventDefault();window.open('https://wa.me/${normalizePhone(ph)}', '_blank')">📱 واتساب</button>` : "";
 
   actionButtonsHtml = `${followBtn}${chatBtn}${waBtn}`;
 
@@ -19802,7 +19807,8 @@ export async function markChatAsRead(convId, myUid){
 
     sc.read_by[myUid] = now;
 
-    await sb.from("chat_conversations").update({ store_context: sc, updated_at: now }).eq("conv_id", convId);
+    // 🌟 حاسم: لا نحدث updated_at هنا إطلاقاً! ففتح المحادثة أو قراءتها لا يغير ترتيبها أبداً، الترتيب يتغير فقط عند إرسال أو استقبال رسالة
+    await sb.from("chat_conversations").update({ store_context: sc }).eq("conv_id", convId);
 
   }catch(e){
 
@@ -20218,6 +20224,7 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   const convId = chatConvId(myUid, sellerUid);
 
+  window._chatTargetUid = sellerUid;
   window._activeChat = { convId, targetUid: sellerUid, targetName, targetPhone, postId: postId || null, storeId: storeId || null, isSeller: isCurrentUserSeller };
 
   const callBtn = document.getElementById("chatHeaderCallBtn");
@@ -20354,23 +20361,24 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
   }
 
+  const inboxEl = document.getElementById("userInboxOverlay");
+  const wasInboxOpen = inboxEl && !inboxEl.classList.contains("hidden");
+  window._chatOpenedFromInbox = !!wasInboxOpen;
+
   const chatOverlay = document.getElementById("userChatOverlay");
 
   if(chatOverlay) {
 
     chatOverlay.classList.remove("hidden");
 
-    chatOverlay.style.zIndex = "1300";
+    chatOverlay.style.zIndex = "6000";
 
   }
 
   if (typeof resetVoiceRecordingUI === 'function') resetVoiceRecordingUI();
 
-  const so = document.getElementById("sellerOverlay");
-
-  if(so) so.style.zIndex = "1000";
-
-  if(typeof closeInbox === "function") closeInbox();
+  if(typeof closeInboxDirect === "function") closeInboxDirect();
+  else if(typeof closeInbox === "function") closeInbox(true);
 
   if(!skipHistory && typeof pushNavState === 'function') {
 
@@ -20744,6 +20752,18 @@ export async function sendUserChatMessage(){
 
   const convId = chatConvId(me.uid, activeChat.targetUid);
 
+  // 🚀 تصعيد المحادثة فورياً لأول القائمة مثل واتساب وإنستغرام
+  _onConversationUpdated({
+    conv_id: convId,
+    p1: [me.uid, activeChat.targetUid].sort()[0],
+    p2: [me.uid, activeChat.targetUid].sort()[1],
+    participant_uids: [me.uid, activeChat.targetUid],
+    last_message: text,
+    last_sender_uid: me.uid,
+    last_sender_name: senderName,
+    updated_at: now
+  });
+
   input.value = "";
 
   resetVoiceRecordingUI();
@@ -20966,9 +20986,80 @@ export function closeUserChatDirect(){
 
   window._activeChat = null;
 
+  // 🌟 التنقل الذكي المطابق للواتساب وإنستغرام:
+  // إذا كان المستخدم قد دخل المحادثة من قائمة الرسائل، يرجع إليها
+  // أما إذا دخل من إعلان أو متجر أو حساب شخص أو من الواجهة، فيخرج مباشرة للشاشة السابقة/الرئيسي ولا يفتح الرسائل!
+  if (window._chatOpenedFromInbox) {
+    window._chatOpenedFromInbox = false;
+    if (typeof openInbox === 'function') {
+      openInbox(true);
+    }
+  } else {
+    // التأكد الحاسم من إغلاق شاشة الرسائل لكي لا تظهر في الخلفية نهائياً
+    if (typeof closeInboxDirect === 'function') closeInboxDirect();
+    else {
+      const uio = document.getElementById("userInboxOverlay");
+      if (uio) { uio.classList.add("hidden"); uio.style.zIndex = ""; }
+    }
+  }
+
 }
 
-export async function openInbox(){
+// 🌟 تحديث ترتيب المحادثات في الوقت الفعلي: الذي ترسل له رسالة أو تصلك منه رسالة يصعد لأول القائمة فوراً
+export function _onConversationUpdated(convData) {
+  if (!convData || !convData.conv_id) return;
+  const myUid = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser.uid : null;
+  if (!myUid) return;
+
+  const now = Number(convData.updated_at) || Date.now();
+
+  // 1) تحديث الكاش المخزن محلياً لضمان عدم ظهور ترتيب قديم عند فتح المحادثات
+  try {
+    const listKey = "tasawuq_inbox_list_" + myUid;
+    let list = JSON.parse(localStorage.getItem(listKey) || "[]");
+    const idx = list.findIndex(c => c.conv_id === convData.conv_id);
+    let item = { conv_id: convData.conv_id, ...convData, updated_at: now };
+    if (idx !== -1) {
+      item = { ...list[idx], ...convData, updated_at: now };
+      list.splice(idx, 1);
+    }
+    // وضع المحادثة في رأس القائمة فوراً
+    list.unshift(item);
+    list.sort((a, b) => (Number(b.updated_at) || 0) - (Number(a.updated_at) || 0));
+    localStorage.setItem(listKey, JSON.stringify(list));
+    localStorage.removeItem("tasawuq_inbox_cache_" + myUid);
+  } catch(e){}
+
+  // 2) التحديث الفوري في الواجهة (DOM) إذا كانت شاشة الرسائل مفتوحة
+  const container = document.getElementById("userInboxList");
+  if (container) {
+    const row = container.querySelector(`[data-conv-id="${convData.conv_id}"]`);
+    if (row) {
+      const msgEl = row.querySelector(".inboxLastMsg");
+      if (msgEl) {
+        const isMe = convData.last_sender_uid === myUid;
+        msgEl.innerHTML = (isMe ? '<span style="color:#0284c7;font-weight:700">أنت: </span>' : '') + escapeHtml(convData.last_message || '');
+      }
+      const timeEl = row.querySelector(".inboxTime");
+      if (timeEl) timeEl.textContent = "الآن";
+
+      // نقل العنصر إلى أول القائمة فوراً مثل واتساب وانستغرام
+      container.prepend(row);
+
+      row.style.transition = "background-color 0.4s ease";
+      const origBg = row.style.backgroundColor;
+      row.style.backgroundColor = "rgba(2, 132, 199, 0.12)";
+      setTimeout(() => { row.style.backgroundColor = origBg; }, 700);
+    } else {
+      if (typeof openInbox === 'function' && !document.getElementById("userInboxOverlay")?.classList.contains("hidden")) {
+        openInbox(true);
+      }
+    }
+  }
+}
+window._onConversationUpdated = _onConversationUpdated;
+
+export async function openInbox(skipHistory){
 
   const overlay = document.getElementById("userInboxOverlay");
 
@@ -20977,6 +21068,23 @@ export async function openInbox(){
   if(!overlay || !list) return;
 
   overlay.classList.remove("hidden");
+  overlay.style.zIndex = "4500";
+
+  if (!skipHistory && typeof pushNavState === 'function') {
+    pushNavState({ screen: 'inbox' }, '#inbox');
+  }
+
+  // 🧹 تنظيف كاش صندوق الرسائل القديم لضمان تطبيق الترتيب الصحيح الحقيقي 100%
+  try {
+    if (localStorage.getItem("tasawuq_inbox_v") !== "167") {
+      const myId = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser.uid : "";
+      if (myId) {
+        localStorage.removeItem("tasawuq_inbox_cache_" + myId);
+        localStorage.removeItem("tasawuq_inbox_list_" + myId);
+      }
+      localStorage.setItem("tasawuq_inbox_v", "167");
+    }
+  } catch(e){}
 
   if(!auth.currentUser){
 
@@ -21062,6 +21170,13 @@ export async function openInbox(){
 
       return true;
 
+    });
+
+    // 🌟 الترتيب الفوري الحاسم: الأحدث رسالة يكون أول محادثة في القمة تماماً مثل واتساب وإنستغرام
+    activeConvs.sort((a, b) => {
+      const timeA = Number(a.updated_at) || 0;
+      const timeB = Number(b.updated_at) || 0;
+      return timeB - timeA;
     });
 
     if(!activeConvs || activeConvs.length === 0){
@@ -21230,7 +21345,7 @@ export async function openInbox(){
 
       return `
 
-        <div class="inboxRow" data-uid="${escapeHtml(otherUid || '')}" data-post-id="${escapeHtml((c.post_context && c.post_context.id) || '')}" data-store-id="${escapeHtml((c.store_context && c.store_context.id) || '')}" data-name="${escapeHtml(otherName)}" onclick="openChatWithSeller(this.dataset.uid, this.dataset.postId, this.dataset.storeId, this.dataset.name)">
+        <div class="inboxRow" data-conv-id="${escapeHtml(c.conv_id || '')}" data-uid="${escapeHtml(otherUid || '')}" data-post-id="${escapeHtml((c.post_context && c.post_context.id) || '')}" data-store-id="${escapeHtml((c.store_context && c.store_context.id) || '')}" data-name="${escapeHtml(otherName)}" onclick="openChatWithSeller(this.dataset.uid, this.dataset.postId, this.dataset.storeId, this.dataset.name)">
 
           <div class="inboxAvatar">${avatarHtml}</div>
 
@@ -21246,13 +21361,13 @@ export async function openInbox(){
 
               </div>
 
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updated_at)}</div>
+              <div class="inboxTime" style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo(c.updated_at)}</div>
 
             </div>
 
             ${tagHtml ? `<div style="margin-bottom:4px">${tagHtml}</div>` : ''}
 
-            <div style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            <div class="inboxLastMsg" style="font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
 
               ${c.last_sender_uid === myUid ? '<span style="color:#0284c7;font-weight:700">أنت: </span>' : ''}${escapeHtml(lastSeenTxt)}
 
@@ -21352,13 +21467,28 @@ export async function deleteConversationForMe(convId){
 
 window.deleteConversationForMe = deleteConversationForMe;
 
-export function closeInbox(){
+export function closeInbox(skipHistory){
+
+  if (!skipHistory && !_isHistoryNavigating && window.history.state && window.history.state.screen === 'inbox') {
+    window.history.back();
+    return;
+  }
+
+  closeInboxDirect();
+
+}
+
+export function closeInboxDirect(){
 
   const overlay = document.getElementById("userInboxOverlay");
 
-  if(overlay) overlay.classList.add("hidden");
+  if(overlay) {
+    overlay.classList.add("hidden");
+    overlay.style.zIndex = "";
+  }
 
 }
+window.closeInboxDirect = closeInboxDirect;
 
 export async function updateGlobalUnreadChatCount(){
 
@@ -21472,40 +21602,26 @@ document.addEventListener("visibilitychange", () => {
 
 export function openChatTargetProfile(){
 
-  if(!window._activeChat || !window._activeChat.targetUid) return;
+  const targetUid = (window._activeChat && window._activeChat.targetUid) || window._chatTargetUid || sellerPanelUid;
 
-  const targetUid = window._activeChat.targetUid;
+  if(!targetUid) return;
 
-  const storeId = window._activeChat.storeId;
+  const storeId = window._activeChat ? window._activeChat.storeId : null;
 
-  // رفع طبقة البروفايل لتظهر فوق نافذة الشات بسلاسة
+  // إعداد مسار الرجوع للدردشة عند الضغط على زر الرجوع في صفحة البروفايل
+  window._sellerBackTarget = 'chat';
 
-  const so = document.getElementById("sellerOverlay");
+  // إخفاء نافذة الدردشة فوراً لتظهر صفحة البروفايل مباشرة أمام المستخدم
+  const chatOverlay = document.getElementById("userChatOverlay");
+  if(chatOverlay) {
+    chatOverlay.classList.add("hidden");
+  }
 
-  if(so) so.style.zIndex = "1400";
-
-  const sto = document.getElementById("storeOverlay");
-
-  if(sto) sto.style.zIndex = "1400";
-
+  // فتح الملف الشخصي فوراً
   if(storeId){
-
     openStore(storeId, false, 'chat');
-
   } else {
-
-    const sOwner = allStores.find(x => (x.ownerUid === targetUid || x.owner_uid === targetUid) && x.status === "approved");
-
-    if(sOwner){
-
-      openStore(sOwner.id, false, 'chat');
-
-    } else {
-
-      openSeller(targetUid);
-
-    }
-
+    openSeller(targetUid);
   }
 
 }
@@ -21523,6 +21639,7 @@ window.sendUserChatMessage = sendUserChatMessage;
 window.openInbox = openInbox;
 
 window.closeInbox = closeInbox;
+window.closeInboxDirect = closeInboxDirect;
 
 window.updateGlobalUnreadChatCount = updateGlobalUnreadChatCount;
 
@@ -22542,6 +22659,17 @@ export async function handleChatPhotoSelected(event){
 
     const p2 = [me.uid, activeChat.targetUid].sort()[1];
 
+    _onConversationUpdated({
+      conv_id: activeChat.convId,
+      p1: p1,
+      p2: p2,
+      participant_uids: [me.uid, activeChat.targetUid],
+      last_message: "📷 صورة",
+      last_sender_uid: me.uid,
+      last_sender_name: senderName,
+      updated_at: now
+    });
+
     await sb.from("chat_conversations").upsert({
 
       conv_id: activeChat.convId,
@@ -23183,6 +23311,16 @@ export function startChatPushRealtimeListener(myUid){
 
           if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
 
+          if(typeof _onConversationUpdated === 'function'){
+            _onConversationUpdated({
+              conv_id: msg.conv_id,
+              last_message: msg.text || (msg.audio_url ? "🎙️ رسالة صوتية" : (msg.image_url ? "📷 صورة" : "رسالة جديدة")),
+              last_sender_uid: msg.sender_uid,
+              last_sender_name: msg.sender_name,
+              updated_at: Number(msg.created_at) || Date.now()
+            });
+          }
+
           // 3. عرض إشعار النظام المباشر
 
           const title = `💬 ${msg.sender_name || 'رسالة جديدة'}`;
@@ -23621,6 +23759,17 @@ async function uploadAndSendVoiceMessage(blob, durationSec){
 
       const p2 = [me.uid, activeChat.targetUid].sort()[1];
 
+      _onConversationUpdated({
+        conv_id: convId,
+        p1: p1,
+        p2: p2,
+        participant_uids: [me.uid, activeChat.targetUid],
+        last_message: "🎙️ رسالة صوتية",
+        last_sender_uid: me.uid,
+        last_sender_name: senderName,
+        updated_at: now
+      });
+
       await sb.from("chat_conversations").upsert({
 
         conv_id: convId,
@@ -23963,9 +24112,9 @@ function getDemoReelsItems() {
 
       sellerUsername: "alamana_auto",
 
-      videoUrl: "1000068463.mp4",
+      videoUrl: "https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/public/videos/sample_ad_video_10s.mp4",
 
-      createdAt: Date.now() - 2 * 3600 * 1000, // قبل ساعتين
+      createdAt: Date.now() - 2 * 3600 * 1000,
 
       views: 1240,
 
@@ -23991,9 +24140,9 @@ function getDemoReelsItems() {
 
       sellerUsername: "albaraka_grill",
 
-      videoUrl: "1000068463.mp4",
+      videoUrl: "https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/public/videos/real_sample_reel_1.mp4",
 
-      createdAt: Date.now() - 5 * 3600 * 1000, // قبل 5 ساعات
+      createdAt: Date.now() - 5 * 3600 * 1000,
 
       views: 890,
 
@@ -24019,7 +24168,9 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
   allPosts.forEach(p => {
 
-    if ((p.videoUrl || p.video) && !seenIds.has(p.id)) {
+    const vUrl = p.videoUrl || p.video || (p.specs && p.specs.video_url);
+    if (vUrl && !seenIds.has(p.id)) {
+      if (typeof vUrl === 'string' && vUrl.startsWith('blob:')) return;
 
       const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
 
@@ -24029,9 +24180,23 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
       const placement = p.videoPlacement || "both";
 
-      if (placement === "story") return;
+      // إذا تم طلب الإعلان بالاسم أو كان لمعلن معين نسمح بالستوري دائماً، وإلا نتحقق من 24 ساعة
+      if (placement === "story" && (!startPostId || startPostId !== p.id) && (!startSellerUid || p.uid !== startSellerUid)) {
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const created = Number(p.createdAt) || 0;
+        if (Date.now() - created > DAY_MS && !isMine) return;
+      }
 
       seenIds.add(p.id);
+
+      // مزامنة التعليقات المخزنة في p.specs
+      if (p.specs && Array.isArray(p.specs.reel_comments)) {
+        const local = _reelsCommentsMap[p.id] || [];
+        const mergedMap = new Map();
+        p.specs.reel_comments.forEach(c => mergedMap.set(c.id || (c.author + '_' + (c.timestamp || 0)), c));
+        local.forEach(c => mergedMap.set(c.id || (c.author + '_' + (c.timestamp || 0)), c));
+        _reelsCommentsMap[p.id] = Array.from(mergedMap.values()).sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+      }
 
       list.push({
 
@@ -24051,7 +24216,7 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
         sellerUsername: p.sellerUsername || (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.username) || "",
 
-        videoUrl: p.videoUrl || p.video,
+        videoUrl: vUrl,
 
         videoPlacement: placement,
 
@@ -24067,21 +24232,25 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
   });
 
-  // 2) دمج الفيديوهات التجريبية للاختبار السريع الفوري
+  // 2) دمج الفيديوهات التوضيحية فقط إذا لم تكن هناك أي فيديوهات حقيقية من إعلانات المنصة
 
-  const demoItems = getDemoReelsItems();
+  if (list.length === 0) {
 
-  demoItems.forEach(d => {
+    const demoItems = getDemoReelsItems();
 
-    if (!seenIds.has(d.id)) {
+    demoItems.forEach(d => {
 
-      seenIds.add(d.id);
+      if (!seenIds.has(d.id)) {
 
-      list.push(d);
+        seenIds.add(d.id);
 
-    }
+        list.push(d);
 
-  });
+      }
+
+    });
+
+  }
 
   // ترتيب القائمة: لو داخلين من بروفايل شخص معين، نبدأ بفيديوهاته أولاً ثم يكمل للباقين
 
@@ -24113,187 +24282,187 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
 }
 
-// عرض شريط الستوريات بالأعلى في الصفحة الرئيسية
+// مزامنة أحدث فيديوهات الستوري والريلز المعتمدة من Supabase في الخلفية
+let _lastStoriesSyncTime = 0;
+window.syncActiveStoriesFromSupabase = async function() {
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (!sb) return;
 
+  try {
+    const { data, error } = await sb
+      .from('posts')
+      .select('*')
+      .not('video_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      let hasChanges = false;
+      const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+
+      data.forEach(row => {
+        // تجاهل الروابط المؤقتة التالفة القديمة
+        if (typeof row.video_url === 'string' && row.video_url.startsWith('blob:')) return;
+
+        const p = (typeof objectFromDb === 'function') ? objectFromDb(row) : row;
+        if (!p || !p.id) return;
+
+        const exIdx = allPosts.findIndex(x => x.id === p.id);
+        if (exIdx !== -1) {
+          allPosts[exIdx].videoUrl = p.videoUrl;
+          allPosts[exIdx].videoPlacement = p.videoPlacement || "both";
+          if (p.specs) allPosts[exIdx].specs = Object.assign(allPosts[exIdx].specs || {}, p.specs);
+          if (p.status === 'approved') allPosts[exIdx].status = 'approved';
+          hasChanges = true;
+        } else {
+          allPosts.unshift(p);
+          hasChanges = true;
+        }
+      });
+
+      allPosts = sortPosts(allPosts);
+      window.allPosts = allPosts;
+      renderStoriesBarDirect();
+      buildReelsPlaylist();
+    }
+  } catch(e) {
+    console.warn("syncActiveStoriesFromSupabase error:", e);
+  }
+};
+
+// عرض شريط الستوريات والريلز بالأعلى في الصفحة الرئيسية
 window.renderStoriesBar = function() {
+  renderStoriesBarDirect();
 
+  // فحص الخلفية وتحديث السيرفر كل 30 ثانية
+  const now = Date.now();
+  if (now - _lastStoriesSyncTime > 30000) {
+    _lastStoriesSyncTime = now;
+    syncActiveStoriesFromSupabase();
+  }
+};
+
+function renderStoriesBarDirect() {
   const bar1 = document.getElementById("storiesBar");
-
   const bar2 = document.getElementById("storiesBarCat");
-
   if (!bar1 && !bar2) return;
 
   const now = Date.now();
-
   const DAY_MS = 24 * 60 * 60 * 1000;
-
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   // 1) تجميع كل مقاطع الفيديو الحقيقية من الإعلانات
   const activeVideoPosts = [];
 
   allPosts.forEach(p => {
-
-    if (p.videoUrl || p.video) {
+    const vUrl = p.videoUrl || p.video || (p.specs && p.specs.video_url);
+    if (vUrl) {
+      // نتجاهل أي رابط blob قديم تالف
+      if (typeof vUrl === 'string' && vUrl.startsWith('blob:')) return;
 
       const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
-
       const isApproved = getStatus(p) === "approved" || p.status === "approved" || !p.status || p.status === "pending";
-
       if (!isApproved && !isMine) return;
 
-      const placement = p.videoPlacement || "both";
-
-      if (placement === "reels") return; // إذا اختار "ريلز فقط"
-
+      const placement = p.videoPlacement || (p.specs && p.specs.video_placement) || "both";
       const created = Number(p.createdAt) || 0;
 
-      if (now - created <= DAY_MS || isMine) {
+      // الستوري (24 ساعة)، الريلز وكلاهما مستمر
+      if (placement === "story" && (now - created > DAY_MS) && !isMine) return;
 
-        activeVideoPosts.push(p);
-
-      }
-
+      activeVideoPosts.push({ ...p, videoUrl: vUrl, videoPlacement: placement });
     }
-
   });
 
-  // فحص هل المستخدم الحالي لديه ستوري نشط
+  // فحص هل المستخدم الحالي لديه ستوري أو ريلز نشط
   const myActiveStory = me ? activeVideoPosts.find(p => p.uid === me.uid || p.addedBy === me.uid) : null;
 
   // 2) تجميع مقاطع الريلز والستوريات جنب بعضها (لكل معلن دائرة فيديو)
   const sellersMap = new Map();
 
   activeVideoPosts.forEach(p => {
-
     if (!sellersMap.has(p.uid)) {
-
       sellersMap.set(p.uid, {
-
         uid: p.uid,
-
         name: resolveDisplayName(p.uid, p),
-
         username: p.sellerUsername || (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.username) || "",
-
         firstPostId: p.id,
-
         avatar: (window.sellersProfileCache && window.sellersProfileCache[p.uid]?.avatar) || localStorage.getItem("tasawuq_avatar_" + p.uid) || "",
-
+        placement: p.videoPlacement || "both",
         isDemo: false
-
       });
-
     }
-
   });
 
-  // 3) دمج مقاطع الريلز الجذابة لتكون المقاطع دائماً متوفرة جنب بعضها للمشاهدة
-  const demoItems = (typeof getDemoReelsItems === 'function') ? getDemoReelsItems() : [];
+  // 3) دمج مقاطع توضيحية فقط في حال لم تكن هناك أي إعلانات فيديو حقيقية نشطة
+  if (sellersMap.size === 0) {
+    const demoItems = (typeof getDemoReelsItems === 'function') ? getDemoReelsItems() : [];
+    demoItems.forEach(d => {
+      if (!sellersMap.has(d.uid)) {
+        sellersMap.set(d.uid, {
+          uid: d.uid,
+          name: d.sellerName || "ريلز",
+          username: d.sellerUsername || "",
+          firstPostId: d.id,
+          avatar: "",
+          placement: "both",
+          isDemo: true
+        });
+      }
+    });
+  }
 
-  demoItems.forEach(d => {
-
-    if (!sellersMap.has(d.uid)) {
-
-      sellersMap.set(d.uid, {
-
-        uid: d.uid,
-
-        name: d.sellerName || "ريلز",
-
-        username: d.sellerUsername || "",
-
-        firstPostId: d.id,
-
-        avatar: "",
-
-        isDemo: true
-
-      });
-
-    }
-
-  });
-
-  // 4) بناء الشريط المتجاور (جنب بعض)
+  // 4) بناء الشريط المتجاور
   const myAvatar = me ? (localStorage.getItem("tasawuq_avatar_" + me.uid) || "") : "";
-
   const myInitial = (window.myProfile && window.myProfile.name) ? window.myProfile.name.trim()[0].toUpperCase() : '👤';
-
   const myAvHtml = myAvatar ? `<img src="${escapeHtml(myAvatar)}" alt="أنا">` : myInitial;
-
   const myStoryAction = myActiveStory ? `openReelsModal({ sellerUid: '${escapeHtml(me.uid)}', postId: '${escapeHtml(myActiveStory.id)}' })` : `openAddStoryPrompt()`;
-
   const myRingClass = myActiveStory ? `storyRing activeStoryRing` : `storyRing myStoryRing`;
 
   let html = `
-
     <!-- دائرة قصتك (عرض الستوري أو إضافة فيديو) -->
-    <div class="storyBubble" onclick="${myStoryAction}" title="${myActiveStory ? 'مشاهدة ستوريك ⭕' : 'أضف ستوري أو ريلز جديد ➕'}">
-
+    <div class="storyBubble" onclick="${myStoryAction}" title="${myActiveStory ? 'مشاهدة فيديوهاتك ⭕' : 'أضف ستوري أو ريلز جديد ➕'}">
       <div class="${myRingClass}">
-
         <div class="storyAvatar">${myAvHtml}</div>
-
-        <div class="storyAddBadge" onclick="event.stopPropagation();openAddStoryPrompt();" title="إضافة فيديو جديد">+</div>
-
+        <div class="storyAddBadge" onclick="event.stopPropagation();openAddStoryPrompt();" title="إضافة فيديو ريلز / ستوري جديد">+</div>
       </div>
-
-      <div class="storyName" style="${myActiveStory ? 'color:var(--teal-dark);font-weight:800' : ''}">${myActiveStory ? 'ستوريك ⭕' : 'قصتك'}</div>
-
+      <div class="storyName" style="${myActiveStory ? 'color:var(--teal-dark);font-weight:800' : ''}">${myActiveStory ? 'فيديوهاتك ⭕' : 'قصتك'}</div>
     </div>
 
     <!-- زر كل الـ Reels للدخول والتفرج على جميع الفيديوهات -->
     <div class="storyBubble" onclick="openReelsModal()" title="اضغط هنا للدخول والتفرج على كل مقاطع الريلز">
-
       <div class="storyRing" style="background:linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6);box-shadow:0 3px 10px rgba(236,72,153,0.35)">
-
         <div class="storyAvatar" style="background:#0f172a;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center">
-
           🎬
-
         </div>
-
       </div>
-
       <div class="storyName" style="color:#ec4899;font-weight:800">كل الـ Reels</div>
-
     </div>
-
   `;
 
-  // عرض كل مقاطع الـ Reels جنب بعض
+  // عرض كل مقاطع المعلنين جنب بعض
   sellersMap.forEach(s => {
-
     if (me && s.uid === me.uid) return; // تم عرضه في دائرة "قصتك"
 
     const sInitial = (s.name || '👤').trim()[0].toUpperCase();
-
     const sAvHtml = s.avatar ? `<img src="${escapeHtml(s.avatar)}" alt="${escapeHtml(s.name)}">` : (s.isDemo ? '🎥' : sInitial);
+    const ringGradient = s.placement === 'story'
+      ? 'linear-gradient(135deg, #f59e0b, #ec4899)'
+      : 'linear-gradient(135deg, #ec4899, #8b5cf6, #0284c7)';
 
     html += `
-
       <div class="storyBubble" onclick="openReelsModal({ sellerUid: '${escapeHtml(s.uid)}', postId: '${escapeHtml(s.firstPostId)}' })" title="مشاهدة ريلز: ${escapeHtml(s.name)}">
-
-        <div class="storyRing" style="background:linear-gradient(135deg, #f59e0b, #ec4899, #0284c7)">
-
+        <div class="storyRing" style="background:${ringGradient}">
           <div class="storyAvatar">${sAvHtml}</div>
-
         </div>
-
         <div class="storyName">${escapeHtml(s.name)}</div>
-
       </div>
-
     `;
-
   });
 
   if (bar1) bar1.innerHTML = html;
-
   if (bar2) bar2.innerHTML = html;
-
-};
+}
 
 window.openAddStoryPrompt = function() {
 
@@ -24466,12 +24635,16 @@ function loadCurrentReel() {
   if (likeIconEl) likeIconEl.textContent = isLiked ? "❤️" : "🤍";
 
   // عداد التعليقات
-
-  const comments = _reelsCommentsMap[reel.id] || [];
-
+  const comments = _reelsCommentsMap[reel.id] || (reel.specs && Array.isArray(reel.specs.reel_comments) ? reel.specs.reel_comments : []);
+  _reelsCommentsMap[reel.id] = comments;
   const commCountEl = document.getElementById("reelsCommentsCount");
-
   if (commCountEl) commCountEl.textContent = comments.length;
+
+  // إذا كان درج التعليقات مفتوحاً، نحدث القائمة فوراً للفيديو الجديد
+  const commentsSheetEl = document.getElementById("reelsCommentsSheet");
+  if (commentsSheetEl && !commentsSheetEl.classList.contains("hidden")) {
+    renderReelCommentsList(reel.id);
+  }
 
 }
 
@@ -24766,21 +24939,15 @@ window.openReelsSellerProfile = function() {
 // فتح تفاصيل الإعلان كاملة
 
 window.openReelsFullPost = function() {
-
   const reel = _reelsPlaylist[_reelsCurrentIndex];
-
   if (!reel || !reel.id) return;
-
   closeReelsModal();
-
-  if (typeof openPostDirect === 'function') openPostDirect(reel.id);
-
-  else if (typeof openPost === 'function') openPost(reel.id);
-
+  setTimeout(() => {
+    if (typeof openPost === 'function') openPost(reel.id);
+  }, 100);
 };
 
 // مشاركة الريل
-
 window.shareCurrentReel = async function() {
 
   const reel = _reelsPlaylist[_reelsCurrentIndex];
@@ -24803,176 +24970,322 @@ window.shareCurrentReel = async function() {
 
 };
 
-// التعليقات على الريل
+// ==========================================================================
+// 💬 نظام التعليقات التفاعلي المباشر للريلز والستوري (مربوط بقاعدة البيانات)
+// ==========================================================================
 
-window.openReelsComments = function() {
-
+window.openReelsComments = async function() {
   const reel = _reelsPlaylist[_reelsCurrentIndex];
-
   if (!reel) return;
-
   const sheet = document.getElementById("reelsCommentsSheet");
-
+  const backdrop = document.getElementById("reelsCommentsBackdrop");
   if (sheet) sheet.classList.remove("hidden");
+  if (backdrop) backdrop.classList.remove("hidden");
 
+  // عرض فوري للتعليقات من الذاكرة المحلية
   renderReelCommentsList(reel.id);
 
+  // تحديث فوري مباشر من Supabase إن وجد اتصال وكان إعلاناً حقيقياً
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sb && reel.id && !String(reel.id).startsWith("demo_")) {
+    try {
+      const { data: dbRow, error } = await sb.from('posts').select('specs').eq('id', reel.id).maybeSingle();
+      if (!error && dbRow && dbRow.specs) {
+        let specs = dbRow.specs;
+        if (typeof specs === "string") {
+          try { specs = JSON.parse(specs); } catch(e) { specs = {}; }
+        }
+        if (specs && Array.isArray(specs.reel_comments)) {
+          const local = _reelsCommentsMap[reel.id] || [];
+          const mergedMap = new Map();
+          specs.reel_comments.forEach(c => {
+            const cid = c.id || (c.author + '_' + (c.timestamp || 0));
+            mergedMap.set(cid, c);
+          });
+          local.forEach(c => {
+            const cid = c.id || (c.author + '_' + (c.timestamp || 0));
+            mergedMap.set(cid, c);
+          });
+          const mergedList = Array.from(mergedMap.values()).sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+          _reelsCommentsMap[reel.id] = mergedList;
+          try {
+            localStorage.setItem('tasawuq_reels_comments', JSON.stringify(_reelsCommentsMap));
+          } catch(e) {}
+          renderReelCommentsList(reel.id);
+          const commCountEl = document.getElementById("reelsCommentsCount");
+          if (commCountEl) commCountEl.textContent = mergedList.length;
+        }
+      }
+    } catch(e) {
+      console.warn("Could not refresh comments from Supabase:", e);
+    }
+  }
+
+  // تركيز حقل الإدخال برفق بعد الفتح
+  setTimeout(() => {
+    const input = document.getElementById("reelsCommentInput");
+    if (input) input.focus();
+  }, 300);
 };
 
 window.closeReelsComments = function() {
-
   const sheet = document.getElementById("reelsCommentsSheet");
-
+  const backdrop = document.getElementById("reelsCommentsBackdrop");
   if (sheet) sheet.classList.add("hidden");
-
+  if (backdrop) backdrop.classList.add("hidden");
 };
 
+function formatReelCommentTime(ts) {
+  if (!ts) return "";
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return "الآن";
+  if (diff < 3600) return `منذ ${Math.floor(diff / 60)} د`;
+  if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} س`;
+  if (diff < 86400 * 7) return `منذ ${Math.floor(diff / 86400)} ي`;
+  return new Date(ts).toLocaleDateString('ar-LY', { month: 'numeric', day: 'numeric' });
+}
+
 function renderReelCommentsList(reelId) {
-
   const list = document.getElementById("reelsCommentsList");
-
   const countEl = document.getElementById("reelsCommentsHeaderCount");
-
   if (!list) return;
 
-  const comments = _reelsCommentsMap[reelId] || [];
+  const reel = _reelsPlaylist[_reelsCurrentIndex] || {};
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isAdOwner = me && (reel.uid === me.uid || reel.addedBy === me.uid);
+  const isAdminUser = typeof isAdmin !== 'undefined' ? isAdmin : false;
 
+  const comments = _reelsCommentsMap[reelId] || [];
   if (countEl) countEl.textContent = comments.length;
 
   if (comments.length === 0) {
-
-    list.innerHTML = `<div class="reportsEmpty" style="padding:20px;text-align:center">لا توجد تعليقات بعد، كن أول من يعلق!</div>`;
-
+    list.innerHTML = `<div class="reportsEmpty" style="padding:24px 16px;text-align:center;color:var(--muted)">💬 لا توجد تعليقات بعد، كن أول من يعلق!</div>`;
     return;
-
   }
 
   list.innerHTML = comments.map(c => {
+    const authorName = c.author || 'مستخدم تسوق الآن';
+    const initial = (authorName.trim()[0] || '👤').toUpperCase();
+    const isMyComment = me && c.uid && (c.uid === me.uid);
+    const canDelete = isMyComment || isAdOwner || isAdminUser;
+    const timeStr = formatReelCommentTime(c.timestamp);
 
-    const initial = (c.author || '👤').trim()[0].toUpperCase();
+    const avHtml = c.avatar
+      ? `<img src="${escapeHtml(c.avatar)}" alt="${escapeHtml(authorName)}">`
+      : initial;
+
+    const delBtn = canDelete
+      ? `<button type="button" class="reelsCommentDelBtn" onclick="deleteReelComment('${escapeHtml(c.id || '')}')" title="حذف التعليق">🗑️</button>`
+      : '';
 
     return `
-
       <div class="reelsCommentItem">
-
-        <div class="reelsCommentAvatar">${initial}</div>
-
+        <div class="reelsCommentAvatar">${avHtml}</div>
         <div class="reelsCommentContent">
-
-          <div class="reelsCommentAuthor">${escapeHtml(c.author)}</div>
-
+          <div class="reelsCommentHeaderLine">
+            <div class="reelsCommentAuthor">
+              <span>${escapeHtml(authorName)}</span>
+              ${timeStr ? `<span class="reelsCommentTime">${timeStr}</span>` : ''}
+            </div>
+            ${delBtn}
+          </div>
           <div class="reelsCommentText">${escapeHtml(c.text)}</div>
-
         </div>
-
       </div>
-
     `;
-
   }).join("");
-
 }
 
-window.submitReelComment = function() {
-
+window.submitReelComment = async function() {
   const input = document.getElementById("reelsCommentInput");
-
   if (!input) return;
 
   const text = (input.value || "").trim();
-
   if (!text) return;
 
   const reel = _reelsPlaylist[_reelsCurrentIndex];
-
   if (!reel) return;
 
   if (!_reelsCommentsMap[reel.id]) _reelsCommentsMap[reel.id] = [];
 
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const myUid = me ? me.uid : ("user_" + Math.random().toString(36).substr(2, 7));
+  const myName = (window.myProfile && window.myProfile.name) ||
+                 (me && me.displayName) ||
+                 (me && me.email ? me.email.split('@')[0] : "مستخدم تسوق الآن");
+  const myAvatar = (window.myProfile && window.myProfile.avatar) ||
+                   (me ? localStorage.getItem("tasawuq_avatar_" + me.uid) : "") || "";
 
-  const myName = (window.myProfile && window.myProfile.name) || (me && me.displayName) || "مستخدم تسوق الآن";
-
-  _reelsCommentsMap[reel.id].push({
-
+  const newComment = {
+    id: "rc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+    uid: myUid,
     author: myName,
-
+    avatar: myAvatar,
     text: text,
-
     timestamp: Date.now()
+  };
 
-  });
+  _reelsCommentsMap[reel.id].push(newComment);
 
   try {
-
     localStorage.setItem('tasawuq_reels_comments', JSON.stringify(_reelsCommentsMap));
-
   } catch(e) {}
 
   input.value = "";
+  renderReelCommentsList(reel.id);
+
+  const commCountEl = document.getElementById("reelsCommentsCount");
+  if (commCountEl) commCountEl.textContent = _reelsCommentsMap[reel.id].length;
+
+  // تمرير القائمة لأسفل لرؤية التعليق الجديد
+  setTimeout(() => {
+    const list = document.getElementById("reelsCommentsList");
+    if (list) list.scrollTop = list.scrollHeight;
+  }, 50);
+
+  if (typeof showToast === 'function') {
+    showToast("✅ تم نشر تعليقك بنجاح!", "success", 2000);
+  }
+
+  // مزامنة فورية مع Supabase إذا كان إعلاناً حقيقياً
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sb && reel.id && !String(reel.id).startsWith("demo_")) {
+    try {
+      const post = allPosts.find(p => p.id === reel.id) || reel;
+      let specs = post.specs;
+      if (typeof specs === "string") {
+        try { specs = JSON.parse(specs); } catch(e) { specs = {}; }
+      }
+      if (!specs || typeof specs !== "object") specs = {};
+
+      const { data: dbRow } = await sb.from('posts').select('specs').eq('id', reel.id).maybeSingle();
+      let remoteSpecs = (dbRow && dbRow.specs) ? dbRow.specs : specs;
+      if (typeof remoteSpecs === "string") {
+        try { remoteSpecs = JSON.parse(remoteSpecs); } catch(e) { remoteSpecs = {}; }
+      }
+      if (!remoteSpecs || typeof remoteSpecs !== "object") remoteSpecs = {};
+
+      const currentList = Array.isArray(remoteSpecs.reel_comments) ? remoteSpecs.reel_comments : [];
+      if (!currentList.some(c => c.id === newComment.id)) {
+        currentList.push(newComment);
+      }
+      remoteSpecs.reel_comments = currentList;
+      post.specs = remoteSpecs;
+      _reelsCommentsMap[reel.id] = currentList;
+
+      await sb.from('posts').update({ specs: remoteSpecs }).eq('id', reel.id);
+
+      try {
+        localStorage.setItem('tasawuq_reels_comments', JSON.stringify(_reelsCommentsMap));
+      } catch(e) {}
+      renderReelCommentsList(reel.id);
+    } catch(err) {
+      console.warn("Error syncing reel comment to Supabase:", err);
+    }
+  }
+};
+
+window.deleteReelComment = async function(commentId) {
+  if (!commentId) return;
+  const reel = _reelsPlaylist[_reelsCurrentIndex];
+  if (!reel) return;
+
+  if (!confirm("هل أنت متأكد من حذف هذا التعليق؟")) return;
+
+  const list = _reelsCommentsMap[reel.id] || [];
+  _reelsCommentsMap[reel.id] = list.filter(c => c.id !== commentId);
+
+  try {
+    localStorage.setItem('tasawuq_reels_comments', JSON.stringify(_reelsCommentsMap));
+  } catch(e) {}
 
   renderReelCommentsList(reel.id);
 
   const commCountEl = document.getElementById("reelsCommentsCount");
-
   if (commCountEl) commCountEl.textContent = _reelsCommentsMap[reel.id].length;
 
+  if (typeof showToast === 'function') {
+    showToast("🗑️ تم حذف التعليق", "info", 2000);
+  }
+
+  // تحديث الحذف في Supabase
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if (sb && reel.id && !String(reel.id).startsWith("demo_")) {
+    try {
+      const post = allPosts.find(p => p.id === reel.id) || reel;
+      let specs = post.specs;
+      if (typeof specs === "string") {
+        try { specs = JSON.parse(specs); } catch(e) { specs = {}; }
+      }
+      if (!specs || typeof specs !== "object") specs = {};
+
+      const { data: dbRow } = await sb.from('posts').select('specs').eq('id', reel.id).maybeSingle();
+      let remoteSpecs = (dbRow && dbRow.specs) ? dbRow.specs : specs;
+      if (typeof remoteSpecs === "string") {
+        try { remoteSpecs = JSON.parse(remoteSpecs); } catch(e) { remoteSpecs = {}; }
+      }
+      if (!remoteSpecs || typeof remoteSpecs !== "object") remoteSpecs = {};
+
+      const currentList = Array.isArray(remoteSpecs.reel_comments) ? remoteSpecs.reel_comments : [];
+      remoteSpecs.reel_comments = currentList.filter(c => c.id !== commentId);
+      post.specs = remoteSpecs;
+
+      await sb.from('posts').update({ specs: remoteSpecs }).eq('id', reel.id);
+    } catch(err) {
+      console.warn("Error deleting comment from Supabase:", err);
+    }
+  }
 };
 
-// دعم إيماءات التمرير بالأصبع (Swipe Up / Down)
-
+// دعم إيماءات التمرير بالأصبع (Swipe Up / Down) مع عزل التعليقات بالكامل
 function initReelsSwipeGestures() {
-
   const container = document.getElementById("reelsContainer");
-
   if (!container || container._swipeInitialized) return;
-
   container._swipeInitialized = true;
 
+  // عزل أحداث التمرير والنقر داخل درج التعليقات
+  const sheet = document.getElementById("reelsCommentsSheet");
+  if (sheet) {
+    const stopBubble = e => e.stopPropagation();
+    sheet.addEventListener("touchstart", stopBubble, { passive: true });
+    sheet.addEventListener("touchend", stopBubble, { passive: true });
+    sheet.addEventListener("touchmove", stopBubble, { passive: true });
+    sheet.addEventListener("wheel", stopBubble, { passive: true });
+  }
+
   container.addEventListener("touchstart", e => {
-
+    if (e.target.closest("#reelsCommentsSheet") || e.target.closest("#reelsCommentsBackdrop")) return;
+    const curSheet = document.getElementById("reelsCommentsSheet");
+    if (curSheet && !curSheet.classList.contains("hidden")) return;
     _reelsTouchStartY = e.touches[0].clientY;
-
   }, { passive: true });
 
   container.addEventListener("touchend", e => {
-
+    if (e.target.closest("#reelsCommentsSheet") || e.target.closest("#reelsCommentsBackdrop")) return;
+    const curSheet = document.getElementById("reelsCommentsSheet");
+    if (curSheet && !curSheet.classList.contains("hidden")) return;
     const endY = e.changedTouches[0].clientY;
-
     const diff = _reelsTouchStartY - endY;
-
     if (diff > 50) {
-
       // سحب للأعلى -> التالي
-
       reelsGoNext();
-
     } else if (diff < -50) {
-
       // سحب للأسفل -> السابق
-
       reelsGoPrev();
-
     }
-
   }, { passive: true });
 
   // دعم عجلة الفأرة على الكمبيوتر
-
   container.addEventListener("wheel", e => {
-
+    if (e.target.closest("#reelsCommentsSheet") || e.target.closest("#reelsCommentsBackdrop")) return;
+    const curSheet = document.getElementById("reelsCommentsSheet");
+    if (curSheet && !curSheet.classList.contains("hidden")) return;
     if (e.deltaY > 30) {
-
       reelsGoNext();
-
     } else if (e.deltaY < -30) {
-
       reelsGoPrev();
-
     }
-
   }, { passive: true });
-
 }
 
 // رفع واختيار فيديو في إضافة الإعلان
@@ -25950,90 +26263,103 @@ window.setVideoPlacement = function(val) {
 };
 
 async function uploadPostVideo(file) {
-
   if (!file) return null;
 
-  // 1) التخزين السحابي الدائم Supabase Storage (يعمل على الهاتف، الموقع المباشر، ومحلياً للجميع)
+  const detectedType = file.type || '';
+  const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop().toLowerCase() : '';
+  let cleanExt = 'mp4';
+  if (detectedType.includes('webm') || ext === 'webm') cleanExt = 'webm';
+  else if (detectedType.includes('quicktime') || ext === 'mov' || ext === 'quicktime') cleanExt = 'mov';
+  else cleanExt = 'mp4';
+
+  const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${cleanExt}`;
+  const mimeType = cleanExt === 'webm' ? 'video/webm' : (cleanExt === 'mov' ? 'video/quicktime' : 'video/mp4');
+
+  const SUPABASE_STORAGE_URL = `https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/videos/${fileName}`;
+  const SUPABASE_PUBLIC_URL = `https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/public/videos/${fileName}`;
+  const SUPABASE_KEY = "sb_publishable_6N_kXZ3e5fB4XM7xKKfT-g_7AHN25Tp";
+
+  // 1) الرفع المباشر عبر REST API إلى Supabase Storage (يعمل على الهاتف، الويب المباشر، والكمبيوتر)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 ثانية كافية للملفات الكبيرة
+
+    const res = await fetch(SUPABASE_STORAGE_URL, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": mimeType
+      },
+      body: file,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      console.log("✅ تم رفع الفيديو إلى Supabase Storage بنجاح:", SUPABASE_PUBLIC_URL);
+      return SUPABASE_PUBLIC_URL;
+    } else {
+      const errTxt = await res.text().catch(() => "");
+      console.warn("Supabase Storage REST status:", res.status, errTxt);
+    }
+  } catch(err) {
+    console.warn("Supabase Storage REST error:", err);
+  }
+
+  // 2) محاولة الرفع عبر SDK كخيار ثانٍ
   const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
-
   if (sb && sb.storage) {
-
     try {
-
-      const ext = (file.name && file.name.includes('.')) ? file.name.split('.').pop().toLowerCase() : 'mp4';
-
-      const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-
-      const mimeType = ext === 'webm' ? 'video/webm' : (ext === 'mov' ? 'video/quicktime' : 'video/mp4');
-
-      const uploadPromise = sb.storage.from('videos').upload(fileName, file, { 
-        cacheControl: '3600', 
+      const { data, error } = await sb.storage.from('videos').upload(fileName, file, {
+        cacheControl: '3600',
         upsert: true,
         contentType: mimeType
       });
-
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 25000));
-
-      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
-
       if (!error && data) {
-
         const { data: pData } = sb.storage.from('videos').getPublicUrl(fileName);
-
         if (pData && pData.publicUrl) {
-          console.log("Video uploaded to Supabase successfully:", pData.publicUrl);
+          console.log("✅ تم رفع الفيديو عبر Supabase SDK:", pData.publicUrl);
           return pData.publicUrl;
         }
-
-      } else if (error) {
-        console.warn("Supabase video upload error:", error);
       }
-
-    } catch(err) {
-
-      console.warn("Supabase video storage upload warning:", err);
-
+    } catch(e) {
+      console.warn("Supabase SDK error:", e);
     }
-
   }
 
-  // 2) الرفع الفوري عبر خادم المطور المحلي /api/upload-video كخيار احتياطي محلي
+  // 3) خادم المطور المحلي /api/upload-video (إذا كان يعمل محلياً)
   try {
     const fd = new FormData();
-    fd.append("video", file, file.name || "video.mp4");
+    fd.append("video", file, fileName);
     const localRes = await fetch("/api/upload-video", { method: "POST", body: fd });
     if (localRes.ok) {
       const data = await localRes.json();
       if (data && data.url) {
-        console.log("Video uploaded locally:", data.url);
+        console.log("✅ تم رفع الفيديو عبر السيرفر المحلي:", data.url);
         return data.url;
       }
     }
-  } catch(e) {
-    // ليس خادماً محلياً
-  }
+  } catch(e) {}
 
-  // 3) حل احتياطي للفيديوهات الخفيفة
+  // 4) التحويل إلى Data URL دائم ومستقر (حتى 15 ميجابايت) لضمان عدم ضياع الفيديو أو اختفائه
   return new Promise((resolve) => {
-
-    if (file.size <= 5 * 1024 * 1024) {
-
+    if (file.size <= 15 * 1024 * 1024) {
       const reader = new FileReader();
-
-      reader.onload = () => resolve(reader.result);
-
-      reader.onerror = () => resolve(URL.createObjectURL(file));
-
+      reader.onload = () => {
+        console.log("✅ تم تحويل الفيديو إلى DataURL دائم");
+        resolve(reader.result);
+      };
+      reader.onerror = () => {
+        console.error("FileReader failed");
+        resolve(null);
+      };
       reader.readAsDataURL(file);
-
     } else {
-
-      resolve(URL.createObjectURL(file));
-
+      console.warn("حجم الفيديو كبير جداً ولم ينجح الرفع السحابي");
+      resolve(null);
     }
-
   });
-
 }
 
 window.publishAdAsStory = function() {
@@ -26058,7 +26384,9 @@ window.publishAdAsStory = function() {
 
       video_placement: 'story',
 
-      created_at: new Date().toISOString()
+      status: 'approved',
+
+      created_at: Date.now()
 
     }).eq('id', p.id).then(()=>{}).catch(()=>{});
 
