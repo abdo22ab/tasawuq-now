@@ -76,7 +76,7 @@ window.openInbox = window.openInbox || function() {
 };
 </script>
 
-<link rel="stylesheet" href="style.css?v=167">
+<link rel="stylesheet" href="style.css?v=168">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -1746,6 +1746,40 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
+
+<!-- ============================================ -->
+<!-- 🖨️ نافذة خيارات طباعة إيصالات الكاشير الحرارية -->
+<!-- ============================================ -->
+<div id="receiptPrintModal" class="overlay hidden" style="z-index: 9500; align-items: center; justify-content: center; background: rgba(0,0,0,0.65);">
+  <div class="sheet" style="width: 92%; max-width: 420px; border-radius: 20px; padding: 22px 18px; background: var(--card); text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1.5px solid var(--border);">
+    <div style="font-size: 38px; margin-bottom: 6px;">🖨️</div>
+    <h3 style="margin: 0 0 6px; font-size: 18px; font-weight: 900; color: var(--text);" id="rpmTitle">خيارات طباعة الإيصال</h3>
+    <p style="margin: 0 0 18px; font-size: 13px; color: var(--muted);" id="rpmSubtitle">يرجى تحديد نمط الطباعة المطلوب للطابعة الحرارية:</p>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button type="button" class="btnMain" onclick="executeReceiptPrint('both')" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-size: 14px; font-weight: 800; padding: 12px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>📑</span>
+        <span>طباعة النسختين معاً في اللحظة نفسها</span>
+      </button>
+
+      <button type="button" class="btnMain" onclick="executeReceiptPrint('customer')" style="background: #16a34a; font-size: 13.5px; font-weight: 800; padding: 11px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>🧾</span>
+        <span>طباعة إيصال الزبون فقط</span>
+      </button>
+
+      <button type="button" class="btnMain" onclick="executeReceiptPrint('kitchen')" style="background: #ea580c; font-size: 13.5px; font-weight: 800; padding: 11px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>👨‍🍳</span>
+        <span>طباعة أمر تشغيل المطبخ فقط</span>
+      </button>
+
+      <button type="button" class="btnGhost" onclick="closeReceiptPrintModal()" style="font-size: 13px; font-weight: 700; padding: 9px; margin-top: 4px; border: 1px solid var(--border); color: var(--text);">
+        إلغاء الأمر
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <!-- زر عائم لمتابعة الطلبية إذا صغر الزبون النافذة -->
 
 <div id="activeOrderFloatingPill" class="activeOrderFloatingPill hidden" onclick="openActiveOrderTracker()"></div>
@@ -3124,7 +3158,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=167"></script>
+<script type="module" src="app.js?v=168"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
