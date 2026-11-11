@@ -3329,6 +3329,8 @@ function getActiveTopView() {
   if (fo && !fo.classList.contains("hidden")) return { type: 'followers' };
   const eps = document.getElementById("editProfileScreen");
   if (eps && !eps.classList.contains("hidden")) return { type: 'editProfile' };
+  const rpm = document.getElementById("receiptPrintModal");
+  if (rpm && !rpm.classList.contains("hidden")) return { type: 'receiptPrintModal' };
   const rlo = document.getElementById("restaurantLiveOrdersOverlay");
   if (rlo && !rlo.classList.contains("hidden")) return { type: 'restaurantOrders' };
   const ao = document.getElementById("accountOverlay");
@@ -3426,6 +3428,11 @@ function performBackAction() {
   if (top.type === 'inbox') {
     if (typeof closeInboxDirect === 'function') closeInboxDirect();
     else if (typeof closeInbox === 'function') closeInbox(true);
+    return true;
+  }
+  if (top.type === 'receiptPrintModal') {
+    if (typeof closeReceiptPrintModal === 'function') closeReceiptPrintModal();
+    else { const rpm = document.getElementById("receiptPrintModal"); if (rpm) rpm.classList.add("hidden"); }
     return true;
   }
   if (top.type === 'restaurantOrders') {
@@ -8354,7 +8361,7 @@ function renderCartUI(){
 
     const qty=item.qty||1;
 
-    return `<div class="cartItemRow"><img class="cImg" src="${escapeHtml(item.image||"")}" onerror="this.style.background='#e6f6fe';this.src=''"><div class="cInfo"><div class="cTitle">${escapeHtml(item.title||"منتج")}</div><div class="cPrice">${formatPrice(item.price||0)} د.ل</div><div class="cartQtyRow"><button class="qtyBtn" onclick="changeQty('${item.postId}',-1)" ${qty<=1?"disabled":""}>−</button><span class="qtyVal">${qty}</span><button class="qtyBtn" onclick="changeQty('${item.postId}',1)">+</button></div></div><button class="cRemove" onclick="removeFromCart('${item.postId}')">🗑️</button></div>`;
+        return `<div class="cartItemRow"><img class="cImg" src="${escapeHtml(item.image||"")}" onerror="this.style.background='#e6f6fe';this.src=''"><div class="cInfo"><div class="cTitle">${escapeHtml(item.title||"منتج")}</div><div class="cPrice">${formatPrice(item.price||0)} د.ل</div><div class="cartQtyRow"><button class="qtyBtn" onclick="changeQty('${item.postId}',-1)" ${qty<=1?"disabled":""}>−</button><span class="qtyVal">${qty}</span><button class="qtyBtn" onclick="changeQty('${item.postId}',1)">+</button></div>${isRestaurant ? `<div style="margin-top:6px"><input type="text" placeholder="📝 ملاحظة خاصة للوجبة (مثلاً: بدون بصل، صوص خارجي)" value="${escapeHtml(item.note||"")}" oninput="updateCartItemNote('${item.postId}', this.value)" style="width:100%;font-size:11.5px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:'Cairo',sans-serif"></div>` : ''}</div><button class="cRemove" onclick="removeFromCart('${item.postId}')">🗑️</button></div>`;
 
   }).join("");
 
@@ -8460,6 +8467,14 @@ window.removeFromCart=(postId)=>{
 
   if(typeof renderStoreProducts==='function') renderStoreProducts();
 
+};
+
+window.updateCartItemNote=(postId, note)=>{
+  const it = cart.items.find(i => i.postId === postId);
+  if(it){
+    it.note = (note || "").trim();
+    saveCart();
+  }
 };
 
 window.changeQty=(postId,delta)=>{
@@ -8760,7 +8775,7 @@ window.submitRestaurantDirectOrder=async()=>{
 
       notes:notes,
 
-      items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1})),
+      items:cart.items.map(i=>({postId:i.postId,title:i.title,price:i.price,qty:i.qty||1,note:(i.note||'').trim()})),
 
       totalPrice:totalToPay,
 
@@ -9652,6 +9667,305 @@ window.toggleCashierSound=()=>{
 
 };
 
+
+// ============================================================
+// 🖨️ منظومة طباعة إيصالات الكاشير الحرارية المتطورة (Receipt POS)
+// ============================================================
+
+window._currentPrintOrderDocId = null;
+
+export function openReceiptPrintModal(docId) {
+  window._currentPrintOrderDocId = docId;
+  const ord = _rloOrders.find(o => o._docId === docId || o.orderId === docId);
+  const m = document.getElementById("receiptPrintModal");
+  if(m){
+    m.classList.remove("hidden");
+    const t = document.getElementById("rpmTitle");
+    if(t && ord) t.textContent = `🖨️ إيصال الطلب رقم #${ord.orderNo}`;
+  }
+}
+window.openReceiptPrintModal = openReceiptPrintModal;
+
+export function closeReceiptPrintModal() {
+  const m = document.getElementById("receiptPrintModal");
+  if(m) m.classList.add("hidden");
+  window._currentPrintOrderDocId = null;
+}
+window.closeReceiptPrintModal = closeReceiptPrintModal;
+
+export function executeReceiptPrint(mode) {
+  if(!window._currentPrintOrderDocId) return;
+  const docId = window._currentPrintOrderDocId;
+  closeReceiptPrintModal();
+  printRestaurantOrderReceipt(docId, mode);
+}
+window.executeReceiptPrint = executeReceiptPrint;
+
+function generateCustomerReceiptText(order, store) {
+  const storeName = store?.name || order.storeName || "المطعم";
+  const storePhone = store?.callPhone || store?.phone || order.storePhone || "";
+  const storeAddress = store?.address || store?.city || "ليبيا";
+  const dateStr = new Date(order.createdAt || Date.now()).toLocaleDateString('ar-LY', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const timeStr = new Date(order.createdAt || Date.now()).toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' });
+  const isDelivery = order.deliveryType === "delivery";
+  const typeStr = isDelivery ? "🛵 توصيل خارجي" : "🚗 استلام سفري (من المطعم)";
+  const paymentStr = (order.paymentMethod === 'wallet' && order.isPaid) ? "🟢 خالص بالمحفظة الإلكترونية" : "💵 الدفع نقداً عند الاستلام (كاش)";
+  
+  let itemsHtml = "";
+  let subtotal = 0;
+  (order.items || []).forEach(it => {
+    const qty = it.qty || 1;
+    const price = it.price || 0;
+    const lineTotal = price * qty;
+    subtotal += lineTotal;
+    
+    itemsHtml += `
+      <tr>
+        <td style="padding:4px 0;font-weight:800;font-size:12.5px">${escapeHtml(it.title)}</td>
+        <td style="padding:4px 0;text-align:center;font-weight:900;font-size:13px">${qty}</td>
+        <td style="padding:4px 0;text-align:left;font-weight:900;font-size:12.5px">${formatPrice(lineTotal)} د.ل</td>
+      </tr>
+    `;
+    if (it.note && it.note.trim()) {
+      itemsHtml += `
+        <tr>
+          <td colspan="3" style="padding:0 8px 4px 0;font-size:11px;font-weight:bold;color:#000">
+            ↳ ⚠️ تعديل: ${escapeHtml(it.note.trim())}
+          </td>
+        </tr>
+      `;
+    }
+  });
+
+  const grandTotal = order.totalPrice || subtotal;
+  const deliveryFee = grandTotal > subtotal ? (grandTotal - subtotal) : 0;
+
+  return `
+    <div class="posReceipt customerReceipt" style="width:72mm;margin:0 auto;font-family:'Cairo','Courier New',monospace;direction:rtl;text-align:right;color:#000;background:#fff">
+      <div style="text-align:center;border-bottom:1.5px dashed #000;padding-bottom:6px;margin-bottom:6px">
+        <div style="font-size:18px;font-weight:900;margin-bottom:2px">🍔 ${escapeHtml(storeName)} 🍔</div>
+        <div style="font-size:11px;color:#333">${escapeHtml(storeAddress)} • هاتف: ${escapeHtml(storePhone)}</div>
+      </div>
+
+      <div style="border-bottom:1px dashed #000;padding-bottom:5px;margin-bottom:6px;font-size:12px;line-height:1.4">
+        <div style="display:flex;justify-content:space-between;font-weight:900;font-size:13.5px">
+          <span>رقم الطلب: #${order.orderNo}</span>
+          <span>${timeStr} - ${dateStr}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span>النوع: ${typeStr}</span>
+          <span>الزبون: ${escapeHtml(order.customerName)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span>الهاتف: ${escapeHtml(order.customerPhone)}</span>
+        </div>
+        ${isDelivery && order.deliveryAddress ? `
+          <div style="margin-top:2px;font-weight:700">العنوان: ${escapeHtml(order.deliveryAddress)}</div>
+        ` : ''}
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+        <thead>
+          <tr style="border-bottom:1px solid #000;font-size:11.5px">
+            <th style="text-align:right;padding-bottom:4px">الصنف</th>
+            <th style="text-align:center;padding-bottom:4px;width:35px">الكمية</th>
+            <th style="text-align:left;padding-bottom:4px;width:60px">الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      <div style="border-top:1px dashed #000;border-bottom:1.5px solid #000;padding:5px 0;margin-bottom:6px;font-size:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+          <span>المجموع الفرعي:</span>
+          <span>${formatPrice(subtotal)} د.ل</span>
+        </div>
+        ${deliveryFee > 0 ? `
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span>رسوم التوصيل:</span>
+            <span>${formatPrice(deliveryFee)} د.ل</span>
+          </div>
+        ` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;border-top:1px solid #000;padding-top:4px;margin-top:3px">
+          <span>الإجمالي النهائي:</span>
+          <span>${formatPrice(grandTotal)} د.ل</span>
+        </div>
+      </div>
+
+      <div style="font-size:11.5px;font-weight:700;margin-bottom:6px;border-bottom:1px dashed #000;padding-bottom:5px">
+        حالة الدفع: ${paymentStr}
+      </div>
+
+      ${order.notes ? `
+        <div style="font-size:11.5px;border:1px dashed #000;padding:5px;border-radius:4px;margin-bottom:6px">
+          <b>📝 ملاحظة الزبون:</b> ${escapeHtml(order.notes)}
+        </div>
+      ` : ''}
+
+      <div style="text-align:center;font-size:11px;padding-top:2px">
+        <div>صحتين وعافية على قلوبكم! ❤️</div>
+        <div style="font-size:10px;color:#444;margin-top:2px">طلب عبر منصة تسوق الآن • tasawuqnow.com</div>
+      </div>
+    </div>
+  `;
+}
+
+function generateKitchenTicketText(order, store) {
+  const storeName = store?.name || order.storeName || "المطعم";
+  const timeStr = new Date(order.createdAt || Date.now()).toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' });
+  const isDelivery = order.deliveryType === "delivery";
+  const typeStr = isDelivery ? "🛵 دليفري خارجي" : "🚗 سفري استلام";
+  const prepMin = order.prepMinutes || 25;
+  const isPaid = (order.paymentMethod === 'wallet' && order.isPaid);
+  
+  let itemsHtml = "";
+  let totalPieces = 0;
+  (order.items || []).forEach(it => {
+    const qty = it.qty || 1;
+    totalPieces += qty;
+    
+    itemsHtml += `
+      <div style="border-top:1px dashed #000;padding:6px 0 3px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:17px;font-weight:900;border:1.5px solid #000;padding:1px 6px;border-radius:4px">[ ${qty} ]</span>
+          <span style="font-size:15px;font-weight:900">${escapeHtml(it.title)}</span>
+        </div>
+        ${it.note && it.note.trim() ? `
+          <div style="font-size:13px;font-weight:900;padding-right:16px;margin-top:3px;color:#000">
+            ↳ ⚠️ (${escapeHtml(it.note.trim())})
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+
+  return `
+    <div class="posReceipt kitchenTicket" style="width:72mm;margin:0 auto;font-family:'Cairo','Courier New',monospace;direction:rtl;text-align:right;color:#000;background:#fff">
+      <div style="text-align:center;border:2px solid #000;padding:4px;border-radius:6px;margin-bottom:6px">
+        <div style="font-size:16px;font-weight:900">🔥 أمر تشغيل المطبخ 🔥</div>
+        <div style="font-size:11px;font-weight:700">KITCHEN ORDER TICKET</div>
+      </div>
+
+      <div style="text-align:center;border-bottom:1.5px dashed #000;padding-bottom:4px;margin-bottom:6px">
+        <div style="font-size:26px;font-weight:900;line-height:1">طلب #${order.orderNo}</div>
+        <div style="font-size:13px;font-weight:800;margin-top:2px">[ ${typeStr} ]</div>
+      </div>
+
+      <div style="border-bottom:1px dashed #000;padding-bottom:4px;margin-bottom:6px;font-size:12px;font-weight:800">
+        <div style="display:flex;justify-content:space-between">
+          <span>الوقت: ${timeStr}</span>
+          <span>المدة: ~${prepMin} دقيقة</span>
+        </div>
+        <div style="margin-top:2px">الزبون: ${escapeHtml(order.customerName)}</div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        ${itemsHtml}
+      </div>
+
+      ${order.notes ? `
+        <div style="border:1.5px solid #000;padding:6px;font-size:12.5px;font-weight:900;border-radius:4px;margin-bottom:6px">
+          ⚠️ ملاحظة خاصة للطلب: ${escapeHtml(order.notes)}
+        </div>
+      ` : ''}
+
+      <div style="border-top:1.5px solid #000;padding-top:4px;font-size:12px;font-weight:900;display:flex;justify-content:space-between">
+        <span>إجمالي القطع: ${totalPieces} وجبة</span>
+        <span>${isPaid ? '🟢 مدفوع مسبقاً' : '💵 كاش عند التسليم'}</span>
+      </div>
+    </div>
+  `;
+}
+
+export function printRestaurantOrderReceipt(docId, mode = 'both') {
+  const order = _rloOrders.find(o => o._docId === docId || o.orderId === docId);
+  if(!order){
+    showToast("⚠️ تعذر العثور على بيانات الطلب للطباعة", "warn");
+    return;
+  }
+  
+  const store = allStores.find(s => s.id === order.storeId);
+  const custHtml = generateCustomerReceiptText(order, store);
+  const kitHtml = generateKitchenTicketText(order, store);
+  
+  let bodyContent = "";
+  if (mode === 'customer') {
+    bodyContent = custHtml;
+  } else if (mode === 'kitchen') {
+    bodyContent = kitHtml;
+  } else {
+    // both with page break
+    bodyContent = `
+      <div style="page-break-after:always;break-after:page;padding-bottom:8mm;">
+        ${custHtml}
+      </div>
+      <div style="padding-top:4mm;">
+        ${kitHtml}
+      </div>
+    `;
+  }
+  
+  let iframe = document.getElementById("receiptPrintIframe");
+  if(!iframe){
+    iframe = document.createElement("iframe");
+    iframe.id = "receiptPrintIframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+  }
+  
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <title>إيصال طلب #${order.orderNo}</title>
+      <style>
+        @page {
+          size: 80mm auto;
+          margin: 3mm;
+        }
+        @media print {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 74mm !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+        body {
+          font-family: 'Cairo', 'Courier New', monospace, sans-serif;
+          margin: 0;
+          padding: 2mm 0;
+          direction: rtl;
+          text-align: right;
+        }
+      </style>
+    </head>
+    <body>
+      ${bodyContent}
+    </body>
+    </html>
+  `);
+  doc.close();
+  
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    showToast(`🖨️ تم إرسال إيصال الطلب #${order.orderNo} للطابعة بنجاح`, "success");
+  }, 250);
+}
+window.printRestaurantOrderReceipt = printRestaurantOrderReceipt;
+
 window.openRestaurantLiveOrders=(storeId)=>{
 
   if(!storeId){showToast("⚠️ رقم المطعم غير محدد","error");return;}
@@ -9985,6 +10299,7 @@ function renderCashierOrdersList(){
         <b>${formatPrice((it.price||0)*(it.qty||1))} د.ل</b>
 
       </div>
+      ${it.note ? `<div style="font-size:11.5px;color:#d97706;padding-right:12px;margin-bottom:4px;font-weight:800">↳ ⚠️ تعديل: ${escapeHtml(it.note)}</div>` : ''}
 
     `).join("")||"";
 
@@ -10084,7 +10399,13 @@ function renderCashierOrdersList(){
 
           </div>
 
-          <div>${deliveryTag}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button type="button" class="btnGhost" onclick="openReceiptPrintModal('${order._docId}')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;font-size:11.5px;font-weight:800;border:1.5px solid #0284c7;color:#0284c7;background:rgba(2,132,199,0.06);cursor:pointer" title="طباعة الإيصال الحراري">
+              <span>🖨️</span>
+              <span>طباعة</span>
+            </button>
+            ${deliveryTag}
+          </div>
 
         </div>
 
