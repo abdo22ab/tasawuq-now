@@ -76,7 +76,10 @@ window.openInbox = window.openInbox || function() {
 };
 </script>
 
-<link rel="stylesheet" href="style.css?v=168">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=181">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -188,43 +191,27 @@ window.openInbox = window.openInbox || function() {
 
 <div class="topbarActions">
 
-<button class="bellBtn" id="pointsBtn" onclick="openPoints()" title="نقاطي">
+  <!-- ☰ زر الثلاث شرطات فوق بعض (القائمة الجانبية) -->
+  <button class="bellBtn" id="hamburgerMenuBtn" onclick="openSideMenu()" title="القائمة الرئيسية" style="position:relative">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" x2="20" y1="12" y2="12"/>
+      <line x1="4" x2="20" y1="6" y2="6"/>
+      <line x1="4" x2="20" y1="18" y2="18"/>
+    </svg>
+    <span id="menuNotificationDot" class="cartBadge" style="display:none;background:#ef4444;width:9px;height:9px;min-width:9px;border-radius:50%;top:3px;left:3px;padding:0;border:1.5px solid var(--teal)"></span>
+  </button>
 
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+  <!-- عناصر خفية متوافقة لضمان عدم حدوث أي خطأ في الدوال البرمجية -->
+  <span id="pointsBadge" style="display:none !important">0</span>
+  <span id="darkModeIconSlot" style="display:none"></span>
+  <span id="headerNotifBadge" style="display:none">0</span>
+  <span id="chatHeaderBadge" style="display:none">0</span>
 
-  <span id="pointsBadge" class="pointsBadge" style="display:none">0</span>
-
-</button>
-
-<button class="bellBtn" id="darkModeBtn" onclick="toggleDarkMode()" title="الوضع الليلي">
-
-  <span id="darkModeIconSlot" style="display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="darkModeIcon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>
-
-</button>
-
-<button class="bellBtn" id="notifHeaderBtn" onclick="openNotificationsCenter()" title="الإشعارات" style="position:relative">
-
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-
-  <span id="headerNotifBadge" class="cartBadge" style="display:none;background:#f59e0b">0</span>
-
-</button>
-
-<button class="bellBtn" id="chatHeaderBtn" onclick="openInbox()" title="الرسائل والمحادثات" style="position:relative">
-
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-
-  <span id="chatHeaderBadge" class="cartBadge" style="display:none;background:#e11d48">0</span>
-
-</button>
-
-<button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none" title="السلة">
-
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-
-  <span class="cartBadge" id="cartHeaderCount" style="display:none">0</span>
-
-</button>
+  <!-- زر السلة (يظهر تلقائياً إذا كان هناك طلب قيد الإجراء) -->
+  <button class="bellBtn" id="cartHeaderBtn" onclick="openCart()" style="display:none" title="السلة">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span class="cartBadge" id="cartHeaderCount" style="display:none">0</span>
+  </button>
 
 </div>
 
@@ -728,12 +715,12 @@ window.openInbox = window.openInbox || function() {
 
   </div>
 
-  <button class="navItem" id="navFav" onclick="showFavorites()">
-
-    <span class="navIcon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></span>
-
-    <span>المفضلة</span>
-
+  <button class="navItem" id="navChat" onclick="openInbox()" style="position:relative">
+    <span class="navIcon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+      <span id="bottomChatBadge" class="cartBadge" style="display:none;background:#e11d48;top:-3px;left:-6px;font-size:10px">0</span>
+    </span>
+    <span>المحادثات</span>
   </button>
 
   <button class="navItem" id="navAccount" onclick="openAccount()">
@@ -942,41 +929,24 @@ window.openInbox = window.openInbox || function() {
 
   <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
 
-  <!-- 💬 صندوق الرسائل والمحادثات -->
-
-  <button class="btnGhost" onclick="openInbox()" style="background:#eff6ff;color:#1e40af;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px">
-
-    💬 صندوق الرسائل والمحادثات
-
-    <span id="accountChatBadge" class="inboxBadge" style="display:none">0</span>
-
-  </button>
-
-  <!-- 🔔 الإشعارات والشكاوى -->
-
-  <!-- 🔔 مركز الإشعارات الشامل (المتابعين + التفاعل + إعدادات التنبيهات الخارجية) -->
-
-  <button class="btnGhost accountBtn" onclick="openNotificationsCenter()" style="background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;position:relative">
-
-    <span>🔔 مركز الإشعارات والتنبيهات</span>
-
-    <span id="accountNotifBadge" class="inboxBadge" style="display:none;background:#ef4444;color:#fff;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:900">0</span>
-
-  </button>
-
-  <button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
-
-  <a href="promo-video.html" class="btnGhost accountBtn" style="background:#f0fdf4;color:#166534;border:1.5px solid #86efac;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;padding:12px;border-radius:12px">
-    🎬 استوديو وصانع الفيديو الإعلاني (3D)
-  </a>
+  <!-- شارات خفية للحفاظ على استقرار الكود البرمجي -->
+  <span id="accountChatBadge" style="display:none">0</span>
+  <span id="accountNotifBadge" style="display:none">0</span>
 
   <!-- 🏪 المتجر -->
-
   <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
 
   <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
 
   <button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
+
+  <!-- 📲 زر تثبيت التطبيق مباشرة بعد المتجر (يظهر فقط إذا لم يكن التطبيق مثبتاً) -->
+  <button type="button" class="btnGhost" id="accountInstallAppBtn" onclick="triggerPwaInstall()" style="background:#eff6ff;color:#0284c7;border:1.5px solid #bfdbfe;font-weight:900;font-size:13.5px;padding:12px;border-radius:12px;margin-top:6px;margin-bottom:6px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span>📲</span>
+    <span>تثبيت تطبيق تسوق الآن على الهاتف</span>
+  </button>
+
+  <button class="btnGhost accountBtn" onclick="openFeedback()">💬 اقتراح / شكوى</button>
 
   <!-- 👑 أدوات الإدارة السريعة للأدمن في مربع منظم وملموم جنباً إلى جنب -->
 
@@ -1058,16 +1028,6 @@ window.openInbox = window.openInbox || function() {
 
   </button>
 
-  <!-- زر تثبيت التطبيق الدائم داخل حسابي -->
-
-  <button type="button" class="btnGhost" id="accountInstallAppBtn" onclick="triggerPwaInstall()" style="background:#eff6ff;color:#0284c7;border:1.5px solid #bfdbfe;font-weight:900;font-size:13.5px;padding:12px;border-radius:12px;margin-top:10px;margin-bottom:6px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
-
-    <span>📲</span>
-
-    <span>تثبيت تطبيق تسوق الآن على الهاتف</span>
-
-  </button>
-
   <!-- 📍 كرت الموقع الجغرافي والبحث القريب (GPS) فوق تسجيل الخروج -->
 
   <div class="accountGpsCard" onclick="requestAppGpsLocation(true)" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-top:10px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
@@ -1090,21 +1050,19 @@ window.openInbox = window.openInbox || function() {
 
   </div>
 
-
-
   <!-- زر تسجيل الخروج -->
 
   <button class="btnMain" style="background:var(--danger);margin-top:10px" onclick="logout();closeOverlay()">تسجيل الخروج</button>
 
-  <!-- 🗑️ خيار حذف الحساب نهائياً (تصميم صغير وأنيق) -->
+  <!-- 🗑️ خيار حذف الحساب نهائياً (تصميم صغير ومحمي ومفصول في المنتصف لمنع الضغط بالخطأ) -->
 
-  <div style="margin-top:14px;text-align:center">
+  <div style="margin-top:26px;padding-top:14px;border-top:1px dashed var(--border);text-align:center">
 
-    <button type="button" id="btnDeleteAccountCompact" onclick="confirmDeleteMyAccount()" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 16px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:11.5px;font-weight:700;color:#dc2626;background:#fef2f2;border:1px solid #fee2e2;cursor:pointer;transition:all .18s ease;box-shadow:0 1px 3px rgba(220,38,38,0.06)">
+    <button type="button" id="btnDeleteAccountCompact" onclick="openDeleteAccountSafetyModal()" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;color:var(--muted);background:transparent;border:1px solid var(--border);cursor:pointer;opacity:0.75;transition:all .18s ease" onmouseover="this.style.opacity='1';this.style.color='#dc2626';this.style.borderColor='#fca5a5'" onmouseout="this.style.opacity='0.75';this.style.color='var(--muted)';this.style.borderColor='var(--border)'">
 
-      <span style="font-size:12px;line-height:1">🗑️</span>
+      <span style="font-size:11px;line-height:1">🗑️</span>
 
-      <span>حذف الحساب نهائياً</span>
+      <span>حذف الحساب</span>
 
     </button>
 
@@ -1114,6 +1072,45 @@ window.openInbox = window.openInbox || function() {
 
   </div>
 
+</div>
+
+<!-- ============================================ -->
+<!-- ⚠️ نافذة الأمان لحذف الحساب نهائياً (متعددة المراحل مع عد تنازلي 10 ثوانٍ) -->
+<!-- ============================================ -->
+<div id="deleteAccountSafetyModal" class="overlay hidden" style="z-index:2050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);box-sizing:border-box">
+  <div class="sheet" style="max-width:390px;width:100%;border-radius:22px;padding:22px 20px;text-align:center;box-shadow:0 15px 40px rgba(0,0,0,0.4);border:1.5px solid #fecaca;background:var(--card);box-sizing:border-box;margin:auto">
+    <div style="width:62px;height:62px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px auto;box-shadow:0 4px 14px rgba(220,38,38,0.15)">
+      ⚠️
+    </div>
+    <h3 style="margin:0 0 6px 0;font-size:17px;font-weight:900;color:#dc2626">
+      تأكيد حذف الحساب نهائياً
+    </h3>
+    <p style="font-size:12.5px;color:var(--text);line-height:1.6;margin:0 0 12px 0;font-weight:700">
+      أنت على وشك حذف حسابك بالكامل من منصة «تسوق الآن».
+    </p>
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:12px;padding:10px 14px;text-align:right;font-size:11.5px;color:#9f1239;line-height:1.75;margin-bottom:14px">
+      <div>• سيتم مسح جميع إعلاناتك المنشورة فوراً.</div>
+      <div>• سيتم حذف ملفك الشخصي ومحادثاتك بالكامل.</div>
+      <div>• سيتم إلغاء رصيد المحفظة والنقاط ولا يمكن استرجاعها.</div>
+      <div style="font-weight:900;margin-top:4px;color:#e11d48">⚠️ هذا القرار نهائي وقطعي ولا يمكن التراجع عنه أبداً.</div>
+    </div>
+
+    <!-- شريط فترة الأمان 10 ثوانٍ -->
+    <div id="deleteSafetyTimerBox" style="background:#fef2f2;border:1px dashed #fca5a5;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:800;color:#b91c1c;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px">
+      <span>⏳</span>
+      <span id="deleteSafetyTimerText">فترة الأمان والتأكيد: <strong id="deleteCountdownNum" style="font-size:16px;color:#dc2626">10</strong> ثوانٍ</span>
+    </div>
+
+    <!-- زر التأكيد النهائي (معطل أثناء العد التنازلي) -->
+    <button type="button" id="btnFinalConfirmDelete" disabled onclick="executeAccountDeletion()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#94a3b8;color:#fff;font-size:13px;font-weight:900;cursor:not-allowed;transition:all .3s ease;margin-bottom:9px;font-family:'Cairo',sans-serif">
+      ⏳ يرجى الانتظار (10 ثوانٍ)...
+    </button>
+
+    <!-- زر الإلغاء والتراجع الفوري -->
+    <button type="button" onclick="closeDeleteAccountSafetyModal()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:12.5px;font-weight:800;cursor:pointer;font-family:'Cairo',sans-serif">
+      ❌ إلغاء وتراجع (احتفظ بحسابي)
+    </button>
+  </div>
 </div>
 
 <!-- ============================================ -->
@@ -1178,6 +1175,7 @@ window.openInbox = window.openInbox || function() {
 
 <div class="formArea">
 
+<div id="restaurantTopHistoryArea" style="display:none;margin-bottom:12px"></div>
 <div class="field" style="margin:8px 0"><input id="storeSearch" placeholder="🔍 ابحث عن متجر..." oninput="renderStoresList()"></div>
 
 <div id="storesList"><div class="reportsEmpty">⏳ جاري تحميل المتاجر...</div></div>
@@ -1288,9 +1286,9 @@ window.openInbox = window.openInbox || function() {
 
 <div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div><input id="storeBankName" maxlength="50" placeholder="مصرف الجمهورية"></div>
 
-<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><input id="storeBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان الدولي (IBAN / LYB)</div><input id="storeBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
 
-<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div><input id="storeBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب المصرفي المحلي</div><input id="storeBankAccount" maxlength="30" placeholder="رقم الحساب المحلي (مثال: 0123456789)" dir="ltr" style="text-align:left;font-family:monospace"></div>
 
 </div>
 
@@ -1380,9 +1378,9 @@ window.openInbox = window.openInbox || function() {
 
 <div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏛️ اسم المصرف</div><input id="editStoreBankName" maxlength="50" placeholder="مصرف الجمهورية"></div>
 
-<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><input id="editStoreBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">🏦 رقم الآيبان الدولي (IBAN / LYB)</div><input id="editStoreBankIban" maxlength="34" placeholder="LY00 0000 0000 0000 0000 0000 00" dir="ltr" style="text-align:left;font-family:monospace"></div>
 
-<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب</div><input id="editStoreBankAccount" maxlength="30" placeholder="1234567890" dir="ltr" style="text-align:left;font-family:monospace"></div>
+<div><div style="font-size:11.5px;font-weight:700;margin-bottom:4px">💳 رقم الحساب المصرفي المحلي</div><input id="editStoreBankAccount" maxlength="30" placeholder="رقم الحساب المحلي (مثال: 0123456789)" dir="ltr" style="text-align:left;font-family:monospace"></div>
 
 </div>
 
@@ -1669,6 +1667,36 @@ window.openInbox = window.openInbox || function() {
   </div>
 
 </div>
+
+<!-- ============================================ -->
+<!-- سجل طلبات الوجبات السابقة (المطاعم والمأكولات) -->
+<!-- ============================================ -->
+<div id="foodOrdersOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <div>
+        <h3 style="margin:0;font-size:16.5px;font-weight:900;display:flex;align-items:center;gap:6px">📜 سجل وجباتي في المطاعم</h3>
+        <p style="margin:3px 0 0;font-size:11.5px;color:var(--muted)">جميع طلبياتك السابقة مع إمكانية النسخ وإعادة الطلب والتقييم</p>
+      </div>
+      <button class="iconBtn" onclick="closeFoodOrdersModal()" style="border:none;background:var(--bg);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text)">✕</button>
+    </div>
+    <div id="foodOrdersContent"></div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- نافذة تقييم الطلبية والتعليق بعد الوصول -->
+<!-- ============================================ -->
+<div id="foodOrderRatingOverlay" class="overlay hidden">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+      <h3 style="margin:0;font-size:16px;font-weight:900;display:flex;align-items:center;gap:6px">⭐ تقييم الوجبة بعد الوصول</h3>
+      <button class="iconBtn" onclick="closeFoodOrderRatingModal()" style="border:none;background:var(--bg);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text)">✕</button>
+    </div>
+    <div id="foodOrderRatingForm"></div>
+  </div>
+</div>
+
 
 <!-- ============================================ -->
 
@@ -2804,7 +2832,7 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<div id="editProfileScreen" class="overlay fullscreen hidden" style="z-index:1040">
+<div id="editProfileScreen" class="overlay fullscreen hidden" style="z-index:5000">
 
   <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0">
 
@@ -3158,7 +3186,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=168"></script>
+<script type="module" src="app.js?v=181"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
@@ -3330,6 +3358,7 @@ window.openInbox = window.openInbox || function() {
       <button type="button" class="reelsTopBtn" onclick="closeReelsModal()" title="إغلاق">✕</button>
       <div class="reelsHeaderTitle" id="reelsHeaderTitle">🎥 ريلز الإعلانات</div>
       <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="reelsTopBtn" id="reelsDeleteTopBtn" onclick="deleteCurrentReelVideo()" title="حذف هذا الفيديو كمسؤول أو صاحب الإعلان" style="display:none;font-size:16px;background:rgba(220,38,38,0.9);color:#fff;border-color:rgba(255,255,255,0.3)">🗑️</button>
         <button type="button" class="reelsTopBtn" onclick="closeReelsModal();openAddStoryPrompt();" title="أضف فيديو ريلز / ستوري جديد" style="font-size:16px;background:linear-gradient(135deg, #ec4899, #8b5cf6);border-color:transparent">➕</button>
         <button type="button" class="reelsTopBtn" id="reelsMuteToggleBtn" onclick="toggleReelsMute()" title="كتم/تشغيل الصوت">🔊</button>
       </div>
@@ -3411,6 +3440,18 @@ window.openInbox = window.openInbox || function() {
 
         <span class="reelsActionCount">مشاركة</span>
 
+      </button>
+
+      <!-- زر تعديل الإعلان والفيديو للأدمن أو صاحب الإعلان -->
+      <button type="button" class="reelsActionBtn reelsEditBtn" id="reelsSideEditBtn" onclick="editCurrentReelPost()" style="display:none" title="تعديل الإعلان والفيديو">
+        <span class="reelsActionIcon" style="color:#38bdf8;font-size:24px">✏️</span>
+        <span class="reelsActionCount" style="color:#bae6fd;font-size:11px;font-weight:800">تعديل</span>
+      </button>
+
+      <!-- زر حذف الفيديو للأدمن أو صاحب الإعلان -->
+      <button type="button" class="reelsActionBtn reelsDeleteBtn" id="reelsSideDeleteBtn" onclick="deleteCurrentReelVideo()" style="display:none" title="حذف الفيديو">
+        <span class="reelsActionIcon" style="color:#ef4444;font-size:24px">🗑️</span>
+        <span class="reelsActionCount" style="color:#fca5a5;font-size:11px;font-weight:800">حذف</span>
       </button>
 
     </div>
@@ -3554,6 +3595,104 @@ window.openInbox = window.openInbox || function() {
 </div>
 
 
+
+
+<!-- ============================================ -->
+<!-- 📱 القائمة الجانبية الفاخرة (Side Drawer Menu) -->
+<!-- ============================================ -->
+<div id="sideMenuOverlay" class="sideMenuOverlay" onclick="closeSideMenu(event)">
+  <div id="sideMenuDrawer" class="sideMenuDrawer" onclick="event.stopPropagation()">
+    
+    <!-- رأس القائمة الجانبية -->
+    <div class="smdHeader">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--teal-light);color:var(--teal-dark);display:flex;align-items:center;justify-content:center;font-size:18px">☰</div>
+        <div>
+          <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text);line-height:1.2">القائمة الرئيسية</h3>
+          <span style="font-size:11.5px;color:var(--muted)">تسوق الآن • خيارات سريعة</span>
+        </div>
+      </div>
+      <button type="button" class="smdCloseBtn" onclick="closeSideMenu()" title="إغلاق">✕</button>
+    </div>
+
+    <!-- كارت المستخدم السريع أو الترحيب -->
+    <div id="sideMenuUserCard" class="smdUserCard" onclick="closeSideMenu(); openAccount();">
+      <div id="smdAvatar" class="smdAvatar">👤</div>
+      <div style="flex:1;min-width:0">
+        <div id="smdUserName" style="font-size:14.5px;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">مرحباً بك زائرنا</div>
+        <div id="smdUserSub" style="font-size:11.5px;color:var(--muted)">اضغط لإدارة حسابك</div>
+      </div>
+      <span style="font-size:15px;color:var(--muted)">‹</span>
+    </div>
+
+    <!-- قائمة الخيارات المطلوبة بدقة من المستخدم -->
+    <div class="smdList">
+
+      <!-- 1. المفضلة -->
+      <div class="smdItem" onclick="closeSideMenu(); setTimeout(showFavorites, 150);">
+        <div class="smdIcon" style="background:#fee2e2;color:#dc2626">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <div class="smdContent">
+          <div class="smdTitle">المفضلة</div>
+          <div class="smdDesc">الإعلانات المحفوظة التي تابعتها</div>
+        </div>
+        <span class="smdBadge" id="smdFavCount" style="display:none;background:#fee2e2;color:#dc2626">0</span>
+        <span class="smdArrow">‹</span>
+      </div>
+
+      <!-- 2. نقاطي -->
+      <div class="smdItem" onclick="closeSideMenu(); setTimeout(openPoints, 150);">
+        <div class="smdIcon" style="background:#fef3c7;color:#d97706">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        </div>
+        <div class="smdContent">
+          <div class="smdTitle">نقاطي والمكافآت</div>
+          <div class="smdDesc">استبدل نقاطك بكروت تعبئة رصيد</div>
+        </div>
+        <span class="smdBadge" id="smdPointsCount" style="background:#f59e0b;color:#fff">0 نقطة</span>
+        <span class="smdArrow">‹</span>
+      </div>
+
+      <!-- 3. الليل والنهاري -->
+      <div class="smdItem" onclick="toggleDarkMode(); updateSideMenuThemeState();">
+        <div class="smdIcon" id="smdThemeIconBox" style="background:#e0f2fe;color:#0284c7">
+          <span id="smdThemeIconSlot"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>
+        </div>
+        <div class="smdContent">
+          <div class="smdTitle" id="smdThemeTitle">المظهر (الليل والنهار)</div>
+          <div class="smdDesc" id="smdThemeDesc">التبديل بين الوضع النهاري والليلي</div>
+        </div>
+        <div class="smdSwitch" id="smdThemeSwitch">
+          <div class="smdSwitchKnob"></div>
+        </div>
+      </div>
+
+      <!-- 4. الإشعارات والتنبيهات -->
+      <div class="smdItem" onclick="closeSideMenu(); setTimeout(openNotificationsCenter, 150);">
+        <div class="smdIcon" style="background:#fef2f2;color:#ef4444">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </div>
+        <div class="smdContent">
+          <div class="smdTitle">الإشعارات والتنبيهات</div>
+          <div class="smdDesc">تنبيهات المتابعين والتفاعل المباشر</div>
+        </div>
+        <span class="smdBadge" id="smdNotifBadge" style="display:none;background:#ef4444;color:#fff">0</span>
+        <span class="smdArrow">‹</span>
+      </div>
+
+    </div>
+
+    <!-- أسفل القائمة: تواصل ودعم -->
+    <div style="margin-top:auto;padding:16px 14px 20px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.6">
+        تسوق الآن — المنصة الأولى في ليبيا 🇱🇾<br>
+        <span style="font-weight:700">إصدار 2026 • v173</span>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 </body>
 
