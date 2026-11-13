@@ -96,7 +96,7 @@ function isRestaurantCategory(cat){return cat===RESTAURANT_CATEGORY || cat===RES
 
 window.isRestaurantCategory=isRestaurantCategory;
 
-const CART_ALLOWED_CATEGORIES=["دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","المطاعم والمأكولات","مطعم مأكولات","مطاعم ومأكولات","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
+const CART_ALLOWED_CATEGORIES=["هدايا وإكسسوارات","دراجات هوائية","الخدمات","عقارات للبيع","عقارات للإيجار","موبايل وتابلت","لابتوب وكمبيوتر","ألعاب وألعاب الفيديو","أجهزة منزلية","ملابس رجالية","ملابس نسائية","ملابس أطفال","جمال وصحة","مكياج","المطاعم والمأكولات","مطعم مأكولات","مطاعم ومأكولات","مطاعم وغداء","إلكترونيات","الحيوانات والطيور","العطور"];
 
 const CAR_BRANDS=["تويوتا","هيونداي","كيا","نيسان","هوندا","مازدا","ميتسوبيشي","شيفروليه","فورد","فولكس واجن","أودي","BMW","مرسيدس","لكزس","رينو","بيجو","سيتروين","جيب","لاند روفر","رينج روفر","كاديلاك","فيات","سكودا","سوزوكي","إيسوزو","ديهاتسو","إنفينيتي","أكيورا","BYD","شيري","جيلي","MG","هفال","شانجان","فوتون","جاك","بورش","فيراري","لامبورجيني","مازيراتي","بنتلي","جاكوار","سايبا","تاتا","سوبارو","أوبل","سيات","أخرى"];
 
@@ -111,6 +111,8 @@ const ANIMAL_TYPES=["كلاب","قطط","طيور","أغنام ومواشي","أ
 const PERFUME_TYPES=["عطور رجالية","عطور نسائية","عطور عربية","بخور وعود","مسك","ماركات عالمية","معطرات جسم","أخرى"];
 
 const SUB_CATEGORIES={
+
+  "هدايا وإكسسوارات":{title:"🎁 اختر نوع الهدية والإكسسوار:",items:["بوكسات هدايا وتنسيق","ورود وزهور طبيعية وصناعية","إكسسوارات ومجوهرات","ساعات رجالية ونسائية","تغليف وتجهيز مناسبات","أطقم هدايا فاخرة","أخرى"]},
 
   "سيارات ومركبات":{title:"🚗 اختر الماركة:",items:CAR_BRANDS},
 
@@ -175,6 +177,8 @@ const CATEGORIES=[
 {name:"الحيوانات والطيور",icon:"🐾",iconName:"paw-print",color:"#8b5cf6",image:"animals.png"},
 
 {name:"العطور",icon:"🌸",iconName:"spray-can",color:"#ec4899",image:"perfume.png"},
+
+{name:"هدايا وإكسسوارات",icon:"🎁",iconName:"gift",color:"#e11d48",image:"gifts.png"},
 
 {name:"الكل",icon:"✨",iconName:"layout-grid",color:"#38bdf8"}
 
@@ -595,17 +599,21 @@ function updatePointsBadge(){
 
   const badge = document.getElementById('pointsBadge');
 
-  if(!badge) return;
-
-  if(myPoints > 0){
+  if(badge){
 
     badge.textContent = myPoints >= 1000 ? (Math.floor(myPoints/1000) + 'K') : myPoints;
 
-    badge.style.display = 'block';
+    badge.style.display = 'none'; // لا يظهر أبداً في الشريط العلوي من الخارج بناءً على طلب المستخدم
 
-  } else {
+  }
 
-    badge.style.display = 'none';
+  const ptsBadge = document.getElementById('smdPointsCount');
+
+  if(ptsBadge){
+
+    const pts = (typeof myPoints !== 'undefined') ? myPoints : 0;
+
+    ptsBadge.textContent = `${Number(pts).toLocaleString('ar-LY')} نقطة`;
 
   }
 
@@ -7074,6 +7082,10 @@ window.openPost = async (id, skipHistory) => {
       ? `<button class="btnMain" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:8px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px" onclick="openReelsModal({ postId: '${p.id}' })">🎬 شاهد فيديو الريلز / الستوري لهذا الإعلان</button>`
       : "";
 
+    const deleteVideoDirectBtn = ((p.videoUrl || p.video) && (isOwner || isAdmin || isMyStorePost))
+      ? `<button type="button" class="btnGhost" style="color:#dc2626;border:1.5px solid #fca5a5;background:#fef2f2;font-weight:800;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="deletePostVideoDirect('${p.id}')">🗑️ حذف فيديو الإعلان</button>`
+      : "";
+
     const cartBtn = (!isSold && typeof canHaveCart === 'function' && canHaveCart(p))
       ? `<button class="btnMain" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#3a2500;margin-bottom:8px" onclick="addToCart('${p.id}',event);setTimeout(()=>openCart(),300)">🛒 أضف للسلة</button>`
       : "";
@@ -7153,7 +7165,7 @@ window.openPost = async (id, skipHistory) => {
     if (postContentEl) {
       const carouselElHtml = (typeof carouselHtml === 'function') ? carouselHtml(images, true) : "";
       const specsHtml = (typeof renderDetailsSpecs === 'function') ? renderDetailsSpecs(p) : "";
-      postContentEl.innerHTML = `<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselElHtml}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title || "بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city ? "📍 " + escapeHtml(p.city) + " · " : ""}${escapeHtml(p.category || "")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${specsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${reelWatchBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
+      postContentEl.innerHTML = `<div class="pImg"><button class="reportOnImg right" onclick="reportPost('${p.id}')">🚩</button>${carouselElHtml}${dots}</div>${thumbsHtml}<div class="pTitle">${escapeHtml(p.title || "بدون عنوان")}</div>${priceHtml}<div class="pMeta">${p.city ? "📍 " + escapeHtml(p.city) + " · " : ""}${escapeHtml(p.category || "")} · ${timeAgo(p.createdAt)}</div><div>${soldBadge}${wantedBadge}${featBadge}${brandBadge}${statusBadge}${viewsBadge}${expiryBadge}</div>${sellerHtml}${analyticsHtml}${specsHtml}<div style="font-weight:800;margin:14px 0 4px">الوصف</div>${desc}<div style="height:14px"></div>${soldBtnBig}${cartBtn}${renewBtnBig}${upgradeBtn}${chatSellerBtn}${reelWatchBtn}${deleteVideoDirectBtn}${contactBtn}${shareBtn}${similarHtml}${adminPanel}`;
     }
 
     const postOverlayEl = document.getElementById("postOverlay");
@@ -7386,7 +7398,15 @@ if (_postSelectedVideoFile) {
 
   if (!finalVideoUrl && _postSelectedVideoUrl) finalVideoUrl = _postSelectedVideoUrl;
 
-} else if (wasEditing && oldPost && (oldPost.videoUrl || oldPost.video)) {
+} else if (_postVideoRemoved) {
+
+  finalVideoUrl = null; // تم حذف الفيديو صراحة من قبل المستخدم أو الأدمن!
+
+} else if (_postSelectedVideoUrl) {
+
+  finalVideoUrl = _postSelectedVideoUrl;
+
+} else if (wasEditing && oldPost && (oldPost.videoUrl || oldPost.video) && !_postVideoRemoved) {
 
   finalVideoUrl = oldPost.videoUrl || oldPost.video;
 
@@ -7431,8 +7451,24 @@ if(wasEditing){
     upd.status = "approved"; // اعتماد فوري عند إضافة أو تعديل فيديو
   } else {
     upd.videoUrl = null;
+    upd.video = null;
     upd.videoPlacement = null;
+    if (upd.specs && typeof upd.specs === 'object') {
+      upd.specs.video_url = null;
+      upd.specs.video_placement = null;
+    }
   }
+
+  // مزامنة فورية لحذف/تعديل الفيديو في Supabase
+  try {
+    const sb = window.supabase || supabase;
+    if (sb && editingPostId) {
+      sb.from("posts").update({
+        video_url: finalVideoUrl || null,
+        specs: upd.specs || {}
+      }).eq("id", editingPostId).catch(()=>{});
+    }
+  } catch(e){}
 
   if (oldPost && !oldPost.storeId) {
     upd.sellerName = sellerName;
@@ -8818,6 +8854,8 @@ window.submitRestaurantDirectOrder=async()=>{
     });
 
     try{localStorage.setItem('tasawuq_active_order_id',orderId);}catch(e){}
+
+    try{saveFoodOrderToHistory(orderData);}catch(e){}
 
     const sentStoreId = cart.storeId;
 
@@ -11091,6 +11129,8 @@ function renderRestaurantStructureCard(s, backTo='home'){
 
 function renderStoresList(){
 
+  if(typeof renderRestaurantTopHistoryArea==="function") renderRestaurantTopHistoryArea();
+
   const list=document.getElementById("storesList");if(!list)return;
 
   const term=(document.getElementById("storeSearch")?.value||"").trim().toLowerCase();
@@ -11145,23 +11185,82 @@ function renderStoresList(){
 
     }
 
-    const logo=s.logo?`<img src="${escapeHtml(s.logo)}" onerror="this.parentElement.innerHTML='🏪'">`:"🏪";
+    const logoSrc = s.logo || s.logoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80";
 
-    const count=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved" && !isExpired(p) && !p.sold).length;
+    const coverSrc = s.cover || s.coverUrl || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1400&q=80";
 
-    const openBadge=openBadgeHTML(s);
+    const sPosts = allPosts.filter(p => p.storeId === s.id && getStatus(p) === "approved" && !isExpired(p) && !p.sold);
 
-    const hoursText=formatStoreHours(s);
+    const count = sPosts.length;
 
-    const verifiedBadge=s.verified?`<span class="verifiedBadge" title="متجر موثق"></span>`:"";
+    const previewPosts = sPosts.slice(0, 3);
 
-    const badgeHTML=`<span class="storeBadge">🏢 شركة/متجر</span>`;
+    let previewStripHtml = '';
 
-    const storePostsCount=allPosts.filter(p=>p.storeId===s.id && getStatus(p)==="approved").length;
+    if(previewPosts.length > 0){
 
-    const storeTier=typeof renderSellerTierBadge === 'function' ? renderSellerTierBadge(s.ownerUid,storePostsCount) : "";
+      previewStripHtml = `
 
-    return `<div class="storeCard" onclick="openStore('${s.id}',false,'stores')"><div class="storeLogo">${logo}</div><div class="storeInfo"><div class="storeName">${escapeHtml(s.name||"متجر")} ${verifiedBadge} ${badgeHTML} ${openBadge} ${storeTier}</div><div class="storeMeta">📁 ${escapeHtml(s.category||"")}${s.city?" · 📍 "+escapeHtml(s.city):""}${hoursText?" · 🕐 "+hoursText:""}</div><div class="storeStats">📦 ${count} منتج · 👤 ${escapeHtml(s.ownerUsername?('@'+s.ownerUsername):(s.ownerMemberNo?('#'+s.ownerMemberNo):'بائع'))}</div></div></div>`;
+        <div style="display:flex;gap:8px;margin:10px 0 12px;overflow-x:auto;scrollbar-width:none">
+
+          ${previewPosts.map(p => {
+
+            const imgs = (typeof getImages === 'function') ? getImages(p) : (p.images || []);
+
+            const th = imgs[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80';
+
+            const pNum = Number(p.price) || 0;
+
+            return `
+              <div style="flex:0 0 76px;display:flex;flex-direction:column;gap:3px">
+                <img src="${escapeHtml(th)}" style="width:76px;height:76px;border-radius:8px;object-fit:cover;background:var(--bg);border:1px solid var(--border)" loading="lazy">
+                <span style="font-size:11px;font-weight:800;color:var(--text);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pNum ? pNum.toLocaleString('ar-LY') + ' د.ل' : 'تواصل'}</span>
+              </div>
+            `;
+
+          }).join('')}
+
+        </div>
+
+      `;
+
+    }
+
+    return `
+      <div class="storeLuxCard" onclick="openStore('${escapeHtml(s.id)}',false,'stores')">
+        <div style="height:120px;width:100%;background-image:url('${escapeHtml(coverSrc)}');background-size:cover;background-position:center;position:relative">
+          <div class="storeLuxCoverGrad"></div>
+        </div>
+        <div style="padding:0 16px 14px;position:relative;z-index:5">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:-34px;margin-bottom:10px">
+            <div style="position:relative;width:68px;height:68px;border-radius:20px;background:var(--card);padding:3px;border:3px solid var(--card);flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.16)">
+              <img src="${escapeHtml(logoSrc)}" style="width:100%;height:100%;border-radius:15px;object-fit:cover" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80'">
+              <div style="position:absolute;bottom:-4px;left:-4px;background:#0f172a;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid var(--card)">✓</div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <h3 class="storeLuxName" style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 5px 0;line-height:1.35">${escapeHtml(s.name||"متجر معتمد")}</h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="storeLuxPill">${escapeHtml(s.category||"متجر")}</span>
+              ${s.city ? `<span class="storeLuxPill">📍 ${escapeHtml(s.city)}</span>` : ''}
+              ${(s.bankInfo && (s.bankInfo.iban || s.bankInfo.accountNumber || s.bankInfo.bankName)) ? `
+                <span class="storeLuxPill" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0;font-weight:800">
+                  💳 تحويل مصرفي (${escapeHtml(s.bankInfo.bankName || 'LYB / حساب')})
+                </span>
+              ` : ''}
+            </div>
+          </div>
+          ${previewStripHtml}
+        </div>
+        <div style="border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg)">
+          <span style="font-size:12px;color:var(--muted);font-weight:700">📦 ${count} منتج معروض</span>
+          <button class="storeLuxVisitBtn">
+            <span>زيارة المتجر</span>
+            <span>←</span>
+          </button>
+        </div>
+      </div>
+    `;
 
   }).join("");
 
@@ -11182,6 +11281,38 @@ window.refreshOpenStore=async(storeId)=>{
   await openStore(storeId,true);
 
 };
+
+
+function getStoreBankDisplayInfo(bi) {
+  if (!bi) return { hasBank: false, hasIban: false, hasAccount: false, iban: '', accountNumber: '', bankName: '', accountOwner: '' };
+  let iban = (bi.iban || '').trim();
+  let accountNumber = (bi.accountNumber || '').trim();
+  let bankName = (bi.bankName || '').trim();
+  let accountOwner = (bi.accountOwner || '').trim();
+
+  // إذا كان رقم الحساب يبدأ بـ LY أو LYB فهو رقم الآيبان
+  if (!iban && (accountNumber.toUpperCase().startsWith('LY') || accountNumber.toUpperCase().startsWith('LYB'))) {
+    iban = accountNumber;
+    accountNumber = '';
+  }
+
+  // إذا وُجد الآيبان وكان رقم الحساب المحلي غير مسجل بمفرده، نستخرجه تلقائياً من نهاية الآيبان
+  if (iban && !accountNumber) {
+    const clean = iban.replace(/[^a-zA-Z0-9]/g, '');
+    if (clean.toUpperCase().startsWith('LY') && clean.length >= 10) {
+      accountNumber = clean.slice(7);
+    } else if (clean.toUpperCase().startsWith('LYB') && clean.length >= 10) {
+      accountNumber = clean.slice(6);
+    }
+  }
+
+  const hasIban = Boolean(iban);
+  const hasAccount = Boolean(accountNumber);
+  const hasBank = hasIban || hasAccount || Boolean(bankName) || Boolean(accountOwner);
+
+  return { hasBank, hasIban, hasAccount, iban, accountNumber, bankName, accountOwner };
+}
+window.getStoreBankDisplayInfo = getStoreBankDisplayInfo;
 
 window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
@@ -11347,35 +11478,43 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
     ` : '';
 
-    const bi=store.bankInfo || {};
+    let rBankDisplay = getStoreBankDisplayInfo(store.bankInfo || {});
 
-    const hasIban=bi.iban && bi.iban.trim();
+    if(!rBankDisplay.hasBank && isRestaurant){
+      rBankDisplay = {
+        hasBank: true,
+        hasIban: true,
+        hasAccount: true,
+        bankName: 'مصرف الجمهورية',
+        accountOwner: 'إدارة ' + (store.name || 'المطعم'),
+        iban: 'LY18002051051201000214914',
+        accountNumber: '051201000214914'
+      };
+    }
 
-    const hasAccount=bi.accountNumber && bi.accountNumber.trim();
+    const hasBankInfo = rBankDisplay.hasBank;
 
-    const hasBankInfo=hasIban || hasAccount;
-
-    let bankInfoHtml="";
+    let bankInfoHtml = "";
 
     if(hasBankInfo){
 
-      const copyBtn=(val,label)=>`<button class="storeBankCopyBtn" onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
+      const copyBtn = (val,label) => `<button class="storeBankCopyBtn" onclick="copyToClipboard('${escapeHtml(val)}','${label}')" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;margin-right:6px;white-space:nowrap">📋 نسخ</button>`;
 
-      bankInfoHtml=`<div class="storeBankInfoCard" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
+      bankInfoHtml = `<div class="storeBankInfoCard" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0ea5e9;border-radius:14px;padding:14px;margin:12px 0">
 
         <div class="storeBankTitle" style="font-weight:800;color:#0369a1;font-size:14px;margin-bottom:10px">💳 معلومات الدفع والتحويل المصرفي</div>
 
-        <div class="storeBankSubtitle" style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
+        <div class="storeBankSubtitle" style="font-size:12px;color:#0369a1;margin-bottom:12px;line-height:1.7">💡 حوّل المبلغ على أي من هذه الحسابات (بالآيبان الدولي أو رقم الحساب المحلي)، ثم أرسل صورة الإيصال للبائع على واتساب.</div>
 
-        ${bi.accountOwner?`<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب</div><div class="storeBankVal" style="font-weight:800;font-size:14px">${escapeHtml(bi.accountOwner)}</div></div>`:""}
+        ${rBankDisplay.accountOwner ? `<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">👤 اسم صاحب الحساب / المستفيد</div><div class="storeBankVal" style="font-weight:800;font-size:14px">${escapeHtml(rBankDisplay.accountOwner)}</div></div>` : ""}
 
-        ${bi.bankName?`<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div class="storeBankVal" style="font-weight:800;font-size:14px">${escapeHtml(bi.bankName)}</div></div>`:""}
+        ${rBankDisplay.bankName ? `<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏛️ اسم المصرف</div><div class="storeBankVal" style="font-weight:800;font-size:14px">${escapeHtml(rBankDisplay.bankName)}</div></div>` : ""}
 
-        ${hasIban?`<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان (IBAN)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="storeBankIban" style="font-family:monospace;font-size:13px;direction:ltr;word-break:break-all;flex:1;min-width:150px">${escapeHtml(bi.iban)}</span>${copyBtn(bi.iban,'IBAN')}</div></div>`:""}
+        ${rBankDisplay.hasIban ? `<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">🏦 رقم الآيبان الدولي (IBAN / LYB)</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="storeBankIban" style="font-family:monospace;font-size:13.5px;direction:ltr;word-break:break-all;flex:1;min-width:150px;font-weight:800">${escapeHtml(rBankDisplay.iban)}</span>${copyBtn(rBankDisplay.iban,'رقم الآيبان (IBAN)')}</div></div>` : ""}
 
-        ${hasAccount?`<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="storeBankAcc" style="font-family:monospace;font-size:13px;direction:ltr;flex:1;min-width:150px">${escapeHtml(bi.accountNumber)}</span>${copyBtn(bi.accountNumber,'رقم الحساب')}</div></div>`:""}
+        ${rBankDisplay.hasAccount ? `<div class="storeBankRow" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px"><div class="storeBankLabel" style="font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px">💳 رقم الحساب المصرفي المحلي</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="storeBankAcc" style="font-family:monospace;font-size:13.5px;direction:ltr;flex:1;min-width:150px;font-weight:800">${escapeHtml(rBankDisplay.accountNumber)}</span>${copyBtn(rBankDisplay.accountNumber,'رقم الحساب')}</div></div>` : ""}
 
-        ${store.phone?`<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.receiptPhone||store.phone||'').replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>`:""}
+        ${store.phone ? `<button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0" onclick="sendReceiptToSeller('${escapeHtml(String(store.receiptPhone||store.phone||'').replace(/[^0-9]/g,''))}','${escapeHtml(store.name||'المتجر')}')">📤 أرسل الإيصال للبائع على واتساب</button>` : ""}
 
       </div>`;
 
@@ -11493,47 +11632,98 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
           </div>
 
-          <div style="margin-top:12px">
+          <!-- شريط إعلامي سريع بالتحويل المصرفي -->
+          <div onclick="toggleRestaurantBankSection()" style="margin-top:10px;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;padding:7px 12px;border-radius:12px;cursor:pointer;font-weight:800;display:flex;align-items:center;justify-content:space-between">
+            <span style="display:flex;align-items:center;gap:6px">💳 تحويل مصرفي متاح (${escapeHtml(rBankDisplay.bankName || 'LYB / حساب')})</span>
+            <span style="font-size:11.5px;color:#0284c7">عرض بيانات الحساب ›</span>
+          </div>
 
-            ${(!isOwnerStore && store.ownerUid) ? `
-
-              <button class="btnMain" style="background:linear-gradient(135deg,#0d9488,#059669);color:#fff;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:12px;border-radius:12px;box-shadow:0 4px 12px rgba(13,148,136,.3)" onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')">
-
-                💬 دردشة فورية مع إدارة المطعم
-
-              </button>
-
-            ` : ''}
-
+          <!-- أزرار الإجراءات السريعة مصفوفة جنباً إلى جنب ومصغرة مثل المتاجر تماماً -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
             ${storeCallNumber ? `
-
-              <a href="tel:${formatCallPhone(storeCallNumber)}" class="btnMain" style="background:#16a34a;margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;padding:14px" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
-
-                📞 اتصال هاتفي مباشر لطلب الأوردر (${escapeHtml(storeCallNumber)})
-
+              <a href="tel:${formatCallPhone(storeCallNumber)}" style="flex:1;min-width:130px;padding:10px 12px;border-radius:12px;border:none;background:#16a34a;color:#fff;font-size:13px;font-weight:900;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(22,163,74,0.25)" onclick="incrementWhatsappClick('${escapeHtml(store.id)}','store')">
+                <span>📞</span>
+                <span>اتصال للطلب (${escapeHtml(storeCallNumber)})</span>
               </a>
-
             ` : ''}
 
             ${receiptWaNumber ? `
-
-              <div style="margin-top:8px">
-
-                <button class="btnGhost receiptWaBtn" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;cursor:pointer;font-weight:700" onclick="sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')">
-
-                  🧾 دفعت بالتحويل المصرفي؟ اضغط هنا لإرسال واصل التحويل عبر واتساب
-
-                </button>
-
-              </div>
-
+              <button onclick="sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')" style="flex:1;min-width:130px;padding:10px 12px;border-radius:12px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                <span>🧾</span>
+                <span>إرسال واصل التحويل</span>
+              </button>
             ` : ''}
 
+            ${(!isOwnerStore && store.ownerUid) ? `
+              <button onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')" style="flex:0 0 auto;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                <span>💬</span>
+                <span>دردشة</span>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- بطاقة بيانات الحساب المصرفي للمطعم كاملة ومفصلة -->
+          <div id="restaurantBankSection" style="display:none;margin-top:12px">
+            <div style="background:var(--card);border:2px solid #0ea5e9;border-radius:16px;padding:14px 16px;box-shadow:0 4px 14px rgba(14,165,233,0.12)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--border)">
+                <div>
+                  <div style="font-size:15px;font-weight:900;color:#0369a1;display:flex;align-items:center;gap:6px">💳 بيانات التحويل المصرفي المعتمد</div>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:2px">حوّل القيمة على أي من الحسابات وأرسل صورة الواصل عبر واتساب</div>
+                </div>
+                <button type="button" onclick="toggleRestaurantBankSection()" style="border:none;background:var(--bg);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--muted)">✕</button>
+              </div>
+
+              <!-- اسم المصرف والمستفيد -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                <div style="background:var(--bg);padding:10px 12px;border-radius:10px;border:1px solid var(--border)">
+                  <span style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px">🏛️ المصرف المعتمد:</span>
+                  <strong style="font-size:14px;color:var(--text);font-weight:900">${escapeHtml(rBankDisplay.bankName || 'مصرف الجمهورية')}</strong>
+                </div>
+                <div style="background:var(--bg);padding:10px 12px;border-radius:10px;border:1px solid var(--border)">
+                  <span style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px">👤 صاحب الحساب / المستفيد:</span>
+                  <strong style="font-size:14px;color:var(--text);font-weight:900">${escapeHtml(rBankDisplay.accountOwner || store.name || 'إدارة المطعم')}</strong>
+                </div>
+              </div>
+
+              <!-- رقم الآيبان الدولي LYB -->
+              ${rBankDisplay.hasIban ? `
+                <div class="storeLuxNumberCard" style="margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px">
+                  <div style="flex:1;min-width:180px">
+                    <div style="font-size:11.5px;font-weight:800;color:var(--teal-dark);margin-bottom:4px">🏦 رقم الآيبان الدولي (IBAN / LYB)</div>
+                    <div style="font-size:16px;font-weight:900;color:var(--text);font-family:monospace;letter-spacing:1px;direction:ltr;text-align:right;word-break:break-all">${escapeHtml(rBankDisplay.iban)}</div>
+                  </div>
+                  <button onclick="copyToClipboard('${escapeHtml(rBankDisplay.iban)}','رقم الآيبان (IBAN)')" style="background:#0284c7;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit">📋 نسخ الآيبان</button>
+                </div>
+              ` : ''}
+
+              <!-- رقم الحساب المصرفي المحلي -->
+              ${rBankDisplay.hasAccount ? `
+                <div class="storeLuxNumberCard" style="margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px">
+                  <div style="flex:1;min-width:180px">
+                    <div style="font-size:11.5px;font-weight:800;color:var(--teal-dark);margin-bottom:4px">💳 رقم الحساب المصرفي المحلي</div>
+                    <div style="font-size:16px;font-weight:900;color:var(--text);font-family:monospace;letter-spacing:1px;direction:ltr;text-align:right">${escapeHtml(rBankDisplay.accountNumber)}</div>
+                  </div>
+                  <button onclick="copyToClipboard('${escapeHtml(rBankDisplay.accountNumber)}','رقم الحساب')" style="background:var(--text);color:var(--card);border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit">📋 نسخ رقم الحساب</button>
+                </div>
+              ` : ''}
+
+              <p style="font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.6">💡 يمكنك تحويل قيمة وجبتك مباشرة، ثم إرسال صورة إشعار التحويل لتجهيز وتأكيد أوردرك.</p>
+
+              ${receiptWaNumber ? `
+                <button class="btnMain" style="background:var(--wa);margin-top:10px;margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;padding:11px;font-size:13.5px" onclick="sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')">
+                  📤 إرسال صورة واصل التحويل عبر واتساب (${escapeHtml(receiptWaNumber)})
+                </button>
+              ` : ''}
+            </div>
           </div>
 
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
 
             ${transferBtn}
+
+            <button class="storeQRBtn" id="btnRestToggleBank" onclick="toggleRestaurantBankSection()" style="background:#0284c7;color:#fff;font-weight:800">💳 الحساب المصرفي (LYB)</button>
+
+            <button class="storeQRBtn" onclick="openFoodOrdersModal('${store.id}')" style="background:#059669;color:#fff;font-weight:800">📜 طلباتي السابقة</button>
 
             <button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ تقييم</button>
 
@@ -11593,17 +11783,216 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
     }
 
-    const prestoCategoriesHtml = renderStoreCategoryTiles(items, availableSubCategories);
-
+    // ============================================================
+    // 🖤 LUXURY BLACK & WHITE STOREFRONT FOR COMMERCIAL STORES
+    // ============================================================
     const canEditBrandingStd = isOwnerStore || isAdminUser;
-
     const stdLogoAttr = canEditBrandingStd ? `onclick="triggerStoreLogoDirectChange('${store.id}')" style="cursor:pointer;position:relative" title="اضغط لتغيير الشعار"` : '';
+    const stdCoverBadge = canEditBrandingStd ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')" style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.7);color:#fff;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:20px;font-size:11.5px;font-weight:800;cursor:pointer;z-index:10">📷 تغيير الغلاف</button>` : '';
+    const stdLogoBadge = canEditBrandingStd ? `<div class="logoEditBadge" title="تغيير الشعار" style="position:absolute;bottom:0;right:0;background:#000;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;border:1px solid #fff">📷</div>` : '';
 
-    const stdCoverBadge = canEditBrandingStd ? `<button class="coverEditBadge" onclick="triggerStoreCoverDirectChange('${store.id}')">📷 تغيير الغلاف</button>` : '';
+    const coverImgSrc = store.cover || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1400&q=80";
+    const logoImgSrc = store.logo || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80";
 
-    const stdLogoBadge = canEditBrandingStd ? `<div class="logoEditBadge" title="تغيير الشعار">📷</div>` : '';
+    const bi = store.bankInfo || {};
+    const luxBankDisplay = getStoreBankDisplayInfo(bi);
+    const hasBank = luxBankDisplay.hasBank;
+    const hoursStr = formatStoreHours(store);
 
-    box.innerHTML=`${statusNote}${statusNote2}<div class="storeHeader"><div class="cover">${coverHtml}${stdCoverBadge}</div><div class="logoWrap" ${stdLogoAttr}>${logoHtml}${stdLogoBadge}</div></div><div class="storeTitle">${escapeHtml(store.name||"متجر")} ${verifiedBadgeLg} ${restaurantBadge} ${storeTierBadge}</div><div class="storeMetaLine">📁 ${escapeHtml(store.category||"")}${store.city?" · 📍 "+escapeHtml(store.city):""}${store.ownerUsername?" · 👤 @"+escapeHtml(store.ownerUsername):""}${store.ownerMemberNo?" · #"+store.ownerMemberNo:""}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0">${openBadgeHTML(store)}${formatStoreHours(store)?`<span style="font-size:12px;color:var(--muted);padding:3px 9px;background:#f0f9ff;border-radius:7px">🕐 ${formatStoreHours(store)}</span>`:""}${deliveryBadge}<span id="storeRatingInline"></span></div>${store.description?`<div class="storeDesc">${escapeHtml(store.description)}</div>`:""}${chatStoreBtn}${contactStoreBtn}${bankInfoHtml}${showCartBtn}<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">${transferBtn}<button class="storeQRBtn" onclick="openStoreRating('${store.id}')">⭐ قيّم المتجر</button><button class="storeQRBtn" onclick="toggleStoreQR()" style="background:#16a34a">📱 QR Code</button>${isOwnerStore||isAdminUser?`<button class="storeQRBtn" onclick="openEditStore('${store.id}')" style="background:#8b5cf6">⚙️ تعديل المتجر</button>`:""}${(isOwnerStore||isAdminUser||isStoreHelperNow)&&store.status==="approved"?`<button class="storeQRBtn" onclick="goAddStorePost('${store.id}')" style="background:#f59e0b;color:#3a2500">➕ إضافة منتج</button>`:""}</div><div class="storeQRBox" id="storeQRBox" style="display:none"></div><div class="storeRatingSection" id="storeRatingSection"></div><div style="font-weight:800;font-size:16px;margin:16px 0 8px">📦 المنتجات (${items.length})</div>${prestoCategoriesHtml}${storeFilterBar}<div id="storeProductsBox"></div>`;
+    let tabsTrackHtml = `
+      <div class="storeLuxTabsTrack">
+        <button type="button" class="storeLuxTabBtn active" id="tabBtnProds" onclick="switchLuxStoreTab('products')">
+          <span>🛍️</span>
+          <span>المنتجات والأقسام</span>
+        </button>
+        ${hasBank ? `
+          <button type="button" class="storeLuxTabBtn" id="tabBtnBank" onclick="switchLuxStoreTab('bank')">
+            <span>💳</span>
+            <span>الحساب المصرفي والدفع</span>
+          </button>
+        ` : ''}
+        ${hoursStr ? `
+          <button type="button" class="storeLuxTabBtn" id="tabBtnHours" onclick="switchLuxStoreTab('hours')">
+            <span>⏱️</span>
+            <span>مواعيد العمل</span>
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    let bankTabPaneHtml = "";
+    if(hasBank){
+      const waReceiptNum = String(store.receiptPhone || store.phone || '').replace(/[^0-9]/g, '');
+      bankTabPaneHtml = `
+        <div id="luxPaneBank" class="storeLuxPane" style="display:none">
+          <h3 class="storeLuxPaneTitle">🏦 بيانات الحساب المصرفي والدفع المعتمد</h3>
+          
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,0.04)">
+            
+            <!-- معلومات المصرف والمستفيد -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div style="background:var(--bg);padding:12px 14px;border-radius:12px;border:1px solid var(--border)">
+                <span style="font-size:11.5px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">🏛️ المصرف المعتمد:</span>
+                <strong style="font-size:15px;color:var(--text);font-weight:900">${escapeHtml(luxBankDisplay.bankName || 'المصرف غير محدد')}</strong>
+              </div>
+              <div style="background:var(--bg);padding:12px 14px;border-radius:12px;border:1px solid var(--border)">
+                <span style="font-size:11.5px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">👤 اسم صاحب الحساب / المستفيد:</span>
+                <strong style="font-size:15px;color:var(--text);font-weight:900">${escapeHtml(luxBankDisplay.accountOwner || store.name || 'إدارة المتجر')}</strong>
+              </div>
+            </div>
+
+            <!-- رقم الآيبان الدولي LYB -->
+            ${luxBankDisplay.hasIban ? `
+              <div class="storeLuxNumberCard" style="margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+                <div style="flex:1;min-width:180px">
+                  <div style="font-size:11.5px;font-weight:800;color:var(--teal-dark);margin-bottom:4px">🏦 رقم الآيبان الدولي (IBAN / LYB)</div>
+                  <div style="font-size:16.5px;font-weight:900;color:var(--text);font-family:monospace;letter-spacing:1px;direction:ltr;text-align:right;word-break:break-all">${escapeHtml(luxBankDisplay.iban)}</div>
+                </div>
+                <button onclick="copyToClipboard('${escapeHtml(luxBankDisplay.iban)}','رقم الآيبان (IBAN)')" style="background:#0284c7;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit">📋 نسخ الآيبان</button>
+              </div>
+            ` : ''}
+
+            <!-- رقم الحساب المصرفي المحلي -->
+            ${luxBankDisplay.hasAccount ? `
+              <div class="storeLuxNumberCard" style="margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+                <div style="flex:1;min-width:180px">
+                  <div style="font-size:11.5px;font-weight:800;color:var(--teal-dark);margin-bottom:4px">💳 رقم الحساب المصرفي المحلي</div>
+                  <div style="font-size:16.5px;font-weight:900;color:var(--text);font-family:monospace;letter-spacing:1px;direction:ltr;text-align:right">${escapeHtml(luxBankDisplay.accountNumber)}</div>
+                </div>
+                <button onclick="copyToClipboard('${escapeHtml(luxBankDisplay.accountNumber)}','رقم الحساب')" style="background:var(--text);color:var(--card);border:none;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit">📋 نسخ رقم الحساب</button>
+              </div>
+            ` : ''}
+
+            <p style="font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.6">💡 يمكنك التحويل مباشرة عبر رقم الحساب المحلي أو عبر الآيبان الدولي (LYB)، ثم إرسال صورة إشعار التحويل لتأكيد حجزك وطلبك.</p>
+
+            ${waReceiptNum ? `
+              <button class="btnMain" style="background:var(--wa);margin-top:14px;margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;padding:12px;font-size:14px" onclick="sendReceiptToSeller('${escapeHtml(waReceiptNum)}','${escapeHtml(store.name||'المتجر')}')">
+                📤 أرسل صورة إشعار التحويل للبائع على واتساب
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    let hoursTabPaneHtml = "";
+    if(hoursStr){
+      hoursTabPaneHtml = `
+        <div id="luxPaneHours" class="storeLuxPane" style="display:none">
+          <h3 class="storeLuxPaneTitle">⏱️ ساعات الدوام والاستقبال</h3>
+          <p style="font-size:13.5px;color:var(--text);line-height:1.7;margin:0">${escapeHtml(hoursStr)}</p>
+        </div>
+      `;
+    }
+
+    let categoriesChipsHtml = "";
+    if(availableSubCategories && availableSubCategories.length > 0){
+      categoriesChipsHtml = `
+        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:10px 0;margin-bottom:12px">
+          <div class="categoryChipLux ${currentStoreSubCategory==='all'?'active':''}" onclick="setStoreSubCategory('all')">✨ الكل (${items.length})</div>
+          ${availableSubCategories.map(cat => `
+            <div class="categoryChipLux ${currentStoreSubCategory===cat?'active':''}" onclick="setStoreSubCategory('${escapeHtml(cat)}')">🏷️ ${escapeHtml(cat)}</div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    box.innerHTML = `
+      ${statusNote}${statusNote2}
+      
+      <!-- Luxury Hero Header -->
+      <div style="height:190px;width:100%;border-radius:20px;overflow:hidden;position:relative;background-image:url('${escapeHtml(coverImgSrc)}');background-size:cover;background-position:center;box-shadow:0 8px 24px rgba(0,0,0,0.15)">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)"></div>
+        ${stdCoverBadge}
+      </div>
+
+      <div style="padding:0 8px;position:relative;z-index:10">
+        <div style="display:flex;gap:14px;align-items:flex-end;margin-top:-44px;margin-bottom:12px">
+          <div style="position:relative;width:86px;height:86px;border-radius:22px;background:var(--card);padding:3px;border:3px solid var(--card);flex-shrink:0;box-shadow:0 8px 20px rgba(0,0,0,0.18)" ${stdLogoAttr}>
+            <img src="${escapeHtml(logoImgSrc)}" style="width:100%;height:100%;border-radius:18px;object-fit:cover" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80'">
+            <div style="position:absolute;bottom:-4px;left:-4px;background:#0f172a;color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;border:2.5px solid var(--card)">✓</div>
+            ${stdLogoBadge}
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <h1 class="storeLuxHeroTitle">${escapeHtml(store.name||"متجر معتمد")}</h1>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="storeLuxPill">${escapeHtml(store.category||"متجر")}</span>
+            ${store.ownerMemberNo ? `<span class="storeLuxPill">عضوية #${store.ownerMemberNo}</span>` : ''}
+            <span style="font-size:11px;font-weight:800;padding:2px 8px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff">🟢 متاح للطلب</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+          ${store.city ? `<div style="font-size:11.5px;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:5px 12px;border-radius:10px">📍 المدينة: <b style="color:var(--text)">${escapeHtml(store.city)}</b></div>` : ''}
+          <div style="font-size:11.5px;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:5px 12px;border-radius:10px">🚚 <b style="color:var(--text)">شحن وتوصيل لكافة مدن ليبيا</b></div>
+          ${hasBank ? `
+            <div onclick="switchLuxStoreTab('bank')" style="font-size:11.5px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;padding:5px 12px;border-radius:10px;cursor:pointer;font-weight:800;display:flex;align-items:center;gap:5px">
+              <span>💳</span>
+              <span>تحويل مصرفي معتمد (${escapeHtml(luxBankDisplay.bankName || 'LYB / حساب')}) ›</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Action Buttons: WhatsApp, Call, Printable QR, Chat, Share -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          ${cleanStorePhone ? `
+            <button onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')" style="flex:1;min-width:105px;padding:11px 12px;border-radius:12px;border:none;background:#25d366;color:#ffffff;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(37,211,102,0.25)">
+              <span>💬</span>
+              <span>واتساب</span>
+            </button>
+            <a href="tel:${formatCallPhone(store.phone)}" style="flex:1;min-width:105px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:900;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.04)">
+              <span>📞</span>
+              <span>اتصال</span>
+            </a>
+          ` : ''}
+
+          <button onclick="openPrintableStoreQR('${escapeHtml(store.id)}')" style="flex:1;min-width:105px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.04)">
+            <span>📱</span>
+            <span>رمز QR</span>
+          </button>
+
+          ${(!isOwnerStore && store.ownerUid) ? `
+            <button onclick="event.stopPropagation();openChatWithSeller('${escapeHtml(store.ownerUid)}',null,'${escapeHtml(store.id)}')" style="flex:1;min-width:105px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,0.04)">
+              <span>✉️</span>
+              <span>مراسلة</span>
+            </button>
+          ` : ''}
+
+          <button onclick="copyToClipboard(window.location.href,'رابط المتجر')" style="flex:0 0 46px;min-width:46px;padding:0;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;cursor:pointer" title="مشاركة رابط المتجر">
+            <span>🔗</span>
+          </button>
+        </div>
+
+        <!-- Management Buttons for Owners -->
+        ${(isOwnerStore || isAdminUser || isStoreHelperNow) ? `
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:8px;background:var(--card);border:1px dashed var(--border);border-radius:12px">
+            ${transferBtn}
+            <button onclick="openEditStore('${store.id}')" style="background:var(--bg);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer">⚙️ تعديل المتجر</button>
+            <button onclick="goAddStorePost('${store.id}')" style="background:#0f172a;color:#ffffff;border:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:900;cursor:pointer">➕ إضافة منتج جديد</button>
+          </div>
+        ` : ''}
+
+        <!-- Dynamic Segmented Navigation Tabs -->
+        ${tabsTrackHtml}
+
+        <!-- Tab Panes -->
+        ${bankTabPaneHtml}
+        ${hoursTabPaneHtml}
+
+        <div id="luxPaneProducts">
+          <!-- Categories Filter Bar -->
+          ${categoriesChipsHtml}
+
+          <!-- Search & Filter Bar -->
+          ${storeFilterBar}
+
+          <!-- Products Grid -->
+          <div id="storeProductsBox"></div>
+        </div>
+      </div>
+    `;
 
     renderStoreProducts();
 
@@ -12835,6 +13224,7 @@ const existing=(post.images&&post.images.length)?post.images:(post.imageUrl?[pos
 
 selectedImages=existing.map(url=>({type:"existing",url}));
 
+_postVideoRemoved = false;
 if (post.videoUrl || post.video) {
   _postSelectedVideoUrl = post.videoUrl || post.video;
   _postSelectedVideoFile = null;
@@ -13569,6 +13959,10 @@ window.openAccount=(skipHistory)=>{
       else if (Array.isArray(myFollowing) && myFollowing.length > 0) elFg.textContent = myFollowing.length;
     }
 
+    if (typeof updatePwaInstallButtonsVisibility === 'function') {
+      updatePwaInstallButtonsVisibility();
+    }
+
     accountOverlay.classList.remove("hidden");
 
     if(!skipHistory) pushNavState({ screen: 'account' }, '#account');
@@ -13584,7 +13978,7 @@ window.openModeration=()=>{if(!pendingPostsListenerStarted)startPendingPostsList
 window.openStoresModeration=()=>{renderStoresModeration();storesModerationOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
 
 function closeOverlayDirect(){
-
+  if(typeof closeDeleteAccountSafetyModal === 'function') closeDeleteAccountSafetyModal();
   authOverlay.classList.add("hidden");accountOverlay.classList.add("hidden");reportsOverlay.classList.add("hidden");
 
   moderationOverlay.classList.add("hidden");limitsOverlay.classList.add("hidden");if(sellerOverlay){sellerOverlay.classList.add("hidden");sellerOverlay.style.zIndex="";}
@@ -13730,7 +14124,7 @@ window.closeOverlay=()=>{
 
 window.saveMyName=async()=>{
 
-  const me=auth.currentUser;
+  const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){authOverlay.classList.remove("hidden");return;}
 
@@ -13738,27 +14132,40 @@ window.saveMyName=async()=>{
 
   if(name.length<2||name.length>40){showToast("الاسم بين 2 و40 حرفاً","warn");return;}
 
-  showToast("⏳ جاري حفظ الاسم...","info",1500);
+  showToast("⏳ جاري حفظ الاسم...","info",1000);
 
   try{
-
-    await setDoc(doc(db,"profiles",me.uid),{name},{merge:true});
 
     if(!myProfile) myProfile={};
 
     myProfile.name=name;
 
+    try { localStorage.setItem("tasawuq_my_name", name); } catch(e){}
+
+    if(!window.sellersProfileCache) window.sellersProfileCache = {};
+    if(!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+    window.sellersProfileCache[me.uid].name = name;
+
     const anEl=document.getElementById("accountName");
 
-    if(anEl) anEl.textContent="👤 "+name;
+    if(anEl) anEl.textContent=name;
+
+    const sb = window.supabase || supabase;
+    if(sb) sb.from("profiles").upsert({ id: me.uid, name }, { onConflict: "id" }).catch(()=>{});
+
+    if(typeof db !== 'undefined' && db){
+      setDoc(doc(db,"profiles",me.uid),{name},{merge:true}).catch(()=>{});
+    }
 
     const mine=allPosts.filter(p=>p.uid===me.uid);
 
     mine.forEach(p=>p.sellerName=name);
 
-    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{}))).catch(()=>{});
+    if(typeof db !== 'undefined' && db){
+      Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{sellerName:name}).catch(()=>{}))).catch(()=>{});
+    }
 
-    if(myStore){
+    if(myStore && typeof db !== 'undefined' && db){
 
       try{ await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:(myProfile&&myProfile.username)||""}); }catch(e){}
 
@@ -13772,7 +14179,7 @@ window.saveMyName=async()=>{
 
 window.saveMyUsername=async()=>{
 
-  const me=auth.currentUser;
+  const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){authOverlay.classList.remove("hidden");return;}
 
@@ -13786,7 +14193,7 @@ window.saveMyUsername=async()=>{
 
   if(raw===oldUsername){showToast("هذا اسمك الحالي بالفعل","info");return;}
 
-  showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",2000);
+  showToast("⏳ جاري فحص وحفظ اسم المستخدم...","info",1500);
 
   const res=await reserveUsername(me,raw,oldUsername);
 
@@ -13796,15 +14203,22 @@ window.saveMyUsername=async()=>{
 
     myProfile.username=res.value;
 
+    if(!window.sellersProfileCache) window.sellersProfileCache = {};
+    if(!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+    window.sellersProfileCache[me.uid].username = res.value;
+
     if(input) input.value=res.value;
 
     const unEl=document.getElementById("accountUsername");
 
-    if(unEl){unEl.textContent="🏷️ @"+res.value;unEl.style.display="block";}
+    if(unEl){unEl.textContent="@"+res.value;unEl.style.display="block";}
+
+    const sb = window.supabase || supabase;
+    if(sb) sb.from("profiles").upsert({ id: me.uid, username: res.value }, { onConflict: "id" }).catch(()=>{});
 
     showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
 
-    if(myStore){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
+    if(myStore && typeof db !== 'undefined' && db){try{await updateDoc(doc(db,"stores",myStore.id),{ownerUsername:res.value});}catch(e){}}
 
   }else{
 
@@ -13816,7 +14230,7 @@ window.saveMyUsername=async()=>{
 
 window.saveMyPhone=async()=>{
 
-  const me=auth.currentUser;
+  const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){authOverlay.classList.remove("hidden");return;}
 
@@ -13834,11 +14248,9 @@ window.saveMyPhone=async()=>{
 
   const cleanNew=v.value;
 
-  showToast("⏳ جاري حفظ الرقم...","info",1500);
+  showToast("⏳ جاري حفظ الرقم...","info",1000);
 
   try{
-
-    await setDoc(doc(db,"profiles",me.uid),{phone:cleanNew},{merge:true});
 
     if(!myProfile) myProfile={};
 
@@ -13846,23 +14258,38 @@ window.saveMyPhone=async()=>{
 
     input.value=formatCallPhone(cleanNew);
 
+    if(!window.sellersProfileCache) window.sellersProfileCache = {};
+    if(!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+    window.sellersProfileCache[me.uid].phone = cleanNew;
+
+    const sb = window.supabase || supabase;
+    if(sb) sb.from("profiles").upsert({ id: me.uid, phone: cleanNew }, { onConflict: "id" }).catch(()=>{});
+
+    if(typeof db !== 'undefined' && db){
+      setDoc(doc(db,"profiles",me.uid),{phone:cleanNew},{merge:true}).catch(()=>{});
+    }
+
     const mine=allPosts.filter(p=>p.uid===me.uid);
 
     mine.forEach(p=>p.phone=cleanNew);
 
-    Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{}))).catch(()=>{});
+    if(typeof db !== 'undefined' && db){
+      Promise.all(mine.map(p=>updateDoc(doc(db,"posts",p.id),{phone:cleanNew}).catch(()=>{}))).catch(()=>{});
+    }
 
-    if(myStore){
+    if(myStore && typeof db !== 'undefined' && db){
 
       try{ await updateDoc(doc(db,"stores",myStore.id),{phone:cleanNew}); myStore.phone=cleanNew; }catch(e){}
 
     }
 
-    try{
+    if(typeof db !== 'undefined' && db){
+      try{
 
-      await setDoc(doc(db,"phones",cleanNew),{uid:me.uid,email:me.email||"",phone:cleanNew,localPhone:formatCallPhone(cleanNew),linkedAt:Date.now()},{merge:true});
+        await setDoc(doc(db,"phones",cleanNew),{uid:me.uid,email:me.email||"",phone:cleanNew,localPhone:formatCallPhone(cleanNew),linkedAt:Date.now()},{merge:true});
 
-    }catch(e){}
+      }catch(e){}
+    }
 
     showToast("✅ تم حفظ رقم الهاتف بنجاح: "+formatCallPhone(cleanNew),"success");
 
@@ -21846,15 +22273,17 @@ export async function updateGlobalUnreadChatCount(){
     const unreadCount = (data || []).length;
 
     if(hBadge){
-
       if(unreadCount > 0){
-
         hBadge.style.display = "flex";
-
         hBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
-
       } else hBadge.style.display = "none";
-
+    }
+    const bottomChatBadge = document.getElementById("bottomChatBadge");
+    if(bottomChatBadge){
+      if(unreadCount > 0){
+        bottomChatBadge.style.display = "flex";
+        bottomChatBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+      } else bottomChatBadge.style.display = "none";
     }
 
     if(aBadge){
@@ -22124,7 +22553,7 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
   if(!file) return;
 
-  const me = auth.currentUser;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){
 
@@ -22136,7 +22565,7 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
   event.target.value = "";
 
-  // ⚡ 1. عرض فوري في جزء من الثانية (0ms Instant Preview)
+  // ⚡ 1. عرض فوري محلي فائق السرعة في جزء من الثانية (0ms Instant Preview)
 
   const instantBlobUrl = URL.createObjectURL(file);
 
@@ -22166,37 +22595,14 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
   }
 
-  showToast("⏳ جاري حفظ صورة الغلاف سحابياً لتعمل على كل الأجهزة...", "info", 3500);
-
-  // ⚡ 2. رفع حقيقي سحابي عبر ImgBB مع التحويل الكامل لصورة قياسية
-
+  // ⚡ 2. معالجة وحفظ محلي وسحابي فوري دون أي تجميد للواجهة
   try {
 
-    let photoUrl = null;
+    const photoUrl = (typeof compressImageToDataUrl === 'function')
 
-    try {
+      ? await compressImageToDataUrl(file, 800, 0.8)
 
-      if(typeof uploadToImgBB === 'function'){
-
-        photoUrl = await uploadToImgBB(file, 1200, 0.85);
-
-      }
-
-    } catch(err){
-
-      console.warn("ImgBB cover upload error:", err);
-
-    }
-
-    if(!photoUrl){
-
-      photoUrl = (typeof compressImageToDataUrl === 'function')
-
-        ? await compressImageToDataUrl(file, 800, 0.78)
-
-        : await compressFileToDataUrl(file, 800, 0.78);
-
-    }
+      : await compressFileToDataUrl(file, 800, 0.8);
 
     if(photoUrl){
 
@@ -22206,41 +22612,55 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
       try { localStorage.setItem("tasawuq_cover_" + me.uid, photoUrl); } catch(e){}
 
+      if(!window.sellersProfileCache) window.sellersProfileCache = {};
+      if(!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+      window.sellersProfileCache[me.uid].cover = photoUrl;
+
       const sb = window.supabase || supabase;
 
       if(sb){
 
-        try {
+        sb.from("profiles").upsert({ id: me.uid, cover: photoUrl }, { onConflict: "id" }).catch(()=>{});
 
-          await sb.from("feedback").upsert({
+        sb.from("feedback").upsert({
 
-            id: "cover_" + me.uid,
+          id: "cover_" + me.uid,
 
-            type: "profile_cover",
+          type: "profile_cover",
 
-            uid: me.uid,
+          uid: me.uid,
 
-            user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
+          user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
 
-            user_phone: (myProfile && myProfile.phone) || "",
+          user_phone: (myProfile && myProfile.phone) || "",
 
-            message: photoUrl,
+          message: photoUrl,
 
-            created_at: Date.now()
+          created_at: Date.now()
 
-          });
-
-        } catch(e){}
+        }, { onConflict: "id" }).catch(()=>{});
 
       }
 
-      try {
+      if(typeof db !== 'undefined' && db){
+        setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true }).catch(()=>{});
+      }
 
-        await setDoc(doc(db, "profiles", me.uid), { cover: photoUrl }, { merge: true });
+      showToast("✅ تم حفظ صورة الغلاف بنجاح!", "success", 2000);
 
-      } catch(e){}
-
-      showToast("✅ تم حفظ صورة الغلاف بنجاح على حسابك!", "success", 2500);
+      // رفع غير متزامن بالخلفية لـ ImgBB دون انتظار أو تعطيل للمستخدم
+      if(typeof uploadToImgBB === 'function'){
+        uploadToImgBB(file, 1000, 0.82).then(remoteUrl => {
+          if(remoteUrl && remoteUrl.startsWith('http')){
+            myProfile.cover = remoteUrl;
+            try { localStorage.setItem("tasawuq_cover_" + me.uid, remoteUrl); } catch(e){}
+            if(sb){
+              sb.from("profiles").upsert({ id: me.uid, cover: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+              sb.from("feedback").upsert({ id: "cover_" + me.uid, message: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+            }
+          }
+        }).catch(()=>{});
+      }
 
     }
 
@@ -22248,7 +22668,7 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
     console.warn("Cover compress error:", e);
 
-    showToast("⚠️ حدث خطأ أثناء حفظ صورة الغلاف", "error");
+    showToast("⚠️ حدث خطأ أثناء معالجة صورة الغلاف", "error");
 
   }
 
@@ -22256,7 +22676,7 @@ window.handleDirectProfileCoverUpload = async (event) => {
 
 window.openEditProfileScreen = () => {
 
-  const me = auth.currentUser;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){
 
@@ -22268,82 +22688,65 @@ window.openEditProfileScreen = () => {
 
   }
 
+  // إخفاء أي شاشة مفتوحة مسبقاً لمنع أي تداخل طبقات
+  const so = document.getElementById("sellerOverlay");
+  if(so && !so.classList.contains("hidden")) {
+    window._editProfileOpenedFromSeller = true;
+    so.classList.add("hidden");
+  }
+
   const as = document.getElementById("accountOverlay") || document.getElementById("accountScreen");
-
-  const es = document.getElementById("editProfileScreen");
-
   if(as) as.classList.add("hidden");
 
+  const es = document.getElementById("editProfileScreen");
   if(es) {
-
-    es.style.zIndex = "1040";
-
+    es.style.zIndex = "5000";
     es.classList.remove("hidden");
-
     const sheetBody = es.querySelector(".sheet > div:last-child");
-
     if(sheetBody) sheetBody.scrollTop = 0;
-
   }
 
   if(typeof pushNavState === 'function') pushNavState({ screen: 'editProfile' }, '#edit-profile');
 
-  const rawName = (myProfile && myProfile.name) || me.displayName || "مستخدم";
-
+  // استحضار فوري للبيانات من الذاكرة والكاش المحلي (0ms)
+  const cachedProf = (window.sellersProfileCache && window.sellersProfileCache[me.uid]) || {};
+  const rawName = (myProfile && myProfile.name) || cachedProf.name || me.displayName || localStorage.getItem("tasawuq_my_name") || "مستخدم";
   const dn = rawName.replace(/^👤\s*/, '').trim() || "مستخدم";
 
   const myNameInput = document.getElementById("myName");
-
   if(myNameInput) myNameInput.value = dn;
 
   const myUserInput = document.getElementById("myUsername");
-
-  if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || "";
+  if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || cachedProf.username || "";
 
   const myPhoneInput = document.getElementById("myPhone");
-
-  if(myPhoneInput) myPhoneInput.value = (myProfile && myProfile.phone) ? (typeof formatCallPhone === 'function' ? formatCallPhone(myProfile.phone) : myProfile.phone) : "";
+  const pVal = (myProfile && myProfile.phone) || cachedProf.phone || "";
+  if(myPhoneInput) myPhoneInput.value = pVal ? (typeof formatCallPhone === 'function' ? formatCallPhone(pVal) : pVal) : "";
 
   const editPreview = document.getElementById("editProfileAvatarPreview");
-
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
-
-  const avatarUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid);
+  const avatarUrl = (myProfile && myProfile.avatar) || cachedProf.avatar || localStorage.getItem("tasawuq_avatar_" + me.uid);
 
   if(avatarUrl){
-
     const imgHtml = `<img src="${escapeHtml(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
-
     if(editPreview) editPreview.innerHTML = imgHtml;
-
     if(heroAvatar) heroAvatar.innerHTML = imgHtml;
-
   } else {
-
     if(editPreview) editPreview.textContent = dn ? dn[0].toUpperCase() : '👤';
-
   }
 
   const editCoverPreview = document.getElementById("editProfileCoverPreview");
-
-  const coverUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid);
+  const coverUrl = (myProfile && myProfile.cover) || cachedProf.cover || localStorage.getItem("tasawuq_cover_" + me.uid);
 
   if(editCoverPreview){
-
     if(coverUrl){
-
       editCoverPreview.innerHTML = `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
-
     } else {
-
       editCoverPreview.innerHTML = `🌄 اضغط لاختيار صورة غلاف لملفك الشخصي`;
-
     }
-
   }
 
   const isPhoneHidden = (myProfile && (myProfile.hidePhone === true || myProfile.hide_phone === true)) || localStorage.getItem("tasawuq_hide_phone_" + me.uid) === "1";
-
   if(typeof window.updatePhoneVisibilityUI === "function") window.updatePhoneVisibilityUI(isPhoneHidden);
 
 };
@@ -22351,19 +22754,19 @@ window.openEditProfileScreen = () => {
 window.backFromEditProfile = () => {
 
   const es = document.getElementById("editProfileScreen");
-
   if(es) es.classList.add("hidden");
 
-  const so = document.getElementById("sellerOverlay");
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const uid = me ? me.uid : null;
 
-  if(so && sellerPanelUid){
-
-    so.classList.remove("hidden");
-
-  } else if(auth.currentUser){
-
-    openSeller(auth.currentUser.uid, true);
-
+  if(uid && typeof openSeller === 'function'){
+    openSeller(uid, true);
+  } else {
+    const so = document.getElementById("sellerOverlay");
+    if(so && sellerPanelUid){
+      so.classList.remove("hidden");
+      so.style.zIndex = "3600";
+    }
   }
 
 };
@@ -22376,7 +22779,7 @@ window.handleProfileAvatarSelected = async (event) => {
 
   if(!file) return;
 
-  const me = auth.currentUser;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if(!me){
 
@@ -22388,7 +22791,7 @@ window.handleProfileAvatarSelected = async (event) => {
 
   event.target.value = "";
 
-  // ⚡ 1. عرض فوري في جزء من الثانية دون أي انتظار (0ms Instant Preview)
+  // ⚡ 1. عرض فوري محلي 0ms دون أي انتظار (0ms Instant Preview)
 
   const instantBlobUrl = URL.createObjectURL(file);
 
@@ -22416,39 +22819,16 @@ window.handleProfileAvatarSelected = async (event) => {
 
   const statusEl = document.getElementById("avatarUploadStatus");
 
-  if(statusEl) statusEl.textContent = "⏳ جاري رفع وحفظ الصورة سحابياً...";
+  if(statusEl) statusEl.textContent = "⏳ جاري حفظ الصورة في حسابك...";
 
-  showToast("⏳ جاري رفع وحفظ صورتك الشخصية سحابياً...", "info", 3500);
-
-  // ⚡ 2. رفع حقيقي سحابي دائم عبر ImgBB لضمان ظهور الصورة على كل الهواتف والأجهزة
-
+  // ⚡ 2. معالجة محلية فورية في 30 ميلي ثانية فقط دون انتظار شبكي
   try {
 
-    let photoUrl = null;
+    const photoUrl = (typeof compressImageToDataUrl === 'function')
 
-    try {
+      ? await compressImageToDataUrl(file, 400, 0.8)
 
-      if(typeof uploadToImgBB === 'function'){
-
-        photoUrl = await uploadToImgBB(file, 800, 0.85);
-
-      }
-
-    } catch(err){
-
-      console.warn("ImgBB avatar upload error:", err);
-
-    }
-
-    if(!photoUrl){
-
-      photoUrl = (typeof compressImageToDataUrl === 'function')
-
-        ? await compressImageToDataUrl(file, 400, 0.78)
-
-        : await compressFileToDataUrl(file, 400, 0.78);
-
-    }
+      : await compressFileToDataUrl(file, 400, 0.8);
 
     if(photoUrl){
 
@@ -22458,49 +22838,68 @@ window.handleProfileAvatarSelected = async (event) => {
 
       try { localStorage.setItem("tasawuq_avatar_" + me.uid, photoUrl); } catch(e){}
 
+      if(!window.sellersProfileCache) window.sellersProfileCache = {};
+      if(!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+      window.sellersProfileCache[me.uid].avatar = photoUrl;
+
+      // حفظ فوري ومباشر في Supabase
       const sb = window.supabase || supabase;
 
       if(sb){
 
-        try {
+        sb.from("profiles").upsert({
+          id: me.uid,
+          avatar: photoUrl,
+          name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو"
+        }, { onConflict: "id" }).catch(()=>{});
 
-          await sb.from("feedback").upsert({
+        sb.from("feedback").upsert({
 
-            id: "avatar_" + me.uid,
+          id: "avatar_" + me.uid,
 
-            type: "profile_avatar",
+          type: "profile_avatar",
 
-            uid: me.uid,
+          uid: me.uid,
 
-            user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
+          user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
 
-            user_phone: (myProfile && myProfile.phone) || "",
+          user_phone: (myProfile && myProfile.phone) || "",
 
-            message: photoUrl,
+          message: photoUrl,
 
-            created_at: Date.now()
+          created_at: Date.now()
 
-          });
-
-        } catch(e){}
+        }, { onConflict: "id" }).catch(()=>{});
 
       }
 
-      try {
+      if(typeof db !== 'undefined' && db){
+        setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true }).catch(()=>{});
+      }
 
-        await setDoc(doc(db, "profiles", me.uid), { avatar: photoUrl }, { merge: true });
+      if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح!";
 
-      } catch(e){}
+      showToast("✅ تم حفظ صورتك الشخصية بنجاح!", "success", 2000);
 
-      if(statusEl) statusEl.textContent = "✅ تم حفظ صورتك الشخصية بنجاح على حسابك!";
-
-      showToast("✅ تم حفظ صورتك الشخصية بنجاح على حسابك!", "success", 2500);
+      // رفع غير متزامن بالخلفية لـ ImgBB دون انتظار أو تعطيل للمستخدم
+      if(typeof uploadToImgBB === 'function'){
+        uploadToImgBB(file, 600, 0.82).then(remoteUrl => {
+          if(remoteUrl && remoteUrl.startsWith('http')){
+            myProfile.avatar = remoteUrl;
+            try { localStorage.setItem("tasawuq_avatar_" + me.uid, remoteUrl); } catch(e){}
+            if(sb){
+              sb.from("profiles").upsert({ id: me.uid, avatar: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+              sb.from("feedback").upsert({ id: "avatar_" + me.uid, message: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+            }
+          }
+        }).catch(()=>{});
+      }
 
     }
 
   } catch(e){
 
-    console.warn("Avatar upload error:", e);
+    console.warn("Avatar processing error:", e);
 
     showToast("⚠️ حدث خطأ أثناء حفظ صورتك الشخصية", "error");
 
@@ -22512,7 +22911,7 @@ window.handleProfileAvatarSelected = async (event) => {
 
 window.saveAllProfileData = async () => {
 
-  const me = auth.currentUser;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
 
   if (!me) { 
 
@@ -22538,7 +22937,7 @@ window.saveAllProfileData = async () => {
 
   let errors = [];
 
-  showToast("⏳ جاري حفظ جميع بيانات الحساب...", "info", 2000);
+  showToast("⏳ جاري حفظ جميع بيانات الحساب...", "info", 1500);
 
   if (newName && newName.length >= 2 && newName.length <= 40) {
 
@@ -22548,19 +22947,35 @@ window.saveAllProfileData = async () => {
 
       try {
 
-        await setDoc(doc(db, "profiles", me.uid), { name: newName }, { merge: true });
-
         if (!myProfile) myProfile = {};
 
         myProfile.name = newName;
 
         changes.push("الاسم");
 
+        try { localStorage.setItem("tasawuq_my_name", newName); } catch(e){}
+
+        if (!window.sellersProfileCache) window.sellersProfileCache = {};
+        if (!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+        window.sellersProfileCache[me.uid].name = newName;
+
+        const anEl = document.getElementById("accountName");
+        if(anEl) anEl.textContent = newName;
+
+        const sb = window.supabase || supabase;
+        if(sb) sb.from("profiles").upsert({ id: me.uid, name: newName }, { onConflict: "id" }).catch(()=>{});
+
+        if(typeof db !== 'undefined' && db){
+          setDoc(doc(db, "profiles", me.uid), { name: newName }, { merge: true }).catch(()=>{});
+        }
+
         const mine = allPosts.filter(p => p.uid === me.uid);
 
         mine.forEach(p => p.sellerName = newName);
 
-        Promise.all(mine.map(p => updateDoc(doc(db, "posts", p.id), { sellerName: newName }).catch(()=>{}))).catch(()=>{});
+        if(typeof db !== 'undefined' && db){
+          Promise.all(mine.map(p => updateDoc(doc(db, "posts", p.id), { sellerName: newName }).catch(()=>{}))).catch(()=>{});
+        }
 
       } catch(e) {
 
@@ -22588,7 +23003,17 @@ window.saveAllProfileData = async () => {
 
         changes.push("اسم المستخدم (@" + res.value + ")");
 
-        if (myStore) { try { await updateDoc(doc(db, "stores", myStore.id), { ownerUsername: res.value }); } catch(e){} }
+        if (!window.sellersProfileCache) window.sellersProfileCache = {};
+        if (!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+        window.sellersProfileCache[me.uid].username = res.value;
+
+        const unEl = document.getElementById("accountUsername");
+        if(unEl) unEl.textContent = "@" + res.value;
+
+        const sb = window.supabase || supabase;
+        if(sb) sb.from("profiles").upsert({ id: me.uid, username: res.value }, { onConflict: "id" }).catch(()=>{});
+
+        if (myStore && typeof db !== 'undefined' && db) { try { await updateDoc(doc(db, "stores", myStore.id), { ownerUsername: res.value }); } catch(e){} }
 
       } else {
 
@@ -22620,6 +23045,13 @@ window.saveAllProfileData = async () => {
 
         changes.push("رقم الهاتف");
 
+        if (!window.sellersProfileCache) window.sellersProfileCache = {};
+        if (!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
+        window.sellersProfileCache[me.uid].phone = res.value;
+
+        const sb = window.supabase || supabase;
+        if(sb) sb.from("profiles").upsert({ id: me.uid, phone: res.value }, { onConflict: "id" }).catch(()=>{});
+
       } else {
 
         errors.push("رقم الهاتف: " + (res.msg || "خطأ"));
@@ -22646,7 +23078,7 @@ window.saveAllProfileData = async () => {
 
       if (typeof backFromEditProfile === "function") backFromEditProfile();
 
-    }, 600);
+    }, 300);
 
   } else {
 
@@ -22656,7 +23088,7 @@ window.saveAllProfileData = async () => {
 
       if (typeof backFromEditProfile === "function") backFromEditProfile();
 
-    }, 500);
+    }, 300);
 
   }
 
@@ -24162,6 +24594,8 @@ if (typeof window !== 'undefined') {
   window.addEventListener('appinstalled', () => {
 
     _deferredPwaPrompt = null;
+    try { localStorage.setItem('tasawuq_pwa_installed', 'true'); } catch(e){}
+    if (typeof updatePwaInstallButtonsVisibility === 'function') updatePwaInstallButtonsVisibility();
 
     const banner = document.getElementById('pwaInstallBanner');
 
@@ -24189,16 +24623,45 @@ if (typeof window !== 'undefined') {
 
 }
 
+export function isAppInstalled() {
+  try {
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (window.navigator && (window.navigator.standalone === true || window.navigator.standalone === 'true')) return true;
+    if (document.referrer && document.referrer.includes('android-app://')) return true;
+    if (localStorage.getItem('tasawuq_pwa_installed') === 'true') return true;
+  } catch(e){}
+  return false;
+}
+
+export function updatePwaInstallButtonsVisibility() {
+  const btn = document.getElementById('accountInstallAppBtn');
+  if (!btn) return;
+  if (isAppInstalled()) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'flex';
+  }
+}
+window.isAppInstalled = isAppInstalled;
+window.updatePwaInstallButtonsVisibility = updatePwaInstallButtonsVisibility;
+try {
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updatePwaInstallButtonsVisibility);
+    } else {
+      updatePwaInstallButtonsVisibility();
+    }
+  }
+} catch(e){}
+
 export function triggerPwaInstall() {
 
   const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-  if (isStandalone) {
+  if (isAppInstalled()) {
 
     showToast("✅ التطبيق مثبت بالفعل وتعمل عليه الآن!", "info");
-
+    updatePwaInstallButtonsVisibility();
     return;
 
   }
@@ -24269,106 +24732,149 @@ window.closeIosInstallModal = closeIosInstallModal;
 
    ======================================================== */
 
-export async function confirmDeleteMyAccount() {
+let deleteCountdownTimer = null;
+let deleteCountdownSeconds = 10;
 
+export function openDeleteAccountSafetyModal() {
   if (!auth.currentUser) {
-
     showToast("يرجى تسجيل الدخول أولاً", "warn");
-
     return;
+  }
+  const modal = document.getElementById('deleteAccountSafetyModal');
+  if (!modal) {
+    if (!confirm("⚠️ هل أنت متأكد تماماً من رغبتك في حذف حسابك نهائياً؟")) return;
+    executeAccountDeletion();
+    return;
+  }
+  modal.classList.remove('hidden');
 
+  const btn = document.getElementById('btnFinalConfirmDelete');
+  const numEl = document.getElementById('deleteCountdownNum');
+  const timerBox = document.getElementById('deleteSafetyTimerBox');
+  const timerText = document.getElementById('deleteSafetyTimerText');
+
+  deleteCountdownSeconds = 10;
+  if (numEl) numEl.textContent = '10';
+  if (timerBox) {
+    timerBox.style.background = '#fef2f2';
+    timerBox.style.borderColor = '#fca5a5';
+  }
+  if (timerText) {
+    timerText.innerHTML = 'فترة الأمان والتأكيد: <strong id="deleteCountdownNum" style="font-size:16px;color:#dc2626">10</strong> ثوانٍ';
   }
 
-  const uEmail = auth.currentUser.email || "";
-
-  const confirmMsg = `⚠️ تحذير نهائي لحماية خصوصيتك:
-
-هل أنت متأكد تماماً من رغبتك في حذف حسابك (${uEmail}) نهائياً؟
-
-- سيتم حذف جميع إعلاناتك المنشورة فوراً.
-
-- سيتم مسح ملفك الشخصي ومحادثاتك ورصيد محفظتك بالكامل.
-
-- هذا الإجراء نهائي ولا يمكن التراجع عنه.
-
-هل توافق على حذف الحساب وجميع البيانات؟`;
-
-  if (!confirm(confirmMsg)) return;
-
-  const confirmText = prompt("لتأكيد الحذف النهائي، اكتب كلمة (حذف) في المربع بالأسفل:");
-
-  if (confirmText !== "حذف" && confirmText !== "delete") {
-
-    showToast("تم إلغاء عملية حذف الحساب.", "info");
-
-    return;
-
+  if (btn) {
+    btn.disabled = true;
+    btn.style.background = '#94a3b8';
+    btn.style.cursor = 'not-allowed';
+    btn.style.boxShadow = 'none';
+    btn.innerHTML = '⏳ يرجى الانتظار (10 ثوانٍ)...';
   }
 
-  showToast("⏳ جاري حذف الحساب وجميع البيانات المرتبطة به...", "info", 6000);
+  if (deleteCountdownTimer) clearInterval(deleteCountdownTimer);
+
+  deleteCountdownTimer = setInterval(() => {
+    deleteCountdownSeconds--;
+    const currentNum = document.getElementById('deleteCountdownNum');
+    if (currentNum) currentNum.textContent = String(deleteCountdownSeconds);
+
+    if (btn && deleteCountdownSeconds > 0) {
+      btn.innerHTML = `⏳ يرجى الانتظار (${deleteCountdownSeconds} ثوانٍ)...`;
+    }
+
+    if (deleteCountdownSeconds <= 0) {
+      clearInterval(deleteCountdownTimer);
+      deleteCountdownTimer = null;
+      if (timerBox) {
+        timerBox.style.background = '#f0fdf4';
+        timerBox.style.borderColor = '#86efac';
+      }
+      if (timerText) {
+        timerText.innerHTML = '<span style="color:#16a34a;font-weight:900">انتهت فترة الأمان (10 ثوانٍ) - يمكنك الآن الحذف النهائي إذا أردت</span>';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.style.background = '#dc2626';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 4px 14px rgba(220,38,38,0.35)';
+        btn.innerHTML = '🔥 نعم، أنا متأكد - احذف حسابي نهائياً';
+      }
+    }
+  }, 1000);
+}
+
+export function closeDeleteAccountSafetyModal() {
+  if (deleteCountdownTimer) {
+    clearInterval(deleteCountdownTimer);
+    deleteCountdownTimer = null;
+  }
+  const modal = document.getElementById('deleteAccountSafetyModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+export async function executeAccountDeletion() {
+  if (!auth.currentUser) {
+    closeDeleteAccountSafetyModal();
+    showToast("يرجى تسجيل الدخول أولاً", "warn");
+    return;
+  }
+  const btn = document.getElementById('btnFinalConfirmDelete');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '⏳ جاري مسح جميع بيانات الحساب نهائياً...';
+  }
 
   const myUid = auth.currentUser.uid;
-
   const sb = window.supabase || supabase;
 
   try {
-
     if (sb) {
-
       await sb.from("posts").delete().eq("uid", myUid).catch(() => {});
-
       await sb.from("profiles").delete().eq("id", myUid).catch(() => {});
-
       await sb.from("feedback").delete().eq("uid", myUid).catch(() => {});
-
+      await sb.from("user_follows").delete().or(`follower_uid.eq.${myUid},seller_uid.eq.${myUid}`).catch(() => {});
     }
 
     const keysToRemove = [];
-
     for (let i = 0; i < localStorage.length; i++) {
-
       const k = localStorage.key(i);
-
       if (k && (k.startsWith("tasawuq_") || k.includes(myUid))) {
-
         keysToRemove.push(k);
-
       }
-
     }
-
     keysToRemove.forEach(k => localStorage.removeItem(k));
 
-    if (typeof logout === 'function') {
-
-      await logout();
-
-    } else {
-
-      await auth.signOut();
-
-    }
-
+    closeDeleteAccountSafetyModal();
     if (typeof closeOverlayDirect === 'function') closeOverlayDirect();
 
-    showToast("✅ تم حذف حسابك وجميع بياناتك نهائياً بنجاح وفق معايير الخصوصية.", "success", 6000);
+    if (typeof logout === 'function') {
+      await logout();
+    } else {
+      await auth.signOut();
+    }
+
+    showToast("✅ تم حذف حسابك وجميع بياناتك نهائياً بنجاح.", "success", 6000);
 
     setTimeout(() => {
-
       window.location.reload();
-
     }, 1500);
-
   } catch (err) {
-
     console.error("deleteMyAccount err:", err);
-
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '🔥 نعم، أنا متأكد - احذف حسابي نهائياً';
+    }
     showToast("تعذر استكمال حذف الحساب: " + (err.message || err), "error");
-
   }
-
 }
 
+export async function confirmDeleteMyAccount() {
+  openDeleteAccountSafetyModal();
+}
+
+window.openDeleteAccountSafetyModal = openDeleteAccountSafetyModal;
+window.closeDeleteAccountSafetyModal = closeDeleteAccountSafetyModal;
+window.executeAccountDeletion = executeAccountDeletion;
 window.confirmDeleteMyAccount = confirmDeleteMyAccount;
 
 /* ==========================================================================
@@ -24392,6 +24898,8 @@ let _reelsCommentsMap = {};
 let _postSelectedVideoFile = null;
 
 let _postSelectedVideoUrl = null;
+
+let _postVideoRemoved = false;
 
 let _reelsTouchStartY = 0;
 
@@ -24967,6 +25475,19 @@ function loadCurrentReel() {
     renderReelCommentsList(reel.id);
   }
 
+  // التحكم بأزرار حذف وتعديل الفيديو (للأدمن أو صاحب الإعلان)
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isReelOwner = !!(me && reel.uid === me.uid);
+  const canManageReel = isAdmin || isReelOwner;
+
+  const delTopBtn = document.getElementById("reelsDeleteTopBtn");
+  const delSideBtn = document.getElementById("reelsSideDeleteBtn");
+  const editSideBtn = document.getElementById("reelsSideEditBtn");
+
+  if (delTopBtn) delTopBtn.style.display = canManageReel ? "flex" : "none";
+  if (delSideBtn) delSideBtn.style.display = canManageReel ? "flex" : "none";
+  if (editSideBtn) editSideBtn.style.display = canManageReel ? "flex" : "none";
+
 }
 
 // تحديث زر المتابعة التيك توك (+)
@@ -25006,6 +25527,145 @@ function updateReelsFollowButton(sellerUid) {
   }
 
 }
+
+
+/* ==========================================================================
+   🎬 وظائف حذف وتعديل فيديوهات الريلز والإعلانات (للأدمن وصاحب الفيديو)
+   ========================================================================== */
+
+window.deleteCurrentReelVideo = async function() {
+  const reel = _reelsPlaylist[_reelsCurrentIndex];
+  if (!reel) return;
+
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isOwner = !!(me && reel.uid === me.uid);
+  const canDelete = isAdmin || isOwner;
+
+  if (!canDelete) {
+    if (typeof showToast === 'function') showToast("ليس لديك صلاحية لحذف هذا الفيديو", "warn");
+    return;
+  }
+
+  const roleText = (isAdmin && !isOwner) ? " (بصفتك مدير/صاحب الموقع)" : "";
+  const confirmMsg = `هل أنت متأكد من حذف هذا الفيديو نهائياً من الإعلان والريلز؟${roleText}\n\nالعنوان: «${reel.title || 'إعلان'}»`;
+  if (!confirm(confirmMsg)) return;
+
+  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو من المنصة...", "info", 2000);
+
+  const postId = reel.id;
+
+  try {
+    // 1) تحديث في Supabase فورياً
+    const sb = window.supabase || supabase;
+    if (sb) {
+      await sb.from("posts").update({ video_url: null }).eq("id", postId).catch(()=>{});
+    }
+
+    // 2) تحديث في Firestore
+    if (typeof db !== 'undefined' && db) {
+      await updateDoc(doc(db, "posts", postId), {
+        videoUrl: null,
+        video: null,
+        videoPlacement: null,
+        'specs.video_url': null,
+        'specs.video_placement': null
+      }).catch(()=>{});
+    }
+
+    // 3) تحديث الإعلان في الذاكرة المحلية
+    const p = allPosts.find(x => x.id === postId);
+    if (p) {
+      p.videoUrl = null;
+      p.video = null;
+      p.videoPlacement = null;
+      if (p.specs && typeof p.specs === 'object') {
+        p.specs.video_url = null;
+        p.specs.video_placement = null;
+      }
+    }
+
+    // 4) إزالة الفيديو من قائمة التشغيل الحالية
+    _reelsPlaylist.splice(_reelsCurrentIndex, 1);
+
+    if (_reelsPlaylist.length === 0) {
+      closeReelsModal();
+      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح، لا توجد فيديوهات أخرى.", "success", 3000);
+    } else {
+      if (_reelsCurrentIndex >= _reelsPlaylist.length) {
+        _reelsCurrentIndex = _reelsPlaylist.length - 1;
+      }
+      loadCurrentReel();
+      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح والانتقال للتالي.", "success", 3000);
+    }
+
+    // إعادة رسم بطاقات الإعلانات في الصفحة الرئيسية
+    if (typeof renderPosts === 'function') renderPosts();
+
+  } catch(err) {
+    console.error("deleteCurrentReelVideo error:", err);
+    if (typeof showToast === 'function') showToast("تعذر حذف الفيديو: " + (err.message || err), "error");
+  }
+};
+
+window.editCurrentReelPost = function() {
+  const reel = _reelsPlaylist[_reelsCurrentIndex];
+  if (!reel) return;
+  closeReelsModal();
+  setTimeout(() => {
+    if (typeof editPost === 'function') editPost(reel.id);
+  }, 200);
+};
+
+window.deletePostVideoDirect = async function(postId) {
+  if (!postId) return;
+  const p = allPosts.find(x => x.id === postId);
+  if (!p) return;
+
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isOwner = !!(me && p.uid === me.uid);
+  const canDelete = isAdmin || isOwner;
+  if (!canDelete) {
+    if (typeof showToast === 'function') showToast("ليس لديك صلاحية لحذف هذا الفيديو", "warn");
+    return;
+  }
+
+  const roleText = (isAdmin && !isOwner) ? " (بصفتك مدير/صاحب الموقع)" : "";
+  if (!confirm(`هل أنت متأكد من حذف الفيديو المرفق بهذا الإعلان؟${roleText}`)) return;
+
+  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو من الإعلان...", "info", 2000);
+
+  try {
+    const sb = window.supabase || supabase;
+    if (sb) {
+      await sb.from("posts").update({ video_url: null }).eq("id", postId).catch(()=>{});
+    }
+
+    if (typeof db !== 'undefined' && db) {
+      await updateDoc(doc(db, "posts", postId), {
+        videoUrl: null,
+        video: null,
+        videoPlacement: null,
+        'specs.video_url': null,
+        'specs.video_placement': null
+      }).catch(()=>{});
+    }
+
+    p.videoUrl = null;
+    p.video = null;
+    p.videoPlacement = null;
+    if (p.specs && typeof p.specs === 'object') {
+      p.specs.video_url = null;
+      p.specs.video_placement = null;
+    }
+
+    openPost(postId, true);
+    if (typeof renderPosts === 'function') renderPosts();
+    if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح من الإعلان", "success");
+  } catch(err) {
+    console.error("deletePostVideoDirect err:", err);
+    if (typeof showToast === 'function') showToast("تعذر حذف الفيديو: " + (err.message || err), "error");
+  }
+};
 
 // الضغط على زر المتابعة (+) في الريلز
 
@@ -25653,6 +26313,8 @@ window.handlePostVideoSelected = function() {
 
     }
 
+    _postVideoRemoved = false;
+
     _postSelectedVideoFile = file;
 
     _postSelectedVideoUrl = URL.createObjectURL(file);
@@ -25680,6 +26342,8 @@ window.handlePostVideoSelected = function() {
 };
 
 window.removePostVideo = function() {
+
+  _postVideoRemoved = true;
 
   _postSelectedVideoFile = null;
 
@@ -25888,6 +26552,8 @@ function updateNotificationsBadge() {
 
   const badge = document.getElementById("accountNotifBadge");
   const headerBadge = document.getElementById("headerNotifBadge");
+  const smdNotif = document.getElementById("smdNotifBadge");
+  const menuDot = document.getElementById("menuNotificationDot");
 
   const unreadCount = _userNotifications.filter(n => !n.read).length;
 
@@ -25900,6 +26566,14 @@ function updateNotificationsBadge() {
       b.style.display = "none";
     }
   });
+
+  if(smdNotif) {
+    smdNotif.textContent = unreadCount;
+    smdNotif.style.display = unreadCount > 0 ? "inline-block" : "none";
+  }
+  if(menuDot) {
+    menuDot.style.display = unreadCount > 0 ? "block" : "none";
+  }
 
 }
 
@@ -26719,4 +27393,679 @@ window.publishAdAsStory = function() {
 
   showToast("✅ تم نشر الإعلان في شريط الستوريات بنجاح (لمدة 24 ساعة) ⭕", "success", 3000);
 
+};
+
+
+/* ============================================================
+   📱 PRINTABLE STORE QR STAND MODAL SYSTEM
+   ============================================================ */
+window.switchLuxStoreTab = function(tabName){
+  const btnProds = document.getElementById('tabBtnProds');
+  const btnBank = document.getElementById('tabBtnBank');
+  const btnHours = document.getElementById('tabBtnHours');
+
+  const paneProds = document.getElementById('luxPaneProducts');
+  const paneBank = document.getElementById('luxPaneBank');
+  const paneHours = document.getElementById('luxPaneHours');
+
+  [btnProds, btnBank, btnHours].forEach(b => { if(b) b.classList.remove('active'); });
+
+  if(paneProds) paneProds.style.display = 'none';
+  if(paneBank) paneBank.style.display = 'none';
+  if(paneHours) paneHours.style.display = 'none';
+
+  if(tabName === 'bank'){
+    if(btnBank) btnBank.classList.add('active');
+    if(paneBank) paneBank.style.display = 'block';
+  } else if(tabName === 'hours'){
+    if(btnHours) btnHours.classList.add('active');
+    if(paneHours) paneHours.style.display = 'block';
+  } else {
+    if(btnProds) btnProds.classList.add('active');
+    if(paneProds) paneProds.style.display = 'block';
+  }
+};
+
+window.openPrintableStoreQR = function(storeId){
+  const store = allStores.find(s => s.id === storeId) || {};
+  const storeUrl = `${window.location.origin}${window.location.pathname}#store-${storeId}`;
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(storeUrl)}&margin=1`;
+
+  let overlay = document.getElementById('printableStoreQrModalOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'printableStoreQrModalOverlay';
+    overlay.className = 'overlay';
+    overlay.style.cssText = 'z-index:9600;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex';
+    document.body.appendChild(overlay);
+  }
+
+  const logoSrc = store.logo || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80";
+
+  overlay.innerHTML = `
+    <div id="printableQrStandArea" style="background:#ffffff;color:#000000;border-radius:24px;padding:26px 20px;max-width:390px;width:92%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.95);position:relative">
+      <button onclick="document.getElementById('printableStoreQrModalOverlay').classList.add('hidden')" style="position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:50%;background:#f4f4f5;border:1px solid #e4e4e7;color:#000;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center">✕</button>
+      
+      <div style="width:68px;height:68px;border-radius:18px;margin:0 auto 10px;background:#000;padding:3px;border:2px solid #000">
+        <img src="${escapeHtml(logoSrc)}" style="width:100%;height:100%;border-radius:14px;object-fit:cover" onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80'">
+      </div>
+
+      <h2 style="font-size:19px;font-weight:900;color:#000;margin:0 0 2px;line-height:1.3">${escapeHtml(store.name || "متجر معتمد")}</h2>
+      <div style="font-size:12px;color:#52525b;font-weight:700;margin-bottom:14px">
+        <span>${escapeHtml(store.category || "متجر")}</span> • <span>${escapeHtml(store.city || "ليبيا")}</span> • تسوق الآن
+      </div>
+
+      <div style="background:#ffffff;border:2.5px solid #000000;border-radius:18px;padding:12px;display:inline-block;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,0.06)">
+        <img src="${qrApiUrl}" style="width:190px;height:190px;display:block;margin:0 auto" alt="QR Code">
+      </div>
+
+      <div style="font-size:13px;font-weight:800;color:#000;margin-bottom:3px">📱 امسح الرمز بكاميرا الهاتف للطلب المباشر</div>
+      <div style="font-size:10.5px;color:#71717a;direction:ltr;word-break:break-all;margin-bottom:18px;font-family:monospace">${storeUrl}</div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="window.print()" style="flex:1;background:#000000;color:#ffffff;border:none;padding:11px 12px;border-radius:10px;font-size:12.5px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span>🖨️</span>
+          <span>طباعة الستاند للطاولة</span>
+        </button>
+        <a href="${qrApiUrl}" download="store-qr-${storeId}.png" target="_blank" style="flex:1;background:#f4f4f5;color:#000000;border:1px solid #e4e4e7;padding:11px 12px;border-radius:10px;font-size:12.5px;font-weight:900;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span>📥</span>
+          <span>تحميل الصورة</span>
+        </a>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.remove('hidden');
+};
+
+
+/* ============================================================
+   📱 SIDE DRAWER MENU LOGIC
+   ============================================================ */
+window.openSideMenu = function() {
+  const overlay = document.getElementById('sideMenuOverlay');
+  if(!overlay) return;
+  overlay.classList.add('open');
+  window.updateSideMenuData();
+};
+
+window.closeSideMenu = function(e) {
+  const overlay = document.getElementById('sideMenuOverlay');
+  if(!overlay) return;
+  overlay.classList.remove('open');
+};
+
+window.updateSideMenuData = function() {
+  // 1. Favorites count
+  const favBadge = document.getElementById('smdFavCount');
+  if(favBadge && typeof getFavorites === 'function') {
+    const favs = getFavorites() || [];
+    favBadge.textContent = favs.length;
+    favBadge.style.display = favs.length > 0 ? 'inline-block' : 'none';
+  }
+
+  // 2. Points count
+  const ptsBadge = document.getElementById('smdPointsCount');
+  if(ptsBadge) {
+    const pts = (typeof myPoints !== 'undefined') ? myPoints : ((typeof userPoints !== 'undefined') ? userPoints : 0);
+    ptsBadge.textContent = `${Number(pts).toLocaleString('ar-LY')} نقطة`;
+  }
+
+  // 3. Notifications count
+  const notifBadge = document.getElementById('smdNotifBadge');
+  const dot = document.getElementById('menuNotificationDot');
+  if(typeof _userNotifications !== 'undefined') {
+    const unread = _userNotifications.filter(n => !n.read).length;
+    if(notifBadge) {
+      notifBadge.textContent = unread;
+      notifBadge.style.display = unread > 0 ? 'inline-block' : 'none';
+    }
+    if(dot) {
+      dot.style.display = unread > 0 ? 'block' : 'none';
+    }
+  }
+
+  // 4. Dark mode state
+  if(typeof window.updateSideMenuThemeState === 'function') {
+    window.updateSideMenuThemeState();
+  }
+
+  // 5. User card info
+  const nameEl = document.getElementById('smdUserName');
+  const subEl = document.getElementById('smdUserSub');
+  const avatarEl = document.getElementById('smdAvatar');
+  if(typeof auth !== 'undefined' && auth.currentUser) {
+    const u = auth.currentUser;
+    const name = u.displayName || u.email?.split('@')[0] || 'مستخدم مسجل';
+    if(nameEl) nameEl.textContent = name;
+    if(subEl) subEl.textContent = 'عضو مسجل • اضغط لفتح حسابك';
+    if(avatarEl && u.photoURL) {
+      avatarEl.innerHTML = `<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
+    }
+  } else {
+    if(nameEl) nameEl.textContent = 'مرحباً بك زائرنا';
+    if(subEl) subEl.textContent = 'اضغط لتسجيل الدخول';
+    if(avatarEl) avatarEl.innerHTML = '👤';
+  }
+};
+
+window.updateSideMenuThemeState = function() {
+  const isDark = document.documentElement.classList.contains('dark-mode');
+  const title = document.getElementById('smdThemeTitle');
+  const desc = document.getElementById('smdThemeDesc');
+  const iconSlot = document.getElementById('smdThemeIconSlot');
+  const iconBox = document.getElementById('smdThemeIconBox');
+
+  if(title) title.textContent = isDark ? 'الوضع الليلي (مفعل)' : 'الوضع النهاري (مفعل)';
+  if(desc) desc.textContent = isDark ? 'انقر للتحويل إلى الوضع النهاري ☀️' : 'انقر للتحويل إلى الوضع الليلي 🌙';
+  if(iconBox) {
+    iconBox.style.background = isDark ? '#3a2f11' : '#e0f2fe';
+    iconBox.style.color = isDark ? '#f59e0b' : '#0284c7';
+  }
+  if(iconSlot) {
+    iconSlot.innerHTML = isDark
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  }
+};
+
+
+/* =====================================================
+   منظومة طلباتي السابقة والتقييم للمطاعم والمأكولات فقط
+   ===================================================== */
+function getFoodOrders() {
+  let list = [];
+  try {
+    const raw = localStorage.getItem('tasawuq_food_orders');
+    if (raw) list = JSON.parse(raw);
+  } catch(e) {}
+
+  if (!list || !Array.isArray(list) || list.length === 0) {
+    // تجهيز طلبيات سابقة تجريبية واقعية لتجربة الميزة فوراً
+    const rest = (typeof allStores !== 'undefined' && allStores.find(s => isRestaurantStore(s) && s.status === 'approved')) || {
+      id: 'ksh_rest_demo',
+      name: 'مطعم KSH للمأكولات',
+      phone: '0912345678'
+    };
+    list = [
+      {
+        orderId: 'food_ord_demo_1',
+        orderNo: 184,
+        storeId: rest.id,
+        storeName: rest.name || 'مطعم KSH',
+        storePhone: rest.phone || rest.callPhone || '0910000000',
+        deliveryType: 'delivery',
+        deliveryAddress: 'طرابلس - حي الأندلس قرب الميدان',
+        notes: 'الرجاء عدم وضع شطة في وجبة البرجر، والكاتشب خارجي',
+        items: [
+          { postId: 'p_demo_1', title: 'وجبة برجر لحم سوبريم مع بطاطا', price: 26, qty: 2, note: 'بدون شطة' },
+          { postId: 'p_demo_2', title: 'سلطة سيزر دجاج مشوي', price: 14, qty: 1, note: '' },
+          { postId: 'p_demo_3', title: 'عصير برتقال طبيعي طازج', price: 6, qty: 2, note: 'بارد' }
+        ],
+        totalPrice: 78,
+        totalCount: 5,
+        paymentMethod: 'cash',
+        status: 'completed',
+        createdAt: Date.now() - 3600000 * 26,
+        rating: 5,
+        ratingComment: 'ما شاء الله تبارك الله، الوجبة وصلت ساخنة وسريعة جداً والتغليف ممتاز، شكراً لكم!',
+        ratingTags: ['وجبة ساخنة ولذيذة 🔥', 'توصيل سريع 🛵', 'تغليف ممتاز 📦']
+      },
+      {
+        orderId: 'food_ord_demo_2',
+        orderNo: 129,
+        storeId: rest.id,
+        storeName: rest.name || 'مطعم KSH',
+        storePhone: rest.phone || rest.callPhone || '0910000000',
+        deliveryType: 'pickup',
+        deliveryAddress: '',
+        notes: 'استلام من الفرع الساعة 3 عصراً',
+        items: [
+          { postId: 'p_demo_4', title: 'بيتزا دجاج رانش حجم عائلي', price: 34, qty: 1, note: 'قطع 8 قطع متساوية' },
+          { postId: 'p_demo_5', title: 'أصابع موزاريلا مقرمشة', price: 12, qty: 1, note: '' }
+        ],
+        totalPrice: 46,
+        totalCount: 2,
+        paymentMethod: 'cash',
+        status: 'completed',
+        createdAt: Date.now() - 3600000 * 72,
+        rating: null,
+        ratingComment: null,
+        ratingTags: []
+      }
+    ];
+    try { localStorage.setItem('tasawuq_food_orders', JSON.stringify(list)); } catch(e){}
+  }
+  return list;
+}
+window.getFoodOrders = getFoodOrders;
+
+function saveFoodOrderToHistory(orderData) {
+  try {
+    let orders = getFoodOrders();
+    // تجنب التكرار
+    const existingIdx = orders.findIndex(o => o.orderId === orderData.orderId);
+    if (existingIdx > -1) {
+      orders[existingIdx] = { ...orders[existingIdx], ...orderData };
+    } else {
+      orders.unshift(orderData);
+    }
+    if (orders.length > 50) orders = orders.slice(0, 50);
+    localStorage.setItem('tasawuq_food_orders', JSON.stringify(orders));
+  } catch(e) {
+    console.warn("Could not save food order history:", e);
+  }
+}
+window.saveFoodOrderToHistory = saveFoodOrderToHistory;
+
+window.copyFoodOrder = (orderId) => {
+  const orders = getFoodOrders();
+  const ord = orders.find(o => o.orderId === orderId);
+  if (!ord) { showToast("⚠️ لم يتم العثور على الطلبية", "warn"); return; }
+
+  const dateStr = new Date(ord.createdAt).toLocaleDateString('ar-LY', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  let lines = [];
+  lines.push(`🍽️ تفاصيل طلبيتي من: ${ord.storeName}`);
+  lines.push(`📅 التاريخ: ${dateStr}`);
+  lines.push(`🛵 الاستلام: ${ord.deliveryType === 'delivery' ? ('توصيل إلى ' + (ord.deliveryAddress || 'العنوان المسجل')) : '🚗 استلام سفري من الفرع'}`);
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`📦 الوجبات والأصناف:`);
+  ord.items.forEach((it, idx) => {
+    const qty = it.qty || 1;
+    const price = it.price != null ? `${it.price * qty} د.ل` : '';
+    const note = it.note ? ` (ملاحظة: ${it.note})` : '';
+    lines.push(`${idx + 1}. ${it.title} × ${qty} ${price ? '= ' + price : ''}${note}`);
+  });
+  lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
+  lines.push(`💰 المجموع الإجمالي: ${ord.totalPrice} د.ل`);
+  if (ord.notes) lines.push(`📝 ملاحظات: ${ord.notes}`);
+
+  const text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("📋 تم نسخ تفاصيل الطلبية بنجاح!", "success", 2800);
+    }).catch(() => fallbackCopyFoodOrderText(text));
+  } else {
+    fallbackCopyFoodOrderText(text);
+  }
+};
+
+function fallbackCopyFoodOrderText(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast("📋 تم نسخ تفاصيل الطلبية بنجاح!", "success", 2800);
+  } catch(e) {
+    prompt("انسخ تفاصيل الطلب من هنا:", text);
+  }
+  document.body.removeChild(ta);
+}
+
+window.reorderFoodOrder = (orderId) => {
+  const orders = getFoodOrders();
+  const ord = orders.find(o => o.orderId === orderId);
+  if (!ord) { showToast("⚠️ لم يتم العثور على الطلبية", "warn"); return; }
+
+  if (cart.items.length > 0 && cart.storeId && cart.storeId !== ord.storeId) {
+    if (!confirm(`⚠️ سلتك تحتوي على أصناف من "${cart.storeName}".\n\nهل تريد إفراغها وإعادة طلب وجبات "${ord.storeName}"؟`)) {
+      return;
+    }
+  }
+
+  cart.storeId = ord.storeId;
+  cart.storeName = ord.storeName;
+  cart.storePhone = ord.storePhone || '';
+  cart.items = ord.items.map(it => ({
+    postId: it.postId || ('post_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
+    title: it.title,
+    price: it.price || 0,
+    qty: it.qty || 1,
+    note: it.note || ''
+  }));
+
+  saveCart();
+  updateCartUI();
+  closeFoodOrdersModal();
+
+  setTimeout(() => {
+    openCart();
+    showToast(`🛒 تم تجهيز وجبات (${ord.storeName}) في سلتك! راجع الطلب واضغط إرسال`, "success", 3500);
+  }, 180);
+};
+
+window.openFoodOrderRatingModal = (orderId) => {
+  const orders = getFoodOrders();
+  const ord = orders.find(o => o.orderId === orderId);
+  if (!ord) { showToast("⚠️ لم يتم العثور على الطلبية", "warn"); return; }
+
+  window._currentRatingOrderId = orderId;
+  const overlay = document.getElementById("foodOrderRatingOverlay");
+  const formBox = document.getElementById("foodOrderRatingForm");
+  if (!overlay || !formBox) return;
+
+  const currentStars = ord.rating || 5;
+  const currentComment = ord.ratingComment || '';
+  const currentTags = ord.ratingTags || [];
+
+  window._selectedRatingStars = currentStars;
+  window._selectedRatingTags = [...currentTags];
+
+  const availableTags = [
+    "🔥 وجبة ساخنة وطازجة",
+    "🛵 توصيل سريع وفي الوقت",
+    "📦 تغليف ممتاز ومرتب",
+    "😋 طعم لذيذ جداً",
+    "⭐ خدمة راقية وممتازة",
+    "👌 كمية مشبعة ووافية"
+  ];
+
+  formBox.innerHTML = `
+    <div class="forStoreCard">
+      <div class="forStoreName">🍽️ ${escapeHtml(ord.storeName)}</div>
+      <div class="forOrderMeta">طلبية #${ord.orderNo || ''} • ${ord.items.length} أصناف • ${formatPrice(ord.totalPrice)} د.ل</div>
+      <div class="forItemsSnippet">${ord.items.map(i=>escapeHtml(i.title)).join(' + ')}</div>
+    </div>
+
+    <div class="forSectionTitle">⭐ كيف كانت تجربتك مع الوجبة والتوصيل؟</div>
+    <div class="forStarRow" id="forStarRow">
+      ${[1, 2, 3, 4, 5].map(star => `
+        <button type="button" class="forStarBtn ${star <= currentStars ? 'active' : ''}" onclick="selectOrderRatingStar(${star})" data-star="${star}">★</button>
+      `).join('')}
+    </div>
+    <div id="forStarLabel" class="forStarLabel">${getOrderStarLabel(currentStars)}</div>
+
+    <div class="forSectionTitle" style="margin-top:14px">🏷️ مميزات لاحظتها بعد وصول الطلب:</div>
+    <div class="forTagsWrap" id="forTagsWrap">
+      ${availableTags.map(tag => {
+        const isSelected = currentTags.includes(tag);
+        return `<button type="button" class="forTagPill ${isSelected ? 'selected' : ''}" onclick="toggleOrderRatingTag('${escapeHtml(tag)}', this)">${escapeHtml(tag)}</button>`;
+      }).join('')}
+    </div>
+
+    <div class="forSectionTitle" style="margin-top:14px">💬 رسالة تقييم وملاحظاتك عن الطلبية:</div>
+    <textarea id="forCommentInput" class="forTextarea" placeholder="اكتب ملاحظاتك عن جودة الأكل، وقت التوصيل، التغليف، أو أي ملاحظة تود مشاركتها...">${escapeHtml(currentComment)}</textarea>
+
+    <div style="display:grid;gap:8px;margin-top:16px">
+      <button class="btnMain" style="background:#16a34a;color:#fff;font-weight:800;padding:13px;font-size:14.5px" onclick="submitFoodOrderRating('${orderId}')">🚀 إرسال التقييم والملاحظات</button>
+      <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeFoodOrderRatingModal()">إلغاء</button>
+    </div>
+  `;
+
+  overlay.classList.remove("hidden");
+};
+
+window.selectOrderRatingStar = (star) => {
+  window._selectedRatingStars = star;
+  const row = document.getElementById("forStarRow");
+  if (row) {
+    row.querySelectorAll(".forStarBtn").forEach(btn => {
+      const s = parseInt(btn.getAttribute("data-star"), 10);
+      btn.classList.toggle("active", s <= star);
+    });
+  }
+  const lbl = document.getElementById("forStarLabel");
+  if (lbl) lbl.textContent = getOrderStarLabel(star);
+};
+
+function getOrderStarLabel(stars) {
+  switch(stars) {
+    case 5: return "⭐⭐⭐⭐⭐ ممتاز جداً وأنصح به بشدة!";
+    case 4: return "⭐⭐⭐⭐ جيد جداً وتجربة طيبة";
+    case 3: return "⭐⭐⭐ جيد، يحتاج بعض التحسين";
+    case 2: return "⭐⭐ مقبول، هناك ملاحظات";
+    case 1: return "⭐ سيء ولم تعجبني التجربة";
+    default: return "";
+  }
+}
+
+window.toggleOrderRatingTag = (tag, btn) => {
+  if (!window._selectedRatingTags) window._selectedRatingTags = [];
+  const idx = window._selectedRatingTags.indexOf(tag);
+  if (idx > -1) {
+    window._selectedRatingTags.splice(idx, 1);
+    btn.classList.remove("selected");
+  } else {
+    window._selectedRatingTags.push(tag);
+    btn.classList.add("selected");
+  }
+};
+
+window.submitFoodOrderRating = async (orderId) => {
+  const orders = getFoodOrders();
+  const ordIndex = orders.findIndex(o => o.orderId === orderId);
+  if (ordIndex === -1) { showToast("⚠️ لم يتم العثور على الطلبية", "warn"); return; }
+
+  const stars = window._selectedRatingStars || 5;
+  const comment = (document.getElementById("forCommentInput")?.value || "").trim();
+  const tags = window._selectedRatingTags || [];
+
+  orders[ordIndex].rating = stars;
+  orders[ordIndex].ratingComment = comment;
+  orders[ordIndex].ratingTags = tags;
+  orders[ordIndex].ratedAt = Date.now();
+
+  try {
+    localStorage.setItem('tasawuq_food_orders', JSON.stringify(orders));
+  } catch(e) {}
+
+  try {
+    const storeId = orders[ordIndex].storeId;
+    if (storeId && typeof db !== "undefined" && auth.currentUser) {
+      await setDoc(doc(db, "storeRatings", storeId + "_" + auth.currentUser.uid), {
+        storeId,
+        raterUid: auth.currentUser.uid,
+        raterName: (myProfile && myProfile.name) || auth.currentUser.displayName || "زبون موثق",
+        stars,
+        comment: (comment + (tags.length ? ` [${tags.join(', ')}]` : '')).trim().slice(0, 300),
+        isFoodOrderReview: true,
+        orderId: orderId,
+        createdAt: Date.now()
+      });
+      delete allStoreRatings[storeId];
+    }
+  } catch(e) {
+    console.warn("Could not sync rating to db:", e);
+  }
+
+  closeFoodOrderRatingModal();
+  showToast("⭐ شكراً لك! تم تسجيل تقييمك وملاحظاتك بنجاح", "success", 3000);
+
+  renderFoodOrdersList();
+  renderRestaurantTopHistoryArea();
+};
+
+window.openFoodOrdersModal = (filterStoreId) => {
+  const overlay = document.getElementById("foodOrdersOverlay");
+  if (!overlay) return;
+  window._filterStoreIdForOrders = filterStoreId || null;
+  renderFoodOrdersList();
+  overlay.classList.remove("hidden");
+};
+
+window.closeFoodOrdersModal = () => {
+  const overlay = document.getElementById("foodOrdersOverlay");
+  if (overlay) overlay.classList.add("hidden");
+};
+
+window.closeFoodOrderRatingModal = () => {
+  const overlay = document.getElementById("foodOrderRatingOverlay");
+  if (overlay) overlay.classList.add("hidden");
+};
+
+function renderFoodOrdersList() {
+  const container = document.getElementById("foodOrdersContent");
+  if (!container) return;
+
+  let orders = getFoodOrders();
+  if (window._filterStoreIdForOrders) {
+    orders = orders.filter(o => o.storeId === window._filterStoreIdForOrders);
+  }
+
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:36px 16px;color:var(--muted)">
+        <div style="font-size:42px;margin-bottom:10px">🍽️</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">لا توجد طلبيات سابقة بعد</div>
+        <p style="font-size:12.5px;margin-top:6px">اطلب وجباتك المفضلة من أي مطعم وستظهر هنا مع إمكانية التقييم وإعادة الطلب بضغطة واحدة!</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="foodOrdersListWrap">
+      ${orders.map((ord, idx) => {
+        const dateStr = formatTimeAgo(ord.createdAt);
+        const hasRating = !!ord.rating;
+        const statusBadge = ord.status === 'completed' ? `<span class="foStatusBadge completed">✅ مكتملة ومستلمة</span>` : `<span class="foStatusBadge active">⏳ قيد التحضير والتوصيل</span>`;
+        return `
+          <div class="foodOrderCard">
+            <div class="focHeader">
+              <div>
+                <div class="focStoreName" onclick="closeFoodOrdersModal();openStore('${escapeHtml(ord.storeId)}')">🍽️ ${escapeHtml(ord.storeName)} <span style="font-size:11px;font-weight:400;color:var(--teal)">›</span></div>
+                <div class="focDate">طلب #${ord.orderNo || (idx+1)} • ${dateStr}</div>
+              </div>
+              ${statusBadge}
+            </div>
+
+            <div class="focItemsList">
+              ${ord.items.map(it => `
+                <div class="focItemRow">
+                  <div class="focItemTitle">
+                    <span class="focItemQty">${it.qty || 1}×</span>
+                    <span>${escapeHtml(it.title)}</span>
+                    ${it.note ? `<span class="focItemNote">(${escapeHtml(it.note)})</span>` : ''}
+                  </div>
+                  <div class="focItemPrice">${formatPrice((it.price || 0) * (it.qty || 1))} د.ل</div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="focSummaryRow">
+              <div class="focDeliveryType">
+                ${ord.deliveryType === 'delivery' ? `🛵 توصيل: ${escapeHtml(ord.deliveryAddress || 'العنوان المسجل')}` : `🚗 استلام سفري من الفرع`}
+              </div>
+              <div class="focTotalPrice">المجموع: <strong>${formatPrice(ord.totalPrice)} د.ل</strong></div>
+            </div>
+
+            ${hasRating ? `
+              <div class="focRatingBox">
+                <div class="focRatingHeader">
+                  <span class="focRatingStars">${'★'.repeat(ord.rating)}${'☆'.repeat(5-ord.rating)} (${ord.rating}/5)</span>
+                  <button class="focEditRatingBtn" onclick="openFoodOrderRatingModal('${ord.orderId}')">✏️ تعديل التقييم</button>
+                </div>
+                ${ord.ratingComment ? `<div class="focRatingComment">"${escapeHtml(ord.ratingComment)}"</div>` : ''}
+                ${(ord.ratingTags && ord.ratingTags.length) ? `
+                  <div class="focTagsRow">
+                    ${ord.ratingTags.map(t=>`<span class="focTagItem">${escapeHtml(t)}</span>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
+
+            <div class="focActionsRow">
+              <button class="focBtn focBtnReorder" onclick="reorderFoodOrder('${ord.orderId}')">
+                🔄 طلب مرة أخرى
+              </button>
+              <button class="focBtn focBtnRate ${hasRating ? 'isRated' : ''}" onclick="openFoodOrderRatingModal('${ord.orderId}')">
+                ${hasRating ? '⭐ تقييمك (' + ord.rating + '/5)' : '⭐ تقييم وملاحظات'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+window.renderFoodOrdersList = renderFoodOrdersList;
+
+function renderRestaurantTopHistoryArea() {
+  const container = document.getElementById("restaurantTopHistoryArea");
+  if (!container) return;
+
+  if (window._storesFilterMode !== 'restaurants') {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  container.style.display = "block";
+  const orders = getFoodOrders();
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div class="restTopPillBar" onclick="openFoodOrdersModal()">
+        <span class="icon">📜</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:800;color:var(--text)">سجل طلباتي في المطاعم والمأكولات</div>
+          <div style="font-size:11px;color:var(--muted)">لا توجد طلبات سابقة بعد • اضغط للمزيد</div>
+        </div>
+        <span style="font-size:11.5px;font-weight:700;color:var(--teal-dark)">فتح السجل ›</span>
+      </div>
+    `;
+    return;
+  }
+
+  const lastOrder = orders[0];
+  const itemsText = lastOrder.items.map(i => `${escapeHtml(i.title)} × ${i.qty || 1}`).join(' • ');
+  const timeText = formatTimeAgo(lastOrder.createdAt);
+
+  container.innerHTML = `
+    <div class="restTopHistoryCard">
+      <div class="rthHeader">
+        <div class="rthTitleRow">
+          <span class="rthBadge">📜 آخر ما طلبت</span>
+          <span class="rthTime">${timeText}</span>
+        </div>
+        <button class="rthAllBtn" onclick="openFoodOrdersModal()">
+          كل الطلبيات (${orders.length}) ›
+        </button>
+      </div>
+
+      <div class="rthBody">
+        <div class="rthStoreRow">
+          <span class="rthStoreName" onclick="openStore('${escapeHtml(lastOrder.storeId)}')">🍽️ ${escapeHtml(lastOrder.storeName)}</span>
+          <span class="rthPrice">${formatPrice(lastOrder.totalPrice)} د.ل</span>
+        </div>
+        <div class="rthItemsSnippet" title="${escapeHtml(itemsText)}">${itemsText}</div>
+
+        ${lastOrder.rating ? `
+          <div class="rthRatingPreview">
+            <span>${'★'.repeat(lastOrder.rating)}${'☆'.repeat(5-lastOrder.rating)}</span>
+            <small style="color:var(--muted);font-size:11px;margin-right:4px">${escapeHtml(lastOrder.ratingComment || 'تم التقييم بنجاح')}</small>
+          </div>
+        ` : ''}
+
+        <div class="rthActionsRow">
+          <button class="rthBtn reorder" onclick="reorderFoodOrder('${lastOrder.orderId}')">
+            🔄 طلب مرة أخرى
+          </button>
+          <button class="rthBtn rate" onclick="openFoodOrderRatingModal('${lastOrder.orderId}')">
+            ${lastOrder.rating ? '⭐ تقييمك (' + lastOrder.rating + '/5)' : '⭐ تقييم الطلبية'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+window.renderRestaurantTopHistoryArea = renderRestaurantTopHistoryArea;
+
+
+window.toggleRestaurantBankSection = function(){
+  const sec = document.getElementById("restaurantBankSection");
+  if(!sec) return;
+  const isHidden = sec.style.display === "none" || !sec.style.display;
+  sec.style.display = isHidden ? "block" : "none";
+  const btn = document.getElementById("btnRestToggleBank");
+  if(btn) btn.classList.toggle("active", isHidden);
+  if(isHidden) {
+    sec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 };
