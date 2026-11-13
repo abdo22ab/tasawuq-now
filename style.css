@@ -1,12 +1,13 @@
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:16px;line-height:1.5;overflow-x:hidden}
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;font-size:16px;line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
 @supports(padding:max(0px)){body{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}}
-:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f5f6f8;--card:#fff;--text:#1f2937;--muted:#8a93a3;--border:#edeff2;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d;--purple:#8b5cf6;--pink:#ec4899}
+:root{--teal:#38bdf8;--teal-dark:#0284c7;--teal-light:#e6f6fe;--amber:#f59e0b;--amber-light:#fef3c7;--bg:#f8fafc;--card:#ffffff;--text:#0f172a;--muted:#475569;--border:#e2e8f0;--danger:#e5484d;--wa:#25d366;--call:#e5484d;--green:#16a34a;--sold:#6b7280;--wanted:#f97316;--restaurant:#e5484d;--purple:#8b5cf6;--pink:#ec4899}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-button, a, input, select, textarea { touch-action: manipulation; }
+button, a, input, select, textarea, optgroup { touch-action: manipulation; font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', Arial, sans-serif; }
 @media screen and (max-width: 768px) {
   input, select, textarea { font-size: 16px !important; }
 }
-body{margin:0;font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0));width:100%;max-width:100%;overflow-x:hidden}
+body{margin:0;font-family:'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', Arial, sans-serif;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:calc(70px + env(safe-area-inset-bottom,0));width:100%;max-width:100%;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .topbar{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;gap:10px}
 .topbar.scrollAway{position:relative}
 .topbarActions{display:flex;align-items:center;gap:6px}
@@ -189,7 +190,8 @@ html.dark-mode .fab{border-color:var(--bg)}
 
 .screen{background:var(--bg);min-height:100%}
 .screenHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:15}
-.screenHeader .back{background:none;border:none;font-size:20px;cursor:pointer}
+.screenHeader .back{width:38px!important;height:38px!important;min-width:38px!important;border-radius:50%!important;background:var(--card)!important;border:1.5px solid var(--border)!important;color:var(--text)!important;font-size:20px!important;font-weight:900!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important;transition:all .18s ease!important;box-shadow:0 2px 6px rgba(15,23,42,0.08)!important;flex-shrink:0!important;padding:0!important;text-decoration:none!important}
+.screenHeader .back:active{transform:scale(0.92)!important;background:var(--bg)!important}
 .screenHeader h3{margin:0;font-size:16px;font-weight:800}
 .formArea{padding:16px}
 .field{margin-bottom:14px}
@@ -485,7 +487,8 @@ html.dark-mode .catBox .catIconWrap.catIconImg img {
   }
 }
 .categoryHeader{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
-.categoryHeader .backBtn{background:none;border:none;font-size:22px;cursor:pointer;color:var(--teal-dark);padding:4px 8px;font-family:inherit}
+.categoryHeader .backBtn{width:38px!important;height:38px!important;min-width:38px!important;border-radius:50%!important;background:var(--card)!important;border:1.5px solid var(--border)!important;color:var(--text)!important;font-size:20px!important;font-weight:900!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important;transition:all .18s ease!important;box-shadow:0 2px 6px rgba(15,23,42,0.08)!important;flex-shrink:0!important;padding:0!important;text-decoration:none!important}
+.categoryHeader .backBtn:active{transform:scale(0.92)!important;background:var(--bg)!important}
 .categoryHeader h3{margin:0;font-size:16px;font-weight:800;flex:1;text-align:center;padding-left:30px}
 .filterBar{display:flex;gap:6px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none}
 .filterBar::-webkit-scrollbar{display:none}
@@ -650,7 +653,7 @@ html.dark-mode .sellerTier.bronze{background:#3a2f11;color:#f0d28a}
 html.dark-mode .sellerTier.silver{background:#232d42;color:#cbd5e1}
 html.dark-mode .sellerTier.gold{background:#3a2f11;color:#fde047}
 html.dark-mode .sellerTier.diamond{background:#1e1b4b;color:#a5b4fc}
-html.dark-mode{--bg:#0f1420;--card:#1a2233;--text:#e8edf5;--muted:#8b95a7;--border:#2a3446;--teal-light:#0c2942;--amber-light:#3a2f11}
+html.dark-mode{--bg:#090d16;--card:#131b2e;--text:#f8fafc;--muted:#94a3b8;--border:#1e293b;--teal-light:#0c2942;--amber-light:#3a2f11}
 html.dark-mode body{background:var(--bg);color:var(--text)}
 html.dark-mode .topbar{background:#0c2942}
 html.dark-mode .searchBox{background:var(--card);border-color:var(--border)}
@@ -5176,4 +5179,1002 @@ html.dark-mode #btnChatAction {
   background: rgba(56, 189, 248, 0.15) !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+
+/* ============================================================
+   🖨️ PRINT MEDIA STYLES FOR STORE QR STAND
+   ============================================================ */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #printableStoreQrModalOverlay,
+  #printableStoreQrModalOverlay * {
+    visibility: visible !important;
+  }
+  #printableStoreQrModalOverlay {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+  #printableQrStandArea {
+    box-shadow: none !important;
+    border: 2px solid #000000 !important;
+    max-width: 480px !important;
+    width: 100% !important;
+    padding: 30px !important;
+  }
+  #printableQrStandArea button,
+  #printableQrStandArea a {
+    display: none !important;
+  }
+}
+
+
+/* ============================================================
+   🖤 STORE LUXURY DESIGN SYSTEM (LIGHT & DARK ADAPTIVE)
+   ============================================================ */
+.storeLuxCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.storeLuxCard:active {
+  transform: scale(0.985);
+}
+html.dark-mode .storeLuxCard {
+  background: #131b2e;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+}
+
+.storeLuxCoverGrad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.8) 0%, rgba(0,0,0,0.2) 100%);
+}
+html.dark-mode .storeLuxCoverGrad {
+  background: linear-gradient(to top, #131b2e 0%, rgba(0,0,0,0.3) 100%);
+}
+
+.storeLuxName {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text) !important;
+  margin-bottom: 5px;
+  line-height: 1.35;
+}
+html.dark-mode .storeLuxName {
+  color: #ffffff !important;
+}
+
+.storeLuxPill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+html.dark-mode .storeLuxPill {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.storeLuxVisitBtn {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s ease;
+}
+html.dark-mode .storeLuxVisitBtn {
+  background: #ffffff;
+  color: #000000;
+}
+
+.storeLuxStripItem {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+html.dark-mode .storeLuxStripItem {
+  background: #1a243a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.storeLuxTabsTrack {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 4px;
+  gap: 4px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+html.dark-mode .storeLuxTabsTrack {
+  background: #131b2e;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.storeLuxTabBtn {
+  flex: 1;
+  min-width: 110px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.storeLuxTabBtn.active {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+}
+html.dark-mode .storeLuxTabBtn.active {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.storeLuxPane {
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+html.dark-mode .storeLuxPane {
+  background: #131b2e;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.storeLuxPaneTitle {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.storeLuxNumberCard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+html.dark-mode .storeLuxNumberCard {
+  background: #1a243a;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.categoryChipLux {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.categoryChipLux.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+html.dark-mode .categoryChipLux {
+  background: #131b2e;
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html.dark-mode .categoryChipLux.active {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+}
+
+.storeLuxHeroTitle {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+html.dark-mode .storeLuxHeroTitle {
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   📱 SIDE DRAWER MENU SYSTEM (3 BARS MENU)
+   ============================================================ */
+.sideMenuOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 9500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.24s ease;
+}
+.sideMenuOverlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sideMenuDrawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 320px;
+  max-width: 86%;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: -8px 0 35px rgba(0, 0, 0, 0.35);
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+}
+.sideMenuOverlay.open .sideMenuDrawer {
+  transform: translateX(0);
+}
+.smdHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.smdCloseBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.smdCloseBtn:active {
+  transform: scale(0.9);
+}
+.smdUserCard {
+  margin: 14px 14px 8px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.smdUserCard:active {
+  background: var(--card);
+}
+.smdAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.smdAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.smdList {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.smdItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.smdItem:hover {
+  background: var(--bg);
+}
+.smdItem:active {
+  transform: scale(0.98);
+}
+.smdIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.smdContent {
+  flex: 1;
+  min-width: 0;
+}
+.smdTitle {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.25;
+}
+.smdDesc {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.smdBadge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.smdArrow {
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 800;
+  margin-right: 2px;
+}
+.smdSwitch {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: #cbd5e1;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.smdSwitchKnob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+html.dark-mode .smdSwitch {
+  background: var(--teal);
+}
+html.dark-mode .smdSwitchKnob {
+  transform: translateX(-18px);
+}
+
+
+/* ============================================
+   منظومة طلباتي السابقة وتقييم الوجبات في المطاعم
+   ============================================ */
+.restTopHistoryCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  margin-bottom: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+html.dark-mode .restTopHistoryCard {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.restTopHistoryCard .rthHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+html.dark-mode .restTopHistoryCard .rthHeader {
+  border-bottom-color: #334155;
+}
+.restTopHistoryCard .rthTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.restTopHistoryCard .rthBadge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+.restTopHistoryCard .rthTime {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.restTopHistoryCard .rthAllBtn {
+  background: transparent;
+  border: none;
+  color: var(--teal-dark);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-family: inherit;
+}
+html.dark-mode .restTopHistoryCard .rthAllBtn {
+  color: #38bdf8;
+}
+.restTopHistoryCard .rthStoreRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.restTopHistoryCard .rthStoreName {
+  font-size: 14.5px;
+  font-weight: 900;
+  color: var(--text);
+  cursor: pointer;
+}
+.restTopHistoryCard .rthPrice {
+  font-size: 14px;
+  font-weight: 900;
+  color: #16a34a;
+}
+.restTopHistoryCard .rthItemsSnippet {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.restTopHistoryCard .rthRatingPreview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.08);
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  color: #f59e0b;
+  font-size: 12px;
+}
+.restTopHistoryCard .rthActionsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.rthBtn {
+  padding: 7px 4px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.rthBtn:active {
+  transform: scale(0.96);
+}
+.rthBtn.copy {
+  background: var(--bg);
+  color: var(--text);
+}
+.rthBtn.reorder {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+html.dark-mode .rthBtn.reorder {
+  background: rgba(22, 163, 74, 0.15);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+.rthBtn.rate {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+html.dark-mode .rthBtn.rate {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.restTopPillBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: transform 0.15s ease;
+}
+.restTopPillBar:active {
+  transform: scale(0.98);
+}
+html.dark-mode .restTopPillBar {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* بطاقات سجل الطلبيات داخل المودال */
+.foodOrdersListWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.foodOrderCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+html.dark-mode .foodOrderCard {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.foodOrderCard .focHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+html.dark-mode .foodOrderCard .focHeader {
+  border-bottom-color: #334155;
+}
+.foodOrderCard .focStoreName {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text);
+  cursor: pointer;
+}
+.foodOrderCard .focDate {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.foStatusBadge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.foStatusBadge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+html.dark-mode .foStatusBadge.completed {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.foStatusBadge.active {
+  background: #fef3c7;
+  color: #92400e;
+}
+html.dark-mode .foStatusBadge.active {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.foodOrderCard .focItemsList {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+html.dark-mode .foodOrderCard .focItemsList {
+  background: #0f172a;
+}
+.foodOrderCard .focItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+}
+.foodOrderCard .focItemTitle {
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+.foodOrderCard .focItemQty {
+  font-weight: 800;
+  color: var(--teal-dark);
+}
+html.dark-mode .foodOrderCard .focItemQty {
+  color: #38bdf8;
+}
+.foodOrderCard .focItemNote {
+  color: var(--muted);
+  font-size: 11px;
+}
+.foodOrderCard .focItemPrice {
+  font-weight: 800;
+  color: var(--text);
+  margin-right: 8px;
+}
+
+.foodOrderCard .focSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: var(--muted);
+}
+.foodOrderCard .focTotalPrice {
+  font-size: 13.5px;
+  color: var(--text);
+}
+.foodOrderCard .focTotalPrice strong {
+  color: #16a34a;
+  font-size: 15px;
+}
+html.dark-mode .foodOrderCard .focTotalPrice strong {
+  color: #4ade80;
+}
+
+.focRatingBox {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-bottom: 10px;
+}
+html.dark-mode .focRatingBox {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.focRatingBox .focRatingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.focRatingBox .focRatingStars {
+  color: #f59e0b;
+  font-size: 13.5px;
+  font-weight: 900;
+}
+.focRatingBox .focEditRatingBtn {
+  background: none;
+  border: none;
+  color: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+html.dark-mode .focRatingBox .focEditRatingBtn {
+  color: #38bdf8;
+}
+.focRatingBox .focRatingComment {
+  font-size: 12px;
+  color: var(--text);
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+.focTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.focTagItem {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+html.dark-mode .focTagItem {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.foodOrderCard .focActionsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+.focBtn {
+  padding: 8px 4px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.focBtn:active {
+  transform: scale(0.96);
+}
+.focBtnCopy {
+  background: var(--bg);
+  color: var(--text);
+}
+.focBtnReorder {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+}
+.focBtnReorder:hover {
+  background: #15803d;
+}
+.focBtnRate {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+.focBtnRate.isRated {
+  background: #f8fafc;
+  color: #b45309;
+  border-color: #e2e8f0;
+}
+html.dark-mode .focBtnRate {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+html.dark-mode .focBtnRate.isRated {
+  background: #0f172a;
+  color: #fde68a;
+  border-color: #334155;
+}
+
+/* نافذة تقييم الطلبية */
+.forStoreCard {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+}
+html.dark-mode .forStoreCard {
+  background: #0f172a;
+  border-color: #334155;
+}
+.forStoreName {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.forOrderMeta {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.forItemsSnippet {
+  font-size: 11.5px;
+  color: var(--text);
+  opacity: 0.85;
+}
+.forSectionTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.forStarRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0;
+  direction: ltr;
+}
+.forStarBtn {
+  background: none;
+  border: none;
+  font-size: 38px;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.forStarBtn:hover,
+.forStarBtn.active {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+.forStarLabel {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #d97706;
+  margin-bottom: 12px;
+  min-height: 20px;
+}
+html.dark-mode .forStarLabel {
+  color: #fbbf24;
+}
+.forTagsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.forTagPill {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+html.dark-mode .forTagPill {
+  background: #0f172a;
+  border-color: #334155;
+}
+.forTagPill:hover {
+  border-color: #f59e0b;
+}
+.forTagPill.selected {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #f59e0b;
+  font-weight: 800;
+}
+html.dark-mode .forTagPill.selected {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border-color: #fbbf24;
+}
+.forTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 85px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+}
+html.dark-mode .forTextarea {
+  background: #0f172a;
+  border-color: #334155;
+}
+.forTextarea:focus {
+  border-color: #16a34a;
+}
+
+/* إخفاء رقم النقاط نهائياً من الشريط العلوي الخارجي */
+#pointsBadge,
+.topbar #pointsBadge,
+.topbarActions #pointsBadge,
+.topbar .pointsBadge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
