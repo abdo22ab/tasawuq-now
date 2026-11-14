@@ -4,6 +4,7 @@
  * 🔒 محمي بمفتاح سري (Secret Key) ونظام منع السبام وحظر الأرقام (Rate Limiting)
  * ⚡ مزود بنظام Keep-Alive 24/7 لمنع خادم Render من النوم
  * 💾 مزود بنظام حفظ واسترجاع الجلسة سحابياً عبر Supabase لمنع تسجيل الخروج نهائياً
+ * 🟢 يدعم فحص الصحة Health Check على المسار الرئيسي لمنع خطأ Deploy Failed في Render
  */
 
 const fs = require('fs');
@@ -178,7 +179,6 @@ async function connectToWhatsApp() {
     sock = makeWASocket({
       auth: state,
       logger: pino({ level: 'silent' }),
-      printQRInTerminal: true,
       browser: ['تسوق الآن', 'Chrome', '1.0.0']
     });
 
@@ -237,6 +237,38 @@ function verifySecret(req, res, next) {
   next();
 }
 
+// 📌 المسار الرئيسي 200 OK لفحص صحة السيرفر من Render ومنع خطأ Deploy Failed
+app.get('/', (req, res) => {
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="utf-8">
+      <title>بوت واتساب - تسوق الآن</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: system-ui, -apple-system, sans-serif; text-align: center; padding: 40px 20px; background: #0f172a; color: #f8fafc; }
+        .card { max-width: 480px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        .btn { display: inline-block; padding: 12px 24px; background: #0284c7; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 800; margin-top: 16px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <h2 style="color:#38bdf8">🤖 خادم بوت واتساب - تسوق الآن</h2>
+        <p style="color:#94a3b8">الحالة: <b style="color:${isConnected ? '#4ade80' : '#fbbf24'}">${isConnected ? '🟢 متصل وجاهز 24/7' : '🟡 بانتظار مسح كود الـ QR'}</b></p>
+        <p style="font-size:13px;color:#cbd5e1">الخادم يعمل بنجاح على Render (Health Check 200 OK)</p>
+        <a href="/qr" class="btn">📲 مسح كود QR وربط الجهاز</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// 📌 مسار Health Check القياسي لـ Render
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ ok: true, status: 'healthy', uptime: process.uptime() });
+});
+
 // 📌 صفحة عرض كود الـ QR لمسحه بكاميرا الهاتف (ربط جهاز)
 app.get('/qr', async (req, res) => {
   if (isConnected) {
@@ -283,6 +315,7 @@ app.get('/qr', async (req, res) => {
 app.get('/status', (req, res) => {
   res.json({
     ok: true,
+    version: '2.1.0',
     connected: isConnected,
     hasQr: !!latestQrData
   });
@@ -403,7 +436,8 @@ setInterval(() => {
   } catch (e) {}
 }, 5 * 60 * 1000); // كل 5 دقائق
 
-app.listen(PORT, () => {
-  console.log(`🚀 خادم بوت واتساب المحمي يعمل على المنفذ: ${PORT}`);
+// الاستماع على 0.0.0.0 ليتمكن Render من الوصول إليه بدون أي عوائق
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 خادم بوت واتساب المحمي يعمل بنجاح على المنفذ: ${PORT}`);
   connectToWhatsApp();
 });
