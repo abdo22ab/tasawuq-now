@@ -3011,6 +3011,26 @@ html.dark-mode .fbPostActBtn.chat {
   color: #e2e8f0;
   border-color: #334155;
 }
+.fbPostActBtn.edit {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+.fbPostActBtn.del {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+html.dark-mode .fbPostActBtn.edit {
+  background: #082f49;
+  color: #38bdf8;
+  border-color: #0369a1;
+}
+html.dark-mode .fbPostActBtn.del {
+  background: #450a0a;
+  color: #f87171;
+  border-color: #991b1b;
+}
 
 /* ============================================
    👤 بطاقات البحث عن الأشخاص والحسابات
@@ -5314,11 +5334,11 @@ html.dark-mode .storeLuxStripItem {
   display: flex;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 4px;
-  gap: 4px;
+  gap: 6px;
   overflow-x: auto;
-  margin: 16px 0;
+  margin: 10px 0 14px;
 }
 html.dark-mode .storeLuxTabsTrack {
   background: #131b2e;
@@ -5327,40 +5347,196 @@ html.dark-mode .storeLuxTabsTrack {
 
 .storeLuxTabBtn {
   flex: 1;
-  min-width: 110px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12.5px;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.18s ease;
   font-family: inherit;
+  white-space: nowrap;
+}
+.storeLuxTabBtn:hover {
+  background: var(--bg);
 }
 .storeLuxTabBtn.active {
   background: #0f172a;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  border-color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+html.dark-mode .storeLuxTabBtn {
+  background: #1a243a;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+html.dark-mode .storeLuxTabBtn:hover {
+  background: #24304d;
+  color: #ffffff;
 }
 html.dark-mode .storeLuxTabBtn.active {
   background: #ffffff;
   color: #000000;
+  border-color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* ============================================================
+   🛍️ STORE FRONT ACTION BUTTONS & COMPACT TOOL ROWS
+   ============================================================ */
+.storeActionRowPrimary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.storeActionRowSecondary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.storeActionBtn {
+  flex: 1;
+  min-width: 82px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+}
+.storeActionBtn:hover {
+  transform: translateY(-1px);
+}
+.storeActionBtn.btnWhatsapp {
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.28);
+}
+.storeActionBtn.btnCall {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.28);
+}
+.storeActionBtn.btnChat {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.storeActionBtn.btnBank {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+.storeActionBtn.btnBank.btnBankCompact {
+  min-width: 70px;
+  padding: 7px 8px;
+  font-size: 11.5px;
+}
+.storeActionBtn.btnBank.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+html.dark-mode .storeActionBtn.btnBank {
+  background: #0c4a6e;
+  color: #e0f2fe;
+  border-color: #0284c7;
+}
+html.dark-mode .storeActionBtn.btnBank.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+.storeActionBtn.btnReceipt {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+html.dark-mode .storeActionBtn.btnReceipt {
+  background: #064e3b;
+  color: #d1fae5;
+  border-color: #059669;
+}
+.storeActionBtn.btnShare {
+  flex: 0 0 38px;
+  min-width: 38px;
+  padding: 0;
+  height: 38px;
+  font-size: 15px;
+}
+
+.storeToolBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.storeToolBtn:hover {
+  background: var(--bg);
+}
+.storeToolBtn.qrBtn {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+.storeToolBtn.toolBtnPrimary {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+}
+html.dark-mode .storeToolBtn.toolBtnPrimary {
+  background: #334155;
+  color: #ffffff;
+}
+.storeToolBtn.toolBtnAlert {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+}
+
 .storeLuxPane {
-  padding: 16px;
+  padding: 12px 14px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  margin-bottom: 18px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  border-radius: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 html.dark-mode .storeLuxPane {
   background: #131b2e;
@@ -5369,10 +5545,10 @@ html.dark-mode .storeLuxPane {
 }
 
 .storeLuxPaneTitle {
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -5381,9 +5557,9 @@ html.dark-mode .storeLuxPane {
 .storeLuxNumberCard {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6177,4 +6353,160 @@ html.dark-mode .forTextarea {
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
+}
+
+
+/* ==================================================== */
+/* 🔘 أزرار الإغلاق العالمية الموحدة عالية الوضوح والتباين */
+/* Universal High-Contrast Close Buttons (Light & Dark) */
+/* ==================================================== */
+.universalCloseBtn {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid #cbd5e1 !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.universalCloseBtn:hover {
+  background: #e2e8f0 !important;
+  color: #000000 !important;
+  transform: scale(1.08) !important;
+}
+
+.universalCloseBtn:active {
+  transform: scale(0.92) !important;
+}
+
+/* في الوضع الليلي Dark Mode */
+html.dark-mode .universalCloseBtn,
+body.dark-mode .universalCloseBtn,
+.dark-mode .universalCloseBtn {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border: 1.5px solid #475569 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.45) !important;
+}
+
+html.dark-mode .universalCloseBtn:hover,
+body.dark-mode .universalCloseBtn:hover,
+.dark-mode .universalCloseBtn:hover {
+  background: #334155 !important;
+  color: #38bdf8 !important;
+  border-color: #64748b !important;
+}
+
+/* تحسين وضوح زر إغلاق ومسح البحث */
+.clearSearchBtn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.clearSearchBtn:hover {
+  background: #cbd5e1;
+  color: #000;
+}
+html.dark-mode .clearSearchBtn,
+.dark-mode .clearSearchBtn {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border: 1px solid #475569 !important;
+}
+html.dark-mode .clearSearchBtn:hover,
+.dark-mode .clearSearchBtn:hover {
+  background: #334155 !important;
+  color: #38bdf8 !important;
+}
+
+/* تحسين زر مسح فلتر السعر */
+.priceClearBtn {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 1.5px solid #fca5a5;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #dc2626;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.priceClearBtn:hover {
+  background: #fecdd3;
+  color: #b91c1c;
+}
+html.dark-mode .priceClearBtn,
+.dark-mode .priceClearBtn {
+  background: #450a0a !important;
+  color: #f87171 !important;
+  border-color: #7f1d1d !important;
+}
+
+/* تحسين أزرار إغلاق المعاينة واللايت بوكس */
+.adClose, .lbClose {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+  border: 1.5px solid rgba(0,0,0,0.15) !important;
+}
+html.dark-mode .adClose,
+html.dark-mode .lbClose,
+.dark-mode .adClose,
+.dark-mode .lbClose {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border: 1.5px solid #475569 !important;
+}
+
+/* تحسين زر إغلاق القائمة الجانبية */
+.smdCloseBtn {
+  border: 1.5px solid #cbd5e1 !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+html.dark-mode .smdCloseBtn,
+.dark-mode .smdCloseBtn {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+/* تحسين زر إغلاق الستوري */
+.storyModalClose {
+  background: rgba(0,0,0,0.45) !important;
+  border: 1.5px solid rgba(255,255,255,0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(6px) !important;
+}
+.storyModalClose:hover {
+  background: rgba(0,0,0,0.7) !important;
+  border-color: #ffffff !important;
 }
