@@ -599,7 +599,9 @@ import {
   onAuthStateChanged,
   signOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import {
   getAI,
@@ -618,7 +620,7 @@ const firebaseConfig = {
 
 const fbApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(fbApp);
-export { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup };
+export { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword };
 
 let aiInstance = null;
 try {
