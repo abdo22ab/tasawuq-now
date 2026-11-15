@@ -33,11 +33,23 @@ window.location.replace("https://tasawuqnow.com"+window.location.hash+window.loc
 <script>
 
 if ('serviceWorker' in navigator) {
+  var isDevServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.port === '5500';
+  if (isDevServer) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      for (var reg of regs) { reg.unregister(); }
+    });
+    if (window.caches) {
+      caches.keys().then(function(names) {
+        for (var name of names) { caches.delete(name); }
+      });
+    }
+  } else {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=153').then(function(reg) {
+    navigator.serviceWorker.register('./sw.js?v=216').then(function(reg) {
       reg.update();
     }).catch(function(e){ console.warn('SW reg error:', e); });
   });
+  }
   navigator.serviceWorker.addEventListener('controllerchange', function() {
     window.location.reload();
   });
@@ -79,7 +91,7 @@ window.openInbox = window.openInbox || function() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=181">
+<link rel="stylesheet" href="style.css?v=216">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -761,27 +773,214 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<div id="authOverlay" class="overlay hidden">
+<!-- ============================================ -->
 
-<div class="sheet">
+<!-- صفحة تسجيل الدخول الكاملة (Google Firebase) -->
 
-<div id="authOptions">
+<!-- ============================================ -->
 
-<h3 style="text-align:center">تسجيل الدخول</h3>
+<div id="authOverlay" class="overlay fullscreen hidden">
 
-<p style="font-size:13px;color:var(--muted);margin:0 0 14px;text-align:center">سجّل دخولك لحفظ إعلاناتك والتواصل مع البائعين</p>
+  <div class="sheet" style="height:100%;max-height:100%;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0;background:var(--bg)">
 
-<button class="authOption" onclick="loginWithGoogle()">🟢 الاستمرار باستخدام Google</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border);flex:0 0 auto">
+      <button type="button" onclick="closeOverlay()" style="background:none;border:none;font-size:24px;color:var(--text);cursor:pointer;padding:0 6px" title="رجوع">‹</button>
+      <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)">تسجيل الدخول والتوثيق</h3>
+      <button type="button" onclick="closeOverlay()" class="universalCloseBtn" title="إغلاق">✕</button>
+    </div>
 
-<button class="btnGhost" style="background:transparent;color:var(--muted);margin-top:12px" onclick="closeOverlay()">إلغاء</button>
+    <div style="flex:1;overflow-y:auto;padding:20px 16px;background:var(--bg);width:100%;max-width:440px;margin:0 auto;box-sizing:border-box">
 
-</div>
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;background:linear-gradient(135deg,#059669,#047857);border-radius:20px;font-size:28px;box-shadow:0 6px 16px rgba(5,150,105,0.25);margin-bottom:10px">🛍️</div>
+        <h2 style="margin:0 0 6px;font-size:22px;font-weight:900;color:var(--text)">تسوق الآن | ليبيا</h2>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 10px;line-height:1.5">منصتك للتجارة الموثوقة والإعلانات والطلبات 🇱🇾</p>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:var(--card);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;color:var(--muted);border:1px solid var(--border)">
+          <span>🛡️</span>
+          <span>توثيق آمن عبر Google Firebase وواتساب</span>
+        </div>
+      </div>
 
-</div>
+      <div style="display:flex;background:var(--card);padding:4px;border-radius:14px;gap:6px;margin-bottom:16px;border:1.5px solid var(--border)">
+        <button id="authTabWaBtn" type="button" onclick="switchAuthTab('wa')" style="flex:1;padding:10px 4px;border:1.5px solid #a7f3d0;border-radius:10px;font-size:13px;font-weight:900;cursor:pointer;background:#ecfdf5;color:#047857;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s">
+          <span>💬</span>
+          <span>رقم الهاتف والواتساب</span>
+        </button>
+        <button id="authTabGoogleBtn" type="button" onclick="switchAuthTab('google')" style="flex:1;padding:10px 4px;border:1.5px solid transparent;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s">
+          <span>🟢</span>
+          <span>حساب Google</span>
+        </button>
+      </div>
+
+      <!-- قسم الواتساب ورقم الهاتف -->
+      <div id="authWaSection" style="background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:18px 16px;box-shadow:0 3px 12px rgba(0,0,0,0.03);margin-bottom:16px">
+        <div id="authWaStepPhone">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:20px">📲</span>
+            <h3 style="margin:0;font-size:15px;font-weight:900;color:var(--text)">الدخول برقم الهاتف وواتساب</h3>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 14px;line-height:1.5">
+            اكتب رقم هاتفك الليبي لتصلك رسالة فورية عبر تطبيق واتساب تحتوي على كود التحقق.
+          </p>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:12.5px;font-weight:800;color:var(--text);display:block;margin-bottom:6px">📱 رقم الهاتف الليبي (المسجل به في واتساب)</label>
+            <div style="position:relative;display:flex;align-items:center">
+              <input id="authWaPhoneNumber" type="tel" placeholder="091XXXXXXX" maxlength="15" oninput="if(typeof formatPhoneInputLive==='function')formatPhoneInputLive(this)" style="width:100%;box-sizing:border-box;padding:12px 14px;padding-left:65px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;direction:ltr;text-align:right;font-weight:800;background:var(--bg);font-family:inherit;color:var(--text)">
+              <span style="position:absolute;left:10px;font-size:12.5px;font-weight:800;color:var(--muted);direction:ltr;pointer-events:none">🇱🇾 +218</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">
+              💡 يقبل شفرات: <b>091 / 092 / 094 / 093</b>
+            </div>
+          </div>
+
+          <button id="authWaSendBtn" type="button" onclick="sendWhatsAppOtp()" style="width:100%;box-sizing:border-box;padding:13px;border-radius:12px;font-size:14.5px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)">
+            <span>💬</span> <span>إرسال كود التحقق عبر واتساب</span>
+          </button>
+
+          <div style="margin-top:14px;background:#f0fdf4;border:1px dashed #86efac;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">🛡️</span>
+            <div style="font-size:11.5px;color:#166534;font-weight:700;line-height:1.4">
+              <b>موثوق 100%:</b> يضمن ربط الحساب برقم واتساب ليبي حقيقي لحماية المشترين والتجار.
+            </div>
+          </div>
+        </div>
+
+        <div id="authWaStepOtp" class="hidden">
+          <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:12px;margin-bottom:12px;text-align:center">
+            <div style="font-size:24px;margin-bottom:4px">💬</div>
+            <div style="font-size:12.5px;color:#047857;font-weight:800">رقم الهاتف المراد توثيقه والدخول به:</div>
+            <div id="authWaTargetPhone" style="font-size:16px;font-weight:900;color:#065f46;direction:ltr;margin-top:2px">091XXXXXXX</div>
+          </div>
+
+          <a id="authWaOpenWaLink" href="#" target="_blank" onclick="if(typeof onWaBtnClick==='function')onWaBtnClick(event)" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" style="flex-shrink:0"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.65 7.89 8.02 8.48 8.02 9.7C8.02 10.92 8.91 12.1 9.03 12.27C9.15 12.44 10.74 14.9 13.21 15.96C15.26 16.84 15.67 16.67 16.12 16.62C16.57 16.58 17.56 16.03 17.76 15.45C17.96 14.88 17.96 14.39 17.9 14.28C17.84 14.18 17.68 14.12 17.43 14C17.18 13.88 15.96 13.27 15.73 13.19C15.5 13.11 15.34 13.07 15.17 13.31C15 13.56 14.53 14.12 14.39 14.28C14.24 14.45 14.1 14.47 13.85 14.35C13.6 14.22 12.81 13.97 11.87 13.13C11.14 12.48 10.65 11.67 10.5 11.43C10.36 11.18 10.49 11.05 10.61 10.92C10.72 10.81 10.86 10.63 10.98 10.48C11.11 10.34 11.15 10.23 11.23 10.07C11.31 9.91 11.27 9.77 11.21 9.65C11.15 9.53 10.65 8.31 10.45 7.82C10.25 7.34 10.05 7.4 9.9 7.4C9.75 7.4 9.53 7.34 9.53 7.34Z"/></svg>
+            <span>🟢 فتح واتساب وإرسال كود التأكيد</span>
+          </a>
+
+          <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:10px 12px;text-align:center;margin-bottom:12px">
+            <div style="font-size:11.5px;color:#166534;font-weight:800;margin-bottom:2px">كود التأكيد الخاص بك:</div>
+            <div id="authWaDisplayCode" style="font-size:26px;font-weight:900;letter-spacing:8px;color:#059669;font-family:monospace;margin:2px 0">----</div>
+            <div style="font-size:11px;color:#047857;line-height:1.4">
+              اضغط على الزر الأخضر أعلاه لإرسال الكود عبر واتساب لإثبات ملكيتك للرقم، ثم اضغط تأكيد بالأسفل.
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:800;color:var(--text);display:block;margin-bottom:6px;text-align:center">🔑 كود التحقق (4 أرقام)</label>
+            <input id="authWaOtpCode" type="text" inputmode="numeric" maxlength="4" placeholder="• • • •" oninput="if(typeof onWaOtpInput==='function')onWaOtpInput(this)" style="width:100%;box-sizing:border-box;padding:12px;border:2px solid #059669;border-radius:12px;font-size:24px;letter-spacing:10px;text-align:center;font-weight:900;background:var(--bg);color:var(--text);font-family:monospace">
+          </div>
+
+          <div id="authWaNameBox" class="hidden" style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:800;color:var(--text);display:block;margin-bottom:4px">👤 اسمك الكريم أو اسم متجرك</label>
+            <input id="authWaFullName" type="text" placeholder="اكتب اسمك لعرضه في ملفك الشخصي" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit">
+          </div>
+
+          <button id="authWaConfirmBtn" type="button" onclick="confirmWhatsAppOtp()" style="width:100%;box-sizing:border-box;padding:13px;border-radius:12px;font-size:14.5px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)">
+            <span>✅</span> <span>تأكيد الدخول وتوثيق الحساب</span>
+          </button>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px">
+            <div id="authWaTimerBox" style="color:var(--muted)">إعادة المحاولة بعد: <b id="authWaTimerCount" style="color:var(--text)">45</b> ثانية</div>
+            <button id="authWaResendBtn" type="button" onclick="resendWhatsAppOtp()" class="hidden" style="background:none;border:none;color:#059669;font-weight:800;cursor:pointer;padding:4px 6px;font-size:12px">🔄 إعادة توليد الكود</button>
+            <button type="button" onclick="backToWaPhoneStep()" style="background:none;border:none;color:var(--muted);font-weight:700;cursor:pointer;padding:4px 6px;font-size:12px">✏️ تغيير الرقم</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- قسم Google -->
+      <div id="authGoogleSection" class="hidden" style="background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:20px 16px;box-shadow:0 3px 12px rgba(0,0,0,0.03);margin-bottom:16px;text-align:center">
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">الدخول السريع بضغطة زر</div>
+        <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.5">سجّل دخولك فوراً باستخدام حساب Google الرسمي بأمان فائق.</p>
+        <button class="authOption" onclick="loginWithGoogle()" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 20px;border-radius:12px;border:1.5px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05);font-size:14.5px;font-weight:800;cursor:pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>تسجيل الدخول بواسطة Google</span>
+        </button>
+      </div>
+
+      <div style="text-align:center;margin-top:10px">
+        <button class="btnGhost" style="background:transparent;color:var(--muted);font-weight:700;font-size:13.5px;border:none;cursor:pointer;padding:8px 16px" onclick="closeOverlay()">تصفح كزائر ‹</button>
+      </div>
+
+    </div>
+
+  </div>
 
 </div>
 
 <!-- ============================================ -->
+
+<!-- ============================================ -->
+<!-- 📲 نافذة توثيق رقم الهاتف عبر واتساب للمستخدمين -->
+<!-- ============================================ -->
+<div id="phoneVerifyOverlay" class="overlay hidden" style="z-index:7500">
+  <div class="sheet" style="max-width:440px;border-radius:20px;padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card);border-bottom:1.5px solid var(--border)">
+      <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text);display:flex;align-items:center;gap:6px">
+        <span>🛡️</span>
+        <span>توثيق رقم الهاتف عبر واتساب</span>
+      </h3>
+      <button type="button" onclick="closePhoneVerificationModal()" class="universalCloseBtn" title="إغلاق">✕</button>
+    </div>
+    <div style="padding:20px 16px;background:var(--bg)">
+      <div id="pvStepPhone">
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:22px">🔒</span>
+          <div style="font-size:12.5px;color:#92400e;line-height:1.4">
+            <b>خطوة أمان إلزامية:</b> لضمان مصداقية المنصة وحماية الجميع من الاحتيال، يجب تأكيد ملكيتك لرقم هاتف ليبي عبر رسالة واتساب.
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:12.5px;font-weight:800;color:var(--text);display:block;margin-bottom:6px">📱 رقم هاتفك الليبي (المسجل به في واتساب)</label>
+          <div style="position:relative;display:flex;align-items:center">
+            <input id="pvPhoneNumber" type="tel" placeholder="091XXXXXXX" maxlength="15" oninput="if(typeof formatPhoneInputLive==='function')formatPhoneInputLive(this)" style="width:100%;box-sizing:border-box;padding:12px 14px;padding-left:65px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;direction:ltr;text-align:right;font-weight:800;background:var(--card);font-family:inherit;color:var(--text)">
+            <span style="position:absolute;left:10px;font-size:12.5px;font-weight:800;color:var(--muted);direction:ltr;pointer-events:none">🇱🇾 +218</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">
+            💡 يقبل شفرات: <b>091 / 092 / 094 / 093</b>
+          </div>
+        </div>
+        <button id="pvSendBtn" type="button" onclick="sendPvOtp()" style="width:100%;box-sizing:border-box;padding:13px;border-radius:12px;font-size:14.5px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)">
+          <span>💬</span> <span>إرسال كود التحقق عبر واتساب</span>
+        </button>
+      </div>
+
+      <div id="pvStepOtp" class="hidden">
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:12px;margin-bottom:12px;text-align:center">
+          <div style="font-size:24px;margin-bottom:4px">💬</div>
+          <div style="font-size:12.5px;color:#047857;font-weight:800">رقم الهاتف المراد توثيقه:</div>
+          <div id="pvTargetPhone" style="font-size:16px;font-weight:900;color:#065f46;direction:ltr;margin-top:2px">091XXXXXXX</div>
+        </div>
+
+        <a id="pvOpenWaLink" href="#" target="_blank" onclick="if(typeof onPvWaBtnClick==='function')onPvWaBtnClick(event)" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" style="flex-shrink:0"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.65 7.89 8.02 8.48 8.02 9.7C8.02 10.92 8.91 12.1 9.03 12.27C9.15 12.44 10.74 14.9 13.21 15.96C15.26 16.84 15.67 16.67 16.12 16.62C16.57 16.58 17.56 16.03 17.76 15.45C17.96 14.88 17.96 14.39 17.9 14.28C17.84 14.18 17.68 14.12 17.43 14C17.18 13.88 15.96 13.27 15.73 13.19C15.5 13.11 15.34 13.07 15.17 13.31C15 13.56 14.53 14.12 14.39 14.28C14.24 14.45 14.1 14.47 13.85 14.35C13.6 14.22 12.81 13.97 11.87 13.13C11.14 12.48 10.65 11.67 10.5 11.43C10.36 11.18 10.49 11.05 10.61 10.92C10.72 10.81 10.86 10.63 10.98 10.48C11.11 10.34 11.15 10.23 11.23 10.07C11.31 9.91 11.27 9.77 11.21 9.65C11.15 9.53 10.65 8.31 10.45 7.82C10.25 7.34 10.05 7.4 9.9 7.4C9.75 7.4 9.53 7.34 9.53 7.34Z"/></svg>
+          <span>🟢 فتح واتساب وإرسال كود التوثيق</span>
+        </a>
+
+        <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:10px 12px;text-align:center;margin-bottom:12px">
+          <div style="font-size:11.5px;color:#166534;font-weight:800;margin-bottom:2px">كود التوثيق الخاص بك:</div>
+          <div id="pvDisplayCode" style="font-size:26px;font-weight:900;letter-spacing:8px;color:#059669;font-family:monospace;margin:2px 0">----</div>
+          <div style="font-size:11px;color:#047857;line-height:1.4">
+            اضغط على الزر الأخضر أعلاه ليفتح واتساب ويرسل الكود، ثم اضغط تأكيد بالأسفل.
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-size:12.5px;font-weight:800;color:var(--text);display:block;margin-bottom:6px;text-align:center">🔑 اكتب كود التحقق (4 أرقام)</label>
+          <input id="pvOtpCode" type="text" inputmode="numeric" maxlength="4" placeholder="• • • •" oninput="if(typeof onPvOtpInput==='function')onPvOtpInput(this)" style="width:100%;box-sizing:border-box;padding:12px;border:2px solid #059669;border-radius:12px;font-size:24px;letter-spacing:10px;text-align:center;font-weight:900;background:var(--card);color:var(--text);font-family:monospace">
+        </div>
+        <button id="pvConfirmBtn" type="button" onclick="confirmPvOtp()" style="width:100%;box-sizing:border-box;padding:13px;border-radius:12px;font-size:14.5px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)">
+          <span>✅</span> <span>تأكيد وتوثيق الرقم الآن</span>
+        </button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px">
+          <button type="button" onclick="backToPvPhoneStep()" style="background:none;border:none;color:var(--muted);font-weight:700;cursor:pointer;padding:4px 6px">✏️ تغيير الرقم</button>
+          <button id="pvResendBtn" type="button" onclick="sendPvOtp()" style="background:none;border:none;color:#059669;font-weight:800;cursor:pointer;padding:4px 6px">🔄 إعادة توليد الكود</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Overlay حسابي -->
 
@@ -797,7 +996,7 @@ window.openInbox = window.openInbox || function() {
 
       <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)">حسابي</h3>
 
-      <button type="button" onclick="closeOverlay()" style="width:30px;height:30px;border-radius:50%;border:none;background:#f1f5f9;color:var(--text);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" title="إغلاق">✕</button>
+      <button type="button" onclick="closeOverlay()" class="universalCloseBtn" title="إغلاق">✕</button>
 
     </div>
 
@@ -805,7 +1004,7 @@ window.openInbox = window.openInbox || function() {
 
   <!-- 🌟 كرت الملف الشخصي البارز في أعلى القائمة (عند الضغط عليه يفتح بروفايل فيسبوك الكامل) -->
 
-  <div class="accountProfileHeaderCard" onclick="openMyProfile()" style="background:linear-gradient(135deg,#0284c7,#0369a1);border-radius:16px;padding:14px 16px;color:#fff;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 14px rgba(2,132,199,0.3);position:relative">
+  <div id="accountProfileHeaderCard" class="accountProfileHeaderCard" onclick="openMyProfile()" style="background:linear-gradient(135deg,#0284c7,#0369a1);border-radius:16px;padding:14px 16px;color:#fff;display:flex;align-items:center;gap:14px;cursor:pointer;margin-bottom:14px;box-shadow:0 4px 14px rgba(2,132,199,0.3);position:relative;overflow:hidden">
 
     <div id="accountAvatarCircle" style="width:54px;height:54px;border-radius:50%;background:#fff;color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;border:3px solid rgba(255,255,255,0.8);overflow:hidden;flex:0 0 auto">👤</div>
 
@@ -820,6 +1019,18 @@ window.openInbox = window.openInbox || function() {
       </div>
 
       <div id="accountUsername" style="font-size:12.5px;opacity:0.9;direction:ltr;text-align:right;margin-top:2px;font-weight:700">@username</div>
+
+      <!-- 🛡️ شارة توثيق الحساب برقم الهاتف -->
+      <div id="accountPhoneVerifiedBadge" style="display:none;font-size:11.5px;background:#10b981;color:#fff;padding:3px 10px;border-radius:14px;font-weight:900;align-items:center;gap:5px;margin-top:5px;width:fit-content;box-shadow:0 2px 6px rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.4)">
+        <span>🛡️ موثّق برقم واتساب:</span>
+        <span id="accountPhoneVerifiedNum" style="direction:ltr;font-family:sans-serif;font-weight:900"></span>
+        <span>✅</span>
+      </div>
+      <!-- 📧 شارة إيميل Google المرتبط (تظهر لصاحب الحساب فقط في شاشة حسابي) -->
+      <div id="accountLinkedEmailBadge" style="display:none;font-size:11px;background:rgba(255,255,255,0.22);color:#fff;padding:3px 10px;border-radius:12px;font-weight:800;align-items:center;gap:5px;margin-top:5px;width:fit-content;border:1px solid rgba(255,255,255,0.45);backdrop-filter:blur(4px)">
+        <span>🔗 حساب Google المرتبط:</span>
+        <span id="accountLinkedEmailText" style="direction:ltr;font-family:sans-serif;font-weight:800"></span>
+      </div>
 
       <div style="font-size:11.5px;color:#bae6fd;margin-top:3px;display:flex;align-items:center;gap:4px">
 
@@ -1429,6 +1640,7 @@ window.openInbox = window.openInbox || function() {
 <input id="directProfileCoverInput" type="file" accept="image/*" class="hidden" onchange="handleDirectProfileCoverUpload(event)">
 
 <button class="btnMain" id="editStoreSubmitBtn" onclick="saveStoreEdits()" style="background:#16a34a">💾 حفظ التعديلات</button>
+<button type="button" class="btnGhost" id="editStoreDeleteBtn" onclick="deleteStore(editStoreCurrentId)" style="color:#ef4444;border:1.5px solid #fca5a5;margin-top:10px;font-weight:800;background:#fff5f5">🗑️ حذف هذا المتجر بالكامل</button>
 
 <button class="btnGhost" onclick="closeOverlay()">إلغاء</button>
 
@@ -1520,7 +1732,7 @@ window.openInbox = window.openInbox || function() {
 
 <div id="cartOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh;overflow-y:auto">
 
-<h3 style="text-align:center">🛒 سلتك</h3>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)"><div style="width:32px"></div><h3 style="margin:0;font-size:16px;font-weight:900;text-align:center">🛒 سلتك</h3><button type="button" class="universalCloseBtn" onclick="closeOverlay()" title="إغلاق">✕</button></div>
 
 <div class="cartStoreLine" id="cartStoreLine" style="display:none">🏪 <span id="cartStoreName"></span></div>
 
@@ -1656,7 +1868,7 @@ window.openInbox = window.openInbox || function() {
 
         <button type="button" id="trackerRefreshBtn" onclick="if(_currentTrackingOrderId)refreshTrackingOrder(_currentTrackingOrderId)" style="border:1px solid var(--border);background:var(--card);border-radius:8px;padding:5px 8px;font-size:11.5px;cursor:pointer;font-weight:700" title="تحديث فوري">🔄 تحديث</button>
 
-        <button class="iconBtn" onclick="closeOrderTracker()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+        <button type="button" class="universalCloseBtn" onclick="closeOrderTracker()" title="إغلاق">✕</button>
 
       </div>
 
@@ -1678,7 +1890,7 @@ window.openInbox = window.openInbox || function() {
         <h3 style="margin:0;font-size:16.5px;font-weight:900;display:flex;align-items:center;gap:6px">📜 سجل وجباتي في المطاعم</h3>
         <p style="margin:3px 0 0;font-size:11.5px;color:var(--muted)">جميع طلبياتك السابقة مع إمكانية النسخ وإعادة الطلب والتقييم</p>
       </div>
-      <button class="iconBtn" onclick="closeFoodOrdersModal()" style="border:none;background:var(--bg);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text)">✕</button>
+      <button type="button" class="universalCloseBtn" onclick="closeFoodOrdersModal()" title="إغلاق">✕</button>
     </div>
     <div id="foodOrdersContent"></div>
   </div>
@@ -1691,7 +1903,7 @@ window.openInbox = window.openInbox || function() {
   <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:24px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
       <h3 style="margin:0;font-size:16px;font-weight:900;display:flex;align-items:center;gap:6px">⭐ تقييم الوجبة بعد الوصول</h3>
-      <button class="iconBtn" onclick="closeFoodOrderRatingModal()" style="border:none;background:var(--bg);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:var(--text)">✕</button>
+      <button type="button" class="universalCloseBtn" onclick="closeFoodOrderRatingModal()" title="إغلاق">✕</button>
     </div>
     <div id="foodOrderRatingForm"></div>
   </div>
@@ -1732,7 +1944,7 @@ window.openInbox = window.openInbox || function() {
 
         <button type="button" id="rloSoundToggle" onclick="toggleCashierSound()" style="border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;font-weight:700">🔔 رنين</button>
 
-        <button type="button" onclick="closeRestaurantLiveOrders()" style="width:30px;height:30px;border-radius:50%;border:none;background:#f1f5f9;color:var(--text);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" title="إغلاق">✕</button>
+        <button type="button" onclick="closeRestaurantLiveOrders()" class="universalCloseBtn" title="إغلاق">✕</button>
 
       </div>
 
@@ -1826,7 +2038,7 @@ window.openInbox = window.openInbox || function() {
 
       <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">⚡ شحن رصيد المحفظة</h3>
 
-      <button class="iconBtn" onclick="closeRechargeModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+      <button type="button" class="universalCloseBtn" onclick="closeRechargeModal()" title="إغلاق">✕</button>
 
     </div>
 
@@ -1936,7 +2148,7 @@ window.openInbox = window.openInbox || function() {
 
       <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">📜 كشف حساب محفظتي</h3>
 
-      <button class="iconBtn" onclick="closeMyWalletHistory()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+      <button type="button" class="universalCloseBtn" onclick="closeMyWalletHistory()" title="إغلاق">✕</button>
 
     </div>
 
@@ -1988,7 +2200,7 @@ window.openInbox = window.openInbox || function() {
 
       </div>
 
-      <button class="iconBtn" onclick="closeAdminWallet()" style="border:none;background:none;font-size:20px;cursor:pointer">✕</button>
+      <button type="button" class="universalCloseBtn" onclick="closeAdminWallet()" title="إغلاق">✕</button>
 
     </div>
 
@@ -2328,7 +2540,7 @@ window.openInbox = window.openInbox || function() {
 
       <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)" id="followersModalTitle">المتابعون والأصدقاء</h3>
 
-      <div style="width:32px"></div>
+      <button type="button" onclick="closeFollowersModal()" class="universalCloseBtn" title="إغلاق">✕</button>
 
     </div>
 
@@ -2362,7 +2574,7 @@ window.openInbox = window.openInbox || function() {
 
       <h3 style="margin:0;font-size:16px;font-weight:900;color:var(--text)" id="sellerHeaderTitle">الملف الشخصي</h3>
 
-      <button type="button" onclick="backFromSeller()" style="width:30px;height:30px;border-radius:50%;border:none;background:#f1f5f9;color:var(--text);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" title="إغلاق">✕</button>
+      <button type="button" onclick="backFromSeller()" class="universalCloseBtn" title="إغلاق">✕</button>
 
     </div>
 
@@ -2596,7 +2808,7 @@ window.openInbox = window.openInbox || function() {
 
   <div class="sheet" style="max-width:420px;padding:20px;text-align:center">
 
-    <button onclick="closeLuckyWheel()" style="position:absolute;top:14px;left:14px;background:rgba(0,0,0,.08);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;z-index:10;">×</button>
+    <button type="button" class="universalCloseBtn" onclick="closeLuckyWheel()" style="position:absolute;top:14px;left:14px;z-index:10" title="إغلاق">✕</button>
 
     <div id="wheelActiveState">
 
@@ -2666,7 +2878,7 @@ window.openInbox = window.openInbox || function() {
 
     <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:20px;text-align:center;position:relative">
 
-      <button onclick="closeOverlay()" style="position:absolute;top:14px;left:14px;background:rgba(255,255,255,.2);border:none;width:32px;height:32px;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;">×</button>
+      <button type="button" class="universalCloseBtn" onclick="closeOverlay()" style="position:absolute;top:14px;left:14px;z-index:10" title="إغلاق">✕</button>
 
       <div style="font-size:50px;margin-bottom:6px">🏆</div>
 
@@ -2923,6 +3135,10 @@ window.openInbox = window.openInbox || function() {
         <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0911868439" oninput="normalizePhoneInput()" style="font-size:15px">
 
         <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0911868439</b>) وسيتم تثبيته بحسابك وإعلاناتك</div>
+        <div style="display:flex;align-items:center;gap:6px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:6px 10px;margin-top:6px">
+          <span style="font-size:16px">🛡️</span>
+          <span style="font-size:11.5px;color:#047857;font-weight:800">توثيق الحساب مجاني 100%: بمجرد حفظ رقم هاتفك يصبح حسابك موثقاً رسمياً لدى كل الزوار</span>
+        </div>
 
       </div>
 
@@ -2952,7 +3168,10 @@ window.openInbox = window.openInbox || function() {
 
       </div>
 
-      <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:14px;padding:9px" onclick="saveMyPhone()">📱 حفظ رقم الهاتف</button>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btnGhost accountBtn" style="flex:1;margin:0;padding:10px;font-weight:800" onclick="saveMyPhone()">💾 حفظ الرقم</button>
+        <button class="btnMain accountBtn" style="flex:1.4;margin:0;padding:10px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(5,150,105,0.2)" onclick="openPhoneVerificationModal()"><span>💬</span> <span>توثيق عبر واتساب</span></button>
+      </div>
 
       <button type="button" class="btnMain" style="margin-top:8px;margin-bottom:0;width:100%;font-weight:900;padding:14px;border-radius:12px;font-size:15px" onclick="saveAllProfileData()">💾 حفظ جميع التعديلات</button>
 
@@ -3186,7 +3405,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=181"></script>
+<script type="module" src="app.js?v=219"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
@@ -3511,7 +3730,7 @@ window.openInbox = window.openInbox || function() {
     <div id="reelsCommentsSheet" class="reelsCommentsSheet hidden" onclick="event.stopPropagation()">
       <div class="reelsCommentsHeader">
         <h4 style="margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px">💬 التعليقات (<span id="reelsCommentsHeaderCount">0</span>)</h4>
-        <button type="button" class="reelsTopBtn" style="background:#f1f5f9;color:#333;width:28px;height:28px;font-size:13px" onclick="closeReelsComments()" title="إغلاق التعليقات">✕</button>
+        <button type="button" class="universalCloseBtn" onclick="closeReelsComments()" title="إغلاق التعليقات">✕</button>
       </div>
       <div class="reelsCommentsList" id="reelsCommentsList">
         <div class="reportsEmpty" style="padding:20px;text-align:center">لا توجد تعليقات بعد، كن أول من يعلق!</div>
@@ -3612,7 +3831,7 @@ window.openInbox = window.openInbox || function() {
           <span style="font-size:11.5px;color:var(--muted)">تسوق الآن • خيارات سريعة</span>
         </div>
       </div>
-      <button type="button" class="smdCloseBtn" onclick="closeSideMenu()" title="إغلاق">✕</button>
+      <button type="button" class="universalCloseBtn smdCloseBtn" onclick="closeSideMenu()" title="إغلاق">✕</button>
     </div>
 
     <!-- كارت المستخدم السريع أو الترحيب -->
