@@ -33,7 +33,7 @@ window.location.replace("https://tasawuqnow.com"+window.location.hash+window.loc
 <script>
 
 if ('serviceWorker' in navigator) {
-  var isDevServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.port === '5500';
+  var isDevServer = window.location.hostname !== 'tasawuqnow.com' && window.location.hostname !== 'www.tasawuqnow.com' && !window.location.hostname.includes('github.io');
   if (isDevServer) {
     navigator.serviceWorker.getRegistrations().then(function(regs) {
       for (var reg of regs) { reg.unregister(); }
@@ -44,15 +44,12 @@ if ('serviceWorker' in navigator) {
       });
     }
   } else {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=216').then(function(reg) {
-      reg.update();
-    }).catch(function(e){ console.warn('SW reg error:', e); });
-  });
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js?v=230').then(function(reg) {
+        reg.update();
+      }).catch(function(e){ console.warn('SW reg error:', e); });
+    });
   }
-  navigator.serviceWorker.addEventListener('controllerchange', function() {
-    window.location.reload();
-  });
 }
 
 </script>
@@ -91,7 +88,7 @@ window.openInbox = window.openInbox || function() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=216">
+<link rel="stylesheet" href="style.css?v=230">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -129,7 +126,7 @@ window.openInbox = window.openInbox || function() {
 
 <button onclick="skipVideoSplash()" style="position:absolute;top:20px;left:20px;z-index:1000000;background:rgba(0,0,0,0.6);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:8px 16px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">تخطي ✕</button>
 
-<video id="splashVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+<video id="splashVideo" autoplay muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
 
 <source src="1000068463.mp4" type="video/mp4">
 
@@ -1138,16 +1135,16 @@ window.openInbox = window.openInbox || function() {
 
   </div>
 
-  <div class="accountEmail" id="accountStore" style="display:none;background:#fff7e6;color:#92400e;font-weight:800;padding:8px 12px;border-radius:10px;text-align:center;font-size:14px"></div>
+  <div class="accountEmail" id="accountStore" style="display:none!important"></div>
 
   <!-- شارات خفية للحفاظ على استقرار الكود البرمجي -->
   <span id="accountChatBadge" style="display:none">0</span>
   <span id="accountNotifBadge" style="display:none">0</span>
 
-  <!-- 🏪 المتجر -->
-  <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e">🏪 فتح متجر</button>
+  <!-- 🏪 المتجر لجميع المستخدمين -->
+  <button class="btnGhost" id="openStoreBtn" onclick="startOpenStore()" style="background:#fff7e6;color:#92400e;font-weight:800;display:block;width:100%">🏪 فتح متجر</button>
 
-  <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;display:none">🏪 متجري</button>
+  <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;font-weight:800;display:none;width:100%">🏪 متجري</button>
 
   <button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
 
@@ -3405,7 +3402,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=219"></script>
+<script type="module" src="app.js?v=230"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
