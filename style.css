@@ -1146,6 +1146,9 @@ html.dark-mode .storeCatTile.active {
   border: 1px solid var(--border);
   box-shadow: 0 4px 14px rgba(0,0,0,.06);
   z-index: 2;
+  box-sizing: border-box;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
 }
 .kshHead {
   display: flex;
@@ -2577,17 +2580,21 @@ html.dark-mode .chatBubble.incoming .chatTime {
   font-weight: 600;
 }
 .fbActionsGrid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .fbBtnAction {
-  flex: 1;
-  min-width: 130px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   height: 42px;
   border-radius: 10px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2595,6 +2602,11 @@ html.dark-mode .chatBubble.incoming .chatTime {
   cursor: pointer;
   border: none;
   transition: all .2s;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
 }
 .fbBtnAction.primary {
   background: linear-gradient(135deg, #0284c7, #0369a1);
@@ -5393,22 +5405,30 @@ html.dark-mode .storeLuxTabBtn.active {
    🛍️ STORE FRONT ACTION BUTTONS & COMPACT TOOL ROWS
    ============================================================ */
 .storeActionRowPrimary {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   margin-bottom: 8px;
 }
 .storeActionRowSecondary {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
   gap: 6px;
-  flex-wrap: wrap;
-  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-items: stretch;
   margin-bottom: 12px;
 }
 .storeActionBtn {
-  flex: 1;
-  min-width: 82px;
-  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 8px 6px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 800;
@@ -5424,6 +5444,13 @@ html.dark-mode .storeLuxTabBtn.active {
   font-family: inherit;
   transition: all 0.15s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.storeActionBtn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .storeActionBtn:hover {
@@ -5452,8 +5479,8 @@ html.dark-mode .storeLuxTabBtn.active {
   border: 1px solid #bae6fd;
 }
 .storeActionBtn.btnBank.btnBankCompact {
-  min-width: 70px;
-  padding: 7px 8px;
+  min-width: 0;
+  padding: 8px 6px;
   font-size: 11.5px;
 }
 .storeActionBtn.btnBank.active {
@@ -5482,19 +5509,22 @@ html.dark-mode .storeActionBtn.btnReceipt {
   border-color: #059669;
 }
 .storeActionBtn.btnShare {
-  flex: 0 0 38px;
-  min-width: 38px;
-  padding: 0;
-  height: 38px;
+  min-width: 0;
+  padding: 8px 6px;
+  height: auto;
   font-size: 15px;
 }
 
 .storeToolBtn {
-  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 6px 11px;
+  gap: 4px;
+  padding: 7px 6px;
   border-radius: 9px;
   font-size: 11.5px;
   font-weight: 800;
@@ -5504,6 +5534,13 @@ html.dark-mode .storeActionBtn.btnReceipt {
   color: var(--text);
   font-family: inherit;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.storeToolBtn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .storeToolBtn:hover {
@@ -5537,6 +5574,9 @@ html.dark-mode .storeToolBtn.toolBtnPrimary {
   border-radius: 14px;
   margin-bottom: 12px;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
 }
 html.dark-mode .storeLuxPane {
   background: #131b2e;
@@ -6509,4 +6549,206 @@ html.dark-mode .smdCloseBtn,
 .storyModalClose:hover {
   background: rgba(0,0,0,0.7) !important;
   border-color: #ffffff !important;
+}
+
+
+/* ==========================================================================
+   📱🌐 محرك التوافق التام للأزرار في جميع الأجهزة (أندرويد، آيفون، تابلت، لابتوب، كمبيوتر)
+   يضمن ملاءمة الأزرار داخل مربعاتها 100% ومنع أي خروج أو كسر في التصميم
+   ========================================================================== */
+
+/* 1. القواعد العامة الصارمة لجميع أزرار وحاويات المنصة */
+button, 
+.btnMain, 
+.btnGhost, 
+.storeActionBtn, 
+.storeToolBtn, 
+.fbBtnAction, 
+.fbPostActBtn, 
+.waBtn, 
+.callBtn, 
+.cartAddBtn, 
+.iconBtn2 {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.storeActionRowPrimary,
+.storeActionRowSecondary,
+.fbActionsGrid,
+.fbPostActions,
+.kshInfo,
+.storeLuxPane {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* 2. الهواتف الصغيرة جداً (أندرويد وآيفون: الشاشات أقل من 380px) */
+@media screen and (max-width: 380px) {
+  .kshInfo {
+    margin: -36px 6px 0 !important;
+    padding: 10px 8px !important;
+    max-width: calc(100% - 12px) !important;
+    overflow: hidden !important;
+  }
+  .storeActionRowPrimary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px !important;
+  }
+  .storeActionRowSecondary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px !important;
+  }
+  .storeActionBtn {
+    padding: 7px 3px !important;
+    font-size: 10.5px !important;
+    gap: 3px !important;
+  }
+  .storeToolBtn {
+    padding: 6px 3px !important;
+    font-size: 10px !important;
+    gap: 3px !important;
+  }
+  .storeActionBtn.btnShare {
+    grid-column: span 2 !important;
+    padding: 6px !important;
+  }
+  .fbActionsGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px !important;
+  }
+  .fbBtnAction {
+    font-size: 11px !important;
+    height: 36px !important;
+    padding: 0 4px !important;
+  }
+  .fbPostActions {
+    gap: 4px !important;
+  }
+  .fbPostActBtn {
+    font-size: 10.5px !important;
+    padding: 6px 3px !important;
+  }
+}
+
+/* 3. الهواتف الذكية القياسية (أندرويد وآيفون: من 381px إلى 480px) */
+@media screen and (min-width: 381px) and (max-width: 480px) {
+  .kshInfo {
+    margin: -36px 8px 0 !important;
+    padding: 12px 10px !important;
+    max-width: calc(100% - 16px) !important;
+    overflow: hidden !important;
+  }
+  .storeActionRowPrimary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .storeActionRowSecondary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .storeActionBtn {
+    padding: 8px 4px !important;
+    font-size: 11.5px !important;
+    gap: 4px !important;
+  }
+  .storeToolBtn {
+    padding: 7px 4px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .storeActionBtn.btnShare {
+    grid-column: span 2 !important;
+  }
+  .fbActionsGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .fbBtnAction {
+    font-size: 12px !important;
+    height: 38px !important;
+    padding: 0 6px !important;
+  }
+}
+
+/* 4. الشاشات المتوسطة والأجهزة القابلة للطي والتابلت (481px إلى 768px) */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .storeActionRowPrimary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .storeActionRowSecondary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .storeActionBtn {
+    padding: 8px 8px !important;
+    font-size: 12px !important;
+  }
+  .storeToolBtn {
+    padding: 8px 8px !important;
+    font-size: 11.5px !important;
+  }
+  .fbActionsGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* 5. شاشات الحواسيب المحمولة والشاشات الكبيرة واللابتوب (أكبر من 769px) */
+@media screen and (min-width: 769px) {
+  .storeActionRowPrimary {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .storeActionRowSecondary {
+    grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .storeActionBtn {
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+  }
+  .storeToolBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+  .fbActionsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+
+/* ============================================================
+   🎯 حماية وتنسيق استجابة كافة الأزرار عبر جميع الشاشات
+   (أندرويد، آيفون، لابتوب، كمبيوتر) لمنع خروج الأزرار خارج مربعاتها
+   ============================================================ */
+.btnMain, .btnGhost, .btnSecondary, .btnSub, .rscCallBtn, .storeBankCopyBtn {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  text-align: center !important;
+}
+
+.rscCallBtn {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+@media screen and (max-width: 480px) {
+  .storeCard {
+    flex-wrap: wrap !important;
+  }
+  .storeBankCopyBtn {
+    margin-right: 0 !important;
+    margin-top: 6px !important;
+    width: 100% !important;
+  }
 }
