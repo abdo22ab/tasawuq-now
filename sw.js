@@ -1,5 +1,5 @@
 // تسوق الآن - Service Worker للعمل أوفلاين ومتوافق مع معايير PWA
-const CACHE_NAME = 'tasawuq-cache-v74';
+const CACHE_NAME = 'tasawuq-cache-v85';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -39,6 +39,10 @@ self.addEventListener('activate', event => {
 // 3. استراتيجية Network-First مع الرجوع للكاش عند انقطاع النت
 self.addEventListener('fetch', event => {
   const req = event.request;
+  const url = req.url || '';
+  if (url.includes(':5000') || url.includes(':5500') || url.includes('172.') || url.includes('192.168.') || url.includes('localhost') || url.includes('127.0.0.1')) {
+    return;
+  }
   // استثناء طلبات قواعد البيانات والـ API لتعمل دائماً مباشرة
   if (req.method !== 'GET' || req.url.includes('supabase.co') || req.url.includes('firebaseio.com') || req.url.includes('onesignal.com')) {
     return;
