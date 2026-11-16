@@ -105,7 +105,6 @@ window.isUserAdmin = function(u, prof){
   const user = u || (typeof auth !== 'undefined' ? auth.currentUser : null);
   const p = prof || (typeof myProfile !== 'undefined' ? myProfile : null);
   if(!user && !p) {
-    if(typeof isAdmin !== 'undefined' && isAdmin) return true;
     return false;
   }
 
@@ -118,10 +117,7 @@ window.isUserAdmin = function(u, prof){
   if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) { isAdmin = true; return true; }
   if(p && p.email && p.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) { isAdmin = true; return true; }
 
-  // 3. فحص اسم المستخدم واسم الأدمن
-  if(p && (p.username === 'abd' || p.name === 'Abdo Alkera')) { isAdmin = true; return true; }
-
-  // 4. فحص أرقام هواتف وواتساب الإدارة
+  // 3. فحص أرقام هواتف وواتساب الإدارة المعتمدة بدقة
   const phoneVal = (p && (p.phone || p.local_phone || p.localPhone || p.phoneNumber)) || 
                    (user && user.phoneNumber) || 
                    (user && user.email && user.email.startsWith("wa_") && user.email.replace("wa_", "").replace("@tasawuq.ly", "")) || 
@@ -129,21 +125,17 @@ window.isUserAdmin = function(u, prof){
   const cl = String(phoneVal).replace(/[^0-9]/g, "");
   if(cl && (ADMIN_PHONES.includes(cl) || ADMIN_PHONES.some(ap => cl.endsWith(ap.slice(-8))))) { isAdmin = true; return true; }
 
-  // 5. فحص تابعية المعرف لعبدو الكرا
+  // 4. فحص تابعية المعرف لعبدو الكرا
   if(typeof isAbdoUser === 'function'){
     if(user && isAbdoUser(user.uid)) { isAdmin = true; return true; }
     if(p && (isAbdoUser(p.uid) || isAbdoUser(p.originalUid))) { isAdmin = true; return true; }
   }
-
-  // 6. التحقق من المتغير العام
-  if(typeof isAdmin !== 'undefined' && isAdmin) return true;
 
   return false;
 };
 
 // ✅ صلاحية إدارة المتاجر والمطاعم الموحدة (للأدمن صلاحية مطلقة + المالك وعمال المتجر)
 window.canUserManageStore = function(store){
-  if(!store) return false;
   const me = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
   const prof = (typeof myProfile !== 'undefined') ? myProfile : null;
   
@@ -151,6 +143,7 @@ window.canUserManageStore = function(store){
   if(typeof window.isUserAdmin === 'function' && window.isUserAdmin(me, prof)) return true;
   if(typeof isAdmin !== 'undefined' && isAdmin) return true;
 
+  if(!store) return false;
   if(!me) return false;
 
   // 2. صاحب المتجر المباشر
@@ -185,20 +178,27 @@ window.isUserPhoneVerified = function(u, prof){
   // 1. الأدمن عبدو الكرا موثق دائماً بدون أدنى شك
   if(typeof window.isUserAdmin === 'function' && window.isUserAdmin(user, p)) return true;
   if(user && (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2')) return true;
+  if(typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(user, p)) return true;
 
-  // 2. إذا كانت علامة التوثيق مسجلة بالبروفايل
-  if(p && (p.phone_verified === true || p.whatsapp_verified === true)) return true;
-
-  // 3. أي مستخدم سجل دخوله عبر واتساب فهو موثق تلقائياً لأنه تحقق برمز OTP
+  // 2. أي مستخدم مسجل عبر واتساب أو الهاتف فهو موثق تلقائياً ومطلقاً
   if(user){
     if(user.phoneNumber) return true;
     if(user.email && (user.email.startsWith("wa_") || user.email.includes("whatsapp"))) return true;
   }
 
-  // 4. إذا كان هناك رقم هاتف مسجل ومحفوظ في البروفايل
+  // 3. إذا كانت علامة التوثيق مسجلة بالبروفايل
+  if(p && (p.phone_verified === true || p.whatsapp_verified === true || p.phoneVerified === true)) return true;
+
+  // 4. إذا كان هناك رقم هاتف مسجل ومحفوظ في البروفايل أو الكاش المحلي
   const ph = (p && (p.phone || p.local_phone || p.localPhone)) || "";
   const cl = String(ph).replace(/[^0-9]/g, "");
   if(cl.length >= 8) return true;
+
+  if(user && user.uid){
+    if(localStorage.getItem("tasawuq_phone_verified_" + user.uid) === "1") return true;
+    const cProf = window.sellersProfileCache && window.sellersProfileCache[user.uid];
+    if(cProf && (cProf.phone_verified || cProf.whatsapp_verified || (cProf.phone && String(cProf.phone).replace(/[^0-9]/g, '').length >= 8))) return true;
+  }
 
   return false;
 };
@@ -215,9 +215,26 @@ window.isAbdoMedia = isAbdoMedia;
 
 function isAbdoUser(uid) {
   if (!uid || typeof uid !== 'string') return false;
-  return ABDO_UIDS.includes(uid);
+  if (ABDO_UIDS.includes(uid)) return true;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
+  const prof = (typeof myProfile !== 'undefined') ? myProfile : null;
+  if (me && me.uid === uid && (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, prof) : false)) return true;
+  if (prof && prof.id === uid && (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, prof) : false)) return true;
+  return false;
 }
 window.isAbdoUser = isAbdoUser;
+
+function isAbdoAccount(user, prof) {
+  if (!user && !prof) return false;
+  const uid = (user && user.uid) || (prof && prof.id) || '';
+  if (uid && isAbdoUser(uid)) return true;
+  const email = ((user && user.email) || (prof && prof.email) || '').toLowerCase();
+  if (email && (email === 'abdoalk73@gmail.com' || email.includes('abdoalk73') || email.includes('928476784'))) return true;
+  const ph = ((user && user.phoneNumber) || (prof && prof.phone) || '').replace(/[^0-9]/g, '');
+  if (ph && (ph === '218928476784' || ph === '0928476784' || ph.endsWith('928476784'))) return true;
+  return false;
+}
+window.isAbdoAccount = isAbdoAccount;
 
 function sanitizeCorruptedSellerMedia() {
   try {
@@ -247,9 +264,30 @@ function sanitizeCorruptedSellerMedia() {
         if (p) {
           if (isAbdoMedia(p.avatar)) p.avatar = null;
           if (isAbdoMedia(p.cover)) p.cover = null;
+          if (p.name === "Abdo Alkera") p.name = "عضو تسوق الآن";
+          if (p.username === "abd") p.username = null;
+          if (p.phone && p.phone.includes("928476784")) p.phone = null;
         }
       }
     });
+  }
+
+  if (typeof myProfile !== 'undefined' && myProfile && !isAbdoAccount(null, myProfile)) {
+    let touched = false;
+    if (isAbdoMedia(myProfile.avatar)) { myProfile.avatar = null; touched = true; }
+    if (isAbdoMedia(myProfile.cover)) { myProfile.cover = null; touched = true; }
+    if (myProfile.name === "Abdo Alkera") { myProfile.name = "عضو تسوق الآن"; touched = true; }
+    if (myProfile.username === "abd") { myProfile.username = null; touched = true; }
+    if (myProfile.phone && myProfile.phone.includes("928476784")) { myProfile.phone = null; touched = true; }
+    if (touched && typeof supabase !== 'undefined' && supabase && myProfile.id) {
+      supabase.from("profiles").update({
+        avatar: myProfile.avatar,
+        cover: myProfile.cover,
+        name: myProfile.name,
+        username: myProfile.username,
+        phone: myProfile.phone
+      }).eq("id", myProfile.id).catch(()=>{});
+    }
   }
 
   if (Array.isArray(window.allPosts)) {
@@ -322,9 +360,8 @@ window.getCandidateUids = function(uid){
     const cleanPh = ((prof && prof.phone) || (me && me.phoneNumber) || (me && me.email) || '').replace(/[^0-9]/g, '');
     const isAbdo = list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
                    list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                   cleanPh.includes('928476784') || 
-                   (prof && prof.username === 'abd') ||
-                   (me && me.email && (me.email.includes('abdoalk73') || me.email.includes('928476784')));
+                   cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784') || 
+                   (me && me.email && (me.email.toLowerCase() === 'abdoalk73@gmail.com' || me.email.includes('928476784')));
 
     if(isAbdo){
       if(!list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) list.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
@@ -375,11 +412,13 @@ window.isPostMine = function(p, allowStore = false){
   
   // Abdo master UIDs
   const cleanPh = ((prof && prof.phone) || (me && me.phoneNumber) || (me && me.email) || '').replace(/[^0-9]/g, '');
-  const isAbdo = (prof && (prof.phone === '218928476784' || prof.username === 'abd')) || 
-                 (me && (me.email === 'abdoalk73@gmail.com' || (me.email && me.email.includes('928476784')) || me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2')) ||
-                 candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') ||
-                 candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-  if(isAbdo && (p.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || p.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2')) return true;
+  const isAbdo = (typeof window.isAbdoAccount === 'function')
+                 ? window.isAbdoAccount(me, prof)
+                 : (cleanPh.includes('928476784') || 
+                    (me && (me.email === 'abdoalk73@gmail.com' || (me.email && me.email.includes('928476784')) || me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2')) ||
+                    candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') ||
+                    candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2'));
+  if(isAbdo && (p.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || p.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || p.uid === 'admin_client_1792952590074')) return true;
 
   // 3. مطابقة الهاتف للإعلانات الشخصية القديمة فقط إذا لم يكن الإعلان مملوكاً لمعرف بائع آخر مسجل
   if (!p.uid || candUids.includes(p.uid)) {
@@ -435,10 +474,9 @@ window.resolveAndSyncUserProfile = async function(user){
   // Check if this is Abdo Alkera
   const isAbdo = (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
                   user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                  (user.email && user.email.toLowerCase().includes('abdoalk73')) ||
+                  (user.email && (user.email.toLowerCase() === 'abdoalk73@gmail.com' || user.email.includes('abdoalk73'))) ||
                   (user.email && user.email.includes('928476784')) ||
-                  cleanPh.includes('928476784') ||
-                  (myProfile && myProfile.username === 'abd'));
+                  (cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784')));
 
   if(isAbdo){
     cleanPh = "218928476784";
@@ -555,13 +593,13 @@ window.resolveAndSyncUserProfile = async function(user){
 
   if(!master && !isAbdo) return myProfile;
 
-  const finalName = (master && master.name && master.name !== "مستخدم") ? master.name : (isAbdo ? "Abdo Alkera" : (user.displayName || "عضو تسوق الآن"));
-  const finalUsername = (master && master.username) ? master.username : (isAbdo ? "abd" : "");
-  const finalMemberNo = (master && (master.memberNo != null ? master.memberNo : master.member_no)) || (isAbdo ? 1001 : 1001);
+  const finalName = (master && master.name && master.name !== "مستخدم" && (master.name !== "Abdo Alkera" || isAbdo)) ? master.name : (isAbdo ? "Abdo Alkera" : (user.displayName || "عضو تسوق الآن"));
+  const finalUsername = (master && master.username && (master.username !== "abd" || isAbdo)) ? master.username : (isAbdo ? "abd" : "");
+  const finalMemberNo = (master && (master.memberNo != null ? master.memberNo : master.member_no) && ((master.memberNo || master.member_no) !== 1001 || isAbdo)) || (isAbdo ? 1001 : null);
   const finalPhone = cleanPh || (master && master.phone) || (isAbdo ? "218928476784" : "");
   const finalStoreId = (master && (master.storeId || master.store_id)) || null;
-  const finalAvatar = (master && master.avatar) || (isAbdo ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
-  const finalCover = (master && master.cover) || (isAbdo ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
+  const finalAvatar = (master && master.avatar && (!isAbdoMedia(master.avatar) || isAbdo)) ? master.avatar : (isAbdo ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
+  const finalCover = (master && master.cover && (!isAbdoMedia(master.cover) || isAbdo)) ? master.cover : (isAbdo ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
   const finalEmail = (master && master.email && !master.email.startsWith("wa_")) ? master.email : (user.email || (isAbdo ? "abdoalk73@gmail.com" : ""));
 
   // Set in memory immediately
@@ -3210,62 +3248,15 @@ function getItemCoords(item, indexSeed = 0) {
 
 }
 
-// طلب إذن الـ GPS التلقائي عند الدخول (مرة كل 4 إلى 5 أيام إذا لم يوافق)
-
+// استرجاع الـ GPS المحفوظ بهدوء دون إظهار أي نافذة حظر أو إبطاء التطبيق
 window.checkAndAutoRequestGps = function() {
-
-  const lastPrompt = Number(localStorage.getItem("gps_prompt_last_time") || 0);
-
-  const now = Date.now();
-
-  const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
-
-  // إذا لم يتم طلبه مطلقاً أو مر عليه 4 أيام كاملة
-
-  if (!lastPrompt || (now - lastPrompt > FOUR_DAYS_MS)) {
-
-    localStorage.setItem("gps_prompt_last_time", String(now));
-
-    if (navigator.geolocation) {
-
-      navigator.geolocation.getCurrentPosition(
-
-        (pos) => {
-
-          window.userGpsCoords = {
-
-            lat: pos.coords.latitude,
-
-            lng: pos.coords.longitude,
-
-            timestamp: Date.now()
-
-          };
-
-          try {
-
-            localStorage.setItem("user_gps_coords", JSON.stringify(window.userGpsCoords));
-
-          } catch(e) {}
-
-          updateGpsUI();
-
-        },
-
-        (err) => {
-
-          console.log("GPS dismissed/denied, will ask again in 4 days");
-
-        },
-
-        { enableHighAccuracy: false, timeout: 7000 }
-
-      );
-
+  try {
+    const saved = localStorage.getItem("user_gps_coords");
+    if (saved) {
+      window.userGpsCoords = JSON.parse(saved);
+      if (typeof updateGpsUI === 'function') updateGpsUI();
     }
-
-  }
-
+  } catch(e) {}
 };
 
 window.requestAppGpsLocation = function(showAlert = false) {
@@ -4406,7 +4397,7 @@ if (typeof window !== 'undefined') {
 
 function showCategoriesScreenDirect(){
 
-  showOnlyMine=false;showOnlyFavorites=false;currentSubCategory="الكل";currentStoreFilter=null;
+  showOnlyMine=false;showOnlyFavorites=false;currentCategory="الكل";currentSubCategory="الكل";currentStoreFilter=null;
 
   const cr=document.getElementById("catsRow");
 
@@ -4456,17 +4447,45 @@ function openCategoryDirect(cat){
 
   const sc=document.getElementById("storeScreen");if(sc)sc.classList.add("hidden");
 
+  const searchInp = document.getElementById("searchInput");
+  if(searchInp && searchInp.value) searchInp.value = "";
+
   closeOverlayDirect();setActiveNav("home");setTopbarMode("scroll");
 
   const cr=document.getElementById("catsRow");
 
-  if(cr) cr.classList.toggle("hidden", cat!=="الكل");
+  if(cr) {
+    if(cat === "الكل") cr.classList.remove("hidden");
+    else cr.classList.add("hidden");
+  }
 
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat && !b.classList.contains("storeChip")));
 
   renderSubCats();renderPosts();updateCartUI();window.scrollTo(0,0);
 
   hideFloatingButtons();
+
+  if(cat !== "الكل" && typeof supabase !== 'undefined' && supabase){
+    const cleanCat = cat.replace("دراجات هوائية", "دراجات").replace("دراجات نارية", "دراجات").replace("عقارات للبيع", "عقارات").replace("عقارات للإيجار", "عقارات");
+    supabase.from('posts').select('*').eq('status', 'approved').ilike('category', `%${cleanCat}%`).limit(100).then(({ data, error }) => {
+      if(!error && Array.isArray(data) && data.length){
+        const newPosts = data.map(objectFromDb);
+        const existingIds = new Set(allPosts.map(x => x.id));
+        let added = false;
+        newPosts.forEach(np => {
+          if(!existingIds.has(np.id)){
+            allPosts.push(np);
+            added = true;
+          }
+        });
+        if(added){
+          allPosts = sortPosts(allPosts);
+          window.allPosts = allPosts;
+          renderPosts();
+        }
+      }
+    }).catch(()=>{});
+  }
 
 }
 
@@ -7447,6 +7466,13 @@ const favs=getFavorites();
 
 const me=auth.currentUser;
 
+if(homeTitle){
+  if(showOnlyMine) homeTitle.textContent = "إعلاناتي";
+  else if(showOnlyFavorites) homeTitle.textContent = "المفضلة";
+  else if(currentCategory === "الكل") homeTitle.textContent = "كل الإعلانات";
+  else homeTitle.textContent = "إعلانات " + currentCategory;
+}
+
 // إذا تم اختيار تصنيف المطاعم: عرض المطاعم كدليل وهيكل (غلاف + شعار + اسم)
 
 if(isRestaurantCategory(currentCategory)){
@@ -7515,34 +7541,59 @@ let list=allPosts.filter(p=>{
 
   }
 
-  if(!currentStoreFilter && currentCategory!=="الكل"){
+  if(!currentStoreFilter && currentCategory && currentCategory !== "الكل"){
+    const pCat = (p.category || "").trim();
+    const curCat = currentCategory.trim();
+    
+    // إذا كان القسم فارغاً في الإعلان لا يطابق أي قسم محدد
+    if(!pCat) return false;
 
-    if(p.category!==currentCategory)return false;
-
+    let isMatch = (pCat === curCat);
+    if(!isMatch){
+      if(curCat === "دراجات هوائية"){
+        isMatch = (pCat === "دراجات هوائية" || pCat.includes("هوائية") || pCat === "دراجات");
+      } else if(curCat === "دراجات نارية"){
+        isMatch = (pCat === "دراجات نارية" || pCat.includes("نارية") || pCat.includes("موتوسيكل") || pCat === "دراجات");
+      } else if(curCat === "عقارات للبيع"){
+        isMatch = (pCat === "عقارات للبيع" || (pCat.includes("عقارات") && pCat.includes("بيع")) || pCat === "عقارات");
+      } else if(curCat === "عقارات للإيجار"){
+        isMatch = (pCat === "عقارات للإيجار" || (pCat.includes("عقارات") && pCat.includes("إيجار")) || pCat === "عقارات");
+      } else if(curCat.includes("موبايل") || curCat.includes("هاتف")){
+        isMatch = (pCat.includes("موبايل") || pCat.includes("هاتف") || pCat.includes("تابلت"));
+      } else if(curCat.includes("سيارات") || curCat.includes("مركبات")){
+        isMatch = (pCat.includes("سيارات") || pCat.includes("مركبات") || pCat === "سيارات");
+      } else if(curCat.includes("لابتوب") || curCat.includes("كمبيوتر")){
+        isMatch = (pCat.includes("لابتوب") || pCat.includes("كمبيوتر") || pCat.includes("حاسوب"));
+      } else if(curCat.includes("ألعاب") || curCat.includes("العاب")){
+        isMatch = (pCat.includes("ألعاب") || pCat.includes("العاب") || pCat.includes("فيديو"));
+      } else {
+        isMatch = (pCat === curCat || pCat.toLowerCase() === curCat.toLowerCase());
+      }
+    }
+    if(!isMatch) return false;
   }
 
   if(currentSubCategory!=="الكل"){
+    const sc = currentSubCategory.toLowerCase().trim();
+    const pBrand = (p.brand||"").trim().toLowerCase();
+    const pSubCat = (p.subCategory||"").trim().toLowerCase();
 
-    const sc = currentSubCategory.toLowerCase();
-
-    const matchBrand = (p.brand||"").toLowerCase() === sc;
-
-    const matchSubCat = (p.subCategory||"").toLowerCase().includes(sc) || sc.includes((p.subCategory||"").toLowerCase());
+    const matchBrand = pBrand.length > 0 && (pBrand === sc || pBrand.includes(sc) || sc.includes(pBrand));
+    const matchSubCat = pSubCat.length > 0 && (pSubCat === sc || pSubCat.includes(sc) || sc.includes(pSubCat));
 
     const s = p.specs || {};
+    const subType = (s.subType||"").trim().toLowerCase();
+    const propType = (s.propertyType||"").trim().toLowerCase();
+    const devType = (s.deviceType||"").trim().toLowerCase();
+    const appType = (s.applianceType||"").trim().toLowerCase();
+    const cons = (s.console||"").trim().toLowerCase();
 
     const matchSpecs = (
-
-      (s.subType && (s.subType.toLowerCase().includes(sc) || sc.includes(s.subType.toLowerCase()))) ||
-
-      (s.propertyType && (s.propertyType.toLowerCase().includes(sc) || sc.includes(s.propertyType.toLowerCase()))) ||
-
-      (s.deviceType && (s.deviceType.toLowerCase().includes(sc) || sc.includes(s.deviceType.toLowerCase()))) ||
-
-      (s.applianceType && (s.applianceType.toLowerCase().includes(sc) || sc.includes(s.applianceType.toLowerCase()))) ||
-
-      (s.console && (s.console.toLowerCase().includes(sc) || sc.includes(s.console.toLowerCase())))
-
+      (subType.length > 0 && (subType.includes(sc) || sc.includes(subType))) ||
+      (propType.length > 0 && (propType.includes(sc) || sc.includes(propType))) ||
+      (devType.length > 0 && (devType.includes(sc) || sc.includes(devType))) ||
+      (appType.length > 0 && (appType.includes(sc) || sc.includes(appType))) ||
+      (cons.length > 0 && (cons.includes(sc) || sc.includes(cons)))
     );
 
     const matchSemantic = 
@@ -7950,7 +8001,7 @@ window.openPost = async (id, skipHistory) => {
       : "";
 
     const shareBtn = (!expired)
-      ? `<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"><button class="btnMain" style="flex:1 1 140px;min-width:130px;background:var(--teal-dark);margin-bottom:0" onclick="sharePost('${p.id}')">📤 مشاركة الرابط</button><button class="btnMain" style="flex:1 1 140px;min-width:130px;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;margin-bottom:0;font-weight:700" onclick="openStoryModal('${p.id}')">📸 صورة للستوري</button></div>`
       : "";
 
     const viewsBadge = (isOwner || isAdmin || isMyStorePost) ? `<div class="pViewsBadge">👁️ ${p.views || 0} مشاهدة</div>` : "";
@@ -10867,11 +10918,11 @@ window.openRestaurantLiveOrders=(storeId)=>{
 
   if(!storeId){showToast("⚠️ رقم المطعم غير محدد","error");return;}
 
-  const store=allStores.find(s=>s.id===storeId);
-
   const me=auth.currentUser;
+  const isAdminUser = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof window.isUserAdmin === 'function' && window.isUserAdmin(me, myProfile));
+  const store = (typeof allStores !== 'undefined' && Array.isArray(allStores)) ? allStores.find(s=>s.id===storeId) : null;
 
-  const canManage = (typeof window.canUserManageStore === 'function') ? window.canUserManageStore(store) : ((typeof isAdmin !== 'undefined' && isAdmin) || (me && me.email===ADMIN_EMAIL));
+  const canManage = isAdminUser || ((typeof window.canUserManageStore === 'function') ? window.canUserManageStore(store) : (me && me.email===ADMIN_EMAIL));
 
   if(!canManage){
 
@@ -12242,7 +12293,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
     const isStoreHelperNow = auth.currentUser && typeof isStoreHelper === 'function' && isStoreHelper(storeId, auth.currentUser.email);
 
-    const canManageStore = isAdminUser || isOwnerStore || isStoreHelperNow;
+    const canManageStore = (typeof window.canUserManageStore === 'function') ? window.canUserManageStore(store) : (isAdminUser || isOwnerStore || isStoreHelperNow);
 
     if(store.status!=="approved" && !canManageStore){
 
@@ -12320,11 +12371,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
              ${receiptWaNumber ? `<button class="btnGhost receiptWaBtn" style="width:100%;font-size:12px;color:#0369a1;background:#f0f9ff;border:1px dashed #0ea5e9;padding:9px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-weight:700" onclick="event.stopPropagation();sendReceiptToSeller('${escapeHtml(receiptWaNumber)}','${escapeHtml(store.name||'المطعم')}')">🧾 دفع مصرفي؟ إرسال واصل التحويل عبر واتساب</button>` : ''}`
 
-          : `<div style="display:flex;gap:8px;margin-bottom:8px">
+          : `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
 
-              <button class="btnMain" style="flex:1;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
+              <button class="btnMain" style="flex:1 1 140px;min-width:130px;background:var(--wa);margin-bottom:0;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();openStoreWhatsapp('${escapeHtml(cleanStorePhone)}')">💬 تواصل عبر واتساب</button>
 
-              <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="flex:1;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>
+              <a href="tel:${formatCallPhone(store.phone)}" class="btnMain" style="flex:1 1 140px;min-width:130px;background:var(--call);margin-bottom:0;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px" onclick="event.stopPropagation();incrementWhatsappClick('${escapeHtml(store.id)}','store')">📞 اتصال هاتفي بالمتجر</a>
 
             </div>`)
 
@@ -12546,11 +12597,11 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
             ${canManageStore?`<button class="storeToolBtn" onclick="openEditStore('${store.id}')">⚙️ تعديل المطعم</button>`:""}
 
-            ${canManageStore&&store.status==="approved"?`<button class="storeToolBtn toolBtnPrimary" onclick="goAddStorePost('${store.id}')">➕ إضافة وجبة</button>`:""}
+            ${(canManageStore && (store.status==="approved" || isAdminUser))?`<button class="storeToolBtn toolBtnPrimary" onclick="goAddStorePost('${store.id}')">➕ إضافة وجبة</button>`:""}
 
-            ${canManageStore&&store.status==="approved"?`<button class="storeToolBtn toolBtnAlert" onclick="openRestaurantLiveOrders('${store.id}')">🔔 الطلبات الحية</button>`:""}
+            ${(canManageStore && (store.status==="approved" || isAdminUser))?`<button class="storeToolBtn toolBtnAlert" onclick="openRestaurantLiveOrders('${store.id}')">🔔 الطلبات الحية</button>`:""}
 
-            ${(isAdminUser||isOwnerStore)?`<button class="storeToolBtn" style="color:#ef4444;border-color:#fca5a5;font-weight:800" onclick="deleteStore('${store.id}')">🗑️ حذف المطعم</button>`:""}
+            ${(isAdminUser||isOwnerStore||canManageStore)?`<button class="storeToolBtn" style="color:#ef4444;border-color:#fca5a5;font-weight:800" onclick="deleteStore('${store.id}')">🗑️ حذف المطعم</button>`:""}
 
             ${transferBtn}
           </div>
@@ -13611,7 +13662,14 @@ window.startOpenStore=async(asAdminClient)=>{
 
   const isCreatingAsAdmin = isAdminUser && (asAdminClient || myStore);
 
-  if(myStore && !isCreatingAsAdmin){showToast("⚠️ لديك متجر بالفعل","warn");return;}
+  // إذا كان المستخدم يملك متجراً معتمداً بالفعل، نتيح له إما التوجه لمتجره أو متابعة فتح متجر/فرع جديد
+  if(myStore && myStore.id && myStore.status === "approved" && !isCreatingAsAdmin){
+    const goToStore = confirm(`لديك متجر معتمد بالفعل باسم "${myStore.name || 'متجري'}".\n\nاضغط "موافق" للدخول إلى صفحة متجرك.\nاضغط "إلغاء" إذا كنت ترغب في تقديم طلب فتح متجر أو فرع جديد.`);
+    if(goToStore){
+      if(typeof openStore === "function") openStore(myStore.id);
+      return;
+    }
+  }
 
   const userPhone=(myProfile&&myProfile.phone)||"";
 
@@ -14367,7 +14425,20 @@ window.showFavoritesDirect=showFavoritesDirect;
 
 window.showFavorites=(skipHistory)=>{showFavoritesDirect();if(!skipHistory)pushNavState({screen:'fav'},'#favorites');};
 
-function setActiveNav(w){navHome.classList.toggle("active",w==="home");navMine.classList.toggle("active",w==="mine");navFav.classList.toggle("active",w==="fav");}
+function setActiveNav(w){
+  const nh = document.getElementById("navHome") || (typeof navHome !== "undefined" ? navHome : null);
+  const nm = document.getElementById("navMine") || (typeof navMine !== "undefined" ? navMine : null);
+  const nc = document.getElementById("navChat");
+  const na = document.getElementById("navAccount");
+  const nf = document.getElementById("navFav") || (typeof navFav !== "undefined" ? navFav : null);
+
+  if(nh && nh.classList) nh.classList.toggle("active", w === "home");
+  if(nm && nm.classList) nm.classList.toggle("active", w === "mine");
+  if(nc && nc.classList) nc.classList.toggle("active", w === "chat");
+  if(na && na.classList) na.classList.toggle("active", w === "account");
+  if(nf && nf.classList) nf.classList.toggle("active", w === "fav");
+}
+window.setActiveNav = setActiveNav;
 
 window.showHome=()=>{showCategoriesScreen();};
 
@@ -14438,6 +14509,11 @@ function openFormScreen(skipHistory){
 window._pvActiveSession = null;
 
 window.openPhoneVerificationModal = function(){
+  const me = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  if(me && typeof window.isUserPhoneVerified === 'function' && window.isUserPhoneVerified(me, myProfile)){
+    showToast("✅ حسابك موثق بالفعل بالكامل 🇱🇾", "success", 3000);
+    return;
+  }
   const overlay = document.getElementById("phoneVerifyOverlay");
   if(!overlay) return;
   overlay.classList.remove("hidden");
@@ -14888,11 +14964,36 @@ window.filterCategory=(cat)=>{
 
   const cr=document.getElementById("catsRow");
 
-  if(cr) cr.classList.toggle("hidden", cat!=="الكل");
+  if(cr) {
+    if(cat === "الكل") cr.classList.remove("hidden");
+    else cr.classList.add("hidden");
+  }
 
   document.querySelectorAll(".catChip").forEach(b=>b.classList.toggle("active",b.dataset.cat===cat&&!b.classList.contains("storeChip")&&!b.classList.contains("restaurantChip")));
 
   renderSubCats();renderPosts();
+
+  if(cat !== "الكل" && typeof supabase !== 'undefined' && supabase){
+    const cleanCat = cat.replace("دراجات هوائية", "دراجات").replace("دراجات نارية", "دراجات").replace("عقارات للبيع", "عقارات").replace("عقارات للإيجار", "عقارات");
+    supabase.from('posts').select('*').eq('status', 'approved').ilike('category', `%${cleanCat}%`).limit(100).then(({ data, error }) => {
+      if(!error && Array.isArray(data) && data.length){
+        const newPosts = data.map(objectFromDb);
+        const existingIds = new Set(allPosts.map(x => x.id));
+        let added = false;
+        newPosts.forEach(np => {
+          if(!existingIds.has(np.id)){
+            allPosts.push(np);
+            added = true;
+          }
+        });
+        if(added){
+          allPosts = sortPosts(allPosts);
+          window.allPosts = allPosts;
+          renderPosts();
+        }
+      }
+    }).catch(()=>{});
+  }
 
 };
 
@@ -14924,29 +15025,37 @@ window.openAccount=(skipHistory)=>{
 
     const me = auth.currentUser;
     const cleanPh = ((myProfile && myProfile.phone) || (me && me.phoneNumber) || (me && me.email) || '').replace(/[^0-9]/g, '');
-    const isAbdo = (cleanPh.includes('928476784')) || 
-                   (myProfile && myProfile.username === 'abd') ||
-                   (me && me.email && (me.email.includes('abdoalk73') || me.email.includes('928476784'))) ||
+    const isAbdo = (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, myProfile) : false) ||
+                   (cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784')) || 
+                   (me && me.email && (me.email.toLowerCase() === 'abdoalk73@gmail.com' || me.email.includes('928476784'))) ||
                    me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2';
     const masterUid = (myProfile && (myProfile.originalUid || myProfile.original_uid)) || (isAbdo ? 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' : me.uid);
-    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid, masterUid];
+    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : (isAbdo ? [me.uid, masterUid] : [me.uid]);
 
     if(!myProfile || !myProfile.name || myProfile.name === "مستخدم" || (!myProfile.memberNo && !myProfile.member_no)){
       try { window.resolveAndSyncUserProfile(me); } catch(e){}
     }
 
-    let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم") ? myProfile.name : (me.displayName || localStorage.getItem("tasawuq_my_name") || "");
+    let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم" && (myProfile.name !== "Abdo Alkera" || isAbdo)) ? myProfile.name : (me.displayName || localStorage.getItem("tasawuq_my_name") || "");
     if (!rawName || rawName === "مستخدم") {
-      const cached = window.sellersProfileCache && (window.sellersProfileCache[me.uid] || window.sellersProfileCache[masterUid]);
-      if (cached && cached.name && cached.name !== "مستخدم") rawName = cached.name;
+      const cached = window.sellersProfileCache && (window.sellersProfileCache[me.uid] || (isAbdo ? window.sellersProfileCache[masterUid] : null));
+      if (cached && cached.name && cached.name !== "مستخدم" && (cached.name !== "Abdo Alkera" || isAbdo)) rawName = cached.name;
     }
     if ((!rawName || rawName === "مستخدم") && isAbdo) rawName = "Abdo Alkera";
-    const dn = rawName.replace(/^👤\s*/, '').trim() || (me.email ? me.email.split('@')[0] : "عضو");
+    const dn = rawName.replace(/^👤\s*/, '').trim() || (isAbdo ? "Abdo Alkera" : (me.email ? me.email.split('@')[0] : "عضو"));
 
     let memberNoVal = (myProfile && (myProfile.memberNo != null ? myProfile.memberNo : myProfile.member_no));
     let unameVal = (myProfile && (myProfile.username || myProfile.sellerUsername));
-    let avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid) || localStorage.getItem("tasawuq_avatar_" + masterUid);
-    let covUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid) || localStorage.getItem("tasawuq_cover_" + masterUid);
+    if (!isAbdo && unameVal === "abd") unameVal = "";
+    if (!isAbdo && memberNoVal === 1001) memberNoVal = null;
+
+    let avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid) || (isAbdo ? localStorage.getItem("tasawuq_avatar_" + masterUid) : "");
+    let covUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid) || (isAbdo ? localStorage.getItem("tasawuq_cover_" + masterUid) : "");
+
+    if (!isAbdo) {
+      if (isAbdoMedia(avUrl)) avUrl = "";
+      if (isAbdoMedia(covUrl)) covUrl = "";
+    }
 
     if (isAbdo) {
       if (!avUrl || avUrl.length < 5) avUrl = "https://i.ibb.co/JwP60ttQ/photo.jpg";
@@ -15073,19 +15182,40 @@ window.openAccount=(skipHistory)=>{
     const refDisplay = document.getElementById("myRefLinkDisplay");
     if(refDisplay) refDisplay.textContent = window.location.origin + window.location.pathname + "?ref=" + refCode;
 
+    // إخفاء حاوية accountStore تماماً حتى لا تظهر كزر ميت "متجر" لا يستجيب للنقر
     const stEl = document.getElementById("accountStore");
     if(stEl){
-      if(myStore){
-        const st = myStore.status === "approved" ? "✅ متجر: " : myStore.status === "pending" ? "⏳ متجر (قيد المراجعة): " : "❌ متجر (مرفوض): ";
-        stEl.textContent = st + myStore.name;
-        stEl.style.display = "block";
+      stEl.style.display = "none";
+    }
+
+    // زر "فتح متجر" يظهر لجميع المستخدمين دائماً وبدون استثناء
+    const openBtn = document.getElementById("openStoreBtn");
+    if(openBtn){
+      openBtn.style.display = "block";
+      openBtn.innerHTML = "🏪 فتح متجر";
+    }
+
+    // زر "متجري" يظهر فقط عند وجود متجر معتمد فعلياً للمستخدم
+    const myStBtn = document.getElementById("myStoreBtn");
+    if(myStBtn){
+      if(myStore && myStore.id && myStore.status === "approved"){
+        myStBtn.style.display = "block";
+        myStBtn.innerHTML = "🏪 متجري" + (myStore.name ? " (" + escapeHtml(myStore.name) + ")" : "");
       } else {
-        stEl.style.display = "none";
+        myStBtn.style.display = "none";
       }
     }
 
-    const openBtn = document.getElementById("openStoreBtn");
-    if(openBtn) openBtn.style.display = myStore ? "none" : "block";
+    // زر طلبات المطعم الحية المباشرة
+    const restOrdersBtn = document.getElementById("myRestaurantOrdersBtn");
+    if(restOrdersBtn){
+      if(myStore && myStore.id && (myStore.category === "المطاعم والمأكولات" || (typeof canUserManageStore === "function" && canUserManageStore(myStore)))){
+        restOrdersBtn.style.display = "block";
+        restOrdersBtn.onclick = () => openRestaurantLiveOrders(myStore.id);
+      } else {
+        restOrdersBtn.style.display = "none";
+      }
+    }
 
     const editBtn = document.getElementById("editStoreBtn");
     if(editBtn) editBtn.style.display = (myStore && myStore.status === "approved") ? "block" : "none";
@@ -16925,11 +17055,12 @@ function startProfileListener(user){
       myProfile=snap.data() || {};
 
       const cleanPh = ((myProfile && myProfile.phone) || (user && user.phoneNumber) || (user && user.email) || '').replace(/[^0-9]/g, '');
-      const isAbdo = user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                     user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                     cleanPh.includes('928476784') || 
-                     (myProfile && myProfile.username === 'abd') ||
-                     (user.email && (user.email.includes('abdoalk73') || user.email.includes('928476784')));
+      const isAbdo = (typeof window.isAbdoAccount === 'function')
+                     ? window.isAbdoAccount(user, myProfile)
+                     : (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
+                        user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
+                        cleanPh.includes('928476784') || 
+                        (user.email && (user.email.includes('abdoalk73') || user.email.includes('928476784'))));
 
       if(isAbdo){
         if(!myProfile.name || myProfile.name === "مستخدم") myProfile.name = "Abdo Alkera";
@@ -16946,8 +17077,8 @@ function startProfileListener(user){
         myProfile.whatsapp_verified = true;
       }
 
-      if(!myProfile.avatar && prevAvatar) myProfile.avatar = prevAvatar;
-      if(!myProfile.cover && prevCover) myProfile.cover = prevCover;
+      if(!myProfile.avatar && prevAvatar && (!isAbdoMedia(prevAvatar) || isAbdo)) myProfile.avatar = prevAvatar;
+      if(!myProfile.cover && prevCover && (!isAbdoMedia(prevCover) || isAbdo)) myProfile.cover = prevCover;
 
       // مزامنة الصورة والغلاف من السيرفر السحابي فوراً لتعمل عبر جميع الهواتف والأجهزة
       const sbClient = window.supabase || supabase;
@@ -17059,11 +17190,27 @@ function stopProfileListener(){if(unsubProfile){unsubProfile();unsubProfile=null
 
 function startStoreListener(uid){
   stopStoreListener();
+  if(!uid || typeof uid !== 'string') {
+    myStore = null;
+    return;
+  }
   const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  unsubStore = onSnapshot(query(collection(db,"stores"), where("ownerUid","in",candUids.slice(0, 10))), snap => {
+  const validUids = candUids.filter(u => u && typeof u === 'string' && u.trim().length > 3);
+  if(validUids.length === 0){
+    myStore = null;
+    return;
+  }
+  unsubStore = onSnapshot(query(collection(db,"stores"), where("ownerUid","in",validUids.slice(0, 10))), snap => {
     if(!snap.empty){
-      const d = snap.docs[0];
-      myStore = { id: d.id, ...d.data() };
+      const match = snap.docs.find(doc => {
+        const d = doc.data();
+        return d && d.ownerUid && validUids.includes(d.ownerUid);
+      });
+      if(match){
+        myStore = { id: match.id, ...match.data() };
+      } else {
+        myStore = null;
+      }
     } else {
       if(typeof isAbdoUser === 'function' && isAbdoUser(uid)){
         const ksh = allStores.find(s => s.id === 'doc_1792952590082_5d3t8gw' || s.ownerUid === 'admin_client_1792952590074');
@@ -17493,6 +17640,9 @@ updateCartUI();
 }else{
 
 isAdmin=false;
+myProfile=null;
+myStore=null;
+try{localStorage.removeItem("tasawuq_my_name");}catch(e){}
 
 adminChip.classList.add("hidden");
 
@@ -17525,6 +17675,11 @@ renderPosts();
 });
 
 window.logout=async()=>{
+
+  myProfile=null;
+  myStore=null;
+  isAdmin=false;
+  try{localStorage.removeItem("tasawuq_my_name");}catch(e){}
 
   if(typeof unbindOneSignalUser === 'function') unbindOneSignalUser();
 
@@ -17942,17 +18097,26 @@ window.confirmWhatsAppOtp = async function(){
       }
 
       let origUid = (existingProfile && existingProfile.id) || (existingPhoneRow && existingPhoneRow.uid) || null;
-      const isAbdoOtp = cleanPhone === "218928476784" || (existingProfile && (existingProfile.username === "abd" || existingProfile.phone === "218928476784"));
+      const isAbdoOtp = cleanPhone === "218928476784" || cleanPhone === "0928476784" || cleanPhone.endsWith("928476784") || (typeof window.isAbdoAccount === 'function' ? window.isAbdoAccount(loggedInUser, existingProfile) : false);
       if(isAbdoOtp && !origUid) origUid = "NrYY8We8VDgBiEk98bbxvkyfq2N2";
 
-      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم") ||
-                        (isAbdoOtp ? "Abdo Alkera" : ((nameInput?.value || "").trim() || "عضو تسوق الآن"));
+      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم" && (!isAbdoOtp ? (existingProfile.name !== "Abdo Alkera" && !existingProfile.name.includes("Alkera")) : true))
+                        ? existingProfile.name
+                        : (isAbdoOtp ? "Abdo Alkera" : ((nameInput?.value || "").trim() || "عضو تسوق الآن"));
 
-      const finalUsername = (existingProfile && existingProfile.username) || (isAbdoOtp ? "abd" : null);
-      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || (isAbdoOtp ? 1001 : 1001);
+      const finalUsername = (existingProfile && existingProfile.username && (!isAbdoOtp ? existingProfile.username !== "abd" : true))
+                        ? existingProfile.username
+                        : (isAbdoOtp ? "abd" : null);
+
+      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || (isAbdoOtp ? 1001 : Math.floor(100000 + Math.random() * 900000));
       const finalStoreId = (existingProfile && (existingProfile.store_id || existingProfile.storeId)) || null;
-      const finalAvatar = (existingProfile && existingProfile.avatar) || (isAbdoOtp ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
-      const finalCover = (existingProfile && existingProfile.cover) || (isAbdoOtp ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
+
+      let finalAvatar = (existingProfile && existingProfile.avatar) || (isAbdoOtp ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
+      if(!isAbdoOtp && finalAvatar && (finalAvatar.includes("JwP60ttQ") || finalAvatar.includes("tP2Br3hW"))) finalAvatar = null;
+
+      let finalCover = (existingProfile && existingProfile.cover) || (isAbdoOtp ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
+      if(!isAbdoOtp && finalCover && (finalCover.includes("JwP60ttQ") || finalCover.includes("tP2Br3hW"))) finalCover = null;
+
       const finalEmail = (existingProfile && existingProfile.email && !existingProfile.email.startsWith("wa_")) ? existingProfile.email : (isAbdoOtp ? "abdoalk73@gmail.com" : authEmail);
 
       const newProfile = {
@@ -18028,12 +18192,12 @@ window.confirmWhatsAppOtp = async function(){
           }, { merge: true }).catch(()=>{});
         }
 
-        // تحديث بيانات الذاكرة الحالية فوراً
+        // تحديث بيانات الذاكرة الحالية فوراً بدون خلط كاش المستخدم السابق
         myProfile = {
-          ...(myProfile || {}),
           ...(existingProfile || {}),
           ...newProfile
         };
+        try { localStorage.setItem("tasawuq_phone_verified_" + loggedInUser.uid, "1"); } catch(e){}
 
         // التحقق من صلاحيات الأدمن فوراً وتفعيلها بالهاتف أو الإيميل
         if(window.isUserAdmin(loggedInUser, myProfile)){
@@ -18292,6 +18456,18 @@ window.addEventListener('load',()=>{
     if(sid){
 
       setTimeout(()=>openRestaurantLiveOrders(sid), 1000);
+
+    }
+
+  }
+
+  if(hash && hash.startsWith('#cat-')){
+
+    const catName = decodeURIComponent(hash.substring(5));
+
+    if(catName){
+
+      setTimeout(()=>openCategoryDirect(catName), 400);
 
     }
 
@@ -19251,10 +19427,12 @@ export async function getUserWallet(uid){
   if(!uid) return { balance: 0.00, updatedAt: Date.now() };
 
   const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  const isAbdo = candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                 candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                 (myProfile && (myProfile.username === 'abd' || myProfile.phone === '218928476784')) ||
-                 (auth.currentUser && (auth.currentUser.email === 'abdoalk73@gmail.com' || (auth.currentUser.email && auth.currentUser.email.includes('928476784'))));
+  const isAbdo = (typeof window.isAbdoAccount === 'function')
+                 ? window.isAbdoAccount(auth.currentUser, myProfile)
+                 : (candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
+                    candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
+                    (myProfile && myProfile.phone === '218928476784') ||
+                    (auth.currentUser && (auth.currentUser.email === 'abdoalk73@gmail.com' || (auth.currentUser.email && auth.currentUser.email.includes('928476784')))));
 
   try{
     const sb = window.supabase || supabase;
@@ -19682,10 +19860,12 @@ export function setupUserWalletListener(uid){
   if(!uid) return;
 
   const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  const isAbdo = candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                 candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                 (myProfile && (myProfile.username === 'abd' || myProfile.phone === '218928476784')) ||
-                 (auth.currentUser && (auth.currentUser.email === 'abdoalk73@gmail.com' || (auth.currentUser.email && auth.currentUser.email.includes('928476784'))));
+  const isAbdo = (typeof window.isAbdoAccount === 'function')
+                 ? window.isAbdoAccount(auth.currentUser, myProfile)
+                 : (candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
+                    candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
+                    (myProfile && myProfile.phone === '218928476784') ||
+                    (auth.currentUser && (auth.currentUser.email === 'abdoalk73@gmail.com' || (auth.currentUser.email && auth.currentUser.email.includes('928476784')))));
 
   // 1. First: immediately fetch authoritative balance from Supabase / cache
   getUserWallet(uid).then(w => {
@@ -21570,6 +21750,7 @@ async function loadAdminStoresPayouts(){
   }
 
 }
+window.loadAdminStoresPayouts = loadAdminStoresPayouts;
 
 // 14. دوال التحكم بالدفع من السلة
 
@@ -23199,8 +23380,8 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
         if(!box || !window._activeChat) return;
         if(!activeRoomIds.includes(payload.new.conv_id)) return;
 
-        // تجاهل إذا كانت الرسالة موجودة بالفعل بالمعرف لمنع التكرار نهائياً
-        if(payload.new.id && box.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
+        // 🔒 منع تكرار الرسائل نهائياً (Deduplication Guard)
+        if(payload.new.id && (box.querySelector(`[data-msg-id="${payload.new.id}"]`) || box.querySelector(`[data-msg-key="id_${payload.new.id}"]`))) return;
 
         const myUid2 = auth.currentUser ? auth.currentUser.uid : "";
         const myCandBubble = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(myUid2) : [myUid2];
@@ -23208,24 +23389,43 @@ export async function openChatWithSeller(sellerUid, postId, storeId, targetCusto
 
         if(isMe){
           const normText = (payload.new.text || '').trim();
-          const tempEl = box.querySelector(`[data-temp="1"][data-msg-text="${escapeHtml(normText)}"]`) || box.querySelector('[data-temp="1"]');
-          if(tempEl){
-            tempEl.removeAttribute("data-temp");
-            tempEl.style.opacity = "1";
-            tempEl.style.transition = "";
-            tempEl.style.transform = "none";
-            if(payload.new.id){
-              tempEl.setAttribute("data-msg-key", 'id_' + payload.new.id);
-              tempEl.setAttribute("data-msg-id", payload.new.id);
-              _attachBubbleEvents(tempEl);
+          const pTime = Number(payload.new.created_at) || 0;
+
+          // نبحث أولاً عن أي فقاعة مؤقتة، أو أي فقاعة مرسلة سابقة بنفس النص لمنع التكرار نهائياً
+          let matchedBubble = box.querySelector('[data-temp="1"]');
+          if(!matchedBubble){
+            const outgoingBubbles = box.querySelectorAll('.chatBubble.outgoing');
+            for(let i = outgoingBubbles.length - 1; i >= 0; i--){
+              const b = outgoingBubbles[i];
+              if(b.getAttribute('data-msg-id') == payload.new.id) return; // موجودة بالفعل
+              const bText = (b.getAttribute('data-msg-text') || b.textContent || '').trim();
+              const bTime = Number(b.getAttribute('data-created-at')) || 0;
+              if(bText && (bText === normText || bText.includes(normText) || normText.includes(bText))){
+                if(!b.getAttribute('data-msg-id') || (pTime && bTime && Math.abs(pTime - bTime) < 20000)){
+                  matchedBubble = b;
+                  break;
+                }
+              }
             }
-            const tEl = tempEl.querySelector(".chatTime");
+          }
+
+          if(matchedBubble){
+            matchedBubble.removeAttribute("data-temp");
+            matchedBubble.style.opacity = "1";
+            matchedBubble.style.transition = "";
+            matchedBubble.style.transform = "none";
+            if(payload.new.id){
+              matchedBubble.setAttribute("data-msg-key", 'id_' + payload.new.id);
+              matchedBubble.setAttribute("data-msg-id", String(payload.new.id));
+              _attachBubbleEvents(matchedBubble);
+            }
+            const tEl = matchedBubble.querySelector(".chatTime");
             if(tEl){
               const msgTime = Number(payload.new.created_at) || Date.now();
               const timeStr = new Date(msgTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               tEl.innerHTML = '<span class="chatCheck sent" title="تم الإرسال">✓✓</span>' + timeStr;
             }
-            return;
+            return; // ⛔ نخرج فوراً لمنع إضافة فقاعة ثانية
           }
         }
 
@@ -24731,11 +24931,12 @@ window.openEditProfileScreen = () => {
   if(typeof pushNavState === 'function') pushNavState({ screen: 'editProfile' }, '#edit-profile');
 
   // استحضار فوري للبيانات من الذاكرة والكاش المحلي (0ms)
-  const isAbdoMe = me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                   me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                   ((myProfile && myProfile.phone) || me.email || '').includes('928476784') || 
-                   (myProfile && myProfile.username === 'abd') ||
-                   (me.email && me.email.includes('abdoalk73'));
+  const isAbdoMe = (typeof window.isAbdoAccount === 'function')
+                   ? window.isAbdoAccount(me, myProfile)
+                   : (me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
+                      me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
+                      ((myProfile && myProfile.phone) || me.email || '').includes('928476784') || 
+                      (me.email && me.email.includes('abdoalk73')));
 
   if(isAbdoMe){
     if(!myProfile) myProfile = {};
@@ -24744,27 +24945,32 @@ window.openEditProfileScreen = () => {
     if(!myProfile.phone) myProfile.phone = "218928476784";
   }
 
-  const cachedProf = (window.sellersProfileCache && (window.sellersProfileCache[me.uid] || window.sellersProfileCache['NrYY8We8VDgBiEk98bbxvkyfq2N2'])) || {};
-  const rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم") ? myProfile.name : (isAbdoMe ? "Abdo Alkera" : (cachedProf.name || me.displayName || localStorage.getItem("tasawuq_my_name") || ""));
+  // عزل تام: لا يرث المستخدم العادي كاش عبدو الكرا أبداً
+  const cachedProf = (window.sellersProfileCache && (window.sellersProfileCache[me.uid] || (isAbdoMe ? window.sellersProfileCache['NrYY8We8VDgBiEk98bbxvkyfq2N2'] : null))) || {};
+  let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم") ? myProfile.name : (isAbdoMe ? "Abdo Alkera" : (cachedProf.name || me.displayName || localStorage.getItem("tasawuq_my_name") || ""));
+  if(!isAbdoMe && (rawName === "Abdo Alkera" || rawName.includes("Alkera"))) rawName = "";
   const dn = rawName.replace(/^👤\s*/, '').trim() || (isAbdoMe ? "Abdo Alkera" : "");
 
   const myNameInput = document.getElementById("myName");
-  if(myNameInput && dn && dn !== "مستخدم") myNameInput.value = dn;
+  if(myNameInput) myNameInput.value = (dn && dn !== "مستخدم") ? dn : "";
 
+  let rawUser = (myProfile && myProfile.username) || cachedProf.username || "";
+  if(!isAbdoMe && rawUser === "abd") rawUser = "";
   const myUserInput = document.getElementById("myUsername");
-  if(myUserInput) myUserInput.value = (myProfile && myProfile.username) || (isAbdoMe ? "abd" : cachedProf.username || "");
+  if(myUserInput) myUserInput.value = isAbdoMe ? "abd" : rawUser;
 
   const myPhoneInput = document.getElementById("myPhone");
-  const pVal = (myProfile && myProfile.phone) || (isAbdoMe ? "218928476784" : cachedProf.phone || "");
+  let pVal = (myProfile && myProfile.phone) || cachedProf.phone || (me.email && me.email.startsWith("wa_") ? me.email.replace("wa_", "").replace("@tasawuq.ly", "") : "");
+  if(!isAbdoMe && pVal.includes("928476784")) pVal = "";
   if(myPhoneInput) myPhoneInput.value = pVal ? (typeof formatCallPhone === 'function' ? formatCallPhone(pVal) : pVal) : "";
 
   if(!myProfile || !myProfile.name || myProfile.name === "مستخدم" || !myProfile.username){
     if(typeof window.resolveAndSyncUserProfile === 'function'){
       window.resolveAndSyncUserProfile(me).then(p => {
         if(p){
-          if(myNameInput && p.name && p.name !== "مستخدم") myNameInput.value = p.name;
-          if(myUserInput && p.username) myUserInput.value = p.username;
-          if(myPhoneInput && p.phone) myPhoneInput.value = (typeof formatCallPhone === 'function' ? formatCallPhone(p.phone) : p.phone);
+          if(myNameInput && p.name && p.name !== "مستخدم" && (!isAbdoMe ? p.name !== "Abdo Alkera" : true)) myNameInput.value = p.name;
+          if(myUserInput && p.username && (!isAbdoMe ? p.username !== "abd" : true)) myUserInput.value = p.username;
+          if(myPhoneInput && p.phone && (!isAbdoMe ? !p.phone.includes("928476784") : true)) myPhoneInput.value = (typeof formatCallPhone === 'function' ? formatCallPhone(p.phone) : p.phone);
         }
       }).catch(()=>{});
     }
@@ -24772,7 +24978,8 @@ window.openEditProfileScreen = () => {
 
   const editPreview = document.getElementById("editProfileAvatarPreview");
   const heroAvatar = document.getElementById("accHeroAvatar") || document.getElementById("accountAvatar");
-  const avatarUrl = (myProfile && myProfile.avatar) || cachedProf.avatar || localStorage.getItem("tasawuq_avatar_" + me.uid) || (isAbdoMe ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : "");
+  let avatarUrl = (myProfile && myProfile.avatar) || cachedProf.avatar || localStorage.getItem("tasawuq_avatar_" + me.uid) || (isAbdoMe ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : "");
+  if(!isAbdoMe && avatarUrl && (avatarUrl.includes("JwP60ttQ") || avatarUrl.includes("tP2Br3hW"))) avatarUrl = "";
 
   if(avatarUrl){
     const imgHtml = `<img src="${escapeHtml(avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
@@ -24783,7 +24990,8 @@ window.openEditProfileScreen = () => {
   }
 
   const editCoverPreview = document.getElementById("editProfileCoverPreview");
-  const coverUrl = (myProfile && myProfile.cover) || cachedProf.cover || localStorage.getItem("tasawuq_cover_" + me.uid) || (isAbdoMe ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : "");
+  let coverUrl = (myProfile && myProfile.cover) || cachedProf.cover || localStorage.getItem("tasawuq_cover_" + me.uid) || (isAbdoMe ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : "");
+  if(!isAbdoMe && coverUrl && (coverUrl.includes("JwP60ttQ") || coverUrl.includes("tP2Br3hW"))) coverUrl = "";
 
   if(editCoverPreview){
     if(coverUrl){
