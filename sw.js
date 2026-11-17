@@ -1,5 +1,5 @@
 // تسوق الآن - Service Worker للعمل أوفلاين ومتوافق مع معايير PWA
-const CACHE_NAME = 'tasawuq-cache-v85';
+const CACHE_NAME = 'tasawuq-cache-v86';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -72,3 +72,56 @@ self.addEventListener('fetch', event => {
 try {
   importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 } catch (e) {}
+
+// 5. استقبال إشعارات الـ Web Push عند إغلاق التطبيق أو قفل الشاشة
+self.addEventListener('push', function(event) {
+  if (!event.data) return;
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch(e) {
+    payload = { title: '🔔 تسوق الآن', body: event.data.text() };
+  }
+  const title = payload.title || (payload.headings && (payload.headings.ar || payload.headings.en)) || '🔔 تسوق الآن';
+  const body = payload.body || payload.alert || payload.message || (payload.contents && (payload.contents.ar || payload.contents.en)) || 'وصلتك رسالة أو تنبيه جديد في تسوق الآن';
+  const notifUrl = payload.url || (payload.data && payload.data.url) || '/';
+
+  const options = {
+    body: body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    vibrate: [200, 100, 200],
+    tag: payload.tag || ('tasawuq_' + Date.now()),
+    renotify: true,
+    data: {
+      url: notifUrl,
+      ...(payload.data || {})
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 6. فتح التطبيق أو المحادثة المحددة عند النقر على الإشعار من شاشة القفل أو سطح المكتب
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  const rawUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/';
+  const targetUrl = new URL(rawUrl, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if ('focus' in client) {
+          if (client.navigate) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
