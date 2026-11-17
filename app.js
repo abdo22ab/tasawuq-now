@@ -111,24 +111,17 @@ window.isUserAdmin = function(u, prof){
   // 1. فحص معرفات الأدمن الرئيسية (جوجل وواتساب وحساب العميل الإداري)
   const adminUids = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074"];
   if(user && adminUids.includes(user.uid)) { isAdmin = true; return true; }
-  if(p && (adminUids.includes(p.uid) || adminUids.includes(p.originalUid) || adminUids.includes(p.original_uid))) { isAdmin = true; return true; }
+  if(p && p.id && adminUids.includes(p.id)) { isAdmin = true; return true; }
 
-  // 2. فحص البريد الإلكتروني الرسمي للأدمن
+  // 2. فحص البريد الإلكتروني الرسمي للأدمن الموثق
   if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) { isAdmin = true; return true; }
   if(p && p.email && p.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) { isAdmin = true; return true; }
 
-  // 3. فحص أرقام هواتف وواتساب الإدارة المعتمدة بدقة
-  const phoneVal = (p && (p.phone || p.local_phone || p.localPhone || p.phoneNumber)) || 
-                   (user && user.phoneNumber) || 
-                   (user && user.email && user.email.startsWith("wa_") && user.email.replace("wa_", "").replace("@tasawuq.ly", "")) || 
-                   (window._activeWaSession && window._activeWaSession.phone) || "";
-  const cl = String(phoneVal).replace(/[^0-9]/g, "");
-  if(cl && (ADMIN_PHONES.includes(cl) || ADMIN_PHONES.some(ap => cl.endsWith(ap.slice(-8))))) { isAdmin = true; return true; }
-
-  // 4. فحص تابعية المعرف لعبدو الكرا
-  if(typeof isAbdoUser === 'function'){
-    if(user && isAbdoUser(user.uid)) { isAdmin = true; return true; }
-    if(p && (isAbdoUser(p.uid) || isAbdoUser(p.originalUid))) { isAdmin = true; return true; }
+  // 3. فحص هاتف الأدمن الموثق من جلسة الدخول المعتمدة فقط
+  if(user && user.phoneNumber && ADMIN_PHONES.some(ap => user.phoneNumber.endsWith(ap.slice(-8)))) { isAdmin = true; return true; }
+  if(user && user.email && user.email.startsWith("wa_")) {
+    const waPh = user.email.replace("wa_", "").replace("@tasawuq.ly", "").replace(/[^0-9]/g, "");
+    if(waPh && ADMIN_PHONES.some(ap => waPh.endsWith(ap.slice(-8)))) { isAdmin = true; return true; }
   }
 
   return false;
@@ -217,21 +210,32 @@ function isAbdoUser(uid) {
   if (!uid || typeof uid !== 'string') return false;
   if (ABDO_UIDS.includes(uid)) return true;
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
-  const prof = (typeof myProfile !== 'undefined') ? myProfile : null;
-  if (me && me.uid === uid && (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, prof) : false)) return true;
-  if (prof && prof.id === uid && (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, prof) : false)) return true;
+  if (me && me.uid === uid) {
+    const email = (me.email || '').toLowerCase().trim();
+    if (email === 'abdoalk73@gmail.com') return true;
+    if (me.phoneNumber === '+218928476784') return true;
+    if (email === 'wa_218928476784@tasawuq.ly') return true;
+  }
   return false;
 }
 window.isAbdoUser = isAbdoUser;
 
 function isAbdoAccount(user, prof) {
   if (!user && !prof) return false;
-  const uid = (user && user.uid) || (prof && prof.id) || '';
-  if (uid && isAbdoUser(uid)) return true;
-  const email = ((user && user.email) || (prof && prof.email) || '').toLowerCase();
-  if (email && (email === 'abdoalk73@gmail.com' || email.includes('abdoalk73') || email.includes('928476784'))) return true;
-  const ph = ((user && user.phoneNumber) || (prof && prof.phone) || '').replace(/[^0-9]/g, '');
-  if (ph && (ph === '218928476784' || ph === '0928476784' || ph.endsWith('928476784'))) return true;
+  const uid = (user && user.uid) || (prof && (prof.id || prof.uid)) || '';
+  if (uid && ABDO_UIDS.includes(uid)) return true;
+  if (user) {
+    const email = (user.email || '').toLowerCase().trim();
+    if (email === 'abdoalk73@gmail.com') return true;
+    if (user.phoneNumber === '+218928476784') return true;
+    if (email === 'wa_218928476784@tasawuq.ly') return true;
+    return false;
+  }
+  if (prof) {
+    const profEmail = (prof.email || '').toLowerCase().trim();
+    if (profEmail === 'abdoalk73@gmail.com') return true;
+    return false;
+  }
   return false;
 }
 window.isAbdoAccount = isAbdoAccount;
@@ -264,7 +268,7 @@ function sanitizeCorruptedSellerMedia() {
         if (p) {
           if (isAbdoMedia(p.avatar)) p.avatar = null;
           if (isAbdoMedia(p.cover)) p.cover = null;
-          if (p.name === "Abdo Alkera") p.name = "عضو تسوق الآن";
+          if (p.name === "Abdo Alkera" || (typeof p.name === 'string' && p.name.includes("Alkera"))) p.name = "عضو تسوق الآن";
           if (p.username === "abd") p.username = null;
           if (p.phone && p.phone.includes("928476784")) p.phone = null;
         }
@@ -272,11 +276,14 @@ function sanitizeCorruptedSellerMedia() {
     });
   }
 
-  if (typeof myProfile !== 'undefined' && myProfile && !isAbdoAccount(null, myProfile)) {
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
+  const isAbdoMe = me ? isAbdoAccount(me, myProfile) : false;
+
+  if (typeof myProfile !== 'undefined' && myProfile && !isAbdoMe) {
     let touched = false;
     if (isAbdoMedia(myProfile.avatar)) { myProfile.avatar = null; touched = true; }
     if (isAbdoMedia(myProfile.cover)) { myProfile.cover = null; touched = true; }
-    if (myProfile.name === "Abdo Alkera") { myProfile.name = "عضو تسوق الآن"; touched = true; }
+    if (myProfile.name === "Abdo Alkera" || (typeof myProfile.name === 'string' && myProfile.name.includes("Alkera"))) { myProfile.name = "عضو تسوق الآن"; touched = true; }
     if (myProfile.username === "abd") { myProfile.username = null; touched = true; }
     if (myProfile.phone && myProfile.phone.includes("928476784")) { myProfile.phone = null; touched = true; }
     if (touched && typeof supabase !== 'undefined' && supabase && myProfile.id) {
@@ -357,11 +364,13 @@ window.getCandidateUids = function(uid){
       aliases.forEach(a => { if(a && !list.includes(a)) list.push(a); });
     }
 
-    const cleanPh = ((prof && prof.phone) || (me && me.phoneNumber) || (me && me.email) || '').replace(/[^0-9]/g, '');
-    const isAbdo = list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                   list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                   cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784') || 
-                   (me && me.email && (me.email.toLowerCase() === 'abdoalk73@gmail.com' || me.email.includes('928476784')));
+    const isAbdo = (typeof isAbdoAccount === 'function')
+                   ? isAbdoAccount(me, prof)
+                   : (list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
+                      list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
+                      (me && me.email && me.email.toLowerCase() === 'abdoalk73@gmail.com') ||
+                      (me && me.email === 'wa_218928476784@tasawuq.ly') ||
+                      (me && me.phoneNumber === '+218928476784'));
 
     if(isAbdo){
       if(!list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) list.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
@@ -444,13 +453,6 @@ window.resolveAndSyncUserProfile = async function(user){
     const m = user.email.match(/(?:wa_)?(\d{9,14})/);
     if(m) cleanPh = m[1];
   }
-  if(!cleanPh){
-    try {
-      const stored = localStorage.getItem("tasawuq_auth_phone") || sessionStorage.getItem("tasawuq_auth_phone");
-      if(stored) cleanPh = String(stored).replace(/[^0-9]/g, '');
-    } catch(e){}
-  }
-
   // Look up phone by user email in Supabase/Firebase if logged in with Google/Email
   if(!cleanPh && user.email && sb){
     try {
@@ -471,12 +473,14 @@ window.resolveAndSyncUserProfile = async function(user){
 
   if(cleanPh && cleanPh.startsWith("0")) cleanPh = "218" + cleanPh.slice(1);
 
-  // Check if this is Abdo Alkera
-  const isAbdo = (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                  user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                  (user.email && (user.email.toLowerCase() === 'abdoalk73@gmail.com' || user.email.includes('abdoalk73'))) ||
-                  (user.email && user.email.includes('928476784')) ||
-                  (cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784')));
+  // Check if this is genuinely Abdo Alkera
+  const isAbdo = (typeof isAbdoAccount === 'function')
+                 ? isAbdoAccount(user, null)
+                 : (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
+                    user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
+                    (user.email && user.email.toLowerCase() === 'abdoalk73@gmail.com') ||
+                    (user.email && user.email === 'wa_218928476784@tasawuq.ly') ||
+                    user.phoneNumber === '+218928476784');
 
   if(isAbdo){
     cleanPh = "218928476784";
@@ -593,10 +597,16 @@ window.resolveAndSyncUserProfile = async function(user){
 
   if(!master && !isAbdo) return myProfile;
 
-  const finalName = (master && master.name && master.name !== "مستخدم" && (master.name !== "Abdo Alkera" || isAbdo)) ? master.name : (isAbdo ? "Abdo Alkera" : (user.displayName || "عضو تسوق الآن"));
-  const finalUsername = (master && master.username && (master.username !== "abd" || isAbdo)) ? master.username : (isAbdo ? "abd" : "");
-  const finalMemberNo = (master && (master.memberNo != null ? master.memberNo : master.member_no) && ((master.memberNo || master.member_no) !== 1001 || isAbdo)) || (isAbdo ? 1001 : null);
-  const finalPhone = cleanPh || (master && master.phone) || (isAbdo ? "218928476784" : "");
+  const finalName = (master && master.name && master.name !== "مستخدم" && (isAbdo || (master.name !== "Abdo Alkera" && !master.name.includes("Alkera"))))
+                    ? master.name
+                    : (isAbdo ? "Abdo Alkera" : (user.displayName || "عضو تسوق الآن"));
+  const finalUsername = (master && master.username && (isAbdo || master.username !== "abd"))
+                    ? master.username
+                    : (isAbdo ? "abd" : "");
+  const finalMemberNo = (master && (master.memberNo != null ? master.memberNo : master.member_no) && (isAbdo || ((master.memberNo || master.member_no) !== 1001)))
+                    ? (master.memberNo != null ? master.memberNo : master.member_no)
+                    : (isAbdo ? 1001 : null);
+  const finalPhone = cleanPh || (master && master.phone && (isAbdo || !master.phone.includes("928476784")) ? master.phone : "") || (isAbdo ? "218928476784" : "");
   const finalStoreId = (master && (master.storeId || master.store_id)) || null;
   const finalAvatar = (master && master.avatar && (!isAbdoMedia(master.avatar) || isAbdo)) ? master.avatar : (isAbdo ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
   const finalCover = (master && master.cover && (!isAbdoMedia(master.cover) || isAbdo)) ? master.cover : (isAbdo ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
@@ -625,7 +635,14 @@ window.resolveAndSyncUserProfile = async function(user){
   myProfile.phone_verified = isVerified;
   myProfile.whatsapp_verified = isVerified;
 
-  try { localStorage.setItem("tasawuq_my_name", finalName); } catch(e){}
+  if (isAbdo) {
+    try { localStorage.setItem("tasawuq_my_name", finalName); } catch(e){}
+  } else {
+    try {
+      if (localStorage.getItem("tasawuq_my_name") === "Abdo Alkera") localStorage.removeItem("tasawuq_my_name");
+      else if (finalName && finalName !== "عضو تسوق الآن") localStorage.setItem("tasawuq_my_name", finalName);
+    } catch(e){}
+  }
   if(finalAvatar) {
     try { localStorage.setItem("tasawuq_avatar_" + user.uid, finalAvatar); } catch(e){}
     try { localStorage.setItem("tasawuq_avatar_" + masterUid, finalAvatar); } catch(e){}
@@ -702,7 +719,7 @@ window.resolveAndSyncUserProfile = async function(user){
       }
     } catch(e){}
   }
-  if(isAbdo || masterBal == null && (masterUid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3" || cleanPh === "218928476784")){
+  if(isAbdo && masterBal == null){
     masterBal = 1220;
   }
   if(masterBal != null){
@@ -783,14 +800,14 @@ window.resolveAndSyncUserProfile = async function(user){
     } catch(e){}
   }
 
-  // Fallbacks for Abdo
-  if((!myProfile.avatar || !loadedAvatar) && (masterUid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3" || cleanPh === "218928476784")){
+  // Fallbacks for Abdo only
+  if(isAbdo && (!myProfile.avatar || !loadedAvatar)){
     loadedAvatar = "https://i.ibb.co/JwP60ttQ/photo.jpg";
     myProfile.avatar = loadedAvatar;
     try { localStorage.setItem("tasawuq_avatar_" + user.uid, loadedAvatar); } catch(e){}
     try { localStorage.setItem("tasawuq_avatar_" + masterUid, loadedAvatar); } catch(e){}
   }
-  if((!myProfile.cover || !loadedCover) && (masterUid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3" || cleanPh === "218928476784")){
+  if(isAbdo && (!myProfile.cover || !loadedCover)){
     loadedCover = "https://i.ibb.co/tP2Br3hW/photo.jpg";
     myProfile.cover = loadedCover;
     try { localStorage.setItem("tasawuq_cover_" + user.uid, loadedCover); } catch(e){}
@@ -1174,7 +1191,10 @@ function hideFloatingButtons(){
 
   if(btn1) btn1.style.display = 'none';
 
-  if(btn2) btn2.style.display = 'none';
+  if(btn2){
+    btn2.style.display = 'none';
+    btn2.classList.remove('active');
+  }
 
   const chatWin = document.getElementById('aiChatWindow');
 
@@ -2470,6 +2490,7 @@ function incAICount(){ try{ localStorage.setItem('aiCount_'+new Date().toDateStr
 window.toggleAIChat = () => {
 
   const win = document.getElementById('aiChatWindow');
+  const btn = document.getElementById('aiChatBtn');
 
   if(!win) return;
 
@@ -2478,6 +2499,7 @@ window.toggleAIChat = () => {
   if(isHidden){
 
     win.style.display = 'flex';
+    if(btn) btn.classList.add('active');
 
     setTimeout(() => {
 
@@ -2490,10 +2512,22 @@ window.toggleAIChat = () => {
   } else {
 
     win.style.display = 'none';
+    if(btn) btn.classList.remove('active');
 
   }
 
 };
+
+// إغلاق نافذة المساعد الذكي وإرجاع الزر شفافاً عند النقر بالخارج
+document.addEventListener('click', (e) => {
+  const win = document.getElementById('aiChatWindow');
+  const btn = document.getElementById('aiChatBtn');
+  if(!win || win.style.display === 'none' || getComputedStyle(win).display === 'none') return;
+  if(!win.contains(e.target) && !btn?.contains(e.target)){
+    win.style.display = 'none';
+    if(btn) btn.classList.remove('active');
+  }
+});
 
 window.aiQuickAsk = (question) => {
 
@@ -9105,6 +9139,29 @@ window.submitNotification=async()=>{
 
     });
 
+    // إرسال Push Notification فوري لجميع الأجهزة المشتركة حتى لو كان التطبيق مغلقاً
+    try {
+      const restKey = window._onesignalRestKey || localStorage.getItem("tasawuq_onesignal_rest_key") || DEFAULT_ONESIGNAL_REST_KEY;
+      if(restKey){
+        fetch("https://onesignal.com/api/v1/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": "Basic " + restKey
+          },
+          body: JSON.stringify({
+            app_id: DEFAULT_ONESIGNAL_APP_ID,
+            included_segments: ["Total Subscriptions"],
+            target_channel: "push",
+            headings: { ar: title, en: title },
+            contents: { ar: message, en: message },
+            url: link || window.location.origin,
+            data: { type: "admin_broadcast", link: link || "" }
+          })
+        }).catch(err => console.warn("OneSignal Broadcast delivery:", err));
+      }
+    } catch(osErr){}
+
     showToast("✅ تم إرسال الإشعار للمستخدمين بنجاح","success");
 
     closeOverlay();
@@ -15024,22 +15081,34 @@ window.openAccount=(skipHistory)=>{
   if(auth.currentUser){
 
     const me = auth.currentUser;
-    const cleanPh = ((myProfile && myProfile.phone) || (me && me.phoneNumber) || (me && me.email) || '').replace(/[^0-9]/g, '');
-    const isAbdo = (typeof isAbdoAccount === 'function' ? isAbdoAccount(me, myProfile) : false) ||
-                   (cleanPh === '218928476784' || cleanPh === '0928476784' || cleanPh.endsWith('928476784')) || 
-                   (me && me.email && (me.email.toLowerCase() === 'abdoalk73@gmail.com' || me.email.includes('928476784'))) ||
-                   me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2';
-    const masterUid = (myProfile && (myProfile.originalUid || myProfile.original_uid)) || (isAbdo ? 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' : me.uid);
-    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : (isAbdo ? [me.uid, masterUid] : [me.uid]);
+    const isAbdo = (typeof isAbdoAccount === 'function')
+                   ? isAbdoAccount(me, myProfile)
+                   : (me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
+                      me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
+                      (me.email && me.email.toLowerCase() === 'abdoalk73@gmail.com') ||
+                      (me.email && me.email === 'wa_218928476784@tasawuq.ly') ||
+                      me.phoneNumber === '+218928476784');
+    const masterUid = (isAbdo && myProfile && (myProfile.originalUid || myProfile.original_uid)) || (isAbdo ? 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' : me.uid);
+    const candUids = isAbdo ? (typeof window.getCandidateUids === 'function' ? window.getCandidateUids(me.uid) : [me.uid, masterUid]) : [me.uid];
+
+    if (!isAbdo && myProfile) {
+      if (isAbdoMedia(myProfile.avatar)) myProfile.avatar = null;
+      if (isAbdoMedia(myProfile.cover)) myProfile.cover = null;
+      if (myProfile.name === "Abdo Alkera" || (typeof myProfile.name === 'string' && myProfile.name.includes("Alkera"))) myProfile.name = "";
+      if (myProfile.username === "abd") myProfile.username = "";
+      if (myProfile.phone && myProfile.phone.includes("928476784")) myProfile.phone = "";
+    }
 
     if(!myProfile || !myProfile.name || myProfile.name === "مستخدم" || (!myProfile.memberNo && !myProfile.member_no)){
       try { window.resolveAndSyncUserProfile(me); } catch(e){}
     }
 
-    let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم" && (myProfile.name !== "Abdo Alkera" || isAbdo)) ? myProfile.name : (me.displayName || localStorage.getItem("tasawuq_my_name") || "");
+    let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم" && (isAbdo || (myProfile.name !== "Abdo Alkera" && !myProfile.name.includes("Alkera"))))
+                  ? myProfile.name
+                  : (me.displayName || "");
     if (!rawName || rawName === "مستخدم") {
-      const cached = window.sellersProfileCache && (window.sellersProfileCache[me.uid] || (isAbdo ? window.sellersProfileCache[masterUid] : null));
-      if (cached && cached.name && cached.name !== "مستخدم" && (cached.name !== "Abdo Alkera" || isAbdo)) rawName = cached.name;
+      const cached = window.sellersProfileCache && window.sellersProfileCache[me.uid];
+      if (cached && cached.name && cached.name !== "مستخدم" && (isAbdo || (cached.name !== "Abdo Alkera" && !cached.name.includes("Alkera")))) rawName = cached.name;
     }
     if ((!rawName || rawName === "مستخدم") && isAbdo) rawName = "Abdo Alkera";
     const dn = rawName.replace(/^👤\s*/, '').trim() || (isAbdo ? "Abdo Alkera" : (me.email ? me.email.split('@')[0] : "عضو"));
@@ -15120,7 +15189,8 @@ window.openAccount=(skipHistory)=>{
 
     const phvEl = document.getElementById("accountPhoneVerifiedBadge");
     const phvNum = document.getElementById("accountPhoneVerifiedNum");
-    const currentPh = (myProfile && myProfile.phone) || (isAbdo ? "218928476784" : null);
+    let userPh = (me.phoneNumber ? me.phoneNumber.replace(/[^0-9]/g, '') : (me.email && me.email.startsWith("wa_") ? me.email.replace("wa_", "").replace("@tasawuq.ly", "") : ""));
+    const currentPh = (myProfile && myProfile.phone && (isAbdo || !myProfile.phone.includes("928476784"))) ? myProfile.phone : (isAbdo ? "218928476784" : userPh);
     if(phvEl){
       if(currentPh){
         phvEl.style.display = "inline-flex";
@@ -15135,19 +15205,29 @@ window.openAccount=(skipHistory)=>{
     if(_sbEarly && candUids.length > 0){
       _sbEarly.from("profiles").select("*").in("id", candUids).then(res => {
         if(res && res.data && res.data.length){
-          const pData = res.data.find(d => d.name && d.name !== "مستخدم") || res.data[0];
+          const pData = res.data.find(d => d.name && d.name !== "مستخدم" && (isAbdo || (d.name !== "Abdo Alkera" && !d.name.includes("Alkera")))) || res.data[0];
           if(pData){
             if(!myProfile) myProfile = {};
-            if(pData.name && pData.name !== "مستخدم") { myProfile.name = pData.name; if(nameEl) nameEl.textContent = pData.name; }
-            if(pData.username) { myProfile.username = pData.username; if(unEl) { unEl.textContent = "@" + pData.username; unEl.style.display = "block"; } }
-            if(pData.phone) {
+            if(pData.name && pData.name !== "مستخدم" && (isAbdo || (pData.name !== "Abdo Alkera" && !pData.name.includes("Alkera")))) {
+              myProfile.name = pData.name;
+              if(nameEl) nameEl.textContent = pData.name;
+            }
+            if(pData.username && (isAbdo || pData.username !== "abd")) {
+              myProfile.username = pData.username;
+              if(unEl) { unEl.textContent = "@" + pData.username; unEl.style.display = "block"; }
+            }
+            if(pData.phone && (isAbdo || !pData.phone.includes("928476784"))) {
               myProfile.phone = pData.phone;
               if(phvEl) phvEl.style.display = "inline-flex";
               if(phvNum) phvNum.textContent = (typeof formatCallPhone === 'function' ? formatCallPhone(pData.phone) : pData.phone);
             }
             const mn = pData.member_no != null ? pData.member_no : pData.memberNo;
-            if(mn != null) { myProfile.memberNo = mn; myProfile.member_no = mn; if(mnEl) { mnEl.textContent = "#" + mn; mnEl.style.display = "inline-block"; } }
-            if(pData.avatar) {
+            if(mn != null && (isAbdo || mn !== 1001)) {
+              myProfile.memberNo = mn;
+              myProfile.member_no = mn;
+              if(mnEl) { mnEl.textContent = "#" + mn; mnEl.style.display = "inline-block"; }
+            }
+            if(pData.avatar && (isAbdo || !isAbdoMedia(pData.avatar))) {
               myProfile.avatar = pData.avatar;
               if(avCircle) avCircle.innerHTML = `<img src="${escapeHtml(pData.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
             }
@@ -15158,6 +15238,7 @@ window.openAccount=(skipHistory)=>{
       _sbEarly.from("feedback").select("id,message").in("id", candUids.flatMap(u => ["avatar_" + u, "cover_" + u])).then(res => {
         if(res && res.data && res.data.length){
           res.data.forEach(item => {
+            if(!isAbdo && isAbdoMedia(item.message)) return;
             if(item.id.startsWith("avatar") && item.message){
               if(avCircle) avCircle.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
               if(!myProfile) myProfile = {};
@@ -16016,6 +16097,9 @@ window.openSeller=async(rawUid,skipHistory)=>{
         if (isAbdoMedia(initialProf.avatar)) initialProf.avatar = "";
         if (isAbdoMedia(initialProf.cover)) initialProf.cover = "";
       }
+      if (initialProf.name === "Abdo Alkera" || (typeof initialProf.name === 'string' && initialProf.name.includes("Alkera"))) initialProf.name = "عضو تسوق الآن";
+      if (initialProf.username === "abd") initialProf.username = "";
+      if (initialProf.phone && initialProf.phone.includes("928476784")) initialProf.phone = "";
     }
   } else {
     const cachedProf = (window.sellersProfileCache && (window.sellersProfileCache[uid] || (isAbdoUid ? window.sellersProfileCache['zoSxkP0PGPWx37J6GMQiOjVgiMC3'] : null))) || null;
@@ -16726,7 +16810,7 @@ async function assignMemberNumber(user,customName){
 
   try{
 
-    if(myProfile && myProfile.memberNo != null){
+    if(myProfile && myProfile.memberNo != null && myProfile.id === user.uid){
       return myProfile.memberNo;
     }
 
@@ -16754,13 +16838,18 @@ async function assignMemberNumber(user,customName){
 
     const existingData = (profileSnap && profileSnap.exists()) ? (profileSnap.data() || {}) : {};
 
-    const existingName = customName || existingData.name || (myProfile && myProfile.name) || defaultName(user);
+    let userPhone = "";
+    if (user.phoneNumber) userPhone = user.phoneNumber.replace(/[^0-9]/g, '');
+    else if (user.email && user.email.startsWith("wa_")) userPhone = user.email.replace(/[^0-9]/g, '');
+    else if (window._activeWaSession && window._activeWaSession.phone) userPhone = window._activeWaSession.phone;
 
-    const existingPhone = existingData.phone || (myProfile && myProfile.phone) || "";
+    const existingName = customName || existingData.name || defaultName(user);
 
-    const existingUsername = existingData.username || (myProfile && myProfile.username) || "";
+    const existingPhone = existingData.phone || userPhone || "";
 
-    const existingStoreId = existingData.storeId || (myProfile && myProfile.storeId) || null;
+    const existingUsername = existingData.username || "";
+
+    const existingStoreId = existingData.storeId || null;
 
     const updates={
 
@@ -17054,13 +17143,12 @@ function startProfileListener(user){
 
       myProfile=snap.data() || {};
 
-      const cleanPh = ((myProfile && myProfile.phone) || (user && user.phoneNumber) || (user && user.email) || '').replace(/[^0-9]/g, '');
       const isAbdo = (typeof window.isAbdoAccount === 'function')
                      ? window.isAbdoAccount(user, myProfile)
                      : (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
                         user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                        cleanPh.includes('928476784') || 
-                        (user.email && (user.email.includes('abdoalk73') || user.email.includes('928476784'))));
+                        (user.email && (user.email.toLowerCase() === 'abdoalk73@gmail.com' || user.email === 'wa_218928476784@tasawuq.ly')) ||
+                        user.phoneNumber === '+218928476784');
 
       if(isAbdo){
         if(!myProfile.name || myProfile.name === "مستخدم") myProfile.name = "Abdo Alkera";
@@ -17071,6 +17159,12 @@ function startProfileListener(user){
         if(!myProfile.cover) myProfile.cover = "https://i.ibb.co/tP2Br3hW/photo.jpg";
         myProfile.phone_verified = true;
         myProfile.whatsapp_verified = true;
+      } else {
+        if(isAbdoMedia(myProfile.avatar)) myProfile.avatar = null;
+        if(isAbdoMedia(myProfile.cover)) myProfile.cover = null;
+        if(myProfile.name === "Abdo Alkera" || (typeof myProfile.name === 'string' && myProfile.name.includes("Alkera"))) myProfile.name = "";
+        if(myProfile.username === "abd") myProfile.username = "";
+        if(myProfile.phone && myProfile.phone.includes("928476784")) myProfile.phone = "";
       }
       if(typeof window.isUserPhoneVerified === 'function' && window.isUserPhoneVerified(user, myProfile)){
         myProfile.phone_verified = true;
@@ -17083,10 +17177,11 @@ function startProfileListener(user){
       // مزامنة الصورة والغلاف من السيرفر السحابي فوراً لتعمل عبر جميع الهواتف والأجهزة
       const sbClient = window.supabase || supabase;
       if(sbClient && user && user.uid){
-        const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(user.uid) : [user.uid];
+        const candUids = isAbdo ? ((typeof window.getCandidateUids === 'function') ? window.getCandidateUids(user.uid) : [user.uid]) : [user.uid];
         sbClient.from("feedback").select("id,message").in("id", candUids.flatMap(u => ["avatar_" + u, "cover_" + u])).then(res => {
           if(res && res.data && res.data.length){
             res.data.forEach(item => {
+              if(!isAbdo && isAbdoMedia(item.message)) return;
               if(item.id.startsWith("avatar") && item.message){
                 myProfile.avatar = item.message;
                 try { localStorage.setItem("tasawuq_avatar_" + user.uid, item.message); } catch(e){}
@@ -17457,6 +17552,67 @@ window.detectCity=async()=>{
 
 };
 
+/* ========================================================
+   🔔 المنظومة الموحدة لإرسال إشعارات الجهاز والشاشة وقفل الهاتف
+   (تضمن ظهور الإشعار خارج المتصفح على سطح المكتب وشاشة القفل
+    في أندرويد وآيفون والكمبيوتر بدون أي أخطاء أو تعليق)
+   ======================================================== */
+export async function showDeviceNotification(title, options = {}) {
+  try {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const notifOptions = {
+      body: options.body || "",
+      icon: options.icon || "/icon-192.png",
+      badge: options.badge || "/icon-192.png",
+      vibrate: options.vibrate || [200, 100, 200],
+      tag: options.tag || ("tasawuq_" + Date.now()),
+      renotify: true,
+      dir: "rtl",
+      lang: "ar",
+      data: options.data || { url: window.location.origin }
+    };
+
+    let shown = false;
+
+    // 1. استخدام Service Worker أولاً (إلزامي لأندرويد وشاشات القفل وتطبيقات PWA)
+    if ("serviceWorker" in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && typeof reg.showNotification === "function") {
+          await reg.showNotification(title, notifOptions);
+          shown = true;
+        }
+      } catch (swErr) {
+        // Fallback below
+      }
+    }
+
+    // 2. استخدام Notification المباشر كحل احتياطي لأجهزة الكمبيوتر والماك
+    if (!shown) {
+      try {
+        const desktopNotif = new Notification(title, notifOptions);
+        if (notifOptions.data && notifOptions.data.url) {
+          desktopNotif.onclick = function() {
+            try { window.focus(); } catch(e){}
+            if (notifOptions.data.url) {
+              window.location.href = notifOptions.data.url;
+            }
+            try { desktopNotif.close(); } catch(e){}
+          };
+        }
+        shown = true;
+      } catch (nErr) {
+        console.warn("Desktop Notification fallback warning:", nErr);
+      }
+    }
+  } catch (err) {
+    console.warn("showDeviceNotification error:", err);
+  }
+}
+window.showDeviceNotification = showDeviceNotification;
+
 window.enableNotifications = async () => {
 
   if(!window.Notification){
@@ -17475,7 +17631,7 @@ window.enableNotifications = async () => {
 
     if(Notification.permission === "denied"){
 
-      alert("⚠️ الإشعارات محظورة في إعدادات المتصفح لـ localhost!\n\nللسماح بها:\n1. اضغط على أيقونة الإعدادات 🔒 بجانب الرابط في الأعلى\n2. غيّر خيار الإشعارات إلى (سماح / Allow)\n3. أعد تحميل الصفحة واضغط الزر مجدداً.");
+      alert("⚠️ الإشعارات محظورة في إعدادات المتصفح!\n\nللسماح بها:\n1. اضغط على أيقونة الإعدادات 🔒 بجانب الرابط في الأعلى\n2. غيّر خيار الإشعارات إلى (سماح / Allow)\n3. أعد تحميل الصفحة واضغط الزر مجدداً.");
 
       return;
 
@@ -17507,17 +17663,13 @@ window.enableNotifications = async () => {
 
       showToast("✅ تم تفعيل الإشعارات بنجاح!", "success", 3000);
 
-      try {
+      showDeviceNotification("🔔 تسوق الآن", {
 
-        new Notification("🔔 تسوق الآن", {
+        body: "تم تفعيل إشعارات الرسائل والمحادثات بنجاح على جهازك!",
 
-          body: "تم تفعيل إشعارات الرسائل والمحادثات بنجاح!",
+        icon: "/icon-192.png"
 
-          icon: "icon-192.png"
-
-        });
-
-      } catch(e){}
+      });
 
     } else {
 
@@ -17642,7 +17794,27 @@ updateCartUI();
 isAdmin=false;
 myProfile=null;
 myStore=null;
-try{localStorage.removeItem("tasawuq_my_name");}catch(e){}
+window._activeWaSession=null;
+try{
+  localStorage.removeItem("tasawuq_my_name");
+  localStorage.removeItem("tasawuq_auth_phone");
+  sessionStorage.removeItem("tasawuq_auth_phone");
+  sessionStorage.removeItem('_tempStoreData');
+}catch(e){}
+
+// تفريغ فوري لعناصر البروفايل في واجهة المستخدم لمنع بقاء أي بيانات سابقة
+try{
+  const avCircle = document.getElementById("accountAvatarCircle"); if(avCircle) avCircle.textContent = '👤';
+  const nameEl = document.getElementById("accountName"); if(nameEl) nameEl.textContent = "";
+  const mnEl = document.getElementById("accountMemberNo"); if(mnEl) mnEl.textContent = "";
+  const unEl = document.getElementById("accountUsername"); if(unEl) unEl.textContent = "";
+  const phvEl = document.getElementById("accountPhoneVerifiedBadge"); if(phvEl) phvEl.style.display = "none";
+  const myNameInput = document.getElementById("myName"); if(myNameInput) myNameInput.value = "";
+  const myUserInput = document.getElementById("myUsername"); if(myUserInput) myUserInput.value = "";
+  const myPhoneInput = document.getElementById("myPhone"); if(myPhoneInput) myPhoneInput.value = "";
+  const headerCard = document.getElementById("accountProfileHeaderCard") || document.querySelector(".accountProfileHeaderCard");
+  if(headerCard) headerCard.style.backgroundImage = "linear-gradient(135deg,#0284c7,#0369a1)";
+}catch(e){}
 
 adminChip.classList.add("hidden");
 
@@ -17679,15 +17851,38 @@ window.logout=async()=>{
   myProfile=null;
   myStore=null;
   isAdmin=false;
-  try{localStorage.removeItem("tasawuq_my_name");}catch(e){}
+  window._activeWaSession=null;
+  try{
+    localStorage.removeItem("tasawuq_my_name");
+    localStorage.removeItem("tasawuq_auth_phone");
+    sessionStorage.removeItem("tasawuq_auth_phone");
+    sessionStorage.removeItem('_tempStoreData');
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("tasawuq_avatar_") || k.startsWith("tasawuq_cover_") || k.startsWith("tasawuq_name_") || k.startsWith("tasawuq_uname_") || k.startsWith("tasawuq_phone_verified_"))) {
+        localStorage.removeItem(k);
+      }
+    }
+  }catch(e){}
+
+  try{
+    const avCircle = document.getElementById("accountAvatarCircle"); if(avCircle) avCircle.textContent = '👤';
+    const nameEl = document.getElementById("accountName"); if(nameEl) nameEl.textContent = "";
+    const mnEl = document.getElementById("accountMemberNo"); if(mnEl) mnEl.textContent = "";
+    const unEl = document.getElementById("accountUsername"); if(unEl) unEl.textContent = "";
+    const phvEl = document.getElementById("accountPhoneVerifiedBadge"); if(phvEl) phvEl.style.display = "none";
+    const myNameInput = document.getElementById("myName"); if(myNameInput) myNameInput.value = "";
+    const myUserInput = document.getElementById("myUsername"); if(myUserInput) myUserInput.value = "";
+    const myPhoneInput = document.getElementById("myPhone"); if(myPhoneInput) myPhoneInput.value = "";
+    const headerCard = document.getElementById("accountProfileHeaderCard") || document.querySelector(".accountProfileHeaderCard");
+    if(headerCard) headerCard.style.backgroundImage = "linear-gradient(135deg,#0284c7,#0369a1)";
+  }catch(e){}
 
   if(typeof unbindOneSignalUser === 'function') unbindOneSignalUser();
 
   if(typeof _chatPushUnsub === 'function'){ try{ _chatPushUnsub(); }catch(e){} _chatPushUnsub = null; }
 
   Object.keys(userLimitsCache).forEach(k=>delete userLimitsCache[k]);
-
-  try{sessionStorage.removeItem('_tempStoreData');}catch(e){}
 
   await signOut(auth);
 
@@ -18097,25 +18292,23 @@ window.confirmWhatsAppOtp = async function(){
       }
 
       let origUid = (existingProfile && existingProfile.id) || (existingPhoneRow && existingPhoneRow.uid) || null;
-      const isAbdoOtp = cleanPhone === "218928476784" || cleanPhone === "0928476784" || cleanPhone.endsWith("928476784") || (typeof window.isAbdoAccount === 'function' ? window.isAbdoAccount(loggedInUser, existingProfile) : false);
+      const isAbdoOtp = cleanPhone === "218928476784" || cleanPhone === "0928476784";
       if(isAbdoOtp && !origUid) origUid = "NrYY8We8VDgBiEk98bbxvkyfq2N2";
 
-      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم" && (!isAbdoOtp ? (existingProfile.name !== "Abdo Alkera" && !existingProfile.name.includes("Alkera")) : true))
+      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم" && (isAbdoOtp || (existingProfile.name !== "Abdo Alkera" && !existingProfile.name.includes("Alkera"))))
                         ? existingProfile.name
                         : (isAbdoOtp ? "Abdo Alkera" : ((nameInput?.value || "").trim() || "عضو تسوق الآن"));
 
-      const finalUsername = (existingProfile && existingProfile.username && (!isAbdoOtp ? existingProfile.username !== "abd" : true))
+      const finalUsername = (existingProfile && existingProfile.username && (isAbdoOtp || existingProfile.username !== "abd"))
                         ? existingProfile.username
                         : (isAbdoOtp ? "abd" : null);
 
-      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || (isAbdoOtp ? 1001 : Math.floor(100000 + Math.random() * 900000));
+      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo) && (isAbdoOtp || (existingProfile.member_no !== 1001 && existingProfile.memberNo !== 1001))) || (isAbdoOtp ? 1001 : Math.floor(100000 + Math.random() * 900000));
       const finalStoreId = (existingProfile && (existingProfile.store_id || existingProfile.storeId)) || null;
 
-      let finalAvatar = (existingProfile && existingProfile.avatar) || (isAbdoOtp ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
-      if(!isAbdoOtp && finalAvatar && (finalAvatar.includes("JwP60ttQ") || finalAvatar.includes("tP2Br3hW"))) finalAvatar = null;
+      let finalAvatar = (existingProfile && existingProfile.avatar && (isAbdoOtp || !isAbdoMedia(existingProfile.avatar))) ? existingProfile.avatar : (isAbdoOtp ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
 
-      let finalCover = (existingProfile && existingProfile.cover) || (isAbdoOtp ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
-      if(!isAbdoOtp && finalCover && (finalCover.includes("JwP60ttQ") || finalCover.includes("tP2Br3hW"))) finalCover = null;
+      let finalCover = (existingProfile && existingProfile.cover && (isAbdoOtp || !isAbdoMedia(existingProfile.cover))) ? existingProfile.cover : (isAbdoOtp ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
 
       const finalEmail = (existingProfile && existingProfile.email && !existingProfile.email.startsWith("wa_")) ? existingProfile.email : (isAbdoOtp ? "abdoalk73@gmail.com" : authEmail);
 
@@ -18278,6 +18471,16 @@ function listenToAppNotifications(){
     if(seen.includes(latest.id)) return;
 
     showInAppBanner(latest);
+
+    // إرسال الإشعار خارج الشاشة فوراً لسطح المكتب وشاشة القفل
+    if(typeof showDeviceNotification === 'function'){
+      showDeviceNotification(latest.title || "🔔 إشعار من تسوق الآن", {
+        body: latest.message || "",
+        icon: "/icon-192.png",
+        tag: "app_notif_" + latest.id,
+        data: { url: latest.link || window.location.origin }
+      });
+    }
 
   });
 
@@ -19449,8 +19652,8 @@ export async function getUserWallet(uid){
             if(r.message){
               try{
                 const p = JSON.parse(r.message);
-                if(p && typeof p.balance === "number" && p.balance > 0){
-                  return { balance: p.balance, updatedAt: p.updatedAt || Date.now() };
+                if(p && typeof p.balance === "number" && !isNaN(p.balance)){
+                  return { balance: Math.max(0, Math.round(p.balance * 100) / 100), updatedAt: p.updatedAt || Date.now() };
                 }
               }catch(e){}
             }
@@ -19466,8 +19669,8 @@ export async function getUserWallet(uid){
         if(snap && snap.exists()){
           const raw = snap.data();
           const parsed = raw.message ? JSON.parse(raw.message) : {};
-          const bal = Math.max(0, Number(parsed.balance || 0));
-          if(bal > 0 || !isAbdo){
+          if(typeof parsed.balance === "number" && !isNaN(parsed.balance)){
+            const bal = Math.max(0, Number(parsed.balance));
             return { balance: Math.round(bal * 100) / 100, updatedAt: parsed.updatedAt || Date.now() };
           }
         }
@@ -19569,6 +19772,16 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
 
   if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
 
+  const isEffectiveAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile)) ||
+    (auth.currentUser && (
+      auth.currentUser.email === ADMIN_EMAIL ||
+      auth.currentUser.email === 'abdoalk73@gmail.com' ||
+      (auth.currentUser.email && auth.currentUser.email.includes('928476784')) ||
+      ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
+    ));
+
   // 🔒 حماية مشددة: لا يمكن لأي مستخدم مناداة الدالة لإضافة رصيد وهمي لنفسه
 
   // العمليات المسموحة فقط: شحن كارت حقيقي، رد طلبية ملغاة، أو إيداع يدوي من الأدمن المعتمد
@@ -19583,7 +19796,7 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
 
   }
 
-  if(meta.txType === "admin_credit" && !isAdmin){
+  if(meta.txType === "admin_credit" && !isEffectiveAdmin){
 
     console.warn("محاولة إيداع أدمن من مستخدم عادي.");
 
@@ -19595,6 +19808,30 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
 
     return { ok: false, error: "رمز الكارت مطلوب لإتمام الشحن" };
 
+  }
+
+  // 1. إذا كان إيداع أدمن وتتوفر دالة RPC السريعة المحمية:
+  if(meta.txType === "admin_credit" && window.supabase && typeof window.supabase.rpc === 'function'){
+    try{
+      const adminUid = (auth.currentUser && auth.currentUser.uid) || (myProfile && (myProfile.uid || myProfile.id)) || "NrYY8We8VDgBiEk98bbxvkyfq2N2";
+      const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
+        p_admin_uid: adminUid,
+        p_target_uid: uid,
+        p_amount: amount,
+        p_type: 'credit',
+        p_note: reason || meta.adminNote || 'إيداع يدوي من الإدارة',
+        p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
+      });
+      if(!rpcErr && rpcRes && rpcRes.ok){
+        if(auth.currentUser && auth.currentUser.uid === uid){
+          updateWalletUI(rpcRes.balance);
+        }
+        return { ok: true, balance: rpcRes.balance, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
+      }
+    }catch(rpcE){
+      console.warn("RPC admin_deposit_wallet fallback in creditUserWallet:", rpcE);
+    }
   }
 
   try{
@@ -19659,14 +19896,48 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
 
   if(amount <= 0 || isNaN(amount)) return { ok: false, error: "المبلغ غير صحيح" };
 
+  const isEffectiveAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile)) ||
+    (auth.currentUser && (
+      auth.currentUser.email === ADMIN_EMAIL ||
+      auth.currentUser.email === 'abdoalk73@gmail.com' ||
+      (auth.currentUser.email && auth.currentUser.email.includes('928476784')) ||
+      ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
+    ));
+
   // 🔒 حماية: لا يمكن خصم رصيد إلا من محفظة صاحب الحساب الحالي (أو الأدمن)
 
-  if(auth.currentUser.uid !== uid && !isAdmin){
+  if(auth.currentUser.uid !== uid && !isEffectiveAdmin){
 
     console.warn("محاولة غير مصرح بها لخصم رصيد من محفظة أخرى.");
 
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
 
+  }
+
+  // 1. إذا كان خصم أدمن وتتوفر دالة RPC السريعة المحمية:
+  if(meta.txType === "admin_debit" && isEffectiveAdmin && window.supabase && typeof window.supabase.rpc === 'function'){
+    try{
+      const adminUid = (auth.currentUser && auth.currentUser.uid) || (myProfile && (myProfile.uid || myProfile.id)) || "NrYY8We8VDgBiEk98bbxvkyfq2N2";
+      const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
+        p_admin_uid: adminUid,
+        p_target_uid: uid,
+        p_amount: amount,
+        p_type: 'debit',
+        p_note: reason || meta.adminNote || 'خصم يدوي من الإدارة',
+        p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
+      });
+      if(!rpcErr && rpcRes && rpcRes.ok){
+        if(auth.currentUser && auth.currentUser.uid === uid){
+          updateWalletUI(rpcRes.balance);
+        }
+        return { ok: true, balance: rpcRes.balance, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
+      }
+    }catch(rpcE){
+      console.warn("RPC admin_deposit_wallet fallback in debitUserWallet:", rpcE);
+    }
   }
 
   try{
@@ -19675,13 +19946,13 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
 
     const oldBalance = current.balance;
 
-    if(oldBalance < amount){
+    if(oldBalance < amount && !isEffectiveAdmin){
 
       return { ok: false, error: "الرصيد غير كافٍ لإتمام العملية", balance: oldBalance };
 
     }
 
-    const newBalance = Math.round((oldBalance - amount) * 100) / 100;
+    const newBalance = Math.max(0, Math.round((oldBalance - amount) * 100) / 100);
 
     const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
 
@@ -19870,7 +20141,7 @@ export function setupUserWalletListener(uid){
   // 1. First: immediately fetch authoritative balance from Supabase / cache
   getUserWallet(uid).then(w => {
     let bal = w.balance;
-    if(isAbdo && (bal == null || bal === 0)) bal = 1220;
+    if(isAbdo && (bal == null || isNaN(bal))) bal = 1220;
     updateWalletUI(bal);
   }).catch(()=>{
     if(isAbdo) updateWalletUI(1220);
@@ -19882,15 +20153,20 @@ export function setupUserWalletListener(uid){
     _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + targetUid), snap=>{
       if(snap && snap.exists()){
         const data = snap.data();
-        let bal = 0;
-        try{ bal = JSON.parse(data.message || "{}").balance || 0; }catch(e){}
-        if(isAbdo && bal === 0) bal = 1220;
+        let bal = null;
+        try{
+          const parsed = JSON.parse(data.message || "{}");
+          if(typeof parsed.balance === 'number' && !isNaN(parsed.balance)) bal = parsed.balance;
+        }catch(e){}
+        if(bal === null || isNaN(bal)){
+          if(isAbdo) bal = 1220; else bal = 0;
+        }
         updateWalletUI(bal);
       } else {
         // Do NOT blindly set 0! Query getUserWallet which checks Supabase!
         getUserWallet(targetUid).then(w => {
           let bal = w.balance;
-          if(isAbdo && (bal == null || bal === 0)) bal = 1220;
+          if(isAbdo && (bal == null || isNaN(bal))) bal = 1220;
           updateWalletUI(bal);
         }).catch(()=>{
           if(isAbdo) updateWalletUI(1220);
@@ -20113,6 +20389,12 @@ window.submitCardRecharge = async()=>{
             }
             showToast(`🎉 تم شحن ${cardAmount} د.ل في محفظتك بنجاح!`, "success", 4000);
             playRestaurantBell('ready');
+            if(typeof showDeviceNotification === 'function'){
+              showDeviceNotification("💳 شحن المحفظة بنجاح", {
+                body: `تم شحن ${cardAmount} د.ل في محفظتك بنجاح! رصيدك الجديد: ${newBal.toFixed(2)} د.ل`,
+                icon: "/icon-192.png"
+              });
+            }
             return;
           } else {
             const failInfo = registerWalletFail();
@@ -20264,6 +20546,13 @@ window.submitCardRecharge = async()=>{
     showToast(`🎉 تم شحن ${cardAmount} د.ل في محفظتك بنجاح!`, "success", 4000);
 
     playRestaurantBell('ready');
+
+    if(typeof showDeviceNotification === 'function'){
+      showDeviceNotification("💳 شحن المحفظة بنجاح", {
+        body: `تم شحن ${cardAmount} د.ل في محفظتك بنجاح! رصيدك الجديد: ${creditRes.balance.toFixed(2)} د.ل`,
+        icon: "/icon-192.png"
+      });
+    }
 
   }catch(e){
 
@@ -20437,7 +20726,17 @@ let _admAllLedger = [];
 
 window.openAdminWallet = ()=>{
 
-  if(!isAdmin){
+  const canAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile)) ||
+    (auth.currentUser && (
+      auth.currentUser.email === ADMIN_EMAIL ||
+      auth.currentUser.email === 'abdoalk73@gmail.com' ||
+      (auth.currentUser.email && auth.currentUser.email.includes('928476784')) ||
+      ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
+    ));
+
+  if(!canAdmin){
 
     showToast("❌ غير مصرح لك", "error");
 
@@ -20513,7 +20812,20 @@ window.toggleAdmCustomDenom = ()=>{
 
 window.adminGenerateCardsBatch = async()=>{
 
-  if(!isAdmin) return;
+  const canAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile)) ||
+    (auth.currentUser && (
+      auth.currentUser.email === ADMIN_EMAIL ||
+      auth.currentUser.email === 'abdoalk73@gmail.com' ||
+      (auth.currentUser.email && auth.currentUser.email.includes('928476784')) ||
+      ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
+    ));
+
+  if(!canAdmin){
+    showToast("❌ غير مصرح لك", "error");
+    return;
+  }
 
   const selDenom = document.getElementById("admCardDenom")?.value || "20";
 
@@ -20561,60 +20873,80 @@ window.adminGenerateCardsBatch = async()=>{
 
   try{
 
-    const generated = [];
-
     const batchId = "batch_" + Date.now();
+    let generated = [];
 
-    for(let i=0; i<count; i++){
+    // محاولة التوليد السريع الذري عبر RPC أولاً (محمي بصلاحية الأدمن)
+    if(window.supabase && typeof window.supabase.rpc === 'function'){
+      try{
+        const adminUid = (auth.currentUser && auth.currentUser.uid) || (myProfile && (myProfile.uid || myProfile.id)) || "NrYY8We8VDgBiEk98bbxvkyfq2N2";
+        const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_generate_cards', {
+          p_admin_uid: adminUid,
+          p_count: count,
+          p_denom: denom,
+          p_batch_id: batchId
+        });
+        if(!rpcErr && rpcRes && rpcRes.ok && Array.isArray(rpcRes.codes)){
+          generated = rpcRes.codes;
+        }
+      }catch(rpcE){
+        console.warn("RPC admin_generate_cards fallback:", rpcE);
+      }
+    }
 
-      const part1 = Math.floor(1000 + Math.random() * 9000);
+    // التنفيذ المباشر إذا لم تكن دالة RPC مفعلة بعد
+    if(generated.length === 0){
+      for(let i=0; i<count; i++){
 
-      const part2 = Math.floor(1000 + Math.random() * 9000);
+        const part1 = Math.floor(1000 + Math.random() * 9000);
 
-      const part3 = Math.floor(1000 + Math.random() * 9000);
+        const part2 = Math.floor(1000 + Math.random() * 9000);
 
-      const code = `TK-${part1}-${part2}-${part3}`;
+        const part3 = Math.floor(1000 + Math.random() * 9000);
 
-      const cardDocId = "card_" + code;
+        const code = `TK-${part1}-${part2}-${part3}`;
 
-      const cardPayload = {
+        const cardDocId = "card_" + code;
 
-        code,
+        const cardPayload = {
 
-        amount: denom,
+          code,
 
-        batchId,
+          amount: denom,
 
-        isUsed: false,
+          batchId,
 
-        usedByUid: null,
+          isUsed: false,
 
-        usedByName: null,
+          usedByUid: null,
 
-        usedByPhone: null,
+          usedByName: null,
 
-        usedAt: null,
+          usedByPhone: null,
 
-        createdAt: Date.now()
+          usedAt: null,
 
-      };
+          createdAt: Date.now()
 
-      await setDoc(doc(db, "feedback", cardDocId), {
+        };
 
-        id: cardDocId,
+        await setDoc(doc(db, "feedback", cardDocId), {
 
-        type: "wallet_card",
+          id: cardDocId,
 
-        uid: "system",
+          type: "wallet_card",
 
-        message: JSON.stringify(cardPayload),
+          uid: "system",
 
-        createdAt: Date.now()
+          message: JSON.stringify(cardPayload),
 
-      });
+          createdAt: Date.now()
 
-      generated.push(code);
+        });
 
+        generated.push(code);
+
+      }
     }
 
     if(outBox) outBox.style.display = "block";
@@ -20689,36 +21021,51 @@ async function loadAdminCardsList(){
 
   if(!box) return;
 
-  box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الكروت...</div>`;
+  box.innerHTML = `<div class="reportsEmpty">⏳ جاري تحميل الكروت بأمان...</div>`;
 
   try{
 
     if(window.supabase){
 
-      const { data, error } = await window.supabase
+      const adminUid = (auth.currentUser && auth.currentUser.uid) || (myProfile && (myProfile.uid || myProfile.id)) || "NrYY8We8VDgBiEk98bbxvkyfq2N2";
 
-        .from("feedback")
+      // 1. محاولة جلب الكروت عبر الدالة الإدارية المحمية في سوبابيز
+      let loadedViaRpc = false;
+      if(typeof window.supabase.rpc === 'function'){
+        try{
+          const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_get_cards', {
+            p_admin_uid: adminUid,
+            p_limit: 150
+          });
+          if(!rpcErr && rpcRes && rpcRes.ok && Array.isArray(rpcRes.cards)){
+            _admAllCards = rpcRes.cards.map(r=>{
+              let parsed = {};
+              try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+              return { ...parsed, _rowId: r._rowId, _created: r._created };
+            });
+            loadedViaRpc = true;
+          }
+        }catch(rpcE){
+          console.warn("RPC admin_get_cards fallback:", rpcE);
+        }
+      }
 
-        .select("*")
+      // 2. محاولة الاستعلام المباشر كحل احتياطي
+      if(!loadedViaRpc){
+        const { data, error } = await window.supabase
+          .from("feedback")
+          .select("*")
+          .eq("type", "wallet_card")
+          .order("created_at", { ascending: false })
+          .limit(100);
 
-        .eq("type", "wallet_card")
-
-        .order("created_at", { ascending: false })
-
-        .limit(100);
-
-      if(!error && data){
-
-        _admAllCards = data.map(r=>{
-
-          let parsed = {};
-
-          try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
-
-          return { ...parsed, _rowId: r.id, _created: r.created_at };
-
-        });
-
+        if(!error && data){
+          _admAllCards = data.map(r=>{
+            let parsed = {};
+            try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
+            return { ...parsed, _rowId: r.id, _created: r.created_at };
+          });
+        }
       }
 
     }
@@ -21417,7 +21764,15 @@ window.admLookupUserByPhone = async()=>{
 
 window.adminExecuteDeposit = async()=>{
 
-  const canAdmin = isAdmin || (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL);
+  const canAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile)) ||
+    (auth.currentUser && (
+      auth.currentUser.email === ADMIN_EMAIL ||
+      auth.currentUser.email === 'abdoalk73@gmail.com' ||
+      (auth.currentUser.email && auth.currentUser.email.includes('928476784')) ||
+      ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
+    ));
 
   if(!canAdmin){
 
@@ -21503,9 +21858,9 @@ window.adminExecuteDeposit = async()=>{
 
     }
 
-    if(!res.ok){
+    if(!res || !res.ok){
 
-      showToast("❌ فشلت العملية: " + (res.error || "خطأ غير متوقع"), "error");
+      showToast("❌ فشلت العملية: " + ((res && res.error) || "خطأ غير متوقع"), "error");
 
       return;
 
@@ -21513,9 +21868,15 @@ window.adminExecuteDeposit = async()=>{
 
     showToast(`✅ تمت العملية بنجاح! الرصيد الجديد: ${res.balance.toFixed(2)} د.ل`, "success", 4000);
 
-    document.getElementById("admDepAmount").value = "";
+    const amtInp = document.getElementById("admDepAmount");
+    if(amtInp) amtInp.value = "";
 
-    document.getElementById("admDepNote").value = "";
+    const noteInp = document.getElementById("admDepNote");
+    if(noteInp) noteInp.value = "";
+
+    if(auth.currentUser && (auth.currentUser.uid === targetUid || (typeof window.getCandidateUids === 'function' && window.getCandidateUids(auth.currentUser.uid).includes(targetUid)))){
+      updateWalletUI(res.balance);
+    }
 
     admLookupUserByPhone();
 
@@ -24935,8 +25296,9 @@ window.openEditProfileScreen = () => {
                    ? window.isAbdoAccount(me, myProfile)
                    : (me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
                       me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                      ((myProfile && myProfile.phone) || me.email || '').includes('928476784') || 
-                      (me.email && me.email.includes('abdoalk73')));
+                      (me.email && me.email.toLowerCase() === 'abdoalk73@gmail.com') ||
+                      (me.email && me.email === 'wa_218928476784@tasawuq.ly') ||
+                      me.phoneNumber === '+218928476784');
 
   if(isAbdoMe){
     if(!myProfile) myProfile = {};
@@ -24947,7 +25309,7 @@ window.openEditProfileScreen = () => {
 
   // عزل تام: لا يرث المستخدم العادي كاش عبدو الكرا أبداً
   const cachedProf = (window.sellersProfileCache && (window.sellersProfileCache[me.uid] || (isAbdoMe ? window.sellersProfileCache['NrYY8We8VDgBiEk98bbxvkyfq2N2'] : null))) || {};
-  let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم") ? myProfile.name : (isAbdoMe ? "Abdo Alkera" : (cachedProf.name || me.displayName || localStorage.getItem("tasawuq_my_name") || ""));
+  let rawName = (myProfile && myProfile.name && myProfile.name !== "مستخدم" && (isAbdoMe || (myProfile.name !== "Abdo Alkera" && !myProfile.name.includes("Alkera")))) ? myProfile.name : (isAbdoMe ? "Abdo Alkera" : (cachedProf.name || me.displayName || ""));
   if(!isAbdoMe && (rawName === "Abdo Alkera" || rawName.includes("Alkera"))) rawName = "";
   const dn = rawName.replace(/^👤\s*/, '').trim() || (isAbdoMe ? "Abdo Alkera" : "");
 
@@ -24968,9 +25330,9 @@ window.openEditProfileScreen = () => {
     if(typeof window.resolveAndSyncUserProfile === 'function'){
       window.resolveAndSyncUserProfile(me).then(p => {
         if(p){
-          if(myNameInput && p.name && p.name !== "مستخدم" && (!isAbdoMe ? p.name !== "Abdo Alkera" : true)) myNameInput.value = p.name;
-          if(myUserInput && p.username && (!isAbdoMe ? p.username !== "abd" : true)) myUserInput.value = p.username;
-          if(myPhoneInput && p.phone && (!isAbdoMe ? !p.phone.includes("928476784") : true)) myPhoneInput.value = (typeof formatCallPhone === 'function' ? formatCallPhone(p.phone) : p.phone);
+          if(myNameInput && p.name && p.name !== "مستخدم" && (isAbdoMe || (p.name !== "Abdo Alkera" && !p.name.includes("Alkera")))) myNameInput.value = p.name;
+          if(myUserInput && p.username && (isAbdoMe || p.username !== "abd")) myUserInput.value = p.username;
+          if(myPhoneInput && p.phone && (isAbdoMe || !p.phone.includes("928476784"))) myPhoneInput.value = (typeof formatCallPhone === 'function' ? formatCallPhone(p.phone) : p.phone);
         }
       }).catch(()=>{});
     }
@@ -26190,13 +26552,15 @@ export async function dispatchChatPushNotification(receiverUid, senderName, text
 
     if (restKey) {
 
+      const targetUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(receiverUid) : [receiverUid];
+
       const payload = {
 
         app_id: DEFAULT_ONESIGNAL_APP_ID,
 
-        include_aliases: { external_id: [receiverUid] },
+        include_aliases: { external_id: targetUids },
 
-        include_external_user_ids: [receiverUid],
+        include_external_user_ids: targetUids,
 
         target_channel: "push",
 
@@ -26278,111 +26642,90 @@ export function startChatPushRealtimeListener(myUid){
 
   }
 
-  const startTimestamp = Date.now();
-
   const processedEventIds = new Set();
 
   const sb = window.supabase || supabase;
 
   try {
 
-    // استماع فوري لأي رسالة جديدة موجهة لي في جدول chat_messages
+    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(myUid) : [myUid];
 
-    const channel = sb
+    const channels = [];
 
-      .channel('chat_notifications:' + myUid)
+    candUids.forEach(uid => {
 
-      .on('postgres_changes', {
+      const channel = sb
 
-        event: 'INSERT',
+        .channel('chat_notifications:' + uid)
 
-        schema: 'public',
+        .on('postgres_changes', {
 
-        table: 'chat_messages',
+          event: 'INSERT',
 
-        filter: 'receiver_uid=eq.' + myUid
+          schema: 'public',
 
-      }, payload => {
+          table: 'chat_messages',
 
-        const msg = payload.new;
+          filter: 'receiver_uid=eq.' + uid
 
-        if(!msg || processedEventIds.has(msg.id)) return;
+        }, payload => {
 
-        processedEventIds.add(msg.id);
+          const msg = payload.new;
 
-        const isActiveHere = window._activeChat && window._activeChat.convId === msg.conv_id && !document.hidden;
+          if(!msg || processedEventIds.has(msg.id)) return;
 
-        if(!isActiveHere){
+          processedEventIds.add(msg.id);
 
-          // 1. تشغيل التنبيه الصوتي
+          const isActiveHere = window._activeChat && window._activeChat.convId === msg.conv_id && !document.hidden;
 
-          if(typeof playChatNotificationSound === 'function') playChatNotificationSound();
+          if(!isActiveHere){
 
-          // 2. تحديث عداد الرسائل
+            // 1. تشغيل التنبيه الصوتي
 
-          if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
+            if(typeof playChatNotificationSound === 'function') playChatNotificationSound();
 
-          if(typeof _onConversationUpdated === 'function'){
-            _onConversationUpdated({
-              conv_id: msg.conv_id,
-              last_message: msg.text || (msg.audio_url ? "🎙️ رسالة صوتية" : (msg.image_url ? "📷 صورة" : "رسالة جديدة")),
-              last_sender_uid: msg.sender_uid,
-              last_sender_name: msg.sender_name,
-              updated_at: Number(msg.created_at) || Date.now()
-            });
-          }
+            // 2. تحديث عداد الرسائل
 
-          // 3. عرض إشعار النظام المباشر
+            if(typeof updateGlobalUnreadChatCount === 'function') updateGlobalUnreadChatCount();
 
-          const title = `💬 ${msg.sender_name || 'رسالة جديدة'}`;
-
-          const body = (msg.text || "وصلتك رسالة جديدة").replace('[صورة] ', '📷 صورة: ');
-
-          if(window.Notification && Notification.permission === "granted"){
-
-            if(navigator.serviceWorker && navigator.serviceWorker.ready){
-
-              navigator.serviceWorker.ready.then(reg => {
-
-                reg.showNotification(title, {
-
-                  body: body,
-
-                  icon: "icon-192.png",
-
-                  badge: "icon-192.png",
-
-                  vibrate: [200, 100, 200],
-
-                  tag: "chat_" + msg.conv_id,
-
-                  data: { url: window.location.origin + "?openChat=" + encodeURIComponent(msg.conv_id) }
-
-                });
-
-              }).catch(() => {
-
-                new Notification(title, { body: body, icon: "icon-192.png" });
-
+            if(typeof _onConversationUpdated === 'function'){
+              _onConversationUpdated({
+                conv_id: msg.conv_id,
+                last_message: msg.text || (msg.audio_url ? "🎙️ رسالة صوتية" : (msg.image_url ? "📷 صورة" : "رسالة جديدة")),
+                last_sender_uid: msg.sender_uid,
+                last_sender_name: msg.sender_name,
+                updated_at: Number(msg.created_at) || Date.now()
               });
-
-            } else {
-
-              new Notification(title, { body: body, icon: "icon-192.png" });
-
             }
 
+            // 3. عرض إشعار النظام المباشر خارج الشاشة
+            const title = `💬 ${msg.sender_name || 'رسالة جديدة'}`;
+
+            const body = (msg.text || "وصلتك رسالة جديدة").replace('[صورة] ', '📷 صورة: ');
+
+            showDeviceNotification(title, {
+              body: body,
+              icon: "/icon-192.png",
+              badge: "/icon-192.png",
+              tag: "chat_" + msg.conv_id,
+              data: { url: window.location.origin + "?openChat=" + encodeURIComponent(msg.conv_id) }
+            });
+
           }
 
-        }
+        })
 
-      })
+        .subscribe();
 
-      .subscribe();
+      channels.push(channel);
+
+    });
 
     _chatPushUnsub = () => {
 
-      try { sb.removeChannel(channel); } catch(e){}
+      channels.forEach(ch => {
+        try { sb.removeChannel(ch); } catch(e){}
+      });
 
     };
 
@@ -28755,11 +29098,15 @@ window.addSystemNotification = function(notif) {
   if (_userNotifications.length > 50) _userNotifications = _userNotifications.slice(0, 50);
   saveUserNotifications();
 
-  try {
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification(item.title, { body: item.text, icon: "favicon.ico" });
-    }
-  } catch(e){}
+  // إرسال الإشعار خارج الشاشة فوراً
+  if(typeof showDeviceNotification === 'function'){
+    showDeviceNotification(item.title, {
+      body: item.text,
+      icon: "/icon-192.png",
+      tag: item.id,
+      data: { url: window.location.origin }
+    });
+  }
 
   if (typeof showToast === 'function') {
     showToast(`🔔 ${item.title}: ${item.text}`, "info", 3500);
@@ -29027,15 +29374,14 @@ window.handleExternalNotifToggle = async function() {
 
       if (Notification.permission === "granted") {
 
-        // إرسال إشعار تجريبي فوري لشاشة الهاتف
-
-        new Notification("🔔 تسوق الآن: إشعار شاشة القفل", {
-
-          body: "مرحباً بك! إشعارات الهاتف وشاشة القفل تعمل لديك بنجاح 100% لتصلك كل التنبيهات والرسائل فوراً.",
-
-          icon: "favicon.ico"
-
-        });
+        // إرسال إشعار تجريبي فوري لشاشة الهاتف أو سطح المكتب
+        if(typeof showDeviceNotification === 'function'){
+          showDeviceNotification("🔔 تسوق الآن: إشعار شاشة القفل", {
+            body: "مرحباً بك! إشعارات الهاتف وشاشة القفل تعمل لديك بنجاح 100% لتصلك كل التنبيهات والرسائل فوراً.",
+            icon: "/icon-192.png",
+            tag: "tasawuq_test_notif"
+          });
+        }
 
         if (typeof showToast === 'function') showToast("✅ تم إرسال إشعار تجريبي لشاشة جهازك بنجاح!", "success", 3000);
 
@@ -29045,19 +29391,14 @@ window.handleExternalNotifToggle = async function() {
 
         if (perm === "granted") {
 
-          // إرسال رسالة تفعيل الإشعارات فورياً
-
-          try {
-
-            new Notification("🎉 تم تفعيل إشعارات الهاتف بنجاح!", {
-
+          // إرسال رسالة تفعيل الإشعارات فورياً خارج الشاشة
+          if(typeof showDeviceNotification === 'function'){
+            showDeviceNotification("🎉 تم تفعيل إشعارات الهاتف بنجاح!", {
               body: "أهلاً بك في تسوق الآن! ستصلك تنبيهات المتابعين والرسائل واللايكات مباشرة على شاشة جهازك.",
-
-              icon: "favicon.ico"
-
+              icon: "/icon-192.png",
+              tag: "tasawuq_welcome_notif"
             });
-
-          } catch(e){}
+          }
 
           // إضافة إشعار داخل مركز الإشعارات
 
