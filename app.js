@@ -8448,9 +8448,12 @@ else{
     if (!base.specs || typeof base.specs !== 'object') base.specs = {};
     base.specs.video_url = finalVideoUrl;
     base.specs.video_placement = selectedPlacement;
-    // اعتماد فوري لأي إعلان يحتوي على ستوري أو ريلز ليظهر للجميع فوراً
-    base.status = "approved";
-    base.approvedAt = now;
+    if (isAdmin) {
+      base.status = "approved";
+      base.approvedAt = now;
+    } else {
+      base.status = "pending";
+    }
   }
 
   if(isStore){
@@ -8469,8 +8472,6 @@ else{
 
     base.uid=storeToUse.ownerUid||auth.currentUser.uid;
 
-    // base.email=storeToUse.ownerEmail||auth.currentUser.email||""; // تم إيقافها لحماية خصوصية المستخدم ومنع تسريب الإيميل
-
     base.addedBy=auth.currentUser.uid;
 
     if(isAdmin){
@@ -8478,6 +8479,10 @@ else{
       base.status="approved";
 
       base.approvedAt=now;
+
+    } else {
+
+      base.status="pending";
 
     }
 
@@ -8487,13 +8492,23 @@ else{
 
     base.uid=auth.currentUser.uid;
 
-    // base.email=auth.currentUser.email||""; // تم إيقافها لحماية خصوصية المستخدم ومنع تسريب الإيميل
-
     base.sellerName=sellerName;
 
     base.sellerMemberNo=sellerMemberNo;
 
     base.sellerUsername=sellerUsername;
+
+    if(isAdmin){
+
+      base.status="approved";
+
+      base.approvedAt=now;
+
+    } else {
+
+      base.status="pending";
+
+    }
 
   }
 
@@ -8508,12 +8523,16 @@ else{
 
   renderPosts();
 
-  // تحديث شريط الستوريات والريلز فوراً بعد النشر ليظهر الفيديو للجميع بدون انتظار
+  // تحديث شريط الستوريات والريلز فوراً بعد النشر ليظهر لصاحبه وللأدمن
   if (typeof renderStoriesBar === 'function') renderStoriesBar();
   if (typeof buildReelsPlaylist === 'function') buildReelsPlaylist();
   if (typeof syncActiveStoriesFromSupabase === 'function') syncActiveStoriesFromSupabase();
 
-  showToast(isStore?"✅ تم إضافة ونشر المنتج بالمتجر بنجاح":((finalVideoUrl)?"🎬 تم نشر الفيديو بنجاح في الستوري والريلز! 🌟":"✅ تم إرسال إعلانك بنجاح"),"success", 3500);
+  const successMsg = isAdmin ? 
+    (isStore ? "✅ تم نشر المنتج بالمتجر بنجاح" : (finalVideoUrl ? "🎬 تم نشر الفيديو بنجاح في الستوري والريلز!" : "✅ تم نشر إعلانك بنجاح")) :
+    (isStore ? "✅ تم إرسال المنتج للمتجر — سيظهر بعد موافقة الإدارة" : (finalVideoUrl ? "🎬 تم إرسال الفيديو — سيظهر بعد موافقة الإدارة" : "✅ تم إرسال إعلانك — سيظهر بعد موافقة الإدارة"));
+
+  showToast(successMsg, "success", 4000);
 
   addPoints(auth.currentUser.uid, 10, '📝 نشر إعلان جديد', 'post_create');
 
@@ -8781,6 +8800,10 @@ function renderModeration(){
 
     const imgs=getImages(p);
 
+    const hasVideo = p.videoUrl || p.video || (p.specs && p.specs.video_url);
+
+    const videoHtml = hasVideo ? `<div style="margin-top:8px;background:#000;border-radius:10px;padding:6px"><div style="font-size:12px;font-weight:800;color:#c084fc;margin-bottom:4px">🎬 فيديو ريلز / ستوري:</div><video src="${escapeHtml(hasVideo)}" controls playsinline style="width:100%;max-height:220px;border-radius:8px;background:#000"></video></div>` : "";
+
     const imgsHtml=imgs.length?`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">${imgs.map(u=>`<img src="${escapeHtml(u)}" style="width:130px;height:130px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)">`).join("")}</div>`:`<div style="padding:20px;text-align:center;color:var(--muted);background:#e6f6fe;border-radius:10px;font-size:13px">🖼️ لا توجد صور</div>`;
 
     const days=daysLeft(p);
@@ -8802,6 +8825,8 @@ function renderModeration(){
 <div style="font-weight:800;font-size:18px;color:var(--teal-dark);margin-bottom:10px">${priceTxt}</div>
 
 ${imgsHtml}
+
+${videoHtml}
 
 <div style="background:#fff;padding:12px;border-radius:10px;margin-top:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border)">${escapeHtml(p.description||"لا يوجد وصف")}</div>
 
@@ -13730,8 +13755,6 @@ window.startOpenStore=async(asAdminClient)=>{
 
   const userPhone=(myProfile&&myProfile.phone)||"";
 
-  if(!userPhone && !isCreatingAsAdmin){showToast("❌ يجب تسجيل رقم الواتساب في حسابك أولاً.","error");return;}
-
   const myCount=allPosts.filter(p => (typeof window.isPostMine === "function" ? window.isPostMine(p) : p.uid === auth.currentUser.uid) && !p.storeId).length;
 
   if(myCount>0 && !isCreatingAsAdmin){
@@ -13808,9 +13831,11 @@ window.startOpenStore=async(asAdminClient)=>{
 
     if(phoneInput){
 
-      phoneInput.setAttribute("readonly","readonly");
+      phoneInput.removeAttribute("readonly");
 
-      phoneInput.value=userPhone;
+      phoneInput.placeholder="مثال: 0923456789";
+
+      phoneInput.value=userPhone || "";
 
     }
 
@@ -13872,7 +13897,12 @@ window.submitStore=async()=>{
 
   const userPhone=(myProfile&&myProfile.phone)||"";
 
-  const phone=isCreatingAsAdmin ? inputPhone : userPhone;
+  const phone=(inputPhone || userPhone || "").trim();
+
+  if(phone && myProfile && !myProfile.phone){
+    myProfile.phone = phone;
+    try { localStorage.setItem("tasawuq_auth_phone", phone); } catch(e){}
+  }
 
   const receiptPhone=document.getElementById("storeReceiptPhone")?.value.trim()||"";
 
@@ -27608,9 +27638,9 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
       const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
 
-      const isApproved = getStatus(p) === "approved" || p.status === "approved" || !p.status || p.status === "pending";
+      const isApproved = getStatus(p) === "approved" || p.status === "approved";
 
-      if (!isApproved && !isMine) return;
+      if (!isApproved && !isMine && !isAdmin) return;
 
       const placement = p.videoPlacement || "both";
 
@@ -27795,8 +27825,8 @@ function renderStoriesBarDirect() {
       if (typeof vUrl === 'string' && vUrl.startsWith('blob:')) return;
 
       const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
-      const isApproved = getStatus(p) === "approved" || p.status === "approved" || !p.status || p.status === "pending";
-      if (!isApproved && !isMine) return;
+      const isApproved = getStatus(p) === "approved" || p.status === "approved";
+      if (!isApproved && !isMine && !isAdmin) return;
 
       const placement = p.videoPlacement || (p.specs && p.specs.video_placement) || "both";
       const created = Number(p.createdAt) || 0;
