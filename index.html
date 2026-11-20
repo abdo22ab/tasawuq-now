@@ -88,7 +88,7 @@ window.openInbox = window.openInbox || function() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=235">
+<link rel="stylesheet" href="style.css?v=237">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -1222,6 +1222,12 @@ window.openInbox = window.openInbox || function() {
 
       </button>
 
+      <button id="adminFeedbackBtn" class="btnGhost hidden" onclick="openAdminFeedback()" style="grid-column:span 2;margin:0;font-size:12px;padding:9px 6px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-weight:800;border-radius:10px;line-height:1.2;display:flex;align-items:center;justify-content:center;gap:4px">
+
+        💬 الشكاوى والاقتراحات
+
+      </button>
+
     </div>
 
   </div>
@@ -1604,17 +1610,41 @@ window.openInbox = window.openInbox || function() {
 
 <div class="field">
 
-<label>👥 مساعدين المتجر</label>
+<label>👥 مشرفين وأدمنز المتجر (صلاحية إدارة المتجر وإضافة المنتجات)</label>
 
 <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px">
+
+<div style="font-size:12px;color:var(--muted);margin-bottom:8px">💡 أضف مشرفين للمتجر عبر <b>البريد الإلكتروني</b> أو <b>رقم الهاتف</b> (09XXXXXXXX) لمنحهم صلاحيات الإدارة الكاملة.</div>
 
 <div id="storeHelpersList"></div>
 
 <div style="margin-top:10px">
 
-<input id="newHelperEmail" type="email" placeholder="helper@gmail.com" dir="ltr" style="text-align:left">
+<input id="newHelperEmail" type="text" placeholder="اكتب الإيميل أو رقم الهاتف (09XXXXXXXX)" dir="ltr" style="text-align:left">
 
-<button class="btnGhost" onclick="addStoreHelper()" style="background:#0284c7;color:#fff;margin-top:8px">➕ إضافة مساعد</button>
+<button type="button" class="btnGhost" onclick="addStoreHelper()" style="background:#0284c7;color:#fff;margin-top:8px">➕ إضافة مشرف/أدمن للمتجر</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="field">
+
+<label>🏷️ أقسام وتصنيفات المتجر المخصصة</label>
+
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+
+<div style="font-size:12px;color:var(--muted);margin-bottom:8px">💡 أضف أقساماً مخصصة لمنتجاتك/وجباتك لتظهر في شريط أقسام المتجر وعند إضافة المنتجات.</div>
+
+<div id="storeCustomCategoriesList"></div>
+
+<div style="display:flex;gap:8px;margin-top:10px">
+
+<input id="newStoreCustomCategory" type="text" placeholder="اسم القسم الجديد (مثلاً: مشروبات ساخنة، تخفيضات...)" style="flex:1">
+
+<button type="button" class="btnGhost" onclick="addStoreCustomCategory()" style="background:#10b981;color:#fff;white-space:nowrap;padding:0 14px">➕ إضافة قسم</button>
 
 </div>
 
@@ -1690,6 +1720,8 @@ window.openInbox = window.openInbox || function() {
 <button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="reportsOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>🚩 الإبلاغات</h3><div id="reportsList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
+
+<div id="adminFeedbackOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh;display:flex;flex-direction:column"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px"><h3 style="margin:0">💬 الشكاوى والاقتراحات</h3><span id="adminFeedbackCountBadge" style="background:#e5484d;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;display:none">0</span></div><div id="adminFeedbackList" style="flex:1;overflow-y:auto;padding-right:2px"></div><button class="btnGhost" style="background:transparent;color:var(--muted);margin-top:10px" onclick="closeOverlay()">إغلاق</button></div></div>
 
 <div id="moderationOverlay" class="overlay hidden"><div class="sheet" style="max-height:88vh"><h3>⏳ الإعلانات قيد المراجعة</h3><div id="moderationList"></div><button class="btnGhost" style="background:transparent;color:var(--muted)" onclick="closeOverlay()">إغلاق</button></div></div>
 
@@ -3425,7 +3457,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=235"></script>
+<script type="module" src="app.js?v=241"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
