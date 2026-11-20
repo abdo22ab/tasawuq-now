@@ -307,25 +307,60 @@ html.dark-mode .adminRow{background:#131a28}
 <div class="section" id="secAdmins">
 <div class="sectionHeader" onclick="toggleSection('secAdmins')">
 <div class="secIconWrap" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff">👥</div>
-<div><div class="secTitle">إدارة الأدمنز</div><div class="secSub">إضافة أو حذف مشرفين</div></div>
+<div><div class="secTitle">إدارة مشرفي الموقع بالكامل (الأدمنز)</div><div class="secSub">إضافة أو حذف مشرفين للموقع كامل</div></div>
 <div class="arrow">▼</div>
 </div>
 <div class="sectionBody">
 <div style="background:#fef3c7;border:1px solid var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#92400e;margin-bottom:12px;line-height:1.7">
-💡 <b>ملاحظة:</b> الأدمن الجديد يسجّل دخول بحساب Google من نفس رابط اللوحة.
+💡 <b>حماية مشددة:</b> إضافة وحذف مشرفي الموقع بالكامل محمية ومقتصرة حصرياً على مالك ومشرف الموقع الرئيسي. يمكن إضافة المشرف عن طريق <b>البريد الإلكتروني</b> أو <b>رقم الهاتف</b> (09XXXXXXXX).
 </div>
 <div id="adminsList"><div class="listEmpty">جاري التحميل...</div></div>
+<div id="adminAddFormWrap">
 <div class="field" style="margin-top:14px">
-<label>➕ إضافة أدمن جديد</label>
-<input id="newAdminEmail" type="email" placeholder="friend@gmail.com" style="direction:ltr;text-align:left">
+<label>➕ إضافة مشرف جديد للموقع</label>
+<input id="newAdminEmail" type="text" placeholder="اكتب البريد الإلكتروني أو رقم الهاتف (09XXXXXXXX)" style="direction:ltr;text-align:left">
 </div>
-<button class="btn btn-primary" onclick="addAdmin()">➕ إضافة أدمن</button>
+<button class="btn btn-primary" onclick="addAdmin()">➕ إضافة مشرف للموقع</button>
+</div>
 <div class="status" id="adminStatus"></div>
 </div>
 </div>
 
 <button class="btn btn-danger" style="margin-top:20px" onclick="logout()">🚪 تسجيل الخروج</button>
 
+</div>
+
+<!-- Modal إدارة مشرفي المتجر -->
+<div id="adminStoreStaffModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;backdrop-filter:blur(4px);padding:20px;overflow-y:auto;align-items:center;justify-content:center">
+  <div style="background:#fff;max-width:540px;width:100%;margin:auto;border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.25);padding:22px;direction:rtl;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid #f1f5f9;padding-bottom:12px">
+      <div>
+        <div style="font-weight:900;font-size:16px;color:#0f172a" id="adminStaffModalTitle">👥 مشرفي وأدمنز المتجر</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px" id="adminStaffModalSubtitle">صلاحيات إدارة المتجر والأقسام والمنتجات</div>
+      </div>
+      <button type="button" onclick="closeAdminStoreStaffModal()" style="border:none;background:#f1f5f9;border-radius:50%;width:32px;height:32px;font-size:15px;cursor:pointer;font-weight:bold;color:#475569">✕</button>
+    </div>
+
+    <div id="adminStaffStoreOwnerInfo" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#334155;margin-bottom:14px;line-height:1.6">
+    </div>
+
+    <div style="font-weight:800;font-size:13.5px;color:#1e293b;margin-bottom:8px">قائمة المشرفين المعتمدين للمتجر:</div>
+    <div id="adminStaffHelpersList" style="max-height:220px;overflow-y:auto;margin-bottom:14px"></div>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="font-weight:800;font-size:12.5px;color:#166534;margin-bottom:6px">➕ إضافة مشرف جديد للمتجر / الشركة:</div>
+      <div style="font-size:11.5px;color:#15803d;margin-bottom:8px">يمكنك إضافة المشرف عبر <b>البريد الإلكتروني</b> أو <b>رقم الهاتف</b> (09XXXXXXXX)</div>
+      <div style="display:flex;gap:8px">
+        <input id="adminNewStaffInput" type="text" placeholder="اكتب الإيميل أو رقم الهاتف..." style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;direction:ltr;text-align:left">
+        <button type="button" class="btn btn-primary" onclick="adminSubmitNewStoreStaff()" style="margin:0;padding:8px 14px;white-space:nowrap;font-size:12.5px">➕ إضافة</button>
+      </div>
+      <div id="adminStaffActionStatus" style="font-size:12px;margin-top:6px;display:none"></div>
+    </div>
+
+    <div style="text-align:left;margin-top:14px">
+      <button type="button" class="btn btn-blue" onclick="closeAdminStoreStaffModal()" style="margin:0;padding:8px 18px;font-size:13px">إغلاق</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -347,10 +382,27 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js?v=6";
+} from "./supabase-adapter.js?v=7";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
+const SUPER_ADMIN_PHONES=["0928476784","218928476784","0928476781","218928476781","0928476783","218928476783","0928476785","218928476785"];
+const SUPER_ADMIN_UIDS=["zoSxkP0PGPWx37J6GMQiOjVgiMC3","NrYY8We8VDgBiEk98bbxvkyfq2N2"];
+
+function isSuperAdminUser(u){
+  const user = u || currentUser;
+  if(!user) return false;
+  const email = (user.email || "").toLowerCase();
+  if(email === MAIN_ADMIN.toLowerCase()) return true;
+  if(SUPER_ADMIN_UIDS.includes(user.uid)) return true;
+  const phone = (user.phoneNumber || user.phone || "").replace(/\D/g, "");
+  if(phone && SUPER_ADMIN_PHONES.some(p => phone.endsWith(p.slice(-8)))) return true;
+  if(email.startsWith("wa_")){
+    const wa = email.replace("wa_","").replace("@tasawuq.ly","").replace(/\D/g,"");
+    if(wa && SUPER_ADMIN_PHONES.some(p => wa.endsWith(p.slice(-8)))) return true;
+  }
+  return false;
+}
 
 let currentUser=null;
 let currentImages=[];
@@ -394,10 +446,29 @@ onAuthStateChanged(auth,async(user)=>{
     document.getElementById("mainScreen").style.display="none";
     return;
   }
-  const email=user.email.toLowerCase();
-  let isAdmin=email===MAIN_ADMIN.toLowerCase();
-  if(!isAdmin){
+  const email=(user.email||"").toLowerCase();
+  const phone=(user.phoneNumber||user.phone||"").replace(/\D/g,"");
+  let isAdmin=isSuperAdminUser(user);
+  if(!isAdmin && email){
     try{const s=await getDoc(doc(db,"admins",email));if(s.exists())isAdmin=true;}catch(e){}
+  }
+  if(!isAdmin && phone){
+    try{const s=await getDoc(doc(db,"admins",phone));if(s.exists())isAdmin=true;}catch(e){}
+  }
+  if(!isAdmin){
+    try{
+      const snap=await getDocs(collection(db,"admins"));
+      const pLast8 = phone.length >= 8 ? phone.slice(-8) : "";
+      if(snap.docs.some(d => {
+        const dId = (d.id||"").toLowerCase();
+        const dData = d.data()||{};
+        const dEm = (dData.email||"").toLowerCase();
+        const dPh = (dData.phone||d.id||"").replace(/\D/g,"");
+        if(email && (dId === email || dEm === email)) return true;
+        if(pLast8 && dPh.length >= 8 && dPh.endsWith(pLast8)) return true;
+        return false;
+      })) isAdmin=true;
+    }catch(e){}
   }
   if(!isAdmin){
     document.getElementById("loginScreen").style.display="none";
@@ -410,7 +481,7 @@ onAuthStateChanged(auth,async(user)=>{
   document.getElementById("deniedScreen").style.display="none";
   document.getElementById("mainScreen").style.display="block";
   document.getElementById("userLine").style.display="inline-block";
-  document.getElementById("userEmail").textContent=user.email;
+  document.getElementById("userEmail").textContent=user.email || user.phoneNumber || "مشرف معتمد";
   await loadBanner();
   startLiveListeners();
   await loadLimits();
@@ -422,7 +493,41 @@ function startLiveListeners(){
   if(!unsubReports){unsubReports=onSnapshot(collection(db,"reports"),snap=>{allReportsCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderReportsList();updateStats();});}
   if(!unsubStores){unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();updateStats();});}
   if(!unsubFeedback){unsubFeedback=onSnapshot(collection(db,"feedback"),snap=>{
-    allFeedbackCache=snap.docs.map(d=>({id:d.id,...d.data()})).filter(f=>!f.type || f.type==='bug'||f.type==='suggestion'||f.type==='complaint'||f.type==='other').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    allFeedbackCache=snap.docs.map(d=>{
+      const raw=d.data()||{};
+      let status=raw.status||"new";
+      let text=raw.message||"";
+      let contact=raw.user_phone||raw.contact||raw.userPhone||"";
+      let userEmail=raw.user_name||raw.userEmail||raw.userName||"";
+      let pageUrl=raw.pageUrl||"";
+      let type=raw.type||"complaint";
+
+      if(typeof raw.message==="string"&&raw.message.trim().startsWith("{")){
+        try{
+          const p=JSON.parse(raw.message);
+          if(p&&typeof p==="object"){
+            text=p.text||p.reason||raw.message;
+            contact=p.contact||raw.user_phone||raw.userPhone||contact;
+            userEmail=p.userEmail||raw.user_name||raw.userName||userEmail;
+            pageUrl=p.pageUrl||"";
+            status=p.status||status;
+          }
+        }catch(e){}
+      }
+      return {
+        id:d.id,
+        ...raw,
+        type:type,
+        rawMessage:raw.message,
+        message:text,
+        contact:contact,
+        userEmail:userEmail,
+        pageUrl:pageUrl,
+        status:status,
+        createdAt:raw.created_at||raw.createdAt||0
+      };
+    }).filter(f=>!f.type || f.type==='bug'||f.type==='suggestion'||f.type==='complaint'||f.type==='other'||f.type==='chat_report'||f.type==='feedback')
+      .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     renderFeedbackList();
     const newCount=allFeedbackCache.filter(f=>f.status==="new").length;
     const fb=document.getElementById("feedbackBadge");
@@ -653,7 +758,7 @@ function renderReportsList(){
     return `<div class="item" style="border-color:var(--danger);background:#fff5f5">
       <div style="background:#fdeceb;color:#b91c1c;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:800;margin-bottom:10px;line-height:1.7">
         🚩 <b>سبب:</b> ${esc(r.reason||"بدون سبب")}<br>
-        <b>من:</b> ${esc(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}
+        <b>من:</b> ${esc(r.reporterName||r.reporterEmail||r.details||"زائر")} · ${timeAgo(r.createdAt)}
       </div>
       ${postInfo}
       <div class="itActions">
@@ -822,6 +927,7 @@ function renderStoresList(){
         <button class="delete" onclick="deleteOneStore('${s.id}')">🗑️ حذف</button>
       </div>
       <button class="btn btn-warning" style="width:100%;margin-top:6px;font-weight:700" onclick="window.open('https://tasawuqnow.com/#store-${s.id}','_blank')">➕ إضافة منتجات / وجبات لهذا المتجر</button>
+      <button class="btn btn-blue" style="width:100%;margin-top:6px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openAdminStoreStaffModal('${s.id}')">👥 مشرفي وأدمنز المتجر (${(s.helpers||[]).length})</button>
       <div style="margin-top:6px">
         ${s.verified?`<button class="btn btn-warning" style="width:100%;padding:10px;font-size:12.5px;margin:0" onclick="unverifyStore('${s.id}')">❌ إلغاء التوثيق</button>`:`<button class="btn btn-primary" style="width:100%;padding:10px;font-size:12.5px;margin:0;background:#1877F2" onclick="verifyStore('${s.id}')">🔵 توثيق المتجر</button>`}
       </div>
@@ -830,6 +936,124 @@ function renderStoresList(){
   box.innerHTML=tabsHtml+items;
 }
 window.setStoreTab=(tab)=>{storeTab=tab;renderStoresList();};
+
+/* ===== Store Staff & Helpers Management (Admin & Store Owner) ===== */
+let _currentAdminStaffStoreId = null;
+
+window.openAdminStoreStaffModal = (storeId) => {
+  const store = allStoresCache.find(s => s.id === storeId);
+  if(!store){ alert("المتجر غير موجود"); return; }
+  _currentAdminStaffStoreId = storeId;
+  const modal = document.getElementById("adminStoreStaffModal");
+  if(!modal) return;
+  modal.style.display = "flex";
+
+  document.getElementById("adminStaffModalTitle").textContent = `👥 مشرفي وأدمنز: ${store.name || 'متجر'}`;
+  document.getElementById("adminStaffModalSubtitle").textContent = `📁 ${store.category || ''} · 📍 ${store.city || ''}`;
+
+  const ownerHtml = `<b>👑 مالك المتجر الأساسي:</b> ${esc(store.ownerEmail || 'غير محدد')}<br>
+  <b>📞 هاتف / واتساب المتجر:</b> ${esc(store.phone || store.callPhone || 'غير متوفر')}<br>
+  <small style="color:#64748b">💡 مالك المتجر وصاحب الموقع يملكون صلاحيات الإدارة الكاملة تلقائياً.</small>`;
+  document.getElementById("adminStaffStoreOwnerInfo").innerHTML = ownerHtml;
+
+  const stInp = document.getElementById("adminNewStaffInput");
+  if(stInp) stInp.value = "";
+  const stStatus = document.getElementById("adminStaffActionStatus");
+  if(stStatus) stStatus.style.display = "none";
+
+  renderAdminStaffHelpersList();
+};
+
+window.closeAdminStoreStaffModal = () => {
+  const modal = document.getElementById("adminStoreStaffModal");
+  if(modal) modal.style.display = "none";
+  _currentAdminStaffStoreId = null;
+};
+
+function renderAdminStaffHelpersList(){
+  const list = document.getElementById("adminStaffHelpersList");
+  if(!list) return;
+  const store = allStoresCache.find(s => s.id === _currentAdminStaffStoreId);
+  if(!store) return;
+  const helpers = Array.isArray(store.helpers) ? store.helpers : [];
+  if(helpers.length === 0){
+    list.innerHTML = '<div class="listEmpty" style="padding:14px;background:#f8fafc;border-radius:10px">لا يوجد مشرفين إضافيين لهذا المتجر حالياً.</div>';
+    return;
+  }
+  list.innerHTML = helpers.map((h, idx) => {
+    const isEmail = String(h).includes("@");
+    const icon = isEmail ? "📧" : "📱";
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:6px">
+      <div>
+        <span style="font-size:13.5px;font-weight:700;color:#0f172a;direction:ltr;display:inline-block">${icon} ${esc(h)}</span>
+        <span class="tag" style="background:#e0f2fe;color:#0369a1;margin-right:8px;font-size:11px">مشرف متجر</span>
+      </div>
+      <button class="rm" onclick="adminRemoveStoreStaff(${idx})" style="background:#fdeceb;color:#e5484d;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:800" title="حذف هذا المشرف">🗑️ حذف</button>
+    </div>`;
+  }).join("");
+}
+
+window.adminSubmitNewStoreStaff = async () => {
+  if(!_currentAdminStaffStoreId) return;
+  const store = allStoresCache.find(s => s.id === _currentAdminStaffStoreId);
+  if(!store) return;
+  const inp = document.getElementById("adminNewStaffInput");
+  const raw = (inp?.value || "").trim();
+  const stStatus = document.getElementById("adminStaffActionStatus");
+
+  if(!raw){ alert("اكتب البريد الإلكتروني أو رقم الهاتف للمشرف"); return; }
+  let val = raw;
+  if(raw.includes("@")){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)){ alert("صيغة البريد الإلكتروني غير صحيحة"); return; }
+    val = raw.toLowerCase();
+  } else {
+    const cleanDigits = raw.replace(/\D/g, "");
+    if(cleanDigits.length < 8){ alert("رقم الهاتف غير صحيح (يجب أن يتكون من 8 أرقام على الأقل)"); return; }
+    val = cleanDigits;
+  }
+
+  const helpers = Array.isArray(store.helpers) ? [...store.helpers] : [];
+  if(helpers.some(h => String(h).toLowerCase() === val.toLowerCase() || (val.length >= 8 && String(h).replace(/\D/g,"").endsWith(val.slice(-8))))){
+    alert("هذا المشرف مسجل مسبقاً لهذا المتجر");
+    return;
+  }
+
+  helpers.push(val);
+  try{
+    await updateDoc(doc(db, "stores", _currentAdminStaffStoreId), { helpers: helpers });
+    store.helpers = helpers;
+    if(inp) inp.value = "";
+    if(stStatus){
+      stStatus.style.display = "block";
+      stStatus.style.color = "#16a34a";
+      stStatus.textContent = "✅ تم إضافة المشرف للمتجر بنجاح!";
+      setTimeout(() => { if(stStatus) stStatus.style.display = "none"; }, 3000);
+    }
+    renderAdminStaffHelpersList();
+    renderStoresList();
+  }catch(e){
+    alert("خطأ أثناء حفظ المشرف: " + e.message);
+  }
+};
+
+window.adminRemoveStoreStaff = async (idx) => {
+  if(!_currentAdminStaffStoreId) return;
+  const store = allStoresCache.find(s => s.id === _currentAdminStaffStoreId);
+  if(!store) return;
+  const helpers = Array.isArray(store.helpers) ? [...store.helpers] : [];
+  const target = helpers[idx];
+  if(!confirm(`هل تريد بالتأكيد حذف المشرف:\n${target}\nمن إدارة هذا المتجر؟`)) return;
+
+  helpers.splice(idx, 1);
+  try{
+    await updateDoc(doc(db, "stores", _currentAdminStaffStoreId), { helpers: helpers });
+    store.helpers = helpers;
+    renderAdminStaffHelpersList();
+    renderStoresList();
+  }catch(e){
+    alert("خطأ أثناء الحذف: " + e.message);
+  }
+};
 window.approveOneStore=async(id)=>{try{await updateDoc(doc(db,"stores",id),{status:"approved",approvedAt:Date.now(),rejectReason:""});alert("✅");}catch(e){alert("خطأ: "+e.message);}};
 window.rejectOneStore=async(id)=>{
   const reason=prompt("السبب:","معلومات غير كافية");
@@ -1087,8 +1311,8 @@ function renderFeedbackList(){
   const box=document.getElementById("feedbackList");
   if(!box)return;
   if(allFeedbackCache.length===0){box.innerHTML='<div class="listEmpty">✅ لا توجد رسائل بعد</div>';return;}
-  const typeLabels={bug:"🐛 مشكلة",suggestion:"💡 اقتراح",complaint:"⚠️ شكوى",other:"📝 أخرى"};
-  const typeColors={bug:"#e5484d",suggestion:"#16a34a",complaint:"#f59e0b",other:"#0284c7"};
+  const typeLabels={bug:"🐛 مشكلة",suggestion:"💡 اقتراح",complaint:"⚠️ شكوى",other:"📝 أخرى",chat_report:"🚨 بلاغ محادثة",feedback:"💬 رسالة"};
+  const typeColors={bug:"#e5484d",suggestion:"#16a34a",complaint:"#f59e0b",other:"#0284c7",chat_report:"#dc2626",feedback:"#6366f1"};
   box.innerHTML=allFeedbackCache.map(f=>{
     const typeLabel=typeLabels[f.type]||"📝";
     const typeColor=typeColors[f.type]||"#0284c7";
@@ -1102,8 +1326,8 @@ function renderFeedbackList(){
       <div style="background:#fff;padding:12px;border-radius:10px;font-size:13.5px;line-height:1.9;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);margin-bottom:10px">${esc(f.message)}</div>
       <div style="font-size:11.5px;color:var(--muted);line-height:1.9;background:#f9fafb;padding:8px 10px;border-radius:8px">
         ${f.contact?`📞 <b>تواصل:</b> <span style="direction:ltr;display:inline-block">${esc(f.contact)}</span><br>`:""}
-        ${f.userEmail?`📧 <b>المستخدم:</b> ${esc(f.userEmail)}<br>`:""}
-        🔗 <span style="direction:ltr;display:inline-block">${esc((f.pageUrl||"").slice(0,80))}${f.pageUrl&&f.pageUrl.length>80?"...":""}</span>
+        ${f.userEmail?`👤 <b>المستخدم:</b> ${esc(f.userEmail)}<br>`:""}
+        ${f.pageUrl?`🔗 <span style="direction:ltr;display:inline-block">${esc((f.pageUrl||"").slice(0,80))}${f.pageUrl&&f.pageUrl.length>80?"...":""}</span>`:""}
       </div>
       <div class="itActions" style="grid-template-columns:1fr 1fr 1fr">
         ${isNew?`<button class="edit" onclick="markFeedbackRead('${f.id}')">✅ تمييز كمقروء</button>`:`<button class="view" onclick="markFeedbackNew('${f.id}')">🔄 جديد</button>`}
@@ -1113,15 +1337,61 @@ function renderFeedbackList(){
     </div>`;
   }).join("");
 }
-window.markFeedbackRead=async(id)=>{try{await updateDoc(doc(db,"feedback",id),{status:"read"});}catch(e){alert("خطأ: "+e.message);}};
-window.markFeedbackNew=async(id)=>{try{await updateDoc(doc(db,"feedback",id),{status:"new"});}catch(e){alert("خطأ: "+e.message);}};
-window.deleteFeedback=async(id)=>{if(!confirm("حذف هذه الرسالة؟"))return;try{await deleteDoc(doc(db,"feedback",id));}catch(e){alert("خطأ: "+e.message);}};
+window.markFeedbackRead=async(id)=>{
+  try{
+    const item=allFeedbackCache.find(x=>x.id===id);
+    let parsed={text:item?item.message:"",contact:item?item.contact:"",userEmail:item?item.userEmail:"",pageUrl:item?item.pageUrl:"",status:"read"};
+    if(item&&item.rawMessage&&typeof item.rawMessage==="string"&&item.rawMessage.startsWith("{")){
+      try{parsed=JSON.parse(item.rawMessage);}catch(e){}
+    }
+    parsed.status="read";
+    await updateDoc(doc(db,"feedback",id),{
+      message:JSON.stringify(parsed),
+      updated_at:Date.now()
+    });
+    if(item){item.status="read";item.rawMessage=JSON.stringify(parsed);}
+    renderFeedbackList();
+    updateStats();
+  }catch(e){alert("خطأ: "+e.message);}
+};
+window.markFeedbackNew=async(id)=>{
+  try{
+    const item=allFeedbackCache.find(x=>x.id===id);
+    let parsed={text:item?item.message:"",contact:item?item.contact:"",userEmail:item?item.userEmail:"",pageUrl:item?item.pageUrl:"",status:"new"};
+    if(item&&item.rawMessage&&typeof item.rawMessage==="string"&&item.rawMessage.startsWith("{")){
+      try{parsed=JSON.parse(item.rawMessage);}catch(e){}
+    }
+    parsed.status="new";
+    await updateDoc(doc(db,"feedback",id),{
+      message:JSON.stringify(parsed),
+      updated_at:Date.now()
+    });
+    if(item){item.status="new";item.rawMessage=JSON.stringify(parsed);}
+    renderFeedbackList();
+    updateStats();
+  }catch(e){alert("خطأ: "+e.message);}
+};
+window.deleteFeedback=async(id)=>{
+  if(!confirm("حذف هذه الرسالة؟"))return;
+  try{
+    await deleteDoc(doc(db,"feedback",id));
+    allFeedbackCache=allFeedbackCache.filter(x=>x.id!==id);
+    renderFeedbackList();
+    updateStats();
+  }catch(e){alert("خطأ: "+e.message);}
+};
 window.replyToFeedback=(contact)=>{
-  const clean=String(contact).replace(/[^0-9+]/g,"");
-  if(clean.length>=9){
+  let clean=String(contact||"").replace(/[^0-9]/g,"");
+  while(clean.startsWith("00218")) clean = clean.slice(5);
+  while(clean.startsWith("218")) clean = clean.slice(3);
+  while(clean.startsWith("0")) clean = clean.slice(1);
+  while(clean.startsWith("218")) clean = clean.slice(3);
+  while(clean.startsWith("0")) clean = clean.slice(1);
+  if(clean.length>=8){
+    const cleanPh = "218" + clean;
     const msg=encodeURIComponent("السلام عليكم 👋\nشكراً على رسالتك في موقع تسوق الآن. نحن هنا لخدمتك 🌸");
-    window.open("https://wa.me/"+clean.replace(/^\+/,"")+"?text="+msg,"_blank");
-  }else if(contact.includes("@")){
+    window.open("https://wa.me/"+cleanPh+"?text="+msg,"_blank");
+  }else if(String(contact||"").includes("@")){
     const subject=encodeURIComponent("رد على رسالتك في تسوق الآن");
     const body=encodeURIComponent("السلام عليكم،\n\nشكراً على رسالتك. نحن هنا لخدمتك.");
     window.open(`mailto:${contact}?subject=${subject}&body=${body}`,"_blank");
@@ -1134,50 +1404,115 @@ window.replyToFeedback=(contact)=>{
 async function loadAdmins(){
   try{
     const snap=await getDocs(collection(db,"admins"));
-    adminsCache=snap.docs.map(d=>({email:d.id,...d.data()}));
+    adminsCache=snap.docs.map(d=>({id:d.id,identifier:d.id,...d.data()}));
     renderAdminsList();
-  }catch(e){}
+  }catch(e){
+    console.error("loadAdmins error:", e);
+  }
 }
 function renderAdminsList(){
   const box=document.getElementById("adminsList");
   if(!box)return;
-  const mainRow=`<div class="adminRow" style="background:#fef3c7">
-    <div class="email">${esc(MAIN_ADMIN)}</div>
-    <span class="tag main">أدمن رئيسي</span>
+  const isSuper = isSuperAdminUser(currentUser);
+  const formWrap = document.getElementById("adminAddFormWrap");
+  if(formWrap){
+    if(isSuper){
+      formWrap.style.display = "block";
+    } else {
+      formWrap.innerHTML = '<div style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px;border-radius:10px;font-size:12.5px;font-weight:700;text-align:center;margin-top:14px">🔒 إضافة وحذف المشرفين مقفلة ومحمية لصاحب ومشرف الموقع الرئيسي فقط.</div>';
+    }
+  }
+
+  const mainRow=`<div class="adminRow" style="background:#fef3c7;border:1px solid #fde68a">
+    <div class="email"><b>👑 ${esc(MAIN_ADMIN)}</b></div>
+    <span class="tag main">مشرف الموقع الرئيسي</span>
   </div>`;
-  const others=adminsCache.filter(a=>a.email.toLowerCase()!==MAIN_ADMIN.toLowerCase());
+  const others=adminsCache.filter(a=>{
+    const id = (a.identifier || a.email || a.id || "").toLowerCase();
+    return id !== MAIN_ADMIN.toLowerCase() && !id.endsWith("928476784");
+  });
   if(others.length===0){
-    box.innerHTML=mainRow+'<div class="listEmpty" style="padding:12px">لا يوجد أدمنز إضافيون</div>';
+    box.innerHTML=mainRow+'<div class="listEmpty" style="padding:12px">لا يوجد مشرفون إضافيون للموقع</div>';
     return;
   }
-  box.innerHTML=mainRow+others.map(a=>`
-    <div class="adminRow">
-      <div class="email">${esc(a.email)}</div>
-      <span class="tag">أدمن</span>
-      <button class="rm" onclick="removeAdmin('${esc(a.email)}')">🗑️</button>
+  box.innerHTML=mainRow+others.map(a=>{
+    const displayId = a.email || a.phone || a.identifier || a.id;
+    const isEmail = String(displayId).includes("@");
+    const icon = isEmail ? "📧" : "📱";
+    const delBtn = isSuper ? `<button class="rm" title="حذف الأدمن" onclick="removeAdmin('${esc(a.id || displayId)}')">🗑️</button>` : '';
+    return `
+    <div class="adminRow" style="background:#fff;border:1px solid var(--border)">
+      <div class="email">
+        <b>${icon} ${esc(displayId)}</b>
+        ${a.addedAt ? `<br><small style="color:var(--muted);font-size:11px">أُضيف: ${timeAgo(a.addedAt)} ${a.addedBy ? 'بواسطة ' + esc(a.addedBy) : ''}</small>` : ''}
+      </div>
+      <span class="tag" style="background:#e0f2fe;color:#0369a1">أدمن موقع</span>
+      ${delBtn}
     </div>
-  `).join("");
+  `}).join("");
 }
 window.addAdmin=async()=>{
-  const email=document.getElementById("newAdminEmail").value.trim().toLowerCase();
-  if(!email){alert("اكتب الإيميل");return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert("إيميل غير صحيح");return;}
-  if(email===MAIN_ADMIN.toLowerCase()){alert("هذا الأدمن الرئيسي");return;}
-  if(adminsCache.some(a=>a.email.toLowerCase()===email)){alert("موجود مسبقاً");return;}
-  if(!confirm(`إضافة:\n${email}\nكأدمن جديد؟`))return;
+  if(!isSuperAdminUser(currentUser)){
+    alert("⛔ عذراً، إدارة مشرفي الموقع بالكامل محمية ومقتصرة حصرياً على صاحب ومشرف الموقع الرئيسي!");
+    return;
+  }
+  const inp=document.getElementById("newAdminEmail");
+  const raw=(inp ? inp.value : "").trim();
+  if(!raw){alert("اكتب البريد الإلكتروني أو رقم الهاتف للمشرف");return;}
+
+  let email="", phone="", identifier="";
+  if(raw.includes("@")){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)){alert("صيغة البريد الإلكتروني غير صحيحة");return;}
+    email = raw.toLowerCase();
+    identifier = email;
+  } else {
+    const cleanDigits = raw.replace(/\D/g, "");
+    if(cleanDigits.length < 8){alert("رقم الهاتف غير صحيح (يجب أن يتكون من 8 أرقام على الأقل)");return;}
+    phone = cleanDigits;
+    identifier = phone;
+  }
+
+  if(identifier === MAIN_ADMIN.toLowerCase() || identifier.endsWith("928476784")){
+    alert("هذا هو الأدمن الرئيسي المسجل بالفعل");
+    return;
+  }
+
+  if(adminsCache.some(a => (a.identifier||a.email||a.phone||a.id||"").toLowerCase() === identifier.toLowerCase() || (phone && (a.phone||"").endsWith(phone.slice(-8))))){
+    alert("هذا المشرف موجود مسبقاً في القائمة");
+    return;
+  }
+
+  if(!confirm(`هل تريد بالتأكيد إضافة:\n${raw}\nكمشرف / أدمن للموقع بالكامل؟`))return;
+
   try{
-    await setDoc(doc(db,"admins",email),{email,addedAt:Date.now(),addedBy:currentUser.email});
-    document.getElementById("newAdminEmail").value="";
-    showAdminStatus("ok","✅ تم إضافة الأدمن: "+email);
+    await setDoc(doc(db,"admins",identifier),{
+      identifier: identifier,
+      email: email,
+      phone: phone,
+      phoneLast8: phone ? phone.slice(-8) : "",
+      addedAt: Date.now(),
+      addedBy: (currentUser && (currentUser.email || currentUser.phoneNumber)) ? (currentUser.email || currentUser.phoneNumber) : "مشرف رئيسي"
+    });
+    if(inp) inp.value="";
+    showAdminStatus("ok","✅ تم إضافة المشرف بنجاح: "+raw);
     await loadAdmins();
   }catch(e){showAdminStatus("err","❌ خطأ: "+e.message);}
 };
-window.removeAdmin=async(email)=>{
-  if(!confirm(`حذف الأدمن:\n${email}?`))return;
-  try{await deleteDoc(doc(db,"admins",email));showAdminStatus("ok","✅ تم الحذف");await loadAdmins();}catch(e){showAdminStatus("err","خطأ: "+e.message);}
+window.removeAdmin=async(id)=>{
+  if(!isSuperAdminUser(currentUser)){
+    alert("⛔ عذراً، إدارة مشرفي الموقع بالكامل محمية ومقتصرة حصرياً على صاحب ومشرف الموقع الرئيسي!");
+    return;
+  }
+  if(!confirm(`هل تريد بالتأكيد حذف المشرف:\n${id}\nوإلغاء صلاحياته من لوحة التحكم؟`))return;
+  try{
+    await deleteDoc(doc(db,"admins",id));
+    showAdminStatus("ok","✅ تم حذف المشرف بنجاح");
+    await loadAdmins();
+  }catch(e){showAdminStatus("err","خطأ: "+e.message);}
 };
 function showAdminStatus(type,msg){
   const el=document.getElementById("adminStatus");
+  if(!el)return;
   el.className="status show "+type;el.textContent=msg;
   if(type==="ok")setTimeout(()=>el.classList.remove("show"),4000);
 }
