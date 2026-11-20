@@ -101,6 +101,18 @@ const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const ADMIN_EMAIL="abdoalk73@gmail.com";
 const ADMIN_PHONES=["218928476784","0928476784","218928476781","0928476781","218928476783","0928476783","218928476785","0928476785"];
 
+let _dynamicAdminsCache = [];
+
+async function loadDynamicAdmins(){
+  try {
+    const snap = await getDocs(collection(db, "admins"));
+    _dynamicAdminsCache = snap.docs.map(d => ({
+      id: (d.id || "").toLowerCase(),
+      data: d.data() || {}
+    }));
+  } catch(e) {}
+}
+
 window.isUserAdmin = function(u, prof){
   const user = u || (typeof auth !== 'undefined' ? auth.currentUser : null);
   const p = prof || (typeof myProfile !== 'undefined' ? myProfile : null);
@@ -122,6 +134,25 @@ window.isUserAdmin = function(u, prof){
   if(user && user.email && user.email.startsWith("wa_")) {
     const waPh = user.email.replace("wa_", "").replace("@tasawuq.ly", "").replace(/[^0-9]/g, "");
     if(waPh && ADMIN_PHONES.some(ap => waPh.endsWith(ap.slice(-8)))) { isAdmin = true; return true; }
+  }
+
+  // 4. فحص المشرفين والأدمنز المضافين ديناميكياً من لوحة الأدمن (بالإيميل أو بالهاتف)
+  if(_dynamicAdminsCache && _dynamicAdminsCache.length > 0){
+    const uEm = (user && user.email) ? user.email.toLowerCase() : "";
+    const pEm = (p && p.email) ? p.email.toLowerCase() : "";
+    const uPh = ((user && user.phoneNumber) || (p && (p.phone || p.local_phone || p.localPhone)) || (user && user.email && user.email.startsWith("wa_") ? user.email.replace("wa_","").replace("@tasawuq.ly","") : "") || "").replace(/\D/g, "");
+    const uLast8 = uPh.length >= 8 ? uPh.slice(-8) : "";
+
+    for(const adm of _dynamicAdminsCache){
+      const aId = adm.id || "";
+      const aData = adm.data || {};
+      const aEm = (aData.email || "").toLowerCase();
+      const aPh = (aData.phone || aData.phoneLast8 || aId).replace(/\D/g, "");
+
+      if(uEm && (aId === uEm || aEm === uEm)) { isAdmin = true; return true; }
+      if(pEm && (aId === pEm || aEm === pEm)) { isAdmin = true; return true; }
+      if(uLast8 && aPh.length >= 8 && aPh.endsWith(uLast8)) { isAdmin = true; return true; }
+    }
   }
 
   return false;
@@ -157,8 +188,8 @@ window.canUserManageStore = function(store){
     if(!store.ownerUid || isAbdoUser(store.ownerUid) || String(store.ownerUid).startsWith('admin_')) return true;
   }
 
-  // 6. عمال / مساعدي المتجر
-  if(typeof isStoreHelper === 'function' && me.email && isStoreHelper(store.id, me.email)) return true;
+  // 6. عمال / مساعدي / أدمنز المتجر (عبر البريد أو الهاتف)
+  if(typeof isStoreHelper === 'function' && isStoreHelper(store.id, me, prof)) return true;
 
   return false;
 };
@@ -1009,31 +1040,33 @@ function validateUsername(u){if(!u)return{ok:false,msg:"اكتب اسم المس
 /* ✅ دالات تنسيق والتحقق من رقم الهاتف */
 
 function normalizePhone(p){
-
   let s = String(p || "").replace(/[^0-9]/g, "");
-
   if (!s) return "";
-
-  if (s.startsWith("00218")) s = s.slice(5);
-
-  else if (s.startsWith("218")) s = s.slice(3);
-
+  while (s.startsWith("00218")) s = s.slice(5);
+  while (s.startsWith("218")) s = s.slice(3);
   while (s.startsWith("0")) s = s.slice(1);
-
+  while (s.startsWith("218")) s = s.slice(3);
+  while (s.startsWith("0")) s = s.slice(1);
+  if (!s) return "";
   return "218" + s;
-
 }
 
 window.normalizePhone = normalizePhone;
 
+function toWhatsappUrl(p, text){
+  const clean = normalizePhone(p);
+  if (!clean || clean === "218") return "";
+  const base = "https://wa.me/" + clean;
+  if (text) return base + "?text=" + encodeURIComponent(text);
+  return base;
+}
+
+window.toWhatsappUrl = toWhatsappUrl;
+
 function formatCallPhone(p){
-
   const norm = normalizePhone(p);
-
   if (!norm) return "";
-
   return "0" + norm.slice(3);
-
 }
 
 window.formatCallPhone = formatCallPhone;
@@ -2971,94 +3004,156 @@ window.openTerms=()=>{termsOverlay.classList.remove("hidden");};
 
 window.openPrivacy=()=>{privacyOverlay.classList.remove("hidden");};
 
-/* ===== Store Helpers ===== */
+/* ===== Store Helpers & Admins ===== */
 
 window.loadStoreHelpers=(storeId)=>{
-
   const store=allStores.find(s=>s.id===storeId);
-
   if(!store){currentStoreHelpers=[];renderStoreHelpersList();return;}
-
   currentStoreHelpers=Array.isArray(store.helpers)?[...store.helpers]:[];
-
   renderStoreHelpersList();
-
 };
 
 function renderStoreHelpersList(){
-
   const box=document.getElementById("storeHelpersList");
-
   if(!box)return;
-
   if(currentStoreHelpers.length===0){
-
-    box.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">لا يوجد مساعدين بعد</div>';
-
+    box.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">لا يوجد مشرفون أو مساعدون مضافون بعد</div>';
     return;
-
   }
-
-  box.innerHTML=currentStoreHelpers.map((email,i)=>`
-
+  box.innerHTML=currentStoreHelpers.map((h,i)=>{
+    const isEmail = String(h).includes("@");
+    const icon = isEmail ? "📧" : "📱";
+    return `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
-
-      <span style="font-size:12.5px;direction:ltr;word-break:break-all;flex:1">${escapeHtml(email)}</span>
-
-      <button onclick="removeStoreHelper(${i})" style="background:#fdeceb;color:#e5484d;border:none;padding:6px 10px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️</button>
-
+      <span style="font-size:12.5px;direction:ltr;word-break:break-all;flex:1;font-weight:700">${icon} ${escapeHtml(h)}</span>
+      <button type="button" onclick="removeStoreHelper(${i})" style="background:#fdeceb;color:#e5484d;border:none;padding:6px 10px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️</button>
     </div>
-
-  `).join("");
-
+  `;}).join("");
 }
 
 window.addStoreHelper=()=>{
-
   const input=document.getElementById("newHelperEmail");
+  const raw=(input ? input.value : "").trim();
+  if(!raw){showToast("⚠️ اكتب الإيميل أو رقم الهاتف للمشرف","warn");return;}
 
-  const email=(input.value||"").trim().toLowerCase();
+  let val = raw;
+  if(raw.includes("@")){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)){showToast("❌ صيغة بريد إلكتروني غير صحيحة","error");return;}
+    val = raw.toLowerCase();
+  } else {
+    const cleanDigits = raw.replace(/\D/g, "");
+    if(cleanDigits.length < 8){showToast("❌ رقم الهاتف غير صحيح (8 أرقام على الأقل)","error");return;}
+    val = cleanDigits;
+  }
 
-  if(!email){showToast("⚠️ اكتب الإيميل","warn");return;}
+  const isExisting = currentStoreHelpers.some(h => {
+    if(val.includes("@")) return String(h).toLowerCase() === val;
+    const hClean = String(h).replace(/\D/g, "");
+    return hClean.length >= 8 && hClean.endsWith(val.slice(-8));
+  });
 
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast("❌ إيميل غير صحيح","error");return;}
+  if(isExisting){showToast("⚠️ هذا المشرف موجود مسبقاً","warn");return;}
+  if(currentStoreHelpers.length >= 15){showToast("⚠️ الحد الأقصى 15 مشرفاً","warn");return;}
 
-  if(currentStoreHelpers.includes(email)){showToast("⚠️ موجود مسبقاً","warn");return;}
-
-  if(currentStoreHelpers.length>=10){showToast("⚠️ الحد الأقصى 10 مساعدين","warn");return;}
-
-  currentStoreHelpers.push(email);
-
-  input.value="";
-
+  currentStoreHelpers.push(val);
+  if(input) input.value="";
   renderStoreHelpersList();
-
-  showToast("✅ تم الإضافة — لا تنسى حفظ التعديلات","success",3000);
-
+  showToast("✅ تم إضافة المشرف — لا تنسى حفظ التعديلات","success",3000);
 };
 
 window.removeStoreHelper=(index)=>{
-
-  if(!confirm("حذف هذا المساعد؟"))return;
-
+  if(!confirm("حذف هذا المشرف؟"))return;
   currentStoreHelpers.splice(index,1);
-
   renderStoreHelpersList();
-
   showToast("✅ تم الحذف — لا تنسى حفظ التعديلات","success",3000);
-
 };
 
-window.isStoreHelper=(storeId,userEmail)=>{
+window.isStoreHelper=(storeId, userOrEmail, prof)=>{
+  if(!userOrEmail) return false;
+  const store = allStores.find(s => s.id === storeId);
+  if(!store || !Array.isArray(store.helpers) || store.helpers.length === 0) return false;
 
-  if(!userEmail)return false;
+  let candEmails = [];
+  let candPhones = [];
 
-  const store=allStores.find(s=>s.id===storeId);
+  if(typeof userOrEmail === 'string'){
+    const s = userOrEmail.trim().toLowerCase();
+    if(s.includes("@")) candEmails.push(s);
+    const digits = s.replace(/\D/g, "");
+    if(digits.length >= 8) candPhones.push(digits);
+  } else if(typeof userOrEmail === 'object'){
+    const u = userOrEmail;
+    const p = prof || (typeof myProfile !== 'undefined' ? myProfile : null);
+    if(u.email) candEmails.push(u.email.toLowerCase());
+    if(p && p.email) candEmails.push(p.email.toLowerCase());
+    if(u.phoneNumber) candPhones.push(u.phoneNumber.replace(/\D/g, ""));
+    if(u.phone) candPhones.push(String(u.phone).replace(/\D/g, ""));
+    if(p && p.phone) candPhones.push(String(p.phone).replace(/\D/g, ""));
+    if(p && p.local_phone) candPhones.push(String(p.local_phone).replace(/\D/g, ""));
+    if(p && p.localPhone) candPhones.push(String(p.localPhone).replace(/\D/g, ""));
+    if(u.email && u.email.startsWith("wa_")){
+      const waPh = u.email.replace("wa_","").replace("@tasawuq.ly","").replace(/\D/g,"");
+      if(waPh.length >= 8) candPhones.push(waPh);
+    }
+  }
 
-  if(!store||!Array.isArray(store.helpers))return false;
+  for(const h of store.helpers){
+    const hStr = String(h || "").trim();
+    if(hStr.includes("@")){
+      if(candEmails.includes(hStr.toLowerCase())) return true;
+    } else {
+      const hDigits = hStr.replace(/\D/g, "");
+      if(hDigits.length >= 8){
+        const h8 = hDigits.slice(-8);
+        if(candPhones.some(cp => cp.endsWith(h8))) return true;
+      }
+    }
+  }
+  return false;
+};
 
-  return store.helpers.includes(userEmail.toLowerCase());
+/* ===== Store Custom Categories (الأقسام المخصصة) ===== */
+let currentStoreCustomCategories = [];
 
+window.loadStoreCustomCategories = (storeId) => {
+  const store = allStores.find(s => s.id === storeId);
+  currentStoreCustomCategories = (store && Array.isArray(store.customCategories)) ? [...store.customCategories] : [];
+  renderStoreCustomCategoriesList();
+};
+
+function renderStoreCustomCategoriesList(){
+  const box = document.getElementById("storeCustomCategoriesList");
+  if(!box) return;
+  if(currentStoreCustomCategories.length === 0){
+    box.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">لا توجد أقسام مخصصة بعد (الأقسام الافتراضية تظهر تلقائياً)</div>';
+    return;
+  }
+  box.innerHTML = currentStoreCustomCategories.map((cat, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
+      <span style="font-size:13px;font-weight:700;color:var(--text);flex:1">🏷️ ${escapeHtml(cat)}</span>
+      <button type="button" onclick="removeStoreCustomCategory(${i})" style="background:#fdeceb;color:#e5484d;border:none;padding:6px 10px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer">🗑️ حذف</button>
+    </div>
+  `).join("");
+}
+
+window.addStoreCustomCategory = () => {
+  const input = document.getElementById("newStoreCustomCategory");
+  const val = (input?.value || "").trim();
+  if(!val){ showToast("⚠️ اكتب اسم القسم الجديد", "warn"); return; }
+  if(val.length < 2 || val.length > 30){ showToast("⚠️ اسم القسم بين 2 و30 حرف", "warn"); return; }
+  if(currentStoreCustomCategories.includes(val)){ showToast("⚠️ هذا القسم موجود مسبقاً", "warn"); return; }
+  if(currentStoreCustomCategories.length >= 25){ showToast("⚠️ الحد الأقصى 25 قسماً", "warn"); return; }
+  currentStoreCustomCategories.push(val);
+  if(input) input.value = "";
+  renderStoreCustomCategoriesList();
+  showToast("✅ تم إضافة القسم — لا تنسى حفظ التعديلات", "success", 2500);
+};
+
+window.removeStoreCustomCategory = (idx) => {
+  if(!confirm("هل تريد حذف هذا القسم؟")) return;
+  currentStoreCustomCategories.splice(idx, 1);
+  renderStoreCustomCategoriesList();
+  showToast("✅ تم الحذف — لا تنسى حفظ التعديلات", "success", 2500);
 };
 
 /* ===== Feedback ===== */
@@ -3083,13 +3178,13 @@ window.openFeedback=()=>{
 
 window.submitFeedback=async()=>{
 
-  const type=document.getElementById("fbType").value;
+  const type=document.getElementById("fbType").value||"complaint";
 
   const message=(document.getElementById("fbMessage").value||"").trim();
 
   const contact=(document.getElementById("fbContact").value||"").trim();
 
-  if(message.length<10){showToast("⚠️ اكتب رسالة (10 أحرف على الأقل)","warn");return;}
+  if(message.length<5){showToast("⚠️ اكتب رسالة (5 أحرف على الأقل)","warn");return;}
 
   const btn=document.getElementById("fbSendBtn");
 
@@ -3097,29 +3192,38 @@ window.submitFeedback=async()=>{
 
   try{
 
-    await addDoc(collection(db,"feedback"),{
+    const user=auth.currentUser;
+    const uid=user?user.uid:"";
+    const userName=(myProfile&&myProfile.name)||(user&&(user.displayName||user.email))||"زائر";
+    const userPhone=contact.slice(0,100);
+    const userEmail=(user&&user.email)||"";
+    const pageUrl=window.location.href.slice(0,500);
+    const userAgent=navigator.userAgent.slice(0,300);
 
-      type:type,
-
-      message:message.slice(0,1000),
-
+    const payloadObj={
+      text:message.slice(0,2000),
       contact:contact.slice(0,100),
-
-      userEmail:(auth.currentUser&&auth.currentUser.email)||"",
-
-      userUid:(auth.currentUser&&auth.currentUser.uid)||"",
-
-      pageUrl:window.location.href.slice(0,500),
-
-      userAgent:navigator.userAgent.slice(0,300),
-
-      createdAt:Date.now(),
-
+      userEmail:userEmail,
+      userUid:uid,
+      pageUrl:pageUrl,
+      userAgent:userAgent,
       status:"new"
+    };
 
+    await addDoc(collection(db,"feedback"),{
+      type:type,
+      uid:uid,
+      user_name:userName.slice(0,100),
+      user_phone:userPhone,
+      created_at:Date.now(),
+      updated_at:Date.now(),
+      message:JSON.stringify(payloadObj)
     });
 
     showToast("✅ وصلتنا رسالتك، شكراً لك!","success",3000);
+
+    const mInp=document.getElementById("fbMessage");if(mInp)mInp.value="";
+    const cInp=document.getElementById("fbContact");if(cInp)cInp.value="";
 
     closeOverlay();
 
@@ -6495,17 +6599,11 @@ window.copyToClipboard=async(text,label)=>{
 };
 
 window.sendReceiptToSeller=(phone,storeName)=>{
-
-  const cleanPhone=String(phone||"").replace(/[^0-9]/g,"");
-
-  if(!cleanPhone){showToast("⚠️ رقم المتجر غير متوفر","warn");return;}
-
+  const cleanPhone=normalizePhone(phone);
+  if(!cleanPhone || cleanPhone === "218"){showToast("⚠️ رقم المتجر غير متوفر أو غير صحيح","warn");return;}
   const msg=`السلام عليكم 👋\n\nحولت مبلغ لـ "${storeName}" على موقع تسوق الآن.\n\n📎 هذا إيصال التحويل 👇\n\n(أرفق صورة الإيصال هنا)`;
-
-  const url=`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
-
+  const url=toWhatsappUrl(cleanPhone, msg);
   window.open(url,"_blank");
-
 };
 
 /* ============================================
@@ -8523,13 +8621,15 @@ if (_postSelectedVideoFile) {
 
   }
 
-  if (!finalVideoUrl && _postSelectedVideoUrl) finalVideoUrl = _postSelectedVideoUrl;
+  if (!finalVideoUrl && _postSelectedVideoUrl && !_postSelectedVideoUrl.startsWith("blob:")) {
+    finalVideoUrl = _postSelectedVideoUrl;
+  }
 
 } else if (_postVideoRemoved) {
 
   finalVideoUrl = null; // تم حذف الفيديو صراحة من قبل المستخدم أو الأدمن!
 
-} else if (_postSelectedVideoUrl) {
+} else if (_postSelectedVideoUrl && !_postSelectedVideoUrl.startsWith("blob:")) {
 
   finalVideoUrl = _postSelectedVideoUrl;
 
@@ -9145,7 +9245,29 @@ function updateModBadge(){
 
    ============================================ */
 
-window.reportPost=async(id)=>{if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}const reason=prompt("سبب الإبلاغ (اختياري):");if(reason===null)return;try{const post=allPosts.find(p=>p.id===id);await addDoc(collection(db,"reports"),{postId:id,postTitle:post?post.title:"",reason:reason||"",reporterEmail:auth.currentUser.email||"",reporterUid:auth.currentUser.uid,createdAt:Date.now()});showToast("تم إرسال الإبلاغ، شكراً لك","success");}catch(e){showToast("تعذر إرسال الإبلاغ: "+e.message,"error");}};
+window.reportPost=async(id)=>{
+  if(!auth.currentUser){pendingAction={type:"report",postId:id};authOverlay.classList.remove("hidden");return;}
+  const reason=prompt("سبب الإبلاغ (اختياري):");
+  if(reason===null)return;
+  try{
+    const post=allPosts.find(p=>p.id===id);
+    const reporterName=(myProfile&&myProfile.name)||auth.currentUser.displayName||auth.currentUser.email||"مستخدم";
+    const reporterEmail=auth.currentUser.email||"";
+    await addDoc(collection(db,"reports"),{
+      postId:id,
+      postTitle:post?post.title:"",
+      reason:reason.trim()||"إبلاغ عام",
+      details:reporterEmail,
+      reporterUid:auth.currentUser.uid,
+      reporterName:reporterName,
+      createdAt:Date.now(),
+      resolved:false
+    });
+    showToast("تم إرسال الإبلاغ، شكراً لك","success");
+  }catch(e){
+    showToast("تعذر إرسال الإبلاغ: "+e.message,"error");
+  }
+};
 
 function startReportsListener(){onSnapshot(collection(db,"reports"),snap=>{allReports=snap.docs.map(d=>({id:d.id,...d.data()}));allReports.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));renderReports();reportsBtn.textContent=allReports.length?`🚩 الإبلاغات (${allReports.length})`:"🚩 الإبلاغات";});}
 
@@ -9171,7 +9293,7 @@ const safePid=escapeHtml(r.postId||"");
 
 const safeRid=escapeHtml(r.id||"");
 
-return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff"><div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">🚩 <b>سبب:</b> ${escapeHtml(r.reason||"بدون سبب")}<br><b>من:</b> ${escapeHtml(r.reporterEmail||"زائر")} · ${timeAgo(r.createdAt)}</div>${postInfo}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px"><button style="padding:12px 4px;border:none;border-radius:9px;background:#fdeceb;color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="deleteReportedPost('${safePid}','${safeRid}')">🗑️ حذف</button><button style="padding:12px 4px;border:none;border-radius:9px;background:var(--bg);color:var(--muted);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="dismissReport('${safeRid}')">👁️ تجاهل</button><button style="padding:12px 4px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${safePid}'),300)">📄 عرض</button></div></div>`;
+return `<div style="border:2px solid #e5484d;border-radius:14px;padding:12px;margin-bottom:14px;background:#fff"><div style="background:#fdeceb;color:#b91c1c;padding:8px 12px;border-radius:10px;font-size:12.5px;font-weight:800;margin-bottom:12px">🚩 <b>سبب:</b> ${escapeHtml(r.reason||"بدون سبب")}<br><b>من:</b> ${escapeHtml(r.reporterName||r.reporterEmail||r.details||"زائر")} · ${timeAgo(r.createdAt)}</div>${postInfo}<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px"><button style="padding:12px 4px;border:none;border-radius:9px;background:#fdeceb;color:var(--danger);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="deleteReportedPost('${safePid}','${safeRid}')">🗑️ حذف</button><button style="padding:12px 4px;border:none;border-radius:9px;background:var(--bg);color:var(--muted);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="dismissReport('${safeRid}')">👁️ تجاهل</button><button style="padding:12px 4px;border:none;border-radius:9px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer" onclick="closeOverlay();setTimeout(()=>openPost('${safePid}'),300)">📄 عرض</button></div></div>`;
 
 }).join("");
 
@@ -9190,9 +9312,155 @@ window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"
 window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
 
 /* ============================================
+   Admin: Feedback & Complaints (إدارة الشكاوى والاقتراحات)
+   ============================================ */
+let allAdminFeedback = [];
+let adminFeedbackListenerStarted = false;
 
+window.openAdminFeedback = () => {
+  if (!isAdmin) return;
+  const overlay = document.getElementById("adminFeedbackOverlay");
+  if (!overlay) return;
+  renderAdminFeedback();
+  if (!adminFeedbackListenerStarted) {
+    adminFeedbackListenerStarted = true;
+    onSnapshot(collection(db, "feedback"), snap => {
+      allAdminFeedback = snap.docs.map(d => {
+        const raw = d.data() || {};
+        let status = raw.status || "new";
+        let text = raw.message || "";
+        let contact = raw.user_phone || raw.contact || raw.userPhone || "";
+        let userEmail = raw.user_name || raw.userEmail || raw.userName || "";
+        let pageUrl = raw.pageUrl || "";
+        let type = raw.type || "complaint";
+
+        if (typeof raw.message === "string" && raw.message.trim().startsWith("{")) {
+          try {
+            const p = JSON.parse(raw.message);
+            if (p && typeof p === "object") {
+              text = p.text || p.reason || raw.message;
+              contact = p.contact || raw.user_phone || raw.userPhone || contact;
+              userEmail = p.userEmail || raw.user_name || raw.userName || userEmail;
+              pageUrl = p.pageUrl || "";
+              status = p.status || status;
+            }
+          } catch(e) {}
+        }
+        return {
+          id: d.id,
+          ...raw,
+          type: type,
+          messageText: text,
+          contact: contact,
+          userEmail: userEmail,
+          pageUrl: pageUrl,
+          status: status,
+          createdAt: raw.created_at || raw.createdAt || 0
+        };
+      }).filter(f => !f.type || f.type === 'bug' || f.type === 'suggestion' || f.type === 'complaint' || f.type === 'other' || f.type === 'chat_report' || f.type === 'feedback')
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      renderAdminFeedback();
+      const newCount = allAdminFeedback.filter(f => f.status === "new").length;
+      const b = document.getElementById("adminFeedbackCountBadge");
+      if (b) {
+        if (newCount > 0) { b.textContent = newCount; b.style.display = "inline-block"; }
+        else { b.style.display = "none"; }
+      }
+      const afBtn = document.getElementById("adminFeedbackBtn");
+      if (afBtn) {
+        afBtn.innerHTML = newCount > 0 ? `💬 الشكاوى والاقتراحات (${newCount})` : `💬 الشكاوى والاقتراحات`;
+      }
+    });
+  }
+  overlay.classList.remove("hidden");
+  accountOverlay.classList.add("hidden");
+};
+
+function renderAdminFeedback() {
+  const box = document.getElementById("adminFeedbackList");
+  if (!box) return;
+  if (!allAdminFeedback || allAdminFeedback.length === 0) {
+    box.innerHTML = '<div class="reportsEmpty">✅ لا توجد شكاوى أو اقتراحات جديدة</div>';
+    return;
+  }
+  const typeLabels = { bug: "🐛 مشكلة", suggestion: "💡 اقتراح", complaint: "⚠️ شكوى", other: "📝 أخرى", chat_report: "🚨 بلاغ محادثة", feedback: "💬 رسالة" };
+  const typeColors = { bug: "#e5484d", suggestion: "#16a34a", complaint: "#f59e0b", other: "#0284c7", chat_report: "#dc2626", feedback: "#6366f1" };
+
+  box.innerHTML = allAdminFeedback.map(f => {
+    const isNew = f.status === "new";
+    const label = typeLabels[f.type] || "💬";
+    const color = typeColors[f.type] || "#0284c7";
+    const safeId = escapeHtml(f.id);
+    return `<div style="border:1.5px solid ${isNew ? color : 'var(--border)'};background:${isNew ? '#fff' : '#f9fafb'};border-radius:14px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="background:${color};color:#fff;font-size:11px;font-weight:900;padding:3px 10px;border-radius:8px">${label}</span>
+        ${isNew ? '<span style="background:#e5484d;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px">جديد</span>' : '<span style="color:var(--muted);font-size:11px">تمت المراجعة</span>'}
+        <span style="font-size:11px;color:var(--muted);margin-right:auto">${timeAgo(f.createdAt)}</span>
+      </div>
+      <div style="font-size:13.5px;line-height:1.8;white-space:pre-wrap;word-break:break-word;background:#f8fafc;padding:10px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:8px">${escapeHtml(f.messageText || f.message || "")}</div>
+      <div style="font-size:11.5px;color:var(--muted);line-height:1.7;margin-bottom:10px">
+        ${f.contact ? `📞 <b>تواصل:</b> <span dir="ltr">${escapeHtml(f.contact)}</span><br>` : ""}
+        ${f.userEmail ? `👤 <b>المستخدم:</b> ${escapeHtml(f.userEmail)}<br>` : ""}
+        ${f.pageUrl ? `🔗 <span dir="ltr">${escapeHtml(f.pageUrl.slice(0, 80))}</span>` : ""}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        ${isNew ? `<button style="padding:9px 4px;border:none;border-radius:8px;background:#dcfce7;color:#166534;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer" onclick="toggleAdminFeedbackStatus('${safeId}', 'read')">✅ مقروء</button>` : `<button style="padding:9px 4px;border:none;border-radius:8px;background:#f3f4f6;color:#374151;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer" onclick="toggleAdminFeedbackStatus('${safeId}', 'new')">🔄 جديد</button>`}
+        ${f.contact ? `<button style="padding:9px 4px;border:none;border-radius:8px;background:#e0f2fe;color:#0369a1;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer" onclick="replyAdminFeedback('${escapeHtml(f.contact)}')">💬 رد</button>` : '<button style="padding:9px 4px;border:none;border-radius:8px;background:#f3f4f6;color:#9ca3af;font-family:inherit;font-size:12px;font-weight:800;cursor:not-allowed" disabled>لا تواصل</button>'}
+        <button style="padding:9px 4px;border:none;border-radius:8px;background:#fee2e2;color:#991b1b;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer" onclick="deleteAdminFeedback('${safeId}')">🗑️ حذف</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+window.toggleAdminFeedbackStatus = async (id, newStatus) => {
+  try {
+    const item = allAdminFeedback.find(x => x.id === id);
+    let parsed = { text: item ? item.messageText : "", status: newStatus };
+    if (item && item.message && typeof item.message === "string" && item.message.startsWith("{")) {
+      try { parsed = JSON.parse(item.message); } catch(e) {}
+    } else if (item) {
+      parsed = { text: item.messageText, contact: item.contact, userEmail: item.userEmail, pageUrl: item.pageUrl };
+    }
+    parsed.status = newStatus;
+    await updateDoc(doc(db, "feedback", id), {
+      message: JSON.stringify(parsed),
+      updated_at: Date.now()
+    });
+    if (item) item.status = newStatus;
+    renderAdminFeedback();
+    showToast("✅ تم التحديث", "success");
+  } catch (e) {
+    showToast("خطأ: " + e.message, "error");
+  }
+};
+
+window.deleteAdminFeedback = async (id) => {
+  if (!confirm("حذف هذه الرسالة؟")) return;
+  try {
+    await deleteDoc(doc(db, "feedback", id));
+    allAdminFeedback = allAdminFeedback.filter(x => x.id !== id);
+    renderAdminFeedback();
+    showToast("✅ تم الحذف", "success");
+  } catch (e) {
+    showToast("خطأ: " + e.message, "error");
+  }
+};
+
+window.replyAdminFeedback = (contact) => {
+  const clean = String(contact).replace(/[^0-9+]/g, "");
+  if (clean.length >= 9) {
+    const msg = encodeURIComponent("السلام عليكم 👋\nشكراً على رسالتك في موقع تسوق الآن. نحن هنا لمساعدتك 🌸");
+    window.open("https://wa.me/" + clean.replace(/^\+/, "") + "?text=" + msg, "_blank");
+  } else if (contact.includes("@")) {
+    window.open(`mailto:${contact}?subject=رد على رسالتك في تسوق الآن`, "_blank");
+  } else {
+    alert("وسيلة التواصل: " + contact);
+  }
+};
+
+/* ============================================
    Admin: Limits
-
    ============================================ */
 
 window.openLimits=()=>{if(!isAdmin)return;renderLimits();if(!limitsListenerStarted){limitsListenerStarted=true;onSnapshot(collection(db,"userLimits"),snap=>{allLimits=snap.docs.map(d=>({uid:d.id,...d.data()}));allLimits.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));renderLimits();});}limitsOverlay.classList.remove("hidden");accountOverlay.classList.add("hidden");};
@@ -9734,7 +10002,7 @@ window.sendCartToWhats=()=>{
 
   const isRestaurant=isRestaurantStore(store);
 
-  const phone=cart.storePhone.replace(/[^0-9]/g,"");
+  const cleanPhone=normalizePhone(cart.storePhone);
 
   const total=cartTotalPrice();
 
@@ -9746,17 +10014,19 @@ window.sendCartToWhats=()=>{
 
     alert(`📞 اتصل بالمطعم واطلب:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 ${cnt} قطعة\n\nسيتم فتح الاتصال الآن...`);
 
-    window.location.href=`tel:${formatCallPhone(phone)}`;
+    window.location.href=`tel:${formatCallPhone(cleanPhone)}`;
 
     return;
 
   }
 
+  if(!cleanPhone || cleanPhone === "218"){ showToast("⚠️ رقم واتساب المتجر غير متوفر", "warn"); return; }
+
   let lines=cart.items.map((item,i)=>{const qty=item.qty||1;const sub=(item.price||0)*qty;return `${i+1}. ${item.title}\n   💰 ${formatPrice(item.price)} د.ل × ${qty} = ${formatPrice(sub)} د.ل`;}).join("\n\n");
 
   const msg=`السلام عليكم 👋\n\nشفت منتجاتك على موقع "تسوق الآن" وأنا مهتم بـ:\n\n${lines}\n\n━━━━━━━━━━━━━\n💰 المجموع: ${formatPrice(total)} د.ل\n📦 عدد القطع: ${cnt}\n\nهل ممكن نتفق؟`;
 
-  const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  const url=toWhatsappUrl(cleanPhone, msg);
 
   window.open(url,"_blank");
 
@@ -12903,7 +13173,7 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
 
     const logoHtml=store.logo?`<img src="${escapeHtml(store.logo)}">`:"<div class='placeholder'>🏪</div>";
 
-    const cleanStorePhone=String(store.phone||'').replace(/[^0-9+]/g,'');
+    const cleanStorePhone=normalizePhone(store.phone);
 
     const storeCallNumber=store.callPhone||store.phone;
 
@@ -13010,6 +13280,13 @@ window.openStore=async(storeId,keepScroll,backTo,skipHistory)=>{
     currentStoreSearch = "";
 
     const availableSubCategories = [];
+
+    if(Array.isArray(store.customCategories)){
+      store.customCategories.forEach(c => {
+        const s = String(c || '').trim();
+        if(s && !availableSubCategories.includes(s)) availableSubCategories.push(s);
+      });
+    }
 
     items.forEach(p => {
 
@@ -13561,7 +13838,15 @@ window.backFromStore=()=>{
 
 };
 
-window.openStoreWhatsapp=(phone)=>{const url="https://wa.me/"+encodeURIComponent(String(phone||'').replace(/[^0-9]/g,""));document.getElementById("warnGo").href=url;warnOverlay.classList.remove("hidden");};
+window.openStoreWhatsapp=(phone)=>{
+  const clean = normalizePhone(phone);
+  if(!clean || clean === "218"){ showToast("⚠️ رقم واتساب المتجر غير متوفر", "warn"); return; }
+  const url = toWhatsappUrl(clean);
+  const warnGo = document.getElementById("warnGo");
+  if(warnGo) warnGo.href = url;
+  if(typeof warnOverlay !== 'undefined' && warnOverlay) warnOverlay.classList.remove("hidden");
+  else window.open(url, "_blank");
+};
 
 window.goAddStorePost=(storeId)=>{
 
@@ -13988,6 +14273,7 @@ window.openEditStore=(storeId)=>{
   document.getElementById("editStoreBankAccount").value=bi.accountNumber||"";
 
   loadStoreHelpers(storeId);
+  loadStoreCustomCategories(storeId);
 
   renderEditStoreLogo(store.logo);
 
@@ -14134,7 +14420,7 @@ window.saveStoreEdits=async()=>{
 
     const finalCallPhone = isRestaurantCategory(newCategory) ? (newCallPhone || newPhone || store.callPhone || store.phone) : (newPhone || store.phone);
 
-    const updates={name:newName,category:newCategory,city:newCity,receiptPhone:(isRestaurantCategory(newCategory)?newReceiptPhone:""),description:newDescription,workingHours:{openTime,closeTime,alwaysOpen},helpers:currentStoreHelpers,bankInfo:{
+    const updates={name:newName,category:newCategory,city:newCity,receiptPhone:(isRestaurantCategory(newCategory)?newReceiptPhone:""),description:newDescription,workingHours:{openTime,closeTime,alwaysOpen},helpers:currentStoreHelpers,customCategories:currentStoreCustomCategories,bankInfo:{
 
       accountOwner:(document.getElementById("editStoreBankOwner")?.value||"").trim().slice(0,60),
 
@@ -14175,6 +14461,9 @@ window.saveStoreEdits=async()=>{
     btn.textContent="⏳ جاري الحفظ...";
 
     await updateDoc(doc(db,"stores",editStoreCurrentId),updates);
+
+    store.helpers = currentStoreHelpers;
+    store.customCategories = currentStoreCustomCategories;
 
     if(store.name!==newName){
 
@@ -14755,16 +15044,17 @@ if(subCatField && subCatInput){
 
     const isRest=isRestaurantCategory(post.storeCategory||post.category);
 
-    const tagList=isRest
+    const postStore=allStores.find(s=>s.id===post.storeId);
+    const customTags=(postStore&&Array.isArray(postStore.customCategories))?[...postStore.customCategories]:[];
 
+    const defaultTags=isRest
       ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
-
       : ['Apple / آيفون', 'Samsung / سامسونج', 'Xiaomi / شاومي', 'Huawei / هواوي', 'Honor / هونر', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة'];
 
+    const tagList=[...customTags, ...defaultTags.filter(t=>!customTags.includes(t))];
+
     if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
-
-      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
-
+      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:${customTags.includes(tag)?'#ecfdf5':'var(--card)'};color:${customTags.includes(tag)?'#047857':'var(--text)'};border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${customTags.includes(tag)?'🏷️ ':''}${tag}</button>
     `).join('');
 
   } else {
@@ -14902,16 +15192,16 @@ if(subCatField && subCatInput){
 
     const isRest=isRestaurantStore(activeStore);
 
-    const tagList=isRest
+    const customTags=(activeStore&&Array.isArray(activeStore.customCategories))?[...activeStore.customCategories]:[];
 
+    const defaultTags=isRest
       ? ['برجر', 'ساندوتشات مشاوي', 'وجبات سريعة', 'بيتزا', 'مقبلات ساخنة', 'مشروبات', 'حلويات وكريب']
-
       : ['Apple / آيفون', 'Samsung / سامسونج', 'Xiaomi / شاومي', 'Huawei / هواوي', 'Honor / هونر', 'كفر', 'شواحن', 'كابل شحن', 'سماعات', 'حاملة هاتف', 'ساعات ذكية', 'باور بانك', 'حماية شاشة'];
 
+    const tagList=[...customTags, ...defaultTags.filter(t=>!customTags.includes(t))];
+
     if(subCatTags) subCatTags.innerHTML=tagList.map(tag=>`
-
-      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${tag}</button>
-
+      <button type="button" onclick="document.getElementById('storeSubCategory').value='${tag}'" style="border:1px solid var(--border);background:${customTags.includes(tag)?'#ecfdf5':'var(--card)'};color:${customTags.includes(tag)?'#047857':'var(--text)'};border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">${customTags.includes(tag)?'🏷️ ':''}${tag}</button>
     `).join('');
 
   } else {
@@ -15811,6 +16101,7 @@ window.openAccount=(skipHistory)=>{
     const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.toggle("hidden", !isAdmin);
     const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.toggle("hidden", !isAdmin);
     const awb = document.getElementById("adminWalletBtn"); if(awb) awb.classList.toggle("hidden", !isAdmin);
+    const afb = document.getElementById("adminFeedbackBtn"); if(afb) afb.classList.toggle("hidden", !isAdmin);
 
     if(typeof getUserWallet === 'function'){
       getUserWallet(me.uid).then(wal=>{
@@ -15935,6 +16226,7 @@ function closeOverlayDirect(){
   const mwho=document.getElementById("myWalletHistoryOverlay");if(mwho)mwho.classList.add("hidden");
 
   const awo=document.getElementById("adminWalletOverlay");if(awo)awo.classList.add("hidden");
+  const afo=document.getElementById("adminFeedbackOverlay");if(afo)afo.classList.add("hidden");
 
   updateSEOMeta(null);
 
@@ -16208,7 +16500,18 @@ window.saveMyPhone=async()=>{
 
    ============================================ */
 
-window.contactSeller=(id)=>{const p=allPosts.find(x=>x.id===id);if(!p||!p.phone)return;incrementWhatsappClick(id,'post');const cleanPhone=normalizePhone(p.phone);document.getElementById("warnGo").href="https://wa.me/"+cleanPhone;warnOverlay.classList.remove("hidden");};
+window.contactSeller=(id)=>{
+  const p=allPosts.find(x=>x.id===id);
+  if(!p||!p.phone)return;
+  incrementWhatsappClick(id,'post');
+  const cleanPhone=normalizePhone(p.phone);
+  if(!cleanPhone || cleanPhone === "218"){ showToast("⚠️ رقم الهاتف غير صحيح أو غير متوفر", "warn"); return; }
+  const url=toWhatsappUrl(cleanPhone);
+  const warnGo=document.getElementById("warnGo");
+  if(warnGo) warnGo.href=url;
+  if(typeof warnOverlay !== 'undefined' && warnOverlay) warnOverlay.classList.remove("hidden");
+  else window.open(url, "_blank");
+};
 
 window.sharePost=async(id)=>{const p=allPosts.find(x=>x.id===id);if(!p)return;const url=window.location.origin+window.location.pathname+'#post-'+id;const priceText=p.priceType==="contact"?'📞 تواصل لمعرفة السعر':(p.price!=null?formatPrice(p.price)+' د.ل':'');const cityText=p.city?'\n📍 '+p.city:'';const text=`🛒 ${p.title||'إعلان'}\n💰 ${priceText}${cityText}\n\nشاهده على تسوق الآن:`;const shareData={title:p.title||'تسوق الآن',text,url};try{if(navigator.share)await navigator.share(shareData);else{const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}catch(e){if(e&&e.name!=='AbortError'){const w='https://wa.me/?text='+encodeURIComponent(text+'\n'+url);window.open(w,'_blank');}}};
 
@@ -17736,6 +18039,7 @@ function startProfileListener(user){
         const apb = document.getElementById("adminPanelBtn"); if(apb) apb.classList.remove("hidden");
         const acsb = document.getElementById("adminCreateStoreBtn"); if(acsb) acsb.classList.remove("hidden");
         const awb = document.getElementById("adminWalletBtn"); if(awb) awb.classList.remove("hidden");
+        const afb = document.getElementById("adminFeedbackBtn"); if(afb) afb.classList.remove("hidden");
       }
 
       if(myProfile.memberNo==null && !assignAttempted){assignAttempted=true;assignMemberNumber(user).catch(e=>{});}
@@ -18192,6 +18496,8 @@ if(user){
 
 try { await window.resolveAndSyncUserProfile(user); } catch(e){}
 
+try { await loadDynamicAdmins(); } catch(e){}
+
 isAdmin = window.isUserAdmin(user, myProfile);
 
 adminChip.classList.toggle("hidden",!isAdmin);
@@ -18241,6 +18547,10 @@ if(limitsBtn)limitsBtn.classList.toggle("hidden",!isAdmin);
 const dashBtn=document.getElementById("dashboardBtn");
 
 if(dashBtn)dashBtn.classList.toggle("hidden",!isAdmin);
+
+const afb=document.getElementById("adminFeedbackBtn");
+
+if(afb)afb.classList.toggle("hidden",!isAdmin);
 
 updateModBadge();
 
@@ -20001,6 +20311,7 @@ if (typeof renderSkeletons === 'function' && typeof window.renderSkeletons === '
 if (typeof renderStoreCover === 'function' && typeof window.renderStoreCover === 'undefined') window.renderStoreCover = renderStoreCover;
 
 if (typeof renderStoreHelpersList === 'function' && typeof window.renderStoreHelpersList === 'undefined') window.renderStoreHelpersList = renderStoreHelpersList;
+if (typeof renderStoreCustomCategoriesList === 'function' && typeof window.renderStoreCustomCategoriesList === 'undefined') window.renderStoreCustomCategoriesList = renderStoreCustomCategoriesList;
 
 if (typeof renderStoreLogo === 'function' && typeof window.renderStoreLogo === 'undefined') window.renderStoreLogo = renderStoreLogo;
 
@@ -28142,7 +28453,7 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
     if (vUrl && !seenIds.has(p.id)) {
       if (typeof vUrl === 'string' && vUrl.startsWith('blob:')) return;
 
-      const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
+      const isMine = (typeof window.isPostMine === 'function' ? window.isPostMine(p, true) : (me && (p.uid === me.uid || p.addedBy === me.uid)));
 
       const isApproved = getStatus(p) === "approved" || p.status === "approved";
 
@@ -28180,7 +28491,7 @@ function buildReelsPlaylist(startSellerUid = null, startPostId = null) {
 
         city: p.city || "ليبيا",
 
-        phone: p.phone || "",
+        phone: p.phone || (window.sellersProfileCache && (window.sellersProfileCache[p.uid]?.phone || window.sellersProfileCache[p.uid]?.local_phone || window.sellersProfileCache[p.uid]?.localPhone)) || "",
 
         sellerName: resolveDisplayName(p.uid, p),
 
@@ -28330,7 +28641,7 @@ function renderStoriesBarDirect() {
       // نتجاهل أي رابط blob قديم تالف
       if (typeof vUrl === 'string' && vUrl.startsWith('blob:')) return;
 
-      const isMine = me && (p.uid === me.uid || p.addedBy === me.uid);
+      const isMine = (typeof window.isPostMine === 'function' ? window.isPostMine(p, true) : (me && (p.uid === me.uid || p.addedBy === me.uid)));
       const isApproved = getStatus(p) === "approved" || p.status === "approved";
       if (!isApproved && !isMine && !isAdmin) return;
 
@@ -28345,7 +28656,9 @@ function renderStoriesBarDirect() {
   });
 
   // فحص هل المستخدم الحالي لديه ستوري أو ريلز نشط
-  const myActiveStory = me ? activeVideoPosts.find(p => p.uid === me.uid || p.addedBy === me.uid) : null;
+  const myActiveStory = (typeof window.isPostMine === 'function')
+    ? activeVideoPosts.find(p => window.isPostMine(p, true))
+    : (me ? activeVideoPosts.find(p => p.uid === me.uid || p.addedBy === me.uid) : null);
 
   // 2) تجميع مقاطع الريلز والستوريات جنب بعضها (لكل معلن دائرة فيديو)
   const sellersMap = new Map();
@@ -28617,9 +28930,7 @@ function loadCurrentReel() {
   }
 
   // التحكم بأزرار حذف وتعديل الفيديو (للأدمن أو صاحب الإعلان)
-  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-  const isReelOwner = !!(me && reel.uid === me.uid);
-  const canManageReel = isAdmin || isReelOwner;
+  const canManageReel = (typeof window.canManageCurrentReel === 'function') ? window.canManageCurrentReel(reel) : (isAdmin || (auth?.currentUser?.uid === reel.uid));
 
   const delTopBtn = document.getElementById("reelsDeleteTopBtn");
   const delSideBtn = document.getElementById("reelsSideDeleteBtn");
@@ -28630,6 +28941,53 @@ function loadCurrentReel() {
   if (editSideBtn) editSideBtn.style.display = canManageReel ? "flex" : "none";
 
 }
+
+// فحص صلاحية إدارة وحذف الفيديو في الريلز (للأدمن أو صاحب الفيديو/المتجر/الهاتف)
+window.canManageCurrentReel = function(reel) {
+  if (!reel) return false;
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const prof = (typeof myProfile !== 'undefined') ? myProfile : null;
+
+  // 1. الأدمن العام ومشرف الموقع
+  const isAdm = (typeof isAdmin !== 'undefined' && isAdmin) ||
+    (typeof window.isUserAdmin === 'function' && window.isUserAdmin(me, prof)) ||
+    (typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(me, prof));
+  if (isAdm) return true;
+
+  if (!me && !prof) return false;
+
+  // 2. فحص الإعلان الأصلي عبر isPostMine
+  const postId = reel.id;
+  const post = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.find(p => p.id === postId) : null;
+  if (post && typeof window.isPostMine === 'function' && window.isPostMine(post, true)) {
+    return true;
+  }
+
+  // 3. مطابقة معرف الناشر المباشر أو قائمة المعرفات المرتبطة بالحساب
+  const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me ? me.uid : null) : [me ? me.uid : ''];
+  if (reel.uid && candUids.includes(reel.uid)) return true;
+  if (me && reel.uid === me.uid) return true;
+  if (prof && prof.id && reel.uid === prof.id) return true;
+  const oUid = prof && (prof.original_uid || prof.originalUid);
+  if (oUid && reel.uid === oUid) return true;
+  const aliases = (prof && (prof.alias_uids || prof.aliasUids)) || [];
+  if (Array.isArray(aliases) && aliases.includes(reel.uid)) return true;
+
+  // 4. مطابقة المتجر إن كان الإعلان لمتجر
+  if (post && post.storeId && typeof window.canUserManageStore === 'function') {
+    const store = (typeof allStores !== 'undefined' && Array.isArray(allStores)) ? allStores.find(s => s.id === post.storeId) : null;
+    if (store && window.canUserManageStore(store)) return true;
+  }
+
+  // 5. مطابقة رقم الهاتف (آخر 8 أرقام)
+  const myPhone = String((prof && (prof.phone || prof.local_phone || prof.localPhone)) || (window._activeWaSession && window._activeWaSession.phone) || (me && me.phoneNumber) || '').replace(/[^0-9]/g, '');
+  const reelPhone = String(reel.phone || (post && post.phone) || '').replace(/[^0-9]/g, '');
+  if (myPhone && reelPhone && myPhone.length >= 8 && reelPhone.length >= 8 && myPhone.slice(-8) === reelPhone.slice(-8)) {
+    return true;
+  }
+
+  return false;
+};
 
 // تحديث زر المتابعة التيك توك (+)
 
@@ -28678,50 +29036,76 @@ window.deleteCurrentReelVideo = async function() {
   const reel = _reelsPlaylist[_reelsCurrentIndex];
   if (!reel) return;
 
-  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-  const isOwner = !!(me && reel.uid === me.uid);
-  const canDelete = isAdmin || isOwner;
+  const canDelete = (typeof window.canManageCurrentReel === 'function')
+    ? window.canManageCurrentReel(reel)
+    : (isAdmin || (auth?.currentUser?.uid === reel.uid));
 
   if (!canDelete) {
     if (typeof showToast === 'function') showToast("ليس لديك صلاحية لحذف هذا الفيديو", "warn");
     return;
   }
 
-  const roleText = (isAdmin && !isOwner) ? " (بصفتك مدير/صاحب الموقع)" : "";
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isDirectOwner = !!(me && reel.uid === me.uid);
+  const roleText = (isAdmin && !isDirectOwner) ? " (بصفتك مدير/مشرف الموقع)" : "";
   const confirmMsg = `هل أنت متأكد من حذف هذا الفيديو نهائياً من الإعلان والريلز؟${roleText}\n\nالعنوان: «${reel.title || 'إعلان'}»`;
   if (!confirm(confirmMsg)) return;
 
-  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو من المنصة...", "info", 2000);
+  // إيقاف الفيديو الحالي فوراً
+  const mainVideoEl = document.getElementById("reelsMainVideo");
+  if (mainVideoEl) {
+    try {
+      mainVideoEl.pause();
+      mainVideoEl.removeAttribute("src");
+      mainVideoEl.load();
+    } catch(e) {}
+  }
+
+  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو فوراً...", "info", 1500);
 
   const postId = reel.id;
 
   try {
+    const post = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.find(x => x.id === postId) : null;
+    let cleanSpecs = {};
+    if (post && post.specs && typeof post.specs === 'object') {
+      cleanSpecs = { ...post.specs };
+    }
+    delete cleanSpecs.video_url;
+    delete cleanSpecs.video_placement;
+    delete cleanSpecs.videoUrl;
+    delete cleanSpecs.video;
+
     // 1) تحديث في Supabase فورياً
-    const sb = window.supabase || supabase;
+    const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
     if (sb) {
-      await sb.from("posts").update({ video_url: null }).eq("id", postId).catch(()=>{});
+      await sb.from("posts").update({
+        video_url: null,
+        video_placement: null,
+        specs: cleanSpecs
+      }).eq("id", postId).catch(()=>{});
     }
 
-    // 2) تحديث في Firestore
-    if (typeof db !== 'undefined' && db) {
+    // 2) تحديث في Firestore / Supabase Adapter
+    if (typeof db !== 'undefined' && db && typeof updateDoc === 'function') {
       await updateDoc(doc(db, "posts", postId), {
         videoUrl: null,
         video: null,
         videoPlacement: null,
-        'specs.video_url': null,
-        'specs.video_placement': null
+        specs: cleanSpecs
       }).catch(()=>{});
     }
 
     // 3) تحديث الإعلان في الذاكرة المحلية
-    const p = allPosts.find(x => x.id === postId);
-    if (p) {
-      p.videoUrl = null;
-      p.video = null;
-      p.videoPlacement = null;
-      if (p.specs && typeof p.specs === 'object') {
-        p.specs.video_url = null;
-        p.specs.video_placement = null;
+    if (post) {
+      post.videoUrl = null;
+      post.video = null;
+      post.videoPlacement = null;
+      if (post.specs && typeof post.specs === 'object') {
+        delete post.specs.video_url;
+        delete post.specs.video_placement;
+        delete post.specs.videoUrl;
+        delete post.specs.video;
       }
     }
 
@@ -28730,17 +29114,18 @@ window.deleteCurrentReelVideo = async function() {
 
     if (_reelsPlaylist.length === 0) {
       closeReelsModal();
-      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح، لا توجد فيديوهات أخرى.", "success", 3000);
+      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح على الفور 🗑️", "success", 3000);
     } else {
       if (_reelsCurrentIndex >= _reelsPlaylist.length) {
         _reelsCurrentIndex = _reelsPlaylist.length - 1;
       }
       loadCurrentReel();
-      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح والانتقال للتالي.", "success", 3000);
+      if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح والانتقال للتالي 🗑️", "success", 3000);
     }
 
-    // إعادة رسم بطاقات الإعلانات في الصفحة الرئيسية
+    // 5) إعادة رسم بطاقات الإعلانات وشريط الستوريات
     if (typeof renderPosts === 'function') renderPosts();
+    if (typeof renderStoriesBar === 'function') renderStoriesBar();
 
   } catch(err) {
     console.error("deleteCurrentReelVideo error:", err);
@@ -28759,35 +29144,50 @@ window.editCurrentReelPost = function() {
 
 window.deletePostVideoDirect = async function(postId) {
   if (!postId) return;
-  const p = allPosts.find(x => x.id === postId);
+  const p = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.find(x => x.id === postId) : null;
   if (!p) return;
 
-  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-  const isOwner = !!(me && p.uid === me.uid);
-  const canDelete = isAdmin || isOwner;
+  const canDelete = (typeof window.canManageCurrentReel === 'function')
+    ? window.canManageCurrentReel(p)
+    : (isAdmin || (typeof window.isPostMine === 'function' && window.isPostMine(p, true)));
+
   if (!canDelete) {
     if (typeof showToast === 'function') showToast("ليس لديك صلاحية لحذف هذا الفيديو", "warn");
     return;
   }
 
-  const roleText = (isAdmin && !isOwner) ? " (بصفتك مدير/صاحب الموقع)" : "";
+  const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
+  const isDirectOwner = !!(me && p.uid === me.uid);
+  const roleText = (isAdmin && !isDirectOwner) ? " (بصفتك مدير/مشرف الموقع)" : "";
   if (!confirm(`هل أنت متأكد من حذف الفيديو المرفق بهذا الإعلان؟${roleText}`)) return;
 
-  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو من الإعلان...", "info", 2000);
+  if (typeof showToast === 'function') showToast("⏳ جاري حذف الفيديو من الإعلان...", "info", 1500);
 
   try {
-    const sb = window.supabase || supabase;
+    let cleanSpecs = {};
+    if (p.specs && typeof p.specs === 'object') {
+      cleanSpecs = { ...p.specs };
+    }
+    delete cleanSpecs.video_url;
+    delete cleanSpecs.video_placement;
+    delete cleanSpecs.videoUrl;
+    delete cleanSpecs.video;
+
+    const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
     if (sb) {
-      await sb.from("posts").update({ video_url: null }).eq("id", postId).catch(()=>{});
+      await sb.from("posts").update({
+        video_url: null,
+        video_placement: null,
+        specs: cleanSpecs
+      }).eq("id", postId).catch(()=>{});
     }
 
-    if (typeof db !== 'undefined' && db) {
+    if (typeof db !== 'undefined' && db && typeof updateDoc === 'function') {
       await updateDoc(doc(db, "posts", postId), {
         videoUrl: null,
         video: null,
         videoPlacement: null,
-        'specs.video_url': null,
-        'specs.video_placement': null
+        specs: cleanSpecs
       }).catch(()=>{});
     }
 
@@ -28795,13 +29195,16 @@ window.deletePostVideoDirect = async function(postId) {
     p.video = null;
     p.videoPlacement = null;
     if (p.specs && typeof p.specs === 'object') {
-      p.specs.video_url = null;
-      p.specs.video_placement = null;
+      delete p.specs.video_url;
+      delete p.specs.video_placement;
+      delete p.specs.videoUrl;
+      delete p.specs.video;
     }
 
     openPost(postId, true);
     if (typeof renderPosts === 'function') renderPosts();
-    if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح من الإعلان", "success");
+    if (typeof renderStoriesBar === 'function') renderStoriesBar();
+    if (typeof showToast === 'function') showToast("✅ تم حذف الفيديو بنجاح من الإعلان 🗑️", "success");
   } catch(err) {
     console.error("deletePostVideoDirect err:", err);
     if (typeof showToast === 'function') showToast("تعذر حذف الفيديو: " + (err.message || err), "error");
@@ -29025,23 +29428,28 @@ window.toggleReelsMute = function() {
 // تواصل واتساب مع المعلن
 
 window.contactReelsSeller = function() {
-
   const reel = _reelsPlaylist[_reelsCurrentIndex];
+  if (!reel) return;
 
-  if (!reel || !reel.phone) {
-
-    if (typeof showToast === 'function') showToast("رقم هاتف المعلن غير متوفر", "warn");
-
+  const rawPhone = reel.phone || (window.sellersProfileCache && (window.sellersProfileCache[reel.uid]?.phone || window.sellersProfileCache[reel.uid]?.local_phone)) || "";
+  if (!rawPhone) {
+    if (typeof showToast === 'function') showToast("⚠️ رقم هاتف المعلن غير متوفر", "warn");
     return;
-
   }
 
-  const cleanPhone = String(reel.phone).replace(/[^0-9]/g, '');
+  const cleanPhone = normalizePhone(rawPhone);
+  if (!cleanPhone || cleanPhone === "218" || cleanPhone.length < 10) {
+    if (typeof showToast === 'function') showToast("⚠️ رقم هاتف المعلن غير صحيح أو غير متوفر", "warn");
+    return;
+  }
 
-  const url = `https://wa.me/218${cleanPhone.replace(/^0/, '')}?text=${encodeURIComponent("السلام عليكم، بخصوص إعلانك على تسوق الآن: " + reel.title)}`;
+  if (reel.id && typeof incrementWhatsappClick === 'function') {
+    incrementWhatsappClick(reel.id, 'post');
+  }
 
+  const msg = "السلام عليكم، بخصوص إعلانك على تسوق الآن: " + (reel.title || "");
+  const url = toWhatsappUrl(cleanPhone, msg);
   window.open(url, "_blank");
-
 };
 
 // فتح بروفايل المعلن من الريلز
@@ -29413,73 +29821,101 @@ function initReelsSwipeGestures() {
 // رفع واختيار فيديو في إضافة الإعلان
 
 window.handlePostVideoSelected = function() {
-
   const input = document.getElementById("postVideoFile");
-
   if (!input || !input.files || input.files.length === 0) return;
-
   const file = input.files[0];
 
-  if (file.size > 15 * 1024 * 1024) {
-
+  // حجم أقصى مرن حتى 40 ميجابايت بدلاً من 15 ميجابايت الصارمة
+  const MAX_BYTES = 40 * 1024 * 1024;
+  if (file.size > MAX_BYTES) {
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-
-    if (typeof showToast === 'function') showToast("⚠️ حجم الفيديو (" + sizeMb + " ميجابايت) كبير جداً! لتسريع الستوري والريلز، اختر فيديو أقل من 15 ميجابايت", "warn", 5000);
-
+    if (typeof showToast === 'function') {
+      showToast(`⚠️ حجم الفيديو (${sizeMb} ميجابايت) كبير جداً! لتسريع الرفع وتشغيل الريلز، اختر فيديو أقل من 40 ميجابايت`, "warn", 5000);
+    }
     removePostVideo();
-
     return;
-
   }
 
-  // فحص مدة الفيديو بدقة (30 ثانية كحد أقصى)
-
-  const tempV = document.createElement("video");
-
-  tempV.preload = "metadata";
-
-  tempV.onloadedmetadata = function() {
-
-    window.URL.revokeObjectURL(tempV.src);
-
-    const duration = Math.round(tempV.duration || 0);
-
-    if (duration > 32) {
-
-      if (typeof showToast === 'function') showToast("⚠️ مدة الستوري / الريلز يجب ألا تتجاوز 30 ثانية! (الفيديو الحالي: " + duration + " ثانية)", "warn", 4500);
-
-      removePostVideo();
-
-      return;
-
+  const sizeMbNum = (file.size / (1024 * 1024)).toFixed(1);
+  if (file.size > 25 * 1024 * 1024) {
+    if (typeof showToast === 'function') {
+      showToast(`💡 حجم الفيديو (${sizeMbNum}MB) — جاري التجهيز، يُفضل دائماً الفيديوهات الخفيفة للمشاهدة الفورية`, "info", 4000);
     }
+  }
+
+  let applied = false;
+  const applySelectedVideo = (durationSec = null) => {
+    if (applied) return;
+    applied = true;
 
     _postVideoRemoved = false;
-
     _postSelectedVideoFile = file;
 
+    if (_postSelectedVideoUrl && _postSelectedVideoUrl.startsWith("blob:")) {
+      try { URL.revokeObjectURL(_postSelectedVideoUrl); } catch(e){}
+    }
     _postSelectedVideoUrl = URL.createObjectURL(file);
 
     const prevBox = document.getElementById("postVideoPreviewBox");
-
     const prevEl = document.getElementById("postVideoPreviewEl");
-
     const promptTxt = document.getElementById("postVideoPromptText");
 
-    if (prevEl) prevEl.src = _postSelectedVideoUrl;
-
+    if (prevEl) {
+      prevEl.src = _postSelectedVideoUrl;
+      try { prevEl.load(); } catch(e){}
+    }
     if (prevBox) prevBox.classList.remove("hidden");
-
-    if (promptTxt) promptTxt.textContent = "✅ تم اختيار الفيديو (" + duration + " ثانية)";
-
+    if (promptTxt) {
+      promptTxt.textContent = (durationSec != null && durationSec > 0)
+        ? `✅ تم اختيار الفيديو (${durationSec} ثانية - ${sizeMbNum}MB)`
+        : `✅ تم اختيار الفيديو بنجاح (${sizeMbNum}MB)`;
+    }
     const optionsBox = document.getElementById("videoPlacementOptions");
-
     if (optionsBox) optionsBox.classList.remove("hidden");
-
   };
 
-  tempV.src = URL.createObjectURL(file);
+  // فحص مدة الفيديو بمرونة تامة مع مؤقت أمان وonerror
+  const tempV = document.createElement("video");
+  tempV.preload = "metadata";
 
+  const safetyTimer = setTimeout(() => {
+    // إذا تأخر فحص الميتاداتا لأكثر من ثانيتين، نقبل الفيديو فوراً دون تعطيل المستخدم
+    applySelectedVideo();
+  }, 2200);
+
+  tempV.onloadedmetadata = function() {
+    clearTimeout(safetyTimer);
+    try { window.URL.revokeObjectURL(tempV.src); } catch(e){}
+
+    const duration = Math.round(tempV.duration || 0);
+
+    // إذا تجاوزت المدة 65 ثانية، ننبه المستخدم بلطف دون كسر الإضافة
+    if (duration > 65) {
+      if (typeof showToast === 'function') {
+        showToast(`⚠️ مدة الفيديو (${duration} ثانية) طويلة نسبياً. الحد الأقصى الموصى به لريلز وستوري المنصة هو 60 ثانية`, "warn", 5000);
+      }
+    } else if (duration > 35) {
+      if (typeof showToast === 'function') {
+        showToast(`💡 مدة الفيديو (${duration} ثانية) — الفيديوهات القصيرة (أقل من 30 ثانية) تحقق عادة تفاعلاً أعلى`, "info", 3500);
+      }
+    }
+
+    applySelectedVideo(duration);
+  };
+
+  tempV.onerror = function() {
+    clearTimeout(safetyTimer);
+    try { window.URL.revokeObjectURL(tempV.src); } catch(e){}
+    // قبول الفيديو حتى لو فشلت الميتاداتا في متصفح أو صيغة معينة
+    applySelectedVideo();
+  };
+
+  try {
+    tempV.src = URL.createObjectURL(file);
+  } catch(e) {
+    clearTimeout(safetyTimer);
+    applySelectedVideo();
+  }
 };
 
 window.removePostVideo = function() {
@@ -30409,11 +30845,34 @@ async function uploadPostVideo(file) {
   const fileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${cleanExt}`;
   const mimeType = cleanExt === 'webm' ? 'video/webm' : (cleanExt === 'mov' ? 'video/quicktime' : 'video/mp4');
 
+  // 1) خادم المنصة /api/upload-video (يعمل محلياً، على شبكة الواي فاي، والـ localhost بسرعة فائقة)
+  try {
+    const fd = new FormData();
+    fd.append("video", file, fileName);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const localRes = await fetch("/api/upload-video", {
+      method: "POST",
+      body: fd,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (localRes.ok) {
+      const data = await localRes.json();
+      if (data && data.url) {
+        console.log("✅ تم رفع الفيديو عبر سيرفر المنصة بنجاح:", data.url);
+        return data.url;
+      }
+    }
+  } catch(e) {
+    console.warn("Upload to /api/upload-video:", e.message || e);
+  }
+
+  // 2) الرفع المباشر عبر REST API إلى Supabase Storage
   const SUPABASE_STORAGE_URL = `https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/videos/${fileName}`;
   const SUPABASE_PUBLIC_URL = `https://jtpfpqalibbwdbirzdnk.supabase.co/storage/v1/object/public/videos/${fileName}`;
   const SUPABASE_KEY = "sb_publishable_6N_kXZ3e5fB4XM7xKKfT-g_7AHN25Tp";
 
-  // 1) الرفع المباشر عبر REST API إلى Supabase Storage (يعمل على الهاتف، الويب المباشر، والكمبيوتر)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 ثانية كافية للملفات الكبيرة
@@ -30441,7 +30900,7 @@ async function uploadPostVideo(file) {
     console.warn("Supabase Storage REST error:", err);
   }
 
-  // 2) محاولة الرفع عبر SDK كخيار ثانٍ
+  // 3) محاولة الرفع عبر SDK كخيار إضافي
   const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
   if (sb && sb.storage) {
     try {
@@ -30462,23 +30921,9 @@ async function uploadPostVideo(file) {
     }
   }
 
-  // 3) خادم المطور المحلي /api/upload-video (إذا كان يعمل محلياً)
-  try {
-    const fd = new FormData();
-    fd.append("video", file, fileName);
-    const localRes = await fetch("/api/upload-video", { method: "POST", body: fd });
-    if (localRes.ok) {
-      const data = await localRes.json();
-      if (data && data.url) {
-        console.log("✅ تم رفع الفيديو عبر السيرفر المحلي:", data.url);
-        return data.url;
-      }
-    }
-  } catch(e) {}
-
-  // 4) التحويل إلى Data URL دائم ومستقر (حتى 15 ميجابايت) لضمان عدم ضياع الفيديو أو اختفائه
+  // 4) التحويل إلى Data URL دائم ومستقر (حتى 25 ميجابايت) لضمان عدم ضياع الفيديو على أي استضافة ثابتة
   return new Promise((resolve) => {
-    if (file.size <= 15 * 1024 * 1024) {
+    if (file.size <= 25 * 1024 * 1024) {
       const reader = new FileReader();
       reader.onload = () => {
         console.log("✅ تم تحويل الفيديو إلى DataURL دائم");
