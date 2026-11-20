@@ -88,7 +88,7 @@ window.openInbox = window.openInbox || function() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=230">
+<link rel="stylesheet" href="style.css?v=235">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -1373,11 +1373,19 @@ window.openInbox = window.openInbox || function() {
 
 <div id="storesScreen" class="screen hidden">
 
-<div class="screenHeader">
+<div class="screenHeader" style="display:flex;align-items:center;gap:8px">
+
+<div style="display:flex;align-items:center;gap:6px">
 
 <button class="back" onclick="showCategoriesScreen()">→</button>
 
-<h3 style="flex:1;text-align:center;padding-left:30px" id="storesScreenTitle">🏢 الشركات والمتاجر</h3>
+<button type="button" id="btnHeaderFoodOrders" onclick="openFoodOrdersModal()" style="display:none;align-items:center;gap:4px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;font-weight:800;color:var(--text);cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.05)" title="سجل الطلبيات الأخيرة">📜 الطلبيات الأخيرة</button>
+
+</div>
+
+<h3 style="flex:1;text-align:center;margin:0" id="storesScreenTitle">🏢 الشركات والمتاجر</h3>
+
+<div id="headerStoresRightSpacer" style="width:38px;height:38px;flex-shrink:0"></div>
 
 </div>
 
@@ -1853,7 +1861,7 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<div id="orderTrackerOverlay" class="overlay hidden">
+<div id="orderTrackerOverlay" class="overlay hidden" onclick="if(event.target===this)closeOrderTracker()">
 
   <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:20px">
 
@@ -1880,7 +1888,7 @@ window.openInbox = window.openInbox || function() {
 <!-- ============================================ -->
 <!-- سجل طلبات الوجبات السابقة (المطاعم والمأكولات) -->
 <!-- ============================================ -->
-<div id="foodOrdersOverlay" class="overlay hidden">
+<div id="foodOrdersOverlay" class="overlay hidden" onclick="if(event.target===this)closeFoodOrdersModal()">
   <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:24px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
       <div>
@@ -1896,7 +1904,7 @@ window.openInbox = window.openInbox || function() {
 <!-- ============================================ -->
 <!-- نافذة تقييم الطلبية والتعليق بعد الوصول -->
 <!-- ============================================ -->
-<div id="foodOrderRatingOverlay" class="overlay hidden">
+<div id="foodOrderRatingOverlay" class="overlay hidden" onclick="if(event.target===this)closeFoodOrderRatingModal()">
   <div class="sheet" style="max-height:90vh;overflow-y:auto;padding-bottom:24px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
       <h3 style="margin:0;font-size:16px;font-weight:900;display:flex;align-items:center;gap:6px">⭐ تقييم الوجبة بعد الوصول</h3>
@@ -1973,6 +1981,18 @@ window.openInbox = window.openInbox || function() {
 
       </div>
 
+    </div>
+
+    <!-- شريط تنبيه الرنين المستمر للطلبيات غير المؤكدة -->
+    <div id="rloAlarmBanner" style="display:none;background:#fef2f2;border-bottom:2px solid #ef4444;padding:10px 14px;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px;display:inline-block;animation:bellShake 0.6s infinite">🔔</span>
+        <div>
+          <div style="font-weight:900;color:#991b1b;font-size:13.5px">يوجد طلب جديد بانتظار التأكيد!</div>
+          <div style="font-size:11px;color:#b91c1c">الصوت يرن بشكل مستمر حتى يتم تأكيد وقبول الطلب</div>
+        </div>
+      </div>
+      <button type="button" onclick="muteCashierAlarmTemporarily()" style="background:#fff;border:1.5px solid #f87171;color:#b91c1c;padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap" title="كتم صوت التنبيه مؤقتاً">🔕 كتم الرنين مؤقتاً</button>
     </div>
 
     <!-- قائمة الطلبات قابلة للتمرير بارتياح كامل -->
@@ -2787,80 +2807,78 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<button id="luckyWheelBtn" onclick="openLuckyWheel()" title="عجلة الحظ" style="position:fixed;bottom:145px;right:20px;z-index:1000;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(245,158,11,.55),rgba(251,191,36,.55));color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,.25);display:none;align-items:center;justify-content:center;opacity:.7;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .15s,opacity .3s;">
-
+<button id="luckyWheelBtn" onclick="openLuckyWheel()" title="عجلة الحظ الملكية" style="position:fixed;bottom:145px;right:20px;z-index:1000;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:2px solid #fef08a;font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(217,119,6,0.45);display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:transform .2s,box-shadow .2s;">
 🎡
-
-<span id="luckyWheelBadge" style="position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;border:1.5px solid #fff;">!</span>
-
+<span id="luckyWheelBadge" style="position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);">!</span>
 </button>
 
 <!-- ============================================ -->
-
 <!-- نافذة عجلة الحظ -->
-
 <!-- ============================================ -->
-
 <div id="luckyWheelOverlay" class="overlay hidden">
-
-  <div class="sheet" style="max-width:420px;padding:20px;text-align:center">
-
+  <div class="sheet lucky-wheel-sheet" style="max-width:430px;padding:22px 16px;text-align:center;">
     <button type="button" class="universalCloseBtn" onclick="closeLuckyWheel()" style="position:absolute;top:14px;left:14px;z-index:10" title="إغلاق">✕</button>
 
     <div id="wheelActiveState">
-
-      <h3 style="margin:0 0 4px;font-size:20px">🎡 عجلة الحظ</h3>
-
-      <p style="font-size:12.5px;color:var(--muted);margin:0 0 18px">جرّب حظك كل 24 ساعة واكسب نقاط!</p>
+      <div class="wheel-header-badge">✨ سحب يومي مجاني ✨</div>
+      <h3 class="wheel-royal-title">🎡 عجلة الحظ الملكية</h3>
+      <p style="font-size:12.5px;color:#a1a1aa;margin:0 0 14px;">أدر العجلة واكسب نقاطاً وجوائز قيّمة فوراً في حسابك!</p>
 
       <div class="wheel-wrap">
-
-        <div class="wheel-pointer">▼</div>
-
-        <div class="wheel-disc" id="wheelDisc">
-
-          <div class="wheel-segment" style="--i:0"></div><div class="wheel-segment" style="--i:1"></div><div class="wheel-segment" style="--i:2"></div><div class="wheel-segment" style="--i:3"></div><div class="wheel-segment" style="--i:4"></div><div class="wheel-segment" style="--i:5"></div><div class="wheel-segment" style="--i:6"></div><div class="wheel-segment" style="--i:7"></div>
-
-          <div class="wheel-label" style="--i:0">5</div><div class="wheel-label" style="--i:1">20</div><div class="wheel-label" style="--i:2">10</div><div class="wheel-label" style="--i:3">⭐</div><div class="wheel-label" style="--i:4">15</div><div class="wheel-label" style="--i:5">50</div><div class="wheel-label" style="--i:6">25</div><div class="wheel-label" style="--i:7">100</div>
-
+        <div class="wheel-pointer-wrap">
+          <svg class="wheel-pointer-svg" width="46" height="52" viewBox="0 0 46 52" fill="none">
+            <defs>
+              <linearGradient id="goldNeedle" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fffbeb" />
+                <stop offset="25%" stop-color="#fef08a" />
+                <stop offset="65%" stop-color="#d97706" />
+                <stop offset="100%" stop-color="#78350f" />
+              </linearGradient>
+              <linearGradient id="rubyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fca5a5" />
+                <stop offset="50%" stop-color="#dc2626" />
+                <stop offset="100%" stop-color="#7f1d1d" />
+              </linearGradient>
+              <filter id="needleShadow" x="-25%" y="-25%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="rgba(0,0,0,0.65)"/>
+              </filter>
+            </defs>
+            <path d="M 23 48 L 7 14 C 7 5, 39 5, 39 14 Z" fill="url(#goldNeedle)" stroke="#78350f" stroke-width="2.5" filter="url(#needleShadow)" />
+            <circle cx="23" cy="17" r="7" fill="url(#rubyGrad)" stroke="#fef08a" stroke-width="1.8" />
+            <circle cx="21" cy="15" r="2" fill="#ffffff" opacity="0.85" />
+          </svg>
         </div>
 
-        <button class="wheel-center-btn" id="wheelCenterBtn" onclick="spinLuckyWheel()">🎯</button>
+        <canvas id="wheelDisc" class="wheel-canvas" width="600" height="600"></canvas>
 
+        <button class="wheel-center-btn" id="wheelCenterBtn" onclick="spinLuckyWheel()" title="تدوير العجلة">
+          <span class="wheel-center-icon">👑</span>
+          <span class="wheel-center-label">تدوير</span>
+        </button>
       </div>
 
-      <div style="font-size:12px;color:var(--muted);margin-top:14px;font-weight:700">👆 اضغط 🎯 للدوران</div>
-
+      <div style="font-size:12px;color:#a1a1aa;margin-top:14px;font-weight:700;">👆 اضغط على الزر الذهبي للتدوير</div>
     </div>
 
-    <div id="wheelResultState" style="display:none">
-
-      <h3 style="margin:0 0 6px;font-size:22px">🎉 مبروك!</h3>
-
-      <div id="wheelRewardIcon" style="font-size:80px;margin-bottom:14px;animation:wheelPopIn .6s ease"></div>
-
-      <div id="wheelRewardText" style="font-size:28px;font-weight:900;color:#f59e0b;margin-bottom:6px"></div>
-
-      <div id="wheelRewardDesc" style="font-size:13.5px;color:var(--muted);margin-bottom:16px"></div>
-
-      <button class="btnMain" onclick="closeLuckyWheel()">حسناً، شكراً 🎉</button>
-
+    <div id="wheelResultState" style="display:none;padding:15px 10px;">
+      <h3 style="margin:0 0 6px;font-size:24px;font-weight:900;background:linear-gradient(135deg, #fffbeb, #fde047);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎉 مبروك!</h3>
+      <div id="wheelRewardIcon" style="font-size:75px;margin:12px 0;animation:wheelPopIn .6s cubic-bezier(0.34,1.56,0.64,1)"></div>
+      <div id="wheelRewardText" style="font-size:26px;font-weight:900;color:#fde047;margin-bottom:6px;text-shadow:0 2px 10px rgba(253,224,71,0.3)"></div>
+      <div id="wheelRewardDesc" style="font-size:13.5px;color:#a1a1aa;margin-bottom:20px"></div>
+      <button class="btnMain" onclick="closeLuckyWheel()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;font-weight:800;padding:12px 28px;border-radius:14px;font-size:15px;box-shadow:0 6px 18px rgba(217,119,6,0.45);cursor:pointer;">حسناً، استلم الجائزة 🎁</button>
     </div>
 
-    <div id="wheelCooldownState" style="display:none">
-
-      <h3 style="margin:0 0 6px;font-size:20px">⏰ العجلة مغلقة</h3>
-
-      <div style="font-size:60px;margin-bottom:10px">⏳</div>
-
-      <div id="wheelCooldownText" style="font-size:26px;font-weight:900;color:#0284c7;direction:ltr;font-family:monospace"></div>
-
-      <button class="btnGhost" onclick="closeLuckyWheel()" style="margin-top:20px;background:transparent;color:var(--muted)">إغلاق</button>
-
+    <div id="wheelCooldownState" style="display:none;padding:15px 10px;">
+      <div class="wheel-header-badge" style="background:rgba(59,130,246,0.15);color:#93c5fd;border-color:rgba(147,197,253,0.3);">⏳ جولة اليوم منتهية</div>
+      <h3 style="margin:4px 0 6px;font-size:20px;font-weight:800;color:#fff;">⏰ العجلة في فترة الاستراحة</h3>
+      <p style="font-size:13px;color:#a1a1aa;margin:0 0 16px;">يحق لك تدوير العجلة مرة واحدة يومياً، موعدك القادم بعد:</p>
+      <div style="font-size:55px;margin-bottom:8px">⌛</div>
+      <div id="wheelCooldownText" style="font-size:28px;font-weight:900;color:#38bdf8;direction:ltr;font-family:monospace;letter-spacing:2px;background:rgba(0,0,0,0.35);padding:10px 18px;border-radius:14px;display:inline-block;border:1px solid rgba(56,189,248,0.3);box-shadow:0 0 15px rgba(56,189,248,0.15)"></div>
+      <div>
+        <button class="btnGhost" onclick="closeLuckyWheel()" style="margin-top:22px;background:rgba(255,255,255,0.08);color:#d4d4d8;border:1px solid rgba(255,255,255,0.15);padding:10px 24px;border-radius:12px;cursor:pointer;font-weight:700;">إغلاق والعودة للتسوق</button>
+      </div>
     </div>
-
   </div>
-
 </div>
 
 <!-- ============================================ -->
@@ -2908,6 +2926,11 @@ window.openInbox = window.openInbox || function() {
         </div>
 
       </div>
+
+      <button type="button" onclick="openLuckyWheel()" style="width:100%;margin-bottom:14px;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:14px;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+        <span style="font-size:18px">🎡</span>
+        <span>عجلة الحظ اليومية — جرّب حظك مجاناً</span>
+      </button>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
 
@@ -3402,7 +3425,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=230"></script>
+<script type="module" src="app.js?v=235"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
@@ -3857,7 +3880,20 @@ window.openInbox = window.openInbox || function() {
         <span class="smdArrow">‹</span>
       </div>
 
-      <!-- 2. نقاطي -->
+      <!-- 2. عجلة الحظ الملكية -->
+      <div class="smdItem" onclick="closeSideMenu(); setTimeout(openLuckyWheel, 150);">
+        <div class="smdIcon" style="background:#fef3c7;color:#d97706;font-size:18px;display:flex;align-items:center;justify-content:center;">
+          🎡
+        </div>
+        <div class="smdContent">
+          <div class="smdTitle">عجلة الحظ الملكية</div>
+          <div class="smdDesc">أدر العجلة يومياً واكسب نقاطاً وجوائز</div>
+        </div>
+        <span class="smdBadge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff">مجاناً</span>
+        <span class="smdArrow">‹</span>
+      </div>
+
+      <!-- 3. نقاطي -->
       <div class="smdItem" onclick="closeSideMenu(); setTimeout(openPoints, 150);">
         <div class="smdIcon" style="background:#fef3c7;color:#d97706">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
