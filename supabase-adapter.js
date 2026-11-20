@@ -22,6 +22,7 @@ const TABLE_MAP = {
   user_limits: "user_limits",
   reports: "reports",
   feedback: "feedback",
+  admins: "feedback",
   counters: "counters",
   ratings: "ratings",
   storeRatings: "store_ratings",
@@ -144,6 +145,18 @@ export function objectToDb(obj) {
   const res = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined) continue;
+    if (k.startsWith("specs.")) {
+      const subKey = toSnake(k.slice(6));
+      if (!res.specs || typeof res.specs !== "object") {
+        res.specs = (obj.specs && typeof obj.specs === "object") ? { ...obj.specs } : {};
+      }
+      if (v === null || v === undefined) {
+        delete res.specs[subKey];
+      } else {
+        res.specs[subKey] = v;
+      }
+      continue;
+    }
     const dbKey = toSnake(k);
     res[dbKey] = v;
   }
@@ -258,6 +271,13 @@ export function doc(dbInstance, ...paths) {
   if (paths.length === 1) {
     return new DocRef(paths[0], "doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7));
   }
+  if (paths.length === 2 && paths[0] === "admins") {
+    const cleanId = String(paths[1] || "").toLowerCase().trim();
+    const ref = new DocRef("admins", cleanId);
+    ref.table = "feedback";
+    ref.adminDocId = "admin_" + cleanId;
+    return ref;
+  }
   if (paths.length === 2) {
     return new DocRef(paths[0], paths[1] || ("doc_" + Date.now() + "_" + Math.random().toString(36).substr(2, 7)));
   }
@@ -280,7 +300,19 @@ export function doc(dbInstance, ...paths) {
 
 export function collection(dbInstance, ...paths) {
   if (paths.length <= 1) {
+    if (paths[0] === "admins") {
+      const col = new CollectionRef("admins");
+      col.table = "feedback";
+      col.defaultFilter = { key: "type", op: "==", val: "admin" };
+      return col;
+    }
     return new CollectionRef(paths[0] || "");
+  }
+  if (paths.length >= 1 && paths[paths.length - 1] === "admins") {
+    const col = new CollectionRef("admins");
+    col.table = "feedback";
+    col.defaultFilter = { key: "type", op: "==", val: "admin" };
+    return col;
   }
   if (paths.length >= 3 && paths[2] === "following") {
     const col = new CollectionRef("user_follows");
@@ -342,6 +374,34 @@ export function startAfter(docSnap) {
 
 export async function getDoc(docRef) {
   if (!docRef || !docRef.id) return makeDocSnap("", null);
+  if (docRef.collectionName === "admins" || docRef.adminDocId) {
+    const rawId = String(docRef.id || "").trim();
+    const isEmail = rawId.includes("@");
+    const cleanId = isEmail ? rawId.toLowerCase() : rawId.replace(/[^0-9]/g, "");
+    const adminId = docRef.adminDocId || ("admin_" + cleanId);
+    try {
+      let { data, error } = await supabase.from("feedback").select("*").eq("id", adminId).maybeSingle();
+      if (!data && !isEmail && cleanId.length >= 8) {
+        const last8 = cleanId.slice(-8);
+        const { data: byPhone } = await supabase.from("feedback").select("*").eq("type", "admin").ilike("message", `%${last8}%`).limit(1);
+        if (byPhone && byPhone.length > 0) data = byPhone[0];
+      }
+      if (error || !data) return makeDocSnap(docRef.id, null);
+      let parsed = {};
+      if (typeof data.message === "string" && data.message.startsWith("{")) {
+        try { parsed = JSON.parse(data.message); } catch(e){}
+      }
+      return makeDocSnap(docRef.id, {
+        id: docRef.id,
+        identifier: parsed.identifier || cleanId,
+        email: parsed.email || (isEmail ? cleanId : ""),
+        phone: parsed.phone || (!isEmail ? cleanId : ""),
+        ...parsed
+      });
+    } catch (err) {
+      return makeDocSnap(docRef.id, null);
+    }
+  }
   const table = docRef.table;
   try {
     let req = supabase.from(table).select("*");
@@ -359,6 +419,33 @@ export async function getDoc(docRef) {
 }
 
 export async function getDocs(target) {
+  if (target && (target.collectionName === "admins" || (target.defaultFilter && target.defaultFilter.val === "admin"))) {
+    try {
+      const { data, error } = await supabase.from("feedback").select("*").eq("type", "admin");
+      if (error || !data) return makeQuerySnap([]);
+      const docs = data.map(item => {
+        let parsed = {};
+        if (typeof item.message === "string" && item.message.startsWith("{")) {
+          try { parsed = JSON.parse(item.message); } catch(e){}
+        }
+        const cleanId = parsed.identifier || (item.id || "").replace(/^admin_/, "") || item.user_name || item.uid;
+        return makeDocSnap(cleanId, {
+          id: cleanId,
+          identifier: cleanId,
+          type: parsed.type || (cleanId.includes("@") ? "email" : "phone"),
+          email: parsed.email || (cleanId.includes("@") ? cleanId : ""),
+          phone: parsed.phone || (!cleanId.includes("@") ? cleanId : ""),
+          display: parsed.display || cleanId,
+          addedAt: parsed.addedAt || item.created_at,
+          addedBy: parsed.addedBy || "",
+          ...parsed
+        });
+      });
+      return makeQuerySnap(docs);
+    } catch (e) {
+      return makeQuerySnap([]);
+    }
+  }
   let table = "";
   let filters = [];
   let orderBys = [];
@@ -429,6 +516,35 @@ function extractMissingColumn(msg) {
 }
 
 export async function setDoc(docRef, data, options = {}) {
+  if (docRef.collectionName === "admins" || docRef.adminDocId) {
+    const rawId = String(docRef.id || (data && (data.email || data.phone || data.identifier)) || "").trim();
+    const isEmail = rawId.includes("@");
+    const cleanId = isEmail ? rawId.toLowerCase() : rawId.replace(/[^0-9]/g, "");
+    const adminId = docRef.adminDocId || ("admin_" + cleanId);
+    const phoneLast8 = !isEmail && cleanId.length >= 8 ? cleanId.slice(-8) : "";
+    const payload = {
+      id: adminId,
+      type: "admin",
+      uid: cleanId,
+      user_name: (data && data.display) || cleanId,
+      user_phone: isEmail ? null : cleanId,
+      created_at: (data && data.addedAt) || Date.now(),
+      updated_at: Date.now(),
+      message: JSON.stringify({
+        identifier: cleanId,
+        display: (data && data.display) || cleanId,
+        type: isEmail ? "email" : "phone",
+        email: isEmail ? cleanId : "",
+        phone: isEmail ? "" : cleanId,
+        phoneLast8: phoneLast8,
+        addedAt: (data && data.addedAt) || Date.now(),
+        addedBy: (data && data.addedBy) || ""
+      })
+    };
+    const { error } = await supabase.from("feedback").upsert(payload);
+    if (error) throw new Error(error.message);
+    return true;
+  }
   const row = objectToDb(data);
   const table = docRef.table;
 
@@ -452,7 +568,11 @@ export async function setDoc(docRef, data, options = {}) {
         if (typeof sp === "string") {
           try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
         }
-        sp[missingCol] = payload[missingCol];
+        if (payload[missingCol] == null) {
+          delete sp[missingCol];
+        } else {
+          sp[missingCol] = payload[missingCol];
+        }
         payload.specs = sp;
       }
       delete payload[missingCol];
@@ -480,7 +600,11 @@ export async function addDoc(colRef, data) {
         if (typeof sp === "string") {
           try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
         }
-        sp[missingCol] = payload[missingCol];
+        if (payload[missingCol] == null) {
+          delete sp[missingCol];
+        } else {
+          sp[missingCol] = payload[missingCol];
+        }
         payload.specs = sp;
       }
       delete payload[missingCol];
@@ -522,7 +646,11 @@ export async function updateDoc(docRef, data) {
         if (typeof sp === "string") {
           try { sp = JSON.parse(sp); } catch(e){ sp = {}; }
         }
-        sp[missingCol] = payload[missingCol];
+        if (payload[missingCol] == null) {
+          delete sp[missingCol];
+        } else {
+          sp[missingCol] = payload[missingCol];
+        }
         payload.specs = sp;
       }
       delete payload[missingCol];
@@ -534,6 +662,21 @@ export async function updateDoc(docRef, data) {
 }
 
 export async function deleteDoc(docRef) {
+  if (docRef.collectionName === "admins" || docRef.adminDocId) {
+    const rawId = String(docRef.id || "").trim();
+    const isEmail = rawId.includes("@");
+    const cleanId = isEmail ? rawId.toLowerCase() : rawId.replace(/[^0-9]/g, "");
+    const adminId = docRef.adminDocId || ("admin_" + cleanId);
+    let { error } = await supabase.from("feedback").delete().eq("id", adminId);
+    if (!isEmail && cleanId.length >= 8) {
+      const last8 = cleanId.slice(-8);
+      try {
+        await supabase.from("feedback").delete().eq("type", "admin").ilike("message", `%${last8}%`);
+      } catch(e){}
+    }
+    if (error) throw new Error(error.message);
+    return true;
+  }
   const table = docRef.table;
   let req = supabase.from(table).delete();
   if (table === "phones") req = req.eq("phone", docRef.id);
