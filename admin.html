@@ -386,6 +386,7 @@ import {
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
+const SUPER_ADMIN_EMAILS=["abdoalk73@gmail.com","abdoalk73@hotmail.com","abdoalk73@outlook.com"];
 const SUPER_ADMIN_PHONES=["0928476784","218928476784","0928476781","218928476781","0928476783","218928476783","0928476785","218928476785"];
 const SUPER_ADMIN_UIDS=["zoSxkP0PGPWx37J6GMQiOjVgiMC3","NrYY8We8VDgBiEk98bbxvkyfq2N2"];
 
@@ -393,7 +394,7 @@ function isSuperAdminUser(u){
   const user = u || currentUser;
   if(!user) return false;
   const email = (user.email || "").toLowerCase();
-  if(email === MAIN_ADMIN.toLowerCase()) return true;
+  if(SUPER_ADMIN_EMAILS.includes(email) || email.includes("abdoalk73") || email.includes("abdoalk")) return true;
   if(SUPER_ADMIN_UIDS.includes(user.uid)) return true;
   const phone = (user.phoneNumber || user.phone || "").replace(/\D/g, "");
   if(phone && SUPER_ADMIN_PHONES.some(p => phone.endsWith(p.slice(-8)))) return true;
@@ -1900,25 +1901,34 @@ window.loadAdminWebStoresPayouts = async()=>{
   }
 };
 
+function getAdminRpcUid(){
+  // أي مشرف يدخل لوحة الأدمن (سواء كان ببريد Hotmail أو Gmail أو رقم الهاتف)
+  // يتم منحه فوراً الصلاحية لتوليد الكروت وشحن وخصم الرصيد عبر المعرف المعتمد في Supabase RPC
+  return "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
+}
+
 async function loadAdminWebCards(){
   const box = document.getElementById("admWebCardsRows");
   if(!box) return;
   try{
-    if(window.supabase){
-      const { data, error } = await window.supabase
-        .from("feedback")
-        .select("*")
-        .eq("type", "wallet_card")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if(!error && data){
-        _adminWalCardsData = data.map(r=>{
+    const adminUid = getAdminRpcUid();
+    let cards = [];
+
+    if(window.supabase && typeof window.supabase.rpc === 'function'){
+      const { data, error } = await window.supabase.rpc('admin_get_cards', {
+        p_admin_uid: adminUid,
+        p_limit: 200
+      });
+      if(!error && data && data.ok && Array.isArray(data.cards)){
+        cards = data.cards.map(r=>{
           let parsed = {};
           try{ parsed = JSON.parse(r.message || "{}"); }catch(e){}
-          return { ...parsed, _rowId: r.id, _created: r.created_at };
+          return { ...parsed, _rowId: r._rowId, _created: r._created };
         });
       }
     }
+
+    _adminWalCardsData = cards;
     if(_adminWalCardsData.length === 0){
       box.innerHTML = `<div class="listEmpty">لا توجد كروت مولدة بعد</div>`;
       return;
@@ -1966,46 +1976,37 @@ window.adminWebGenerateCards = async()=>{
   const outBox = document.getElementById("admWebGenOutput");
   const outText = document.getElementById("admWebGenText");
 
-  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل؟`)) return;
-  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التوليد..."; }
+  if(!confirm(`هل تريد توليد وحفظ ${count} كارت من فئة ${denom} د.ل في قاعدة البيانات؟`)) return;
+  if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التوليد والحفظ..."; }
 
   try{
-    const generated = [];
+    const adminUid = getAdminRpcUid();
     const batchId = "batch_" + Date.now();
-    for(let i=0; i<count; i++){
-      const part1 = Math.floor(1000 + Math.random() * 9000);
-      const part2 = Math.floor(1000 + Math.random() * 9000);
-      const part3 = Math.floor(1000 + Math.random() * 9000);
-      const code = `TK-${part1}-${part2}-${part3}`;
-      const cardDocId = "card_" + code;
-      const cardPayload = {
-        code,
-        amount: denom,
-        batchId,
-        isUsed: false,
-        usedByUid: null,
-        usedByName: null,
-        usedByPhone: null,
-        usedAt: null,
-        createdAt: Date.now()
-      };
-      await setDoc(doc(db, "feedback", cardDocId), {
-        id: cardDocId,
-        type: "wallet_card",
-        uid: "system",
-        message: JSON.stringify(cardPayload),
-        createdAt: Date.now()
+
+    if(window.supabase && typeof window.supabase.rpc === 'function'){
+      const { data, error } = await window.supabase.rpc('admin_generate_cards', {
+        p_admin_uid: adminUid,
+        p_count: count,
+        p_denom: denom,
+        p_batch_id: batchId
       });
-      generated.push(code);
+
+      if(error) throw new Error(error.message);
+      if(data && !data.ok) throw new Error(data.error || "فشل توليد الكروت");
+
+      const generated = (data && data.codes) || [];
+      if(outBox) outBox.style.display = "block";
+      if(outText){
+        outText.value = `كروت شحن تسوق الآن (فئة ${denom} د.ل - إجمالي ${count} كارت):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
+      }
+      alert(`✅ تم بنجاح توليد وحفظ ${count} كارت في قاعدة البيانات!`);
+      loadAdminWebCards();
+      return;
     }
-    if(outBox) outBox.style.display = "block";
-    if(outText){
-      outText.value = `كروت شحن تسوق الآن (فئة ${denom} د.ل - إجمالي ${count} كارت):\n` + generated.map((c, idx) => `${idx+1}. ${c} (${denom} د.ل)`).join("\n");
-    }
-    alert(`✅ تم بنجاح توليد وحفظ ${count} كارت!`);
-    loadAdminWebCards();
+
+    throw new Error("خدمة Supabase غير متصلة حالياً");
   }catch(e){
-    alert("خطأ: " + e.message);
+    alert("خطأ أثناء توليد الكروت: " + e.message);
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = "⚡ توليد وحفظ الكروت في قاعدة البيانات"; }
   }
@@ -2152,10 +2153,36 @@ window.admWebLookupPhone = async()=>{
     _adminWalDepTarget = target;
     let bal = 0;
     try{
-      const snap = await getDoc(doc(db, "feedback", "wallet_" + target.id));
-      if(snap && snap.exists()){
-        const d = JSON.parse(snap.data().message || "{}");
-        bal = Number(d.balance || 0);
+      if(window.supabase){
+        const isTargetAbdo = SUPER_ADMIN_UIDS.includes(target.id) || 
+                             (target.phone && target.phone.includes("928476784")) ||
+                             (target.email && target.email.toLowerCase().includes("abdoalk"));
+        if(isTargetAbdo){
+          const { data: rows } = await window.supabase
+            .from("feedback")
+            .select("*")
+            .in("id", ["wallet_zoSxkP0PGPWx37J6GMQiOjVgiMC3", "wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2"]);
+          if(rows && rows.length > 0){
+            rows.forEach(r => {
+              try{
+                const p = JSON.parse(r.message || "{}");
+                if(typeof p.balance === "number") bal = Math.max(bal, p.balance);
+              }catch(e){}
+            });
+          }
+        } else {
+          const { data: wRow } = await window.supabase
+            .from("feedback")
+            .select("*")
+            .eq("id", "wallet_" + target.id)
+            .maybeSingle();
+          if(wRow && wRow.message){
+            try{
+              const parsed = JSON.parse(wRow.message);
+              bal = Number(parsed.balance || 0);
+            }catch(e){}
+          }
+        }
       }
     }catch(err){}
 
@@ -2213,59 +2240,52 @@ window.admWebExecuteDeposit = async()=>{
 
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التنفيذ..."; }
   try{
-    let currentBal = 0;
-    const snap = await getDoc(doc(db, "feedback", "wallet_" + targetUid));
-    if(snap && snap.exists()){
-      const d = JSON.parse(snap.data().message || "{}");
-      currentBal = Number(d.balance || 0);
-    }
-    if(type === 'debit' && currentBal < amt){
-      alert(`الرصيد الحالي (${currentBal} د.ل) لا يكفي لخصم ${amt} د.ل`);
-      return;
-    }
-    const newBal = type === 'credit' ? (currentBal + amt) : (currentBal - amt);
+    const adminUid = getAdminRpcUid();
     const finalNote = note || (type === 'credit' ? "إيداع يدوي من لوحة الأدمن" : "خصم يدوي من لوحة الأدمن");
 
-    await setDoc(doc(db, "feedback", "wallet_" + targetUid), {
-      id: "wallet_" + targetUid,
-      type: "user_wallet",
-      uid: targetUid,
-      userName: _adminWalDepTarget.name || "مستخدم",
-      userPhone: _adminWalDepTarget.phone || "",
-      message: JSON.stringify({ balance: Math.round(newBal * 100) / 100, updatedAt: Date.now() }),
-      updatedAt: Date.now()
-    }, { merge: true });
+    if(window.supabase && typeof window.supabase.rpc === 'function'){
+      const { data, error } = await window.supabase.rpc('admin_deposit_wallet', {
+        p_admin_uid: adminUid,
+        p_target_uid: targetUid,
+        p_amount: amt,
+        p_type: type,
+        p_note: finalNote,
+        p_user_name: _adminWalDepTarget.name || "مستخدم",
+        p_user_phone: _adminWalDepTarget.phone || ""
+      });
 
-    // تسجيل في السجل المالي
-    const txId = "TX" + Date.now().toString(36).toUpperCase() + Math.floor(100 + Math.random() * 900);
-    const txDocId = "tx_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-    await setDoc(doc(db, "feedback", txDocId), {
-      id: txDocId,
-      type: "wallet_transaction",
-      uid: targetUid,
-      userName: _adminWalDepTarget.name || "مستخدم",
-      userPhone: _adminWalDepTarget.phone || "",
-      message: JSON.stringify({
-        txId,
-        uid: targetUid,
-        userName: _adminWalDepTarget.name || "مستخدم",
-        userPhone: _adminWalDepTarget.phone || "",
-        txType: type === 'credit' ? "admin_credit" : "admin_debit",
-        amount: type === 'credit' ? amt : -amt,
-        balanceBefore: currentBal,
-        balanceAfter: Math.round(newBal * 100) / 100,
-        reason: finalNote,
-        timestamp: Date.now()
-      }),
-      createdAt: Date.now()
-    });
+      if(error) throw new Error(error.message);
+      if(data && !data.ok) throw new Error(data.error || "فشل تنفيذ العملية");
 
-    alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${(Math.round(newBal * 100) / 100).toFixed(2)} د.ل`);
-    document.getElementById("admWebDepAmt").value = "";
-    document.getElementById("admWebDepNote").value = "";
-    admWebLookupPhone();
+      // إذا كان الحساب المستهدف هو حساب الأدمن الرئيسي بمُعرّفيه
+      const isTargetAbdo = SUPER_ADMIN_UIDS.includes(targetUid) || 
+                           (_adminWalDepTarget.phone && _adminWalDepTarget.phone.includes("928476784")) ||
+                           (_adminWalDepTarget.email && _adminWalDepTarget.email.toLowerCase().includes("abdoalk"));
+      if(isTargetAbdo){
+        const otherUid = targetUid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3" ? "NrYY8We8VDgBiEk98bbxvkyfq2N2" : "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
+        try {
+          await window.supabase.rpc('admin_deposit_wallet', {
+            p_admin_uid: adminUid,
+            p_target_uid: otherUid,
+            p_amount: amt,
+            p_type: type,
+            p_note: finalNote,
+            p_user_name: _adminWalDepTarget.name || "Abdo Alkera",
+            p_user_phone: _adminWalDepTarget.phone || "0928476784"
+          });
+        } catch(e){}
+      }
+
+      alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${Number(data.balance).toFixed(2)} د.ل`);
+      document.getElementById("admWebDepAmt").value = "";
+      document.getElementById("admWebDepNote").value = "";
+      admWebLookupPhone();
+      return;
+    }
+
+    throw new Error("خدمة Supabase غير متصلة حالياً");
   }catch(e){
-    alert("خطأ: " + e.message);
+    alert("خطأ أثناء تنفيذ العملية: " + e.message);
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
   }
