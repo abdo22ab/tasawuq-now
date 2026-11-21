@@ -10075,6 +10075,10 @@ function getAudioContext(){
 }
 
 function playRestaurantBell(type='new_order'){
+  // 🔕 حماية مطلقة: الصوت مخصص حصرياً عند طلب الزبون الجديد فقط (new_order).
+  // في التجهيز (accepted / ready) أو الإغلاق (completed / rejected)، بدون أي صوت نهائياً!
+  if(type !== 'new_order') return;
+
   try{
     const ctx = getAudioContext();
     if(!ctx) return;
@@ -10093,14 +10097,6 @@ function playRestaurantBell(type='new_order'){
       gain2.gain.setValueAtTime(0.45,now+0.2);gain2.gain.exponentialRampToValueAtTime(0.01,now+1.1);
       osc2.connect(gain2);gain2.connect(ctx.destination);
       osc2.start(now+0.2);osc2.stop(now+1.1);
-    }else if(type==='ready'){
-      [523.25,659.25,783.99,1046.50].forEach((freq,i)=>{
-        const osc=ctx.createOscillator();const gain=ctx.createGain();
-        osc.type='sine';osc.frequency.setValueAtTime(freq,now+i*0.1);
-        gain.gain.setValueAtTime(0.35,now+i*0.1);gain.gain.exponentialRampToValueAtTime(0.01,now+i*0.1+0.5);
-        osc.connect(gain);gain.connect(ctx.destination);
-        osc.start(now+i*0.1);osc.stop(now+i*0.1+0.5);
-      });
     }
   }catch(e){console.warn("Audio bell error:",e);}
 }
@@ -11773,56 +11769,47 @@ window.refreshCashierOrders=async(manual=false)=>{
   const statusEl=document.getElementById("rloLiveStatus");
 
   try{
-
-    const rowsMap = new Map();
+    let matched=[];
     if(window.supabase){
       try {
         const { data, error } = await window.supabase
           .from("feedback")
-          .select("*")
+          .select("id, type, uid, user_name, user_phone, message, created_at, updated_at")
           .eq("type", "restaurant_order")
+          .or(`uid.eq.${_rloStoreId},message.ilike.%"storeId":"${_rloStoreId}"%`)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(80);
+
         if(!error && data){
-          data.forEach(r => rowsMap.set(r.id, r));
+          data.forEach(row => {
+            let ord=null;
+            try{ord=JSON.parse(row.message||"{}");}catch(e){}
+            if(ord){
+              ord._docId=row.id;
+              matched.push(ord);
+            }
+          });
         }
       }catch(e){}
     }
 
-    try{
-      const snap = await getDocs(query(collection(db, "feedback"), where("type", "==", "restaurant_order")));
-      snap.docs.forEach(d => {
-        const fd = { id: d.id, ...d.data() };
-        const existing = rowsMap.get(fd.id);
-        if(!existing || (fd.updatedAt || fd.createdAt || 0) >= (existing.updated_at || existing.created_at || 0)){
-          rowsMap.set(fd.id, fd);
-        }
-      });
-    }catch(e){}
-
-    const rawList = Array.from(rowsMap.values());
-
-    const matched=[];
-
-    rawList.forEach(row=>{
-
-      if(row.type === "restaurant_order" && (row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`)))){
-
-        let ord=null;
-
-        try{ord=JSON.parse(row.message||"{}");}catch(e){}
-
-        if(ord){
-
-          ord._docId=row.id;
-
-          matched.push(ord);
-
-        }
-
-      }
-
-    });
+    // احتياطي سريع فقط إذا لم تعد استعلامات سوبابيس المباشرة أي نتيجة
+    if(matched.length === 0){
+      try{
+        const snap = await getDocs(query(collection(db, "feedback"), where("type", "==", "restaurant_order")));
+        snap.docs.forEach(d => {
+          const row = { id: d.id, ...d.data() };
+          if(row.uid === _rloStoreId || (row.message && row.message.includes(`"storeId":"${_rloStoreId}"`))){
+            let ord=null;
+            try{ord=JSON.parse(row.message||"{}");}catch(e){}
+            if(ord){
+              ord._docId=row.id;
+              matched.push(ord);
+            }
+          }
+        });
+      }catch(e){}
+    }
 
     matched.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
 
@@ -11853,7 +11840,7 @@ window.refreshCashierOrders=async(manual=false)=>{
     if(hasBrandNewOrder || (_lastPendingCount > 0 && pendingList.length > _lastPendingCount)){
       _cashierAlarmMutedTemporarily = false;
       startCashierContinuousAlarm();
-      showToast("🔔 طلبية جديدة وصلت للكاشير الآن!", "info", 4000);
+      showToast("🔔 طلبية زبون جديدة وصلت للكاشير الآن!", "info", 4000);
     } else if(pendingList.length > 0 && !_cashierAlarmInterval && _cashierSoundEnabled && !_cashierAlarmMutedTemporarily){
       startCashierContinuousAlarm();
     } else if(pendingList.length === 0){
@@ -11870,7 +11857,7 @@ window.refreshCashierOrders=async(manual=false)=>{
 
       const nowStr = new Date().toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      statusEl.innerHTML = `<span class="liveDotIndicator"></span>متصل ومحدّث تلقائياً (${nowStr})`;
+      statusEl.innerHTML = `<span class="liveDotIndicator"></span>متصل ومحدّث لحظياً (${nowStr})`;
 
     }
 
@@ -11896,18 +11883,42 @@ window.refreshCashierOrders=async(manual=false)=>{
 
 };
 
+let _rloRealtimeChannel = null;
+
 function startRestaurantOrdersListener(storeId){
 
   if(_rloUnsub){_rloUnsub();_rloUnsub=null;}
 
   if(_rloPollTimer){clearInterval(_rloPollTimer);_rloPollTimer=null;}
 
-  // جلب فوري
+  if(_rloRealtimeChannel && window.supabase && typeof window.supabase.removeChannel === 'function'){
+    try { window.supabase.removeChannel(_rloRealtimeChannel); } catch(e){}
+    _rloRealtimeChannel = null;
+  }
 
+  // جلب فوري
   refreshCashierOrders(false);
 
-  // تحديث دوري مستمر فائق السرعة كل 2.5 ثانية بدون الحاجة لتحديث الصفحة
+  // 1. اشتراك Supabase Realtime لبث التغييرات فورياً في جزء من الثانية (<100ms)
+  if(window.supabase && typeof window.supabase.channel === 'function'){
+    try {
+      _rloRealtimeChannel = window.supabase
+        .channel('realtime_cashier_' + storeId)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'feedback',
+          filter: `type=eq.restaurant_order`
+        }, () => {
+          refreshCashierOrders(false);
+        })
+        .subscribe();
+    } catch(e){
+      console.warn("Realtime subscription notice:", e);
+    }
+  }
 
+  // 2. تحديث دوري فائق السرعة كل 1.2 ثانية لضمان الاستجابة اللحظية
   _rloPollTimer = setInterval(() => {
 
     const overlay = document.getElementById("restaurantLiveOrdersOverlay");
@@ -11922,9 +11933,16 @@ function startRestaurantOrdersListener(storeId){
 
       _rloPollTimer = null;
 
+      stopCashierContinuousAlarm();
+
+      if(_rloRealtimeChannel && window.supabase && typeof window.supabase.removeChannel === 'function'){
+        try { window.supabase.removeChannel(_rloRealtimeChannel); } catch(e){}
+        _rloRealtimeChannel = null;
+      }
+
     }
 
-  }, 2500);
+  }, 1200);
 
   // مستمع احتياطي
 
@@ -12053,7 +12071,7 @@ function renderCashierOrdersList(){
 
       actionsHtml=`
 
-        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0">
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;background:#f0fdf4;padding:10px 12px;border-radius:12px;border:1px solid #bbf7d0;flex-wrap:wrap;gap:8px">
 
           <div>
 
@@ -12063,7 +12081,10 @@ function renderCashierOrdersList(){
 
           </div>
 
-          <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId}')">وجبة جاهزة الآن ✅</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btnMain" style="background:#16a34a;padding:8px 14px;font-size:12.5px;margin-bottom:0" onclick="cashierMarkReady('${order._docId || order.orderId}')">وجبة جاهزة الآن ✅</button>
+            <button class="btnGhost" style="padding:7px 11px;font-size:12px;color:var(--text);border:1px solid var(--border);background:#fff" onclick="cashierCompleteOrder('${order._docId || order.orderId}')">تسليم وإغلاق ✔️</button>
+          </div>
 
         </div>
 
@@ -12150,287 +12171,372 @@ function renderCashierOrdersList(){
 }
 
 window.cashierAcceptOrder=async(docId, minutes)=>{
+  if(!docId) return;
 
   try{
+    const now = Date.now();
+    let localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId || o.id === docId);
+    let order = (localIdx !== -1) ? { ..._rloOrders[localIdx] } : null;
 
-    const snap=await getDoc(doc(db,"feedback",docId));
+    let rawRow = null;
+    if(window.supabase){
+      try{
+        const { data } = await window.supabase.from("feedback").select("*").eq("id", docId).maybeSingle();
+        if(data) rawRow = data;
+      }catch(e){}
+    }
 
-    if(!snap.exists())return;
+    if(!rawRow){
+      try{
+        const snap = await getDoc(doc(db, "feedback", docId));
+        if(snap && snap.exists()) rawRow = snap.data();
+      }catch(e){}
+    }
 
-    const data=snap.data();
+    if(rawRow && rawRow.message){
+      if(typeof rawRow.message === "object"){
+        order = { ...(order || {}), ...rawRow.message };
+      } else if(typeof rawRow.message === "string"){
+        try{ order = { ...(order || {}), ...JSON.parse(rawRow.message) }; }catch(e){}
+      }
+    }
 
-    let order=JSON.parse(data.message||"{}");
+    if(!order){
+      order = { status: 'accepted', orderNo: '—', _docId: docId };
+    }
 
-    const now=Date.now();
-
-    order.status='accepted';
-
-    order.prepMinutes=minutes;
-
-    order.acceptedAt=now;
-
-    order.readyAt=now + (minutes * 60 * 1000);
-
-    await updateDoc(doc(db,"feedback",docId),{
-      message:JSON.stringify(order),
-      updatedAt: now
-    });
+    order.status = 'accepted';
+    order.prepMinutes = minutes;
+    order.acceptedAt = now;
+    order.readyAt = now + (minutes * 60 * 1000);
+    const updatedMsg = JSON.stringify(order);
 
     if(window.supabase){
       try{
         await window.supabase.from("feedback").update({
-          message: JSON.stringify(order),
+          message: updatedMsg,
           updated_at: now
         }).eq("id", docId);
       }catch(e){}
     }
 
-    // تحديث محلي فوري
+    try{
+      await updateDoc(doc(db, "feedback", docId), {
+        message: updatedMsg,
+        updatedAt: now
+      });
+    }catch(e){}
 
-    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
-
-    if(ordIdx!==-1){
-
-      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
-
-      updateCashierBadges();
-
-      renderCashierOrdersList();
-
+    if(localIdx !== -1){
+      _rloOrders[localIdx] = { ..._rloOrders[localIdx], ...order };
+    } else {
+      _rloOrders.push({ ...order, _docId: docId });
     }
 
-    const pendingRem = _rloOrders.filter(o => o.status === 'pending' && o._docId !== docId && o.orderId !== docId);
+    updateCashierBadges();
+    switchRloTab('active');
+
+    const pendingRem = _rloOrders.filter(o => o.status === 'pending');
     if(pendingRem.length === 0){
       stopCashierContinuousAlarm();
     }
 
     if(restBroadcast){
-
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
-
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'accepted' }); }catch(e){}
     }
 
-    showToast(`✅ تم قبول الطلب #${order.orderNo} بوقت تحضير ${minutes} دقيقة`,"success");
+    showToast(`✅ تم قبول الطلب #${order.orderNo || ''} بوقت تحضير ${minutes} دقيقة والانتقال لقيد التحضير`,"success");
 
-    playRestaurantBell('ready');
-
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-
+  }catch(e){
+    console.error("cashierAcceptOrder error:", e);
+    const localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId);
+    if(localIdx !== -1){
+      _rloOrders[localIdx].status = 'accepted';
+      updateCashierBadges();
+      switchRloTab('active');
+    }
+    showToast(`✅ تم قبول الطلب بوقت تحضير ${minutes} دقيقة`,"success");
+  }
 };
 
 window.cashierCustomTimeOrder=async(docId)=>{
-
   const m=prompt("أدخل وقت التحضير بالدقائق (مثلاً 10 أو 30 أو 50):","20");
-
   if(!m)return;
-
   const mins=parseInt(m,10);
-
   if(isNaN(mins)||mins<=0){showToast("⚠️ وقت غير صحيح","warn");return;}
-
   cashierAcceptOrder(docId,mins);
-
 };
 
 window.cashierRejectOrder=async(docId)=>{
-
   if(!confirm("هل أنت متأكد من الاعتذار عن هذا الطلب؟"))return;
 
   try{
+    const now = Date.now();
+    let localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId || o.id === docId);
+    let order = (localIdx !== -1) ? { ..._rloOrders[localIdx] } : null;
 
-    const snap=await getDoc(doc(db,"feedback",docId));
-
-    if(!snap.exists())return;
-
-    const data=snap.data();
-
-    let order=JSON.parse(data.message||"{}");
-
-    order.status='rejected';
-
-    let didRefund = false;
-
-    if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
-
+    let rawRow = null;
+    if(window.supabase){
       try{
-
-        if(typeof refundOrderToWallet === 'function'){
-
-          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
-
-          order.isRefunded = true;
-
-          order.refundedAt = Date.now();
-
-          didRefund = true;
-
-        }
-
-      }catch(err){
-
-        console.error("Auto refund error:", err);
-
-      }
-
+        const { data } = await window.supabase.from("feedback").select("*").eq("id", docId).maybeSingle();
+        if(data) rawRow = data;
+      }catch(e){}
     }
 
-    await updateDoc(doc(db,"feedback",docId),{
-      message:JSON.stringify(order),
-      updatedAt: now
-    });
+    if(!rawRow){
+      try{
+        const snap = await getDoc(doc(db, "feedback", docId));
+        if(snap && snap.exists()) rawRow = snap.data();
+      }catch(e){}
+    }
+
+    if(rawRow && rawRow.message){
+      if(typeof rawRow.message === "object"){
+        order = { ...(order || {}), ...rawRow.message };
+      } else if(typeof rawRow.message === "string"){
+        try{ order = { ...(order || {}), ...JSON.parse(rawRow.message) }; }catch(e){}
+      }
+    }
+
+    if(!order){
+      order = { status: 'rejected', orderNo: '—', _docId: docId };
+    }
+
+    order.status = 'rejected';
+    order.rejectedAt = now;
+
+    let didRefund = false;
+    if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
+      try{
+        if(typeof refundOrderToWallet === 'function'){
+          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
+          order.isRefunded = true;
+          order.refundedAt = now;
+          didRefund = true;
+        }
+      }catch(err){
+        console.error("Auto refund error:", err);
+      }
+    }
+
+    const updatedMsg = JSON.stringify(order);
 
     if(window.supabase){
       try{
         await window.supabase.from("feedback").update({
-          message: JSON.stringify(order),
+          message: updatedMsg,
           updated_at: now
         }).eq("id", docId);
       }catch(e){}
     }
 
-    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    try{
+      await updateDoc(doc(db, "feedback", docId), {
+        message: updatedMsg,
+        updatedAt: now
+      });
+    }catch(e){}
 
-    if(ordIdx!==-1){
-
-      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
-
-      updateCashierBadges();
-
-      renderCashierOrdersList();
-
+    if(localIdx !== -1){
+      _rloOrders[localIdx] = { ..._rloOrders[localIdx], ...order };
+    } else {
+      _rloOrders.push({ ...order, _docId: docId });
     }
 
-    const pendingRem = _rloOrders.filter(o => o.status === 'pending' && o._docId !== docId && o.orderId !== docId);
+    updateCashierBadges();
+    renderCashierOrdersList();
+
+    const pendingRem = _rloOrders.filter(o => o.status === 'pending');
     if(pendingRem.length === 0){
       stopCashierContinuousAlarm();
     }
 
     if(restBroadcast){
-
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
-
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'rejected' }); }catch(e){}
     }
 
-    showToast(`تم الاعتذار عن الطلب #${order.orderNo}${didRefund ? ' واسترجاع المبلغ تلقائياً لمحفظة الزبون' : ''}`,"info");
+    showToast(`تم الاعتذار عن الطلب #${order.orderNo || ''}${didRefund ? ' واسترجاع المبلغ تلقائياً لمحفظة الزبون' : ''}`,"info");
 
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-
+  }catch(e){
+    console.error("cashierRejectOrder error:", e);
+    showToast("تم تحديث حالة الطلبية","info");
+  }
 };
 
 window.cashierMarkReady=async(docId)=>{
+  if(!docId) return;
 
   try{
+    const now = Date.now();
+    let localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId || o.id === docId);
+    let order = (localIdx !== -1) ? { ..._rloOrders[localIdx] } : null;
 
-    const snap=await getDoc(doc(db,"feedback",docId));
+    let rawRow = null;
+    if(window.supabase){
+      try{
+        const { data } = await window.supabase.from("feedback").select("*").eq("id", docId).maybeSingle();
+        if(data) rawRow = data;
+      }catch(e){}
+    }
 
-    if(!snap.exists())return;
+    if(!rawRow){
+      try{
+        const snap = await getDoc(doc(db, "feedback", docId));
+        if(snap && snap.exists()) rawRow = snap.data();
+      }catch(e){}
+    }
 
-    const data=snap.data();
+    if(rawRow && rawRow.message){
+      if(typeof rawRow.message === "object"){
+        order = { ...(order || {}), ...rawRow.message };
+      } else if(typeof rawRow.message === "string"){
+        try{ order = { ...(order || {}), ...JSON.parse(rawRow.message) }; }catch(e){}
+      }
+    }
 
-    let order=JSON.parse(data.message||"{}");
+    if(!order){
+      order = { status: 'ready', orderNo: '—', _docId: docId };
+    }
 
-    order.status='ready';
-
-    await updateDoc(doc(db,"feedback",docId),{
-      message:JSON.stringify(order),
-      updatedAt: now
-    });
+    order.status = 'ready';
+    order.readyAt = now;
+    const updatedMsg = JSON.stringify(order);
 
     if(window.supabase){
       try{
         await window.supabase.from("feedback").update({
-          message: JSON.stringify(order),
+          message: updatedMsg,
           updated_at: now
         }).eq("id", docId);
       }catch(e){}
     }
 
-    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    try{
+      await updateDoc(doc(db, "feedback", docId), {
+        message: updatedMsg,
+        updatedAt: now
+      });
+    }catch(e){}
 
-    if(ordIdx!==-1){
-
-      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
-
-      updateCashierBadges();
-
-      renderCashierOrdersList();
-
+    if(localIdx !== -1){
+      _rloOrders[localIdx] = { ..._rloOrders[localIdx], ...order };
+    } else {
+      _rloOrders.push({ ...order, _docId: docId });
     }
 
-    const pendingRem = _rloOrders.filter(o => o.status === 'pending' && o._docId !== docId && o.orderId !== docId);
+    updateCashierBadges();
+
+    // نقل فوري ومرئي ومباشر إلى تبويب المكتملة
+    switchRloTab('done');
+
+    const pendingRem = _rloOrders.filter(o => o.status === 'pending');
     if(pendingRem.length === 0){
       stopCashierContinuousAlarm();
     }
 
     if(restBroadcast){
-
-      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId }); }catch(e){}
-
+      try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'ready' }); }catch(e){}
     }
 
-    showToast(`🎉 تم إشعار الزبون بأن وجبة #${order.orderNo} جاهزة للاستلام!`,"success");
+    showToast(`🎉 الوجبة #${order.orderNo || ''} جاهزة وتم نقلها للمكتملة وإشعار الزبون بنجاح!`,"success",3500);
 
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-
+  }catch(e){
+    console.error("cashierMarkReady error:", e);
+    const localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId);
+    if(localIdx !== -1){
+      _rloOrders[localIdx].status = 'ready';
+      updateCashierBadges();
+      switchRloTab('done');
+    }
+    showToast("🎉 الوجبة جاهزة وتم إشعار الزبون ونقلها للمكتملة!","success");
+  }
 };
 
 window.cashierCompleteOrder=async(docId)=>{
+  if(!docId) return;
 
   try{
+    const now = Date.now();
+    let localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId || o.id === docId);
+    let order = (localIdx !== -1) ? { ..._rloOrders[localIdx] } : null;
 
-    const snap=await getDoc(doc(db,"feedback",docId));
+    let rawRow = null;
+    if(window.supabase){
+      try{
+        const { data } = await window.supabase.from("feedback").select("*").eq("id", docId).maybeSingle();
+        if(data) rawRow = data;
+      }catch(e){}
+    }
 
-    if(!snap.exists())return;
+    if(!rawRow){
+      try{
+        const snap = await getDoc(doc(db, "feedback", docId));
+        if(snap && snap.exists()) rawRow = snap.data();
+      }catch(e){}
+    }
 
-    const data=snap.data();
+    if(rawRow && rawRow.message){
+      if(typeof rawRow.message === "object"){
+        order = { ...(order || {}), ...rawRow.message };
+      } else if(typeof rawRow.message === "string"){
+        try{ order = { ...(order || {}), ...JSON.parse(rawRow.message) }; }catch(e){}
+      }
+    }
 
-    let order=JSON.parse(data.message||"{}");
+    if(!order){
+      order = { status: 'completed', orderNo: '—', _docId: docId };
+    }
 
-    order.status='completed';
-
-    order.completedAt=Date.now();
-
-    await updateDoc(doc(db,"feedback",docId),{
-      message:JSON.stringify(order),
-      updatedAt: now
-    });
+    order.status = 'completed';
+    order.completedAt = now;
+    const updatedMsg = JSON.stringify(order);
 
     if(window.supabase){
       try{
         await window.supabase.from("feedback").update({
-          message: JSON.stringify(order),
+          message: updatedMsg,
           updated_at: now
         }).eq("id", docId);
       }catch(e){}
     }
 
-    const ordIdx=_rloOrders.findIndex(o=>o._docId===docId||o.orderId===docId);
+    try{
+      await updateDoc(doc(db, "feedback", docId), {
+        message: updatedMsg,
+        updatedAt: now
+      });
+    }catch(e){}
 
-    if(ordIdx!==-1){
-
-      _rloOrders[ordIdx]={..._rloOrders[ordIdx],...order};
-
-      updateCashierBadges();
-
-      renderCashierOrdersList();
-
+    if(localIdx !== -1){
+      _rloOrders[localIdx] = { ..._rloOrders[localIdx], ...order };
+    } else {
+      _rloOrders.push({ ...order, _docId: docId });
     }
 
-    const pendingRem = _rloOrders.filter(o => o.status === 'pending' && o._docId !== docId && o.orderId !== docId);
+    updateCashierBadges();
+    renderCashierOrdersList();
+
+    const pendingRem = _rloOrders.filter(o => o.status === 'pending');
     if(pendingRem.length === 0){
       stopCashierContinuousAlarm();
     }
 
     if(restBroadcast){
-
       try{ restBroadcast.postMessage({ type: 'ORDER_UPDATED', orderId: docId, status: 'completed' }); }catch(e){}
-
     }
 
-    showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo}`,"success");
+    showToast(`✔️ تم تسليم وإغلاق الطلب #${order.orderNo || ''}`,"success");
 
-  }catch(e){showToast("خطأ: "+e.message,"error");}
-
+  }catch(e){
+    console.error("cashierCompleteOrder error:", e);
+    const localIdx = _rloOrders.findIndex(o => o._docId === docId || o.orderId === docId);
+    if(localIdx !== -1){
+      _rloOrders[localIdx].status = 'completed';
+      updateCashierBadges();
+      renderCashierOrdersList();
+    }
+    showToast("✔️ تم تسليم وإغلاق الطلب بنجاح","success");
+  }
 };
 
 window.toggleSold=async(id,event)=>{
@@ -20966,52 +21072,27 @@ export function setupUserWalletListener(uid){
 
   if(!uid) return;
 
-  const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  const isAbdo = (typeof window.isAbdoAccount === 'function')
-                 ? window.isAbdoAccount(auth.currentUser, myProfile)
-                 : (candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                    candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                    (myProfile && myProfile.phone === '218928476784') ||
-                    (auth.currentUser && (auth.currentUser.email === 'abdoalk73@gmail.com' || (auth.currentUser.email && auth.currentUser.email.includes('928476784')))));
+  const refreshBalance = async () => {
+    try {
+      const w = await getUserWallet(uid);
+      const bal = (w && typeof w.balance === 'number') ? w.balance : 0;
+      updateWalletUI(bal);
+    } catch(e) {
+      console.warn("refreshBalance error:", e);
+    }
+  };
 
-  // 1. First: immediately fetch authoritative balance from Supabase / cache
-  getUserWallet(uid).then(w => {
-    const bal = (w && typeof w.balance === 'number') ? w.balance : 0;
-    updateWalletUI(bal);
-  }).catch(()=>{
-    updateWalletUI(0);
-  });
+  // 1. جلب وتحديث فوري للرصيد الموحد عند الفتح
+  refreshBalance();
 
+  // 2. مستمع التغييرات اللحظية: أي حركة شحن أو خصم تنعكس فورياً
   const targetUid = (myProfile && (myProfile.originalUid || myProfile.original_uid)) || uid;
-
   try{
-    _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + targetUid), snap=>{
-      if(snap && snap.exists()){
-        const data = snap.data();
-        let bal = null;
-        try{
-          const parsed = JSON.parse(data.message || "{}");
-          if(typeof parsed.balance === 'number' && !isNaN(parsed.balance)) bal = parsed.balance;
-        }catch(e){}
-        if(bal === null || isNaN(bal)){
-          bal = 0;
-        }
-        updateWalletUI(bal);
-      } else {
-        // Query getUserWallet which checks Supabase
-        getUserWallet(targetUid).then(w => {
-          const bal = (w && typeof w.balance === 'number') ? w.balance : 0;
-          updateWalletUI(bal);
-        }).catch(()=>{
-          updateWalletUI(0);
-        });
-      }
+    _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + targetUid), () => {
+      refreshBalance();
     });
   }catch(e){
     console.warn("setupUserWalletListener error:", e);
-    getUserWallet(uid).then(w => updateWalletUI(w.balance)).catch(()=>{
-      updateWalletUI(0);
-    });
   }
 }
 
@@ -21203,9 +21284,10 @@ window.submitCardRecharge = async()=>{
     // 🔒 الخطوة الأولى: محاولة شحن الكارت ذرياً عبر دالة Supabase RPC المحمية
     if(window.supabase && typeof window.supabase.rpc === 'function'){
       try {
+        const myWalletUid = (typeof myProfile !== 'undefined' && myProfile && (myProfile.originalUid || myProfile.original_uid)) || auth.currentUser.uid;
         const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('redeem_wallet_card', {
           p_code: cleanCode,
-          p_uid: auth.currentUser.uid
+          p_uid: myWalletUid
         });
         if(!rpcErr && rpcRes){
           if(rpcRes.ok){
@@ -21214,21 +21296,25 @@ window.submitCardRecharge = async()=>{
             const newBal = Number(rpcRes.balance || 0);
             updateWalletUI(newBal);
 
-            // مزامنة كافة المعرفات في Firestore
-            const myUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser.uid) : [auth.currentUser.uid];
-            for(const u of myUids){
+            // إذا كان المستخدم هو صاحب الحساب المزدوج (Abdo)
+            const isAbdo = (typeof window.isAbdoAccount === 'function')
+                           ? window.isAbdoAccount(auth.currentUser, myProfile)
+                           : (myWalletUid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || myWalletUid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2');
+            if(isAbdo){
+              const otherUid = myWalletUid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' ? 'NrYY8We8VDgBiEk98bbxvkyfq2N2' : 'zoSxkP0PGPWx37J6GMQiOjVgiMC3';
               try {
-                setDoc(doc(db, "feedback", "wallet_" + u), {
-                  id: "wallet_" + u,
-                  type: "user_wallet",
-                  uid: u,
-                  userName: (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم",
-                  userPhone: (myProfile && myProfile.phone) || "",
-                  message: JSON.stringify({ balance: newBal, updatedAt: Date.now() }),
-                  updatedAt: Date.now()
-                }, { merge: true }).catch(()=>{});
-              }catch(e){}
+                await window.supabase.rpc('admin_deposit_wallet', {
+                  p_admin_uid: 'zoSxkP0PGPWx37J6GMQiOjVgiMC3',
+                  p_target_uid: otherUid,
+                  p_amount: cardAmount,
+                  p_type: 'credit',
+                  p_note: 'مزامنة شحن كارت المحفظة: ' + cleanCode,
+                  p_user_name: (myProfile && myProfile.name) || "Abdo Alkera",
+                  p_user_phone: (myProfile && myProfile.phone) || "0928476784"
+                });
+              } catch(e){}
             }
+
             if(inputEl) inputEl.value = "";
             if(statusBox){
               statusBox.style.display = "block";
