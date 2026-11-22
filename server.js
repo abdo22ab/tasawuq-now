@@ -93,20 +93,24 @@ const server = http.createServer((req, res) => {
         let targetFileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.mp4`;
         let videoData = null;
 
+        const ALLOWED_VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.m4v'];
+
         if (cType.includes('multipart/form-data')) {
           const match = cType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
           const boundary = match ? (match[1] || match[2]) : null;
           if (boundary) {
             const parsed = parseMultipart(bodyBuffer, boundary);
             if (parsed && parsed.fileData.length > 0) {
-              const ext = path.extname(parsed.filename) || '.mp4';
+              let ext = (path.extname(parsed.filename) || '.mp4').toLowerCase();
+              if (!ALLOWED_VIDEO_EXTS.includes(ext)) ext = '.mp4';
               targetFileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
               videoData = parsed.fileData;
             }
           }
         } else {
           // Direct binary upload
-          const ext = cType.includes('webm') ? '.webm' : (cType.includes('quicktime') ? '.mov' : '.mp4');
+          let ext = cType.includes('webm') ? '.webm' : (cType.includes('quicktime') ? '.mov' : '.mp4');
+          if (!ALLOWED_VIDEO_EXTS.includes(ext)) ext = '.mp4';
           targetFileName = `video_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
           videoData = bodyBuffer;
         }
@@ -114,6 +118,20 @@ const server = http.createServer((req, res) => {
         if (!videoData || videoData.length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
           res.end(JSON.stringify({ error: 'لم يتم استلام أي بيانات فيديو صالحة' }));
+          return;
+        }
+
+        // 🛡️ فحص أمني لمحتوى الملف: رفض أي ملفات قابلة للتنفيذ أو سكريبتات أو HTML
+        const headerCheck = videoData.slice(0, 1024).toString('utf8').toLowerCase();
+        if (
+          headerCheck.includes('<html') ||
+          headerCheck.includes('<!doctype') ||
+          headerCheck.includes('<script') ||
+          headerCheck.includes('<?php') ||
+          (videoData[0] === 0x4D && videoData[1] === 0x5A) // MZ header (.exe / .dll)
+        ) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({ error: '⛔ تم رفض الملف: نوع الملف غير مسموح به لحماية النظام' }));
           return;
         }
 
@@ -186,14 +204,16 @@ const server = http.createServer((req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN'
       });
       fileStream.pipe(res);
       return;
     }
 
-    // Anti-cache headers on ALL responses
-    res.writeHead(200, {
+    // Security & Anti-cache headers on ALL responses
+    const respHeaders = {
       'Content-Type': contentType,
       'Content-Length': stats.size,
       'Accept-Ranges': 'bytes',
@@ -201,8 +221,17 @@ const server = http.createServer((req, res) => {
       'Pragma': 'no-cache',
       'Expires': '0',
       'Clear-Site-Data': '"cache"',
-      'Access-Control-Allow-Origin': '*'
-    });
+      'Access-Control-Allow-Origin': '*',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      'Referrer-Policy': 'strict-origin-when-cross-origin'
+    };
+
+    if (reqPath.startsWith('/uploads/')) {
+      respHeaders['Content-Security-Policy'] = "default-src 'none'; media-src 'self'; sandbox";
+    }
+
+    res.writeHead(200, respHeaders);
 
     fs.createReadStream(filePath).pipe(res);
   });
