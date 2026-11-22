@@ -3180,49 +3180,37 @@ window.openInbox = window.openInbox || function() {
 
       <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:14px;padding:9px" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 
-      <div class="field" style="margin-bottom:8px">
-
-        <label>📱 رقم الهاتف / الواتساب</label>
-
-        <input id="myPhone" class="phoneInput" maxlength="16" placeholder="0911868439" oninput="normalizePhoneInput()" style="font-size:15px">
-
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب الرقم بأي صيغة (مثال: <b>0911868439</b>) وسيتم تثبيته بحسابك وإعلاناتك</div>
-        <div style="display:flex;align-items:center;gap:6px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:6px 10px;margin-top:6px">
-          <span style="font-size:16px">🛡️</span>
-          <span style="font-size:11.5px;color:#047857;font-weight:800">توثيق الحساب مجاني 100%: بمجرد حفظ رقم هاتفك يصبح حسابك موثقاً رسمياً لدى كل الزوار</span>
+      <!-- 📱 بطاقة رقم الهاتف والتوثيق عبر واتساب المباشر -->
+      <div class="field" style="margin-bottom:12px">
+        <label>📱 رقم الهاتف الموثق عبر واتساب</label>
+        <div id="accountPhoneCardWrap" style="background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+          <div style="flex:1">
+            <div id="accountPhoneDisplayText" style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right">لم يتم ربط رقم هاتف بعد</div>
+            <div id="accountPhoneStatusText" style="font-size:11px;color:var(--muted);margin-top:2px">وثّق رقمك عبر واتساب ليظهر لجميع الزوار ويحمي حسابك</div>
+          </div>
+          <span id="accountPhoneBadgeIcon" style="font-size:24px;margin-right:8px">🔒</span>
         </div>
 
+        <button type="button" id="btnAccountVerifyWa" class="btnMain accountBtn" style="width:100%;margin:0;padding:12px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)" onclick="openPhoneVerificationModal()">
+          <span style="font-size:18px">💬</span> <span id="accountPhoneBtnLabel">توثيق وربط رقم الهاتف عبر واتساب</span>
+        </button>
+
+        <!-- حقل مخفي للحفاظ على التوافق مع أي دوال تعتمد على معرف myPhone -->
+        <input type="hidden" id="myPhone" value="">
       </div>
 
       <!-- 🔒 خيار إظهار أو إخفاء رقم الهاتف في الملف الشخصي -->
-
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-
         <div style="display:flex;align-items:center;gap:10px">
-
           <span style="font-size:20px" id="phoneVisibilityIcon">👁️</span>
-
           <div>
-
             <div style="font-size:13.5px;font-weight:800;color:var(--text)" id="phoneVisibilityTitle">ظهور رقم الهاتف في الملف الشخصي</div>
-
             <div style="font-size:11px;color:var(--muted)" id="phoneVisibilityDesc">رقمك يظهر للزوار تحت اسمك في بروفايلك</div>
-
           </div>
-
         </div>
-
         <button type="button" id="btnTogglePhoneVisibility" onclick="togglePhoneVisibility()" style="border:none;border-radius:20px;padding:7px 16px;font-size:12.5px;font-weight:800;cursor:pointer;transition:all .2s;background:#e0f2fe;color:#0284c7;font-family:'Cairo',sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-
           ظاهر 🟢
-
         </button>
-
-      </div>
-
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="btnGhost accountBtn" style="flex:1;margin:0;padding:10px;font-weight:800" onclick="saveMyPhone()">💾 حفظ الرقم</button>
-        <button class="btnMain accountBtn" style="flex:1.4;margin:0;padding:10px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(5,150,105,0.2)" onclick="openPhoneVerificationModal()"><span>💬</span> <span>توثيق عبر واتساب</span></button>
       </div>
 
       <button type="button" class="btnMain" style="margin-top:8px;margin-bottom:0;width:100%;font-weight:900;padding:14px;border-radius:12px;font-size:15px" onclick="saveAllProfileData()">💾 حفظ جميع التعديلات</button>
@@ -3457,7 +3445,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=247"></script>
+<script type="module" src="app.js?v=250"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
