@@ -3457,7 +3457,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=244"></script>
+<script type="module" src="app.js?v=247"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
@@ -3977,6 +3977,52 @@ window.openInbox = window.openInbox || function() {
 
   </div>
 </div>
+
+<!-- 🛡️ درع الحماية الأمني ومكافحة التلاعب بالكونسول (Anti-Console & Anti-Tamper Shield) -->
+<script>
+(function(){
+  // 1. حظر اختصارات أدوات المطورين والكونسول من لوحة المفاتيح
+  document.addEventListener('keydown', function(e) {
+    if (e.keyCode === 123 || e.key === 'F12') {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+  }, true);
+
+  // 2. حظر القائمة بالنقر الأيمن (Context Menu) لمنع خيار فحص العنصر مع إتاحة النسخ واللصق في الحقول
+  document.addEventListener('contextmenu', function(e) {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target && e.target.isContentEditable)) {
+      return true;
+    }
+    e.preventDefault();
+    return false;
+  }, false);
+
+  // 3. تحذير أمني صارم بالكونسول عند محاولة فتحه
+  try {
+    console.log(
+      "%c⛔ تحذير أمني صارم (SECURITY SHIELD ACTIVE) ⛔",
+      "color:#ffffff;font-size:20px;font-weight:900;background:#dc2626;padding:6px 12px;border-radius:8px;"
+    );
+    console.log(
+      "%c⚠️ تنبيه نظام تسوق الآن: جميع المعاملات المالية (الرصيد، الكروت، النقاط، الطلبيات) يتم التحقق منها ذرياً من خلال قاعدة البيانات والسيرفر.\nأي محاولة لتنفيذ أوامر هنا لتعديل المتغيرات محلياً لن تؤثر على السيرفر ويتم حظر الحساب تلقائياً.",
+      "color:#991b1b;font-size:12.5px;font-weight:700;line-height:1.6;"
+    );
+  } catch(e){}
+})();
+</script>
 
 </body>
 
