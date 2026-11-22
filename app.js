@@ -320,7 +320,6 @@ function sanitizeCorruptedSellerMedia() {
     if (touched && typeof supabase !== 'undefined' && supabase && myProfile.id) {
       supabase.from("profiles").update({
         avatar: myProfile.avatar,
-        cover: myProfile.cover,
         name: myProfile.name,
         username: myProfile.username,
         phone: myProfile.phone
@@ -3866,10 +3865,11 @@ export function hydratePostsSellerInfo(postsList) {
     if (!p.sellerUsername && prof && prof.username) {
       p.sellerUsername = prof.username;
     }
-    if (!p.sellerAvatar && prof && prof.avatar) {
-      p.sellerAvatar = (!isAbdoUser(uid) && isAbdoMedia(prof.avatar)) ? null : prof.avatar;
+    const resolvedAv = (prof && prof.avatar) || (window.sellersProfileCache && window.sellersProfileCache[uid]?.avatar) || (typeof window.getSafeSellerAvatar === 'function' ? window.getSafeSellerAvatar(uid, p.sellerAvatar) : p.sellerAvatar);
+    if (resolvedAv) {
+      p.sellerAvatar = (!isAbdoUser(uid) && typeof isAbdoMedia === 'function' && isAbdoMedia(resolvedAv)) ? null : resolvedAv;
     }
-    if (!isAbdoUser(uid) && isAbdoMedia(p.sellerAvatar)) {
+    if (!isAbdoUser(uid) && typeof isAbdoMedia === 'function' && isAbdoMedia(p.sellerAvatar)) {
       p.sellerAvatar = null;
     }
   });
@@ -3969,7 +3969,7 @@ window.initGlobalProfilesCache = initGlobalProfilesCache;
 
 async function ensureSellersProfilesLoaded(uids) {
   if (!uids || uids.length === 0 || typeof supabase === "undefined" || !supabase) return;
-  const missingUids = uids.filter(uid => uid && !window.sellersProfileCache[uid]);
+  const missingUids = uids.filter(uid => uid && (!window.sellersProfileCache[uid] || !window.sellersProfileCache[uid].avatar || !window.sellersProfileCache[uid].cover));
   if (missingUids.length === 0) return;
   try {
     const { data, error } = await supabase
@@ -11151,6 +11151,8 @@ window.finishAndDismissActiveOrder=async(markInDb=false)=>{
 
         ord.completedAt=Date.now();
 
+        ord.isRefunded=false; // 🔒 قفل أمان: الطلبية مستلمة ومكتملة ولا يجوز استرجاعها
+
         await updateDoc(doc(db,"feedback",orderId),{message:JSON.stringify(ord)});
 
         if(window.supabase){
@@ -11235,9 +11237,9 @@ window.customerCancelOrder=async(orderId)=>{
 
     }
 
-    if(order.status !== 'pending'){
+    if(order.status !== 'pending' || order.status === 'completed' || order.status === 'ready'){
 
-      showToast("⚠️ عذراً، لا يمكن إلغاء الطلبية لأن الكاشير قام بقبولها وبدأ المطبخ في تحضيرها بالفعل!", "warn", 5000);
+      showToast("⚠️ عذراً، لا يمكن إلغاء الطلبية لأن الكاشير قام بقبولها أو تم تجهيزها/تسليمها بالفعل!", "warn", 5000);
 
       return;
 
@@ -11257,13 +11259,17 @@ window.customerCancelOrder=async(orderId)=>{
 
         if(typeof refundOrderToWallet === 'function'){
 
-          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
+          const refRes = await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName, order);
 
-          order.isRefunded = true;
+          if(refRes && refRes.ok !== false){
 
-          order.refundedAt = Date.now();
+            order.isRefunded = true;
 
-          didRefund = true;
+            order.refundedAt = Date.now();
+
+            didRefund = true;
+
+          }
 
         }
 
@@ -12412,6 +12418,11 @@ window.cashierRejectOrder=async(docId)=>{
       order = { status: 'rejected', orderNo: '—', _docId: docId };
     }
 
+    if(order.status === 'completed' || order.status === 'ready'){
+      showToast("⚠️ لا يمكن رفض أو إلغاء طلبية تم تجهيزها أو تسليمها بالفعل!", "warn", 4000);
+      return;
+    }
+
     order.status = 'rejected';
     order.rejectedAt = now;
 
@@ -12419,10 +12430,12 @@ window.cashierRejectOrder=async(docId)=>{
     if(order.paymentMethod === 'wallet' && order.isPaid && !order.isRefunded && order.customerUid && !order.customerUid.startsWith('guest_')){
       try{
         if(typeof refundOrderToWallet === 'function'){
-          await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName);
-          order.isRefunded = true;
-          order.refundedAt = now;
-          didRefund = true;
+          const refRes = await refundOrderToWallet(order.customerUid, order.totalPrice, order.orderNo, order.storeName, order);
+          if(refRes && refRes.ok !== false){
+            order.isRefunded = true;
+            order.refundedAt = now;
+            didRefund = true;
+          }
         }
       }catch(err){
         console.error("Auto refund error:", err);
@@ -12599,6 +12612,7 @@ window.cashierCompleteOrder=async(docId)=>{
 
     order.status = 'completed';
     order.completedAt = now;
+    order.isRefunded = false; // 🔒 قفل أمان قطعي: يمنع أي استرجاع لرصيد هذه الطلبية نهائياً
     const updatedMsg = JSON.stringify(order);
 
     if(window.supabase){
@@ -15815,6 +15829,7 @@ window.confirmPvOtp = async function(){
     }
     const myPhoneInp = document.getElementById("myPhone");
     if(myPhoneInp) myPhoneInp.value = localPhone;
+    if(typeof updateAccountPhoneUI === 'function') updateAccountPhoneUI();
 
     // تحديث إعلانات المستخدم ومتجره بالرقم الموثق الجديد
     try {
@@ -15842,6 +15857,55 @@ window.confirmPvOtp = async function(){
     }
   }
 };
+
+function updateAccountPhoneUI(){
+  const dispText = document.getElementById("accountPhoneDisplayText");
+  const statText = document.getElementById("accountPhoneStatusText");
+  const badgeIcon = document.getElementById("accountPhoneBadgeIcon");
+  const btnLabel = document.getElementById("accountPhoneBtnLabel");
+  const cardWrap = document.getElementById("accountPhoneCardWrap");
+  const hiddenInp = document.getElementById("myPhone");
+  if(!dispText) return;
+
+  const me = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  const rawPhone = (myProfile && (myProfile.phone || myProfile.local_phone)) || "";
+  const isVerified = typeof window.isUserPhoneVerified === 'function' ? window.isUserPhoneVerified(me, myProfile) : !!rawPhone;
+
+  if(hiddenInp && rawPhone) hiddenInp.value = typeof formatCallPhone === 'function' ? formatCallPhone(rawPhone) : rawPhone;
+
+  if(rawPhone && isVerified){
+    dispText.textContent = typeof formatCallPhone === 'function' ? formatCallPhone(rawPhone) : rawPhone;
+    dispText.style.color = "#047857";
+    if(statText) statText.textContent = "✅ رقم هاتفك موثق ومربوط بحسابك وإعلاناتك رسمياً";
+    if(badgeIcon) badgeIcon.textContent = "🟢";
+    if(btnLabel) btnLabel.textContent = "🔄 تغيير أو تحديث رقم الهاتف عبر واتساب";
+    if(cardWrap){
+      cardWrap.style.background = "#f0fdf4";
+      cardWrap.style.borderColor = "#86efac";
+    }
+  } else if(rawPhone){
+    dispText.textContent = typeof formatCallPhone === 'function' ? formatCallPhone(rawPhone) : rawPhone;
+    dispText.style.color = "var(--text)";
+    if(statText) statText.textContent = "⚠️ رقم هاتفك غير مؤكد، اضغط الزر بالأسفل للتوثيق عبر واتساب";
+    if(badgeIcon) badgeIcon.textContent = "⚠️";
+    if(btnLabel) btnLabel.textContent = "💬 توثيق هذا الرقم عبر واتساب الآن";
+    if(cardWrap){
+      cardWrap.style.background = "#fffbeb";
+      cardWrap.style.borderColor = "#fde68a";
+    }
+  } else {
+    dispText.textContent = "لم يتم ربط رقم هاتف بعد";
+    dispText.style.color = "var(--muted)";
+    if(statText) statText.textContent = "وثّق رقم هاتفك عبر واتساب لتأكيد حسابك لدى جميع الزوار";
+    if(badgeIcon) badgeIcon.textContent = "🔒";
+    if(btnLabel) btnLabel.textContent = "📲 توثيق وربط رقم الهاتف عبر واتساب";
+    if(cardWrap){
+      cardWrap.style.background = "var(--bg)";
+      cardWrap.style.borderColor = "var(--border)";
+    }
+  }
+}
+window.updateAccountPhoneUI = updateAccountPhoneUI;
 
 window.startAddPost=async()=>{
 
@@ -16261,6 +16325,30 @@ window.openAccount=(skipHistory)=>{
           });
         }
       }).catch(()=>{});
+
+      if(typeof db !== 'undefined' && db && me.uid){
+        getDoc(doc(db, "profiles", me.uid)).then(pS => {
+          if(pS && pS.exists()){
+            const d = pS.data();
+            if(d.cover && (!myProfile || !myProfile.cover)){
+              if(!myProfile) myProfile = {};
+              myProfile.cover = d.cover;
+              try { localStorage.setItem("tasawuq_cover_" + me.uid, d.cover); } catch(e){}
+              if(headerCard){
+                headerCard.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.6)), url("${d.cover}")`;
+                headerCard.style.backgroundSize = "cover";
+                headerCard.style.backgroundPosition = "center";
+              }
+            }
+            if(d.avatar && (!myProfile || !myProfile.avatar)){
+              if(!myProfile) myProfile = {};
+              myProfile.avatar = d.avatar;
+              try { localStorage.setItem("tasawuq_avatar_" + me.uid, d.avatar); } catch(e){}
+              if(avCircle) avCircle.innerHTML = `<img src="${escapeHtml(d.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+            }
+          }
+        }).catch(()=>{});
+      }
     }
 
     const refCode = memberNoVal || me.uid;
@@ -16331,6 +16419,8 @@ window.openAccount=(skipHistory)=>{
         if(typeof updateWalletUI === 'function') updateWalletUI(0);
       });
     }
+
+    if(typeof updateAccountPhoneUI === 'function') updateAccountPhoneUI();
 
     // جلب عداد المتابعين وأتابعهم عبر معرفات الحساب الموحدة بدقة تامة وبدون تكرار
     if (_sbEarly && candUids.length > 0) {
@@ -17186,10 +17276,10 @@ window.openSeller=async(rawUid,skipHistory)=>{
           if(res && res.data && res.data.length){
             res.data.forEach(item => {
               if(!isAbdoUid && typeof isAbdoMedia === 'function' && isAbdoMedia(item.message)) return;
-              if(item.id.startsWith("avatar") && item.message && !avatarUrl){
+              if(item.id.startsWith("avatar") && item.message){
                 avatarUrl = item.message;
                 try { localStorage.setItem("tasawuq_avatar_" + uid, item.message); } catch(e){}
-              } else if(item.id.startsWith("cover") && item.message && !coverUrl){
+              } else if(item.id.startsWith("cover") && item.message){
                 coverUrl = item.message;
                 try { localStorage.setItem("tasawuq_cover_" + uid, item.message); } catch(e){}
               }
@@ -17237,26 +17327,36 @@ window.openSeller=async(rawUid,skipHistory)=>{
           }
         }).catch(()=>{})
       );
+
+      bgTasks.push(
+        getDoc(doc(db, "profiles", uid)).then(pS => {
+          if(pS && pS.exists()){
+            const fsData = pS.data();
+            if(fsData){
+              if(fsData.avatar && !avatarUrl) avatarUrl = fsData.avatar;
+              if(fsData.cover && !coverUrl) coverUrl = fsData.cover;
+              if(!prof) prof = fsData;
+              else {
+                if(!prof.avatar && fsData.avatar) prof.avatar = fsData.avatar;
+                if(!prof.cover && fsData.cover) prof.cover = fsData.cover;
+              }
+            }
+          }
+        }).catch(()=>{})
+      );
     }
 
     await Promise.allSettled(bgTasks);
 
     if(!prof && typeof db !== 'undefined' && db){
-
       try {
-
         const pS = await getDoc(doc(db, "profiles", uid));
-
         if(pS && pS.exists()) prof = pS.data();
-
       } catch(e){}
-
     }
 
     if(!prof){
-
       prof = isMe ? (activeProf || {}) : (initialProf || { id: uid, name: resolveDisplayName(uid, existingPost) });
-
     }
 
     const candCheck = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
@@ -17269,18 +17369,34 @@ window.openSeller=async(rawUid,skipHistory)=>{
       if(prof && (prof.memberNo == null && prof.member_no == null)) { prof.memberNo = 1001; prof.member_no = 1001; }
       if(prof && !prof.phone) prof.phone = "218928476784";
     }
+
+    // استخراج وتأكيد الصورة الشخصية وصورة الغلاف لجميع المستخدمين بدون استثناء 100%
+    const cachedEntry = (window.sellersProfileCache && window.sellersProfileCache[uid]) || {};
+    if(!avatarUrl) avatarUrl = (prof && prof.avatar) || cachedEntry.avatar || localStorage.getItem("tasawuq_avatar_" + uid) || "";
+    if(!coverUrl) coverUrl = (prof && prof.cover) || cachedEntry.cover || localStorage.getItem("tasawuq_cover_" + uid) || "";
+
     if(!isAbdoUid){
       avatarUrl = (typeof window.getSafeSellerAvatar === 'function') ? window.getSafeSellerAvatar(uid, avatarUrl) : avatarUrl;
       coverUrl = (typeof window.getSafeSellerCover === 'function') ? window.getSafeSellerCover(uid, coverUrl) : coverUrl;
-      if(prof) {
-        prof.avatar = (typeof window.getSafeSellerAvatar === 'function') ? window.getSafeSellerAvatar(uid, prof.avatar) : prof.avatar;
-        prof.cover = (typeof window.getSafeSellerCover === 'function') ? window.getSafeSellerCover(uid, prof.cover) : prof.cover;
-      }
     } else {
       if(!avatarUrl && window.sellersProfileCache && window.sellersProfileCache[uid]?.avatar) avatarUrl = window.sellersProfileCache[uid].avatar;
       if(!coverUrl && window.sellersProfileCache && window.sellersProfileCache[uid]?.cover) coverUrl = window.sellersProfileCache[uid].cover;
-      if(avatarUrl) prof.avatar = avatarUrl;
-      if(coverUrl) prof.cover = coverUrl;
+    }
+
+    if(prof){
+      prof.avatar = avatarUrl || prof.avatar || null;
+      prof.cover = coverUrl || prof.cover || null;
+    }
+
+    if(!window.sellersProfileCache) window.sellersProfileCache = {};
+    if(!window.sellersProfileCache[uid]) window.sellersProfileCache[uid] = { id: uid };
+    if(avatarUrl) {
+      window.sellersProfileCache[uid].avatar = avatarUrl;
+      try { localStorage.setItem("tasawuq_avatar_" + uid, avatarUrl); } catch(e){}
+    }
+    if(coverUrl) {
+      window.sellersProfileCache[uid].cover = coverUrl;
+      try { localStorage.setItem("tasawuq_cover_" + uid, coverUrl); } catch(e){}
     }
 
     renderSeller(uid, prof, ratings, false, ratings, followersCount, followingCount);
@@ -17324,8 +17440,12 @@ const ph=prof&&prof.phone;
 const isPhoneHidden = (prof && (prof.hidePhone === true || prof.hide_phone === true)) || localStorage.getItem("tasawuq_hide_phone_" + uid) === "1";
 
 const isAbdoUid = (typeof isAbdoUser === 'function') ? isAbdoUser(uid) : (uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2');
-let avatarUrl = (typeof window.getSafeSellerAvatar === 'function') ? window.getSafeSellerAvatar(uid, prof && prof.avatar) : ((prof && prof.avatar) || "");
-let coverUrl = (typeof window.getSafeSellerCover === 'function') ? window.getSafeSellerCover(uid, prof && prof.cover) : ((prof && prof.cover) || "");
+let avatarUrl = (typeof window.getSafeSellerAvatar === 'function') 
+  ? window.getSafeSellerAvatar(uid, (prof && prof.avatar) || (window.sellersProfileCache && window.sellersProfileCache[uid]?.avatar)) 
+  : ((prof && prof.avatar) || (window.sellersProfileCache && window.sellersProfileCache[uid]?.avatar) || localStorage.getItem("tasawuq_avatar_" + uid) || "");
+let coverUrl = (typeof window.getSafeSellerCover === 'function') 
+  ? window.getSafeSellerCover(uid, (prof && prof.cover) || (window.sellersProfileCache && window.sellersProfileCache[uid]?.cover)) 
+  : ((prof && prof.cover) || (window.sellersProfileCache && window.sellersProfileCache[uid]?.cover) || localStorage.getItem("tasawuq_cover_" + uid) || "");
 if (!isAbdoUid && typeof isAbdoMedia === 'function') {
   if (isAbdoMedia(avatarUrl)) avatarUrl = "";
   if (isAbdoMedia(coverUrl)) coverUrl = "";
@@ -19060,29 +19180,6 @@ window.sendWhatsAppOtp = async function(){
   const cleanPhone = v.value;
   const localPhone = formatCallPhone(cleanPhone);
 
-  // 🔒 حماية حديدية: منع تام لمحاولة تسجيل الدخول بأرقام هواتف المشرفين والإدارة عبر واتساب
-  const isTargetAdmin = cleanPhone === "218928476784" || cleanPhone === "0928476784" ||
-                        cleanPhone.endsWith("928476784") || cleanPhone.endsWith("928476781") ||
-                        cleanPhone.endsWith("928476783") || cleanPhone.endsWith("928476785");
-  if(isTargetAdmin){
-    showToast("⛔ حساب الإدارة العامة والمشرف الرئيسي محمي بأعلى معايير الأمان. يرجى تسجيل الدخول عبر حساب Google أو Hotmail المعتمد حصراً!", "error", 6500);
-    return;
-  }
-
-  // 🔒 فحص أمني: هل الرقم مسجل بالفعل بحساب مستخدم أو تاجر سابق؟
-  let isExistingAccount = false;
-  const sbCheck = window.supabase || supabase;
-  if(sbCheck){
-    try {
-      const { data: pRec } = await sbCheck.from("phones").select("uid").eq("phone", cleanPhone).maybeSingle();
-      if(pRec && pRec.uid) isExistingAccount = true;
-      else {
-        const { data: byP } = await sbCheck.from("profiles").select("id").eq("phone", cleanPhone).maybeSingle();
-        if(byP && byP.id) isExistingAccount = true;
-      }
-    } catch(e){}
-  }
-
   const code = Math.floor(1000 + Math.random() * 9000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000;
 
@@ -19095,8 +19192,7 @@ window.sendWhatsAppOtp = async function(){
     localPhone: localPhone,
     code: code,
     expiresAt: expiresAt,
-    waUrl: waUrl,
-    isExistingAccount: isExistingAccount
+    waUrl: waUrl
   };
 
   const oldBtnHtml = sendBtn ? sendBtn.innerHTML : "";
@@ -19143,13 +19239,8 @@ window.sendWhatsAppOtp = async function(){
   if(step2) step2.classList.remove("hidden");
   if(targetPhoneEl) targetPhoneEl.textContent = localPhone;
   if(displayCodeEl){
-    if(isExistingAccount){
-      displayCodeEl.textContent = "••••";
-      displayCodeEl.style.letterSpacing = "6px";
-    } else {
-      displayCodeEl.textContent = code;
-      displayCodeEl.style.letterSpacing = "8px";
-    }
+    displayCodeEl.textContent = code;
+    displayCodeEl.style.letterSpacing = "8px";
   }
   if(openWaLink) openWaLink.href = waUrl;
   if(otpInput){
@@ -19250,16 +19341,13 @@ window.confirmWhatsAppOtp = async function(){
   }
 
   const cleanPhone = session.phone;
-  // 🔒 حماية حديدية: منع تام لمحاولة تسجيل الدخول بأرقام المشرفين والإدارة عبر واتساب
-  const isTargetAdmin = cleanPhone === "218928476784" || cleanPhone === "0928476784" ||
-                        cleanPhone.endsWith("928476784") || cleanPhone.endsWith("928476781") ||
-                        cleanPhone.endsWith("928476783") || cleanPhone.endsWith("928476785");
-  if(isTargetAdmin){
-    showToast("⛔ حساب الإدارة العامة والمشرف الرئيسي محمي بأعلى معايير الأمان. يرجى تسجيل الدخول عبر حساب Google أو Hotmail المعتمد حصراً!", "error", 6500);
-    return;
-  }
   const localPhone = session.localPhone;
-  const authEmail = "wa_" + cleanPhone + "@tasawuq.ly";
+  const isAbdo = cleanPhone === "218928476784" || cleanPhone === "0928476784" || cleanPhone.endsWith("928476784");
+
+  const authEmails = [
+    "wa_" + cleanPhone + "@tasawuqnow.com",
+    "wa_" + cleanPhone + "@tasawuq.ly"
+  ];
 
   const oldBtnHtml = confirmBtn ? confirmBtn.innerHTML : "";
   if(confirmBtn){
@@ -19269,7 +19357,7 @@ window.confirmWhatsAppOtp = async function(){
 
   try {
     // 1. إذا كان هناك حساب قديم مختلف مسجل الدخول، نقوم بتسجيل الخروج منه أولاً
-    if(auth.currentUser && auth.currentUser.email !== authEmail){
+    if(auth.currentUser && !authEmails.includes(auth.currentUser.email)){
       try { await signOut(auth); } catch(e){}
     }
 
@@ -19287,33 +19375,36 @@ window.confirmWhatsAppOtp = async function(){
     let loggedInUser = null;
 
     // نحاول تسجيل الدخول أولاً بالصيغ الممكنة
-    for(const pwd of pwdCandidates){
-      try {
-        const res = await signInWithEmailAndPassword(auth, authEmail, pwd);
-        loggedInUser = res.user;
-        break;
-      } catch(e){
-        // إذا كانت كلمة المرور غير مطابقة نجرب الصيغة التالية
+    for(const authEmail of authEmails){
+      for(const pwd of pwdCandidates){
+        try {
+          const res = await signInWithEmailAndPassword(auth, authEmail, pwd);
+          loggedInUser = res.user;
+          break;
+        } catch(e){}
       }
+      if(loggedInUser) break;
     }
 
     // إذا لم يكن المستخدم مسجلاً من قبل في Firebase، ننشئ له حساباً جديداً
     if(!loggedInUser){
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, authEmail, pwdCandidates[0]);
-        loggedInUser = cred.user;
-      } catch(createErr){
-        if(createErr.code === "auth/email-already-in-use"){
-          // الحساب موجود بالفعل، نجرب باقي الصيغ الاحتياطية
-          for(const ep of pwdCandidates){
-            try {
-              const r = await signInWithEmailAndPassword(auth, authEmail, ep);
-              loggedInUser = r.user;
-              break;
-            } catch(e){}
+      for(const authEmail of authEmails){
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, authEmail, pwdCandidates[0]);
+          loggedInUser = cred.user;
+          break;
+        } catch(createErr){
+          if(createErr.code === "auth/email-already-in-use"){
+            for(const ep of pwdCandidates){
+              try {
+                const r = await signInWithEmailAndPassword(auth, authEmail, ep);
+                loggedInUser = r.user;
+                break;
+              } catch(e){}
+            }
           }
         }
-        if(!loggedInUser) throw createErr;
+        if(loggedInUser) break;
       }
     }
 
@@ -19422,7 +19513,7 @@ window.confirmWhatsAppOtp = async function(){
         // حفظ وتحديث في قاعدة بيانات Firebase
         if(typeof db !== 'undefined' && db && typeof setDoc === 'function'){
           setDoc(doc(db, "profiles", loggedInUser.uid), newProfile, { merge: true }).catch(()=>{});
-          if(isAbdoOtp){
+          if(isAbdo){
             setDoc(doc(db, "profiles", "zoSxkP0PGPWx37J6GMQiOjVgiMC3"), newProfile, { merge: true }).catch(()=>{});
             setDoc(doc(db, "profiles", "NrYY8We8VDgBiEk98bbxvkyfq2N2"), newProfile, { merge: true }).catch(()=>{});
           }
@@ -20856,8 +20947,8 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
     if(!targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) targetCandUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
   }
 
-  // 1. إذا كان إيداع أدمن وتتوفر دالة RPC السريعة المحمية:
-  if(meta.txType === "admin_credit" && window.supabase && typeof window.supabase.rpc === 'function'){
+  // 1. إذا كان إيداع أدمن أو استرجاع طلبية وتتوفر دالة RPC السريعة المحمية:
+  if((meta.txType === "admin_credit" || meta.txType === "order_refund") && window.supabase && typeof window.supabase.rpc === 'function'){
     try{
       const adminUid = "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
       const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
@@ -20865,33 +20956,23 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
         p_target_uid: uid,
         p_amount: amount,
         p_type: 'credit',
-        p_note: reason || meta.adminNote || 'إيداع يدوي من الإدارة',
+        p_note: reason || meta.adminNote || (meta.txType === "order_refund" ? (`استرجاع قيمة طلبية #${meta.orderNo || ''} (${meta.storeName || 'المطعم'})`) : 'إيداع يدوي من الإدارة'),
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
-        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || '',
-        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
-        const finalBal = rpcRes.balance;
+        const finalBal = Number(rpcRes.balance);
+        const now = Date.now();
 
-        // مزامنة كافة المعرفات البديلة في Supabase و Firestore
+        // مزامنة قطعية ومباشرة لكافة المعرفات البديلة في Supabase و Firestore
         for(const altUid of targetCandUids){
-          if(altUid !== uid){
-            try {
-              const altOld = await getUserWallet(altUid);
-              const altDiff = Math.round((finalBal - altOld.balance) * 100) / 100;
-              if(Math.abs(altDiff) > 0.001){
-                await window.supabase.rpc('admin_deposit_wallet', {
-                  p_admin_uid: adminUid,
-                  p_target_uid: altUid,
-                  p_amount: Math.abs(altDiff),
-                  p_type: altDiff > 0 ? 'credit' : 'debit',
-                  p_note: 'مزامنة المعرف البديل',
-                  p_user_name: meta.userName || 'مستخدم',
-                  p_user_phone: meta.userPhone || '',
-                  p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
-                });
-              }
-            } catch(e){}
+          if(window.supabase){
+            try{
+              await window.supabase.from("feedback").update({
+                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+                updated_at: now
+              }).eq("id", "wallet_" + altUid);
+            }catch(e){}
           }
           try{
             await setDoc(doc(db, "feedback", "wallet_" + altUid), {
@@ -20900,11 +20981,15 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
               uid: altUid,
               userName: meta.userName || (myProfile && myProfile.name) || "مستخدم",
               userPhone: meta.userPhone || (myProfile && myProfile.phone) || "",
-              message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
-              updatedAt: Date.now()
+              message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+              updatedAt: now
             }, { merge: true });
           }catch(e){}
         }
+
+        try{
+          await recordWalletTx(uid, meta.txType, amount, rpcRes.oldBalance, finalBal, reason, meta);
+        }catch(e){}
 
         const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
         if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
@@ -20923,6 +21008,7 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
     const newBalance = Math.round((oldBalance + amount) * 100) / 100;
     const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
     const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+    const now = Date.now();
 
     for(const u of targetCandUids){
       try{
@@ -20932,10 +21018,18 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
           uid: u,
           userName: uName,
           userPhone: uPhone,
-          message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
-          updatedAt: Date.now()
+          message: JSON.stringify({ balance: newBalance, updatedAt: now }),
+          updatedAt: now
         }, { merge: true });
       }catch(e){}
+      if(window.supabase){
+        try{
+          await window.supabase.from("feedback").update({
+            message: JSON.stringify({ balance: newBalance, updatedAt: now }),
+            updated_at: now
+          }).eq("id", "wallet_" + u);
+        }catch(e){}
+      }
     }
 
     const txId = await recordWalletTx(uid, meta.txType, amount, oldBalance, newBalance, reason, meta);
@@ -20975,6 +21069,7 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
   if(targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || String(meta.userPhone||'').includes('928476784')){
     if(!targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) targetCandUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
     if(!targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) targetCandUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
+    if(!targetCandUids.includes('admin_client_1792952590074')) targetCandUids.push('admin_client_1792952590074');
   }
 
   const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
@@ -20985,48 +21080,8 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
   }
 
-  // 1. إذا كانت العملية سداد طلبية: نستخدم دالة الزبائن المخصصة user_pay_order المحمية ذرياً
-  if(meta.txType === "order_payment" && window.supabase && typeof window.supabase.rpc === 'function'){
-    try{
-      const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('user_pay_order', {
-        p_customer_uid: uid,
-        p_amount: amount,
-        p_order_no: String(meta.orderNo || meta.orderId || ''),
-        p_store_name: String(meta.storeName || 'المطعم')
-      });
-      if(!rpcErr && rpcRes && rpcRes.ok){
-        const finalBal = rpcRes.balance;
-        for(const altUid of targetCandUids){
-          if(altUid !== uid){
-            try{
-              await window.supabase.rpc('user_pay_order', {
-                p_customer_uid: altUid,
-                p_amount: 0,
-                p_order_no: 'sync',
-                p_store_name: 'sync'
-              });
-            }catch(e){}
-          }
-          try{
-            await setDoc(doc(db, "feedback", "wallet_" + altUid), {
-              id: "wallet_" + altUid,
-              type: "user_wallet",
-              uid: altUid,
-              message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
-              updatedAt: Date.now()
-            }, { merge: true });
-          }catch(e){}
-        }
-        if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
-          updateWalletUI(finalBal);
-        }
-        return { ok: true, balance: finalBal, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
-      }
-    }catch(e){}
-  }
-
-  // 2. إذا توفرت دالة RPC السريعة المحمية (خصم أدمن أو سداد طلبية):
-  if((meta.txType === "admin_debit" || meta.txType === "order_payment") && window.supabase && typeof window.supabase.rpc === 'function'){
+  // 1. الخصم الذري الآمن عبر Supabase RPC
+  if(window.supabase && typeof window.supabase.rpc === 'function'){
     try{
       const adminUid = "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
       const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
@@ -21034,32 +21089,23 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
         p_target_uid: uid,
         p_amount: amount,
         p_type: 'debit',
-        p_note: reason || meta.adminNote || (meta.txType === "order_payment" ? 'سداد طلبية' : 'خصم يدوي من الإدارة'),
+        p_note: reason || meta.adminNote || (meta.txType === "order_payment" ? 'سداد طلبية مطعم' : 'خصم رصيد'),
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
-        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || '',
-        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
-        const finalBal = rpcRes.balance;
+        const finalBal = Number(rpcRes.balance);
+        const now = Date.now();
 
-        // مزامنة كافة المعرفات البديلة للمستخدم في Supabase و Firestore
+        // مزامنة فورية ومباشرة لكافة المعرفات البديلة في Supabase و Firestore
         for(const altUid of targetCandUids){
-          if(altUid !== uid){
-            try {
-              const altOld = await getUserWallet(altUid);
-              const altDiff = Math.round((altOld.balance - finalBal) * 100) / 100;
-              if(Math.abs(altDiff) > 0.001){
-                await window.supabase.rpc('admin_deposit_wallet', {
-                  p_admin_uid: adminUid,
-                  p_target_uid: altUid,
-                  p_amount: Math.abs(altDiff),
-                  p_type: altDiff > 0 ? 'debit' : 'credit',
-                  p_note: 'مزامنة المعرف البديل',
-                  p_user_name: meta.userName || 'مستخدم',
-                  p_user_phone: meta.userPhone || ''
-                });
-              }
-            } catch(e){}
+          if(window.supabase){
+            try{
+              await window.supabase.from("feedback").update({
+                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+                updated_at: now
+              }).eq("id", "wallet_" + altUid);
+            }catch(e){}
           }
           try{
             await setDoc(doc(db, "feedback", "wallet_" + altUid), {
@@ -21068,11 +21114,15 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
               uid: altUid,
               userName: meta.userName || (myProfile && myProfile.name) || "مستخدم",
               userPhone: meta.userPhone || (myProfile && myProfile.phone) || "",
-              message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
-              updatedAt: Date.now()
+              message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+              updatedAt: now
             }, { merge: true });
           }catch(e){}
         }
+
+        try{
+          await recordWalletTx(uid, meta.txType || "order_payment", -amount, rpcRes.oldBalance, finalBal, reason, meta);
+        }catch(e){}
 
         if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
           updateWalletUI(finalBal);
@@ -21084,6 +21134,7 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     }
   }
 
+  // 2. خط الدفاع الاحتياطي
   try{
     const current = await getUserWallet(uid);
     const oldBalance = current.balance;
@@ -21093,6 +21144,7 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     const newBalance = Math.max(0, Math.round((oldBalance - amount) * 100) / 100);
     const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
     const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
+    const now = Date.now();
 
     for(const u of targetCandUids){
       try{
@@ -21102,10 +21154,18 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
           uid: u,
           userName: uName,
           userPhone: uPhone,
-          message: JSON.stringify({ balance: newBalance, updatedAt: Date.now() }),
-          updatedAt: Date.now()
+          message: JSON.stringify({ balance: newBalance, updatedAt: now }),
+          updatedAt: now
         }, { merge: true });
       }catch(e){}
+      if(window.supabase){
+        try{
+          await window.supabase.from("feedback").update({
+            message: JSON.stringify({ balance: newBalance, updatedAt: now }),
+            updated_at: now
+          }).eq("id", "wallet_" + u);
+        }catch(e){}
+      }
     }
 
     const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
@@ -21123,22 +21183,27 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
 
 // 🔒 تم إلغاء window.debitUserWallet لمنع التلاعب من الكونسول
 
-// 5. استرجاع قيمة طلبية ملغاة (Refund)
+// 5. استرجاع قيمة طلبية ملغاة (Refund) - 🔒 محمي تماماً من التلاعب
 
-export async function refundOrderToWallet(uid, amount, orderNo, storeName){
+export async function refundOrderToWallet(uid, amount, orderNo, storeName, orderData = null){
+  // 🔒 حماية قطعية: يمنع استرجاع أي طلبية تم تسليمها أو إكمالها أو استرجاعها مسبقاً
+  if(orderData){
+    if(orderData.status === 'completed' || orderData.completedAt || orderData.status === 'ready'){
+      console.warn("Security check: Cannot refund completed or ready order:", orderNo);
+      return { ok: false, error: "لا يمكن استرجاع رصيد طلبية مكتملة أو تم تسليمها للزبون بالفعل" };
+    }
+    if(orderData.isRefunded){
+      console.warn("Security check: Order already refunded:", orderNo);
+      return { ok: false, error: "تم استرجاع رصيد هذه الطلبية بالفعل مسبقاً" };
+    }
+  }
 
   return creditUserWallet(
-
     uid,
-
     amount,
-
-    `استرجاع قيمة طلبية ملغاة رقم #${orderNo} (${storeName})`,
-
+    `استرجاع قيمة طلبية ملغاة رقم #${orderNo || '—'} (${storeName || 'المطعم'})`,
     { txType: "order_refund", orderNo, storeName }
-
   );
-
 }
 
 window.refundOrderToWallet = refundOrderToWallet;
@@ -21493,8 +21558,7 @@ window.submitCardRecharge = async()=>{
                   p_type: 'credit',
                   p_note: 'مزامنة شحن كارت المحفظة: ' + cleanCode,
                   p_user_name: (myProfile && myProfile.name) || "Abdo Alkera",
-                  p_user_phone: (myProfile && myProfile.phone) || "0928476784",
-                  p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+                  p_user_phone: (myProfile && myProfile.phone) || "0928476784"
                 });
               } catch(e){}
             }
@@ -26379,9 +26443,20 @@ window.handleDirectProfileCoverUpload = async (event) => {
               try { localStorage.setItem("tasawuq_cover_" + cId, remoteUrl); } catch(e){}
               if(window.sellersProfileCache && window.sellersProfileCache[cId]) window.sellersProfileCache[cId].cover = remoteUrl;
               if(sb){
-                sb.from("feedback").upsert({ id: "cover_" + cId, message: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+                sb.from("feedback").upsert({
+                  id: "cover_" + cId,
+                  type: "profile_cover",
+                  uid: cId,
+                  user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
+                  user_phone: (myProfile && myProfile.phone) || "",
+                  message: remoteUrl,
+                  updated_at: Date.now()
+                }, { onConflict: "id" }).catch(()=>{});
               }
             });
+            if(typeof db !== 'undefined' && db){
+              setDoc(doc(db, "profiles", me.uid), { cover: remoteUrl }, { merge: true }).catch(()=>{});
+            }
           }
         }).catch(()=>{});
       }
@@ -26502,6 +26577,30 @@ window.openEditProfileScreen = () => {
     } else {
       editCoverPreview.innerHTML = `🌄 اضغط لاختيار صورة غلاف لملفك الشخصي`;
     }
+  }
+
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  if((!coverUrl || !avatarUrl) && sb){
+    sb.from("feedback").select("id,message").in("id", ["avatar_" + me.uid, "cover_" + me.uid]).then(res => {
+      if(res && res.data && res.data.length){
+        res.data.forEach(item => {
+          if(item.id.startsWith("avatar") && item.message && !avatarUrl){
+            if(!isAbdoMe && (item.message.includes("JwP60ttQ") || item.message.includes("tP2Br3hW"))) return;
+            if(!myProfile) myProfile = {};
+            myProfile.avatar = item.message;
+            try { localStorage.setItem("tasawuq_avatar_" + me.uid, item.message); } catch(e){}
+            if(editPreview) editPreview.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+            if(heroAvatar) heroAvatar.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+          } else if(item.id.startsWith("cover") && item.message && !coverUrl){
+            if(!isAbdoMe && (item.message.includes("JwP60ttQ") || item.message.includes("tP2Br3hW"))) return;
+            if(!myProfile) myProfile = {};
+            myProfile.cover = item.message;
+            try { localStorage.setItem("tasawuq_cover_" + me.uid, item.message); } catch(e){}
+            if(editCoverPreview) editCoverPreview.innerHTML = `<img src="${escapeHtml(item.message)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+          }
+        });
+      }
+    }).catch(()=>{});
   }
 
   const isPhoneHidden = (myProfile && (myProfile.hidePhone === true || myProfile.hide_phone === true)) || localStorage.getItem("tasawuq_hide_phone_" + me.uid) === "1";
@@ -26638,9 +26737,25 @@ window.handleProfileAvatarSelected = async (event) => {
               if(window.sellersProfileCache && window.sellersProfileCache[cId]) window.sellersProfileCache[cId].avatar = remoteUrl;
               if(sb){
                 sb.from("profiles").upsert({ id: cId, avatar: remoteUrl }, { onConflict: "id" }).catch(()=>{});
-                sb.from("feedback").upsert({ id: "avatar_" + cId, message: remoteUrl }, { onConflict: "id" }).catch(()=>{});
+                sb.from("feedback").upsert({
+                  id: "avatar_" + cId,
+                  type: "profile_avatar",
+                  uid: cId,
+                  user_name: (myProfile && myProfile.name) || me.displayName || localStorage.getItem("tasawuq_my_name") || "عضو",
+                  message: remoteUrl,
+                  updated_at: Date.now()
+                }, { onConflict: "id" }).catch(()=>{});
               }
             });
+            if(typeof db !== 'undefined' && db){
+              setDoc(doc(db, "profiles", me.uid), { avatar: remoteUrl }, { merge: true }).catch(()=>{});
+            }
+            if(Array.isArray(window.allPosts)){
+              window.allPosts.forEach(p => {
+                if(candUids.includes(p.uid)) p.sellerAvatar = remoteUrl;
+              });
+              if(typeof renderPosts === 'function') renderPosts();
+            }
           }
         }).catch(()=>{});
       }
