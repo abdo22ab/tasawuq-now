@@ -1881,13 +1881,44 @@ async function syncPendingPoints(){
 
   try{
 
-    const pending = JSON.parse(localStorage.getItem('pendingPoints') || '[]');
+    const rawPending = localStorage.getItem('pendingPoints');
+    if(!rawPending) return;
+    let pending = [];
+    try { pending = JSON.parse(rawPending); } catch(e){ localStorage.removeItem('pendingPoints'); return; }
 
-    if(pending.length === 0) return;
+    if(!Array.isArray(pending) || pending.length === 0) return;
 
-    const myPending = pending.filter(p => p.uid === auth.currentUser.uid);
+    const myPending = pending.filter(p => p && p.uid === auth.currentUser.uid);
 
     if(myPending.length === 0) return;
+
+    // 🔒 فحص أمني صارم ضد التلاعب بالنقاط من الكونسول أو التخزين المحلي
+    let totalPendingValue = 0;
+    const safePendingItems = [];
+    for(const p of myPending){
+      const val = Math.floor(Number(p.value) || 0);
+      // سقف أقصى لأي مكافأة مفردة: 25 نقطة
+      if(val <= 0 || val > 25){
+        console.warn("⚠️ تم رصد وحجب محاولة تلاعب بقيم النقاط المعلقة:", p);
+        continue;
+      }
+      totalPendingValue += val;
+      // سقف كلي أقصى لجميع العمليات المعلقة المجمعة: 40 نقطة
+      if(totalPendingValue > 40){
+        console.warn("⚠️ تجاوز السقف الأقصى المسموح لمزامنة النقاط المعلقة.");
+        break;
+      }
+      safePendingItems.push({
+        value: val,
+        title: String(p.title || 'مكافأة معلقة').slice(0, 50),
+        timestamp: Number(p.timestamp) || Date.now()
+      });
+    }
+
+    if(safePendingItems.length === 0){
+      localStorage.removeItem('pendingPoints');
+      return;
+    }
 
     const userRef = doc(db, 'userPoints', auth.currentUser.uid);
 
@@ -1895,13 +1926,11 @@ async function syncPendingPoints(){
 
     const currentData = snap.exists() ? snap.data() : { points: 0, history: [] };
 
-    let newPoints = currentData.points || 0;
+    let newPoints = (currentData.points || 0) + totalPendingValue;
 
     const history = Array.isArray(currentData.history) ? currentData.history : [];
 
-    for(const p of myPending){
-
-      newPoints += p.value;
+    for(const p of safePendingItems){
 
       history.unshift({
 
@@ -1921,13 +1950,13 @@ async function syncPendingPoints(){
 
     await setDoc(userRef, { points: newPoints, history, updatedAt: Date.now() }, { merge: true });
 
-    const remaining = pending.filter(p => p.uid !== auth.currentUser.uid);
+    const remaining = pending.filter(p => p && p.uid !== auth.currentUser.uid);
 
     localStorage.setItem('pendingPoints', JSON.stringify(remaining));
 
-    console.log('✅ تمت مزامنة', myPending.length, 'عملية معلقة');
+    console.log('✅ تمت مزامنة', safePendingItems.length, 'عملية معلقة آمنة');
 
-    showToast(`✅ تم استرجاع ${myPending.length} مكافأة معلقة`, 'success', 3000);
+    showToast(`✅ تم استرجاع ${safePendingItems.length} مكافأة معلقة`, 'success', 3000);
 
   }catch(e){
 
@@ -2384,7 +2413,7 @@ window.spinLuckyWheel = async function(){
 
 async function giveWheelReward(uid, reward){
 
-  const pointsToAdd = reward.type === 'points' ? reward.value : 0;
+  const pointsToAdd = reward.type === 'points' ? Math.min(100, Math.max(0, Number(reward.value) || 0)) : 0;
 
   try{
 
@@ -2393,6 +2422,15 @@ async function giveWheelReward(uid, reward){
     const snap = await getDoc(userRef);
 
     const currentData = snap.exists() ? snap.data() : { points: 0, history: [] };
+
+    // 🔒 فحص أمني بالسيرفر وقاعدة البيانات: منع تكرار الدوران اليومي وتجاوز الكونسول أو مسح الكاش
+    const now = Date.now();
+    const lastSpinDb = Number(currentData.lastWheelSpin || 0);
+    if(lastSpinDb && (now - lastSpinDb) < (24 * 60 * 60 * 1000 - 60000)){
+      console.warn("⛔ محاولة غير مصرح بها لتدوير العجلة قبل اكتمال 24 ساعة.");
+      showToast("⏳ لقد قمت بتدوير العجلة بالفعل اليوم! موعدك القادم غداً.", "warn");
+      return;
+    }
 
     const newPoints = (currentData.points || 0) + pointsToAdd;
 
@@ -2406,13 +2444,18 @@ async function giveWheelReward(uid, reward){
 
       activity: 'lucky_wheel',
 
-      timestamp: Date.now()
+      timestamp: now
 
     });
 
     if(history.length > 100) history.splice(100);
 
-    const updates = { points: newPoints, history, updatedAt: Date.now() };
+    const updates = { 
+      points: newPoints, 
+      history, 
+      lastWheelSpin: now,
+      updatedAt: now 
+    };
 
     if(reward.type === 'featured'){
 
@@ -2898,13 +2941,44 @@ window.toggleDarkMode=function(){
 
 };
 
-function loadCart(){try{const saved=localStorage.getItem('tasawuqCart');if(saved){const parsed=JSON.parse(saved);if(parsed && typeof parsed==="object" && Array.isArray(parsed.items)){cart=parsed;}}}catch(e){}}
+function sanitizeCartItems(){
+  if(!cart || !Array.isArray(cart.items)) return;
+  for(let i = cart.items.length - 1; i >= 0; i--){
+    const it = cart.items[i];
+    if(!it || typeof it !== 'object'){ cart.items.splice(i, 1); continue; }
+    if(Array.isArray(window.allPosts) && window.allPosts.length > 0 && it.postId){
+      const realP = window.allPosts.find(p => p.id === it.postId);
+      if(realP && typeof realP.price !== 'undefined' && Number(realP.price) >= 0){
+        it.price = Number(realP.price);
+        if(realP.title) it.title = realP.title;
+      }
+    }
+    it.qty = Math.max(1, Math.min(99, parseInt(it.qty, 10) || 1));
+    it.price = Math.max(0, Number(it.price) || 0);
+  }
+}
+
+function loadCart(){
+  try{
+    const saved=localStorage.getItem('tasawuqCart');
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(parsed && typeof parsed==="object" && Array.isArray(parsed.items)){
+        cart=parsed;
+        sanitizeCartItems();
+      }
+    }
+  }catch(e){}
+}
 
 function saveCart(){try{localStorage.setItem('tasawuqCart',JSON.stringify(cart));}catch(e){}}
 
 function cartTotalCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
 
-function cartTotalPrice(){return cart.items.reduce((s,i)=>s+((i.price||0)*(i.qty||1)),0);}
+function cartTotalPrice(){
+  sanitizeCartItems();
+  return cart.items.reduce((s,i)=>s+((Number(i.price)||0)*(i.qty||1)),0);
+}
 
 function cartTotalItemsCount(){return cart.items.reduce((s,i)=>s+(i.qty||1),0);}
 
@@ -9305,11 +9379,43 @@ window.dismissAllReports=async()=>{if(!isAdmin)return;if(allReports.length===0){
 
 window.deleteAllReportedPosts=async()=>{if(!isAdmin)return;if(allReports.length===0){showToast("لا توجد","info");return;}const ids=[...new Set(allReports.map(r=>r.postId).filter(x=>x))];if(!confirm(`حذف ${ids.length} إعلان؟`))return;const c=prompt('اكتب "حذف" للتأكيد:');if(c!=="حذف"){showToast("تم الإلغاء","info");return;}let okP=0,okR=0;for(const pid of ids){try{await deleteDoc(doc(db,"posts",pid));okP++;}catch(e){}}for(const r of allReports){try{await deleteDoc(doc(db,"reports",r.id));okR++;}catch(e){}}showToast(`✅ حذف ${okP} إعلان + ${okR} إبلاغ`,"success");renderReports();};
 
-window.dismissReport=async(id)=>{try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.dismissReport=async(id)=>{
+  const isAdminUser = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile));
+  if(!isAdminUser){ if(typeof showToast === 'function') showToast("⛔ هذا الإجراء مخصص للأدمن فقط", "error"); return; }
+  try{await deleteDoc(doc(db,"reports",id));}catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
-window.deleteReportedPost=async(pid,rid)=>{if(!confirm("حذف الإعلان؟"))return;try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deleteReportedPost=async(pid,rid)=>{
+  const isAdminUser = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile));
+  if(!isAdminUser){ if(typeof showToast === 'function') showToast("⛔ هذا الإجراء مخصص للأدمن فقط", "error"); return; }
+  if(!confirm("حذف الإعلان؟"))return;
+  try{await deleteDoc(doc(db,"posts",pid));await deleteDoc(doc(db,"reports",rid));}catch(e){showToast("خطأ: "+e.message,"error");}
+};
 
-window.deletePost=async(id)=>{if(!confirm("حذف هذا الإعلان؟"))return;try{if(cart.items.some(i=>i.postId===id)){cart.items=cart.items.filter(i=>i.postId!==id);if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}saveCart();updateCartUI();}await deleteDoc(doc(db,"posts",id));}catch(e){showToast("خطأ: "+e.message,"error");}};
+window.deletePost=async(id)=>{
+  if(!id) return;
+  const p = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.find(x => x.id === id) : null;
+  const isDirectOwner = !!(auth.currentUser && p && (p.sellerId === auth.currentUser.uid || p.uid === auth.currentUser.uid));
+  const isPostAuthor = !!(p && typeof window.isPostMine === 'function' && window.isPostMine(p, true));
+  const isAdminUser = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile));
+  if(!isDirectOwner && !isPostAuthor && !isAdminUser){
+    if(typeof showToast === 'function') showToast("⛔ عذراً، لا تملك صلاحية لحذف إعلان مستخدم آخر!", "error");
+    return;
+  }
+  if(!confirm("حذف هذا الإعلان؟"))return;
+  try{
+    if(cart.items.some(i=>i.postId===id)){
+      cart.items=cart.items.filter(i=>i.postId!==id);
+      if(cart.items.length===0){cart.storeId=null;cart.storeName="";cart.storePhone="";}
+      saveCart();
+      updateCartUI();
+    }
+    await deleteDoc(doc(db,"posts",id));
+    if(typeof showToast === 'function') showToast("✅ تم حذف الإعلان بنجاح", "success");
+  }catch(e){
+    if(typeof showToast === 'function') showToast("خطأ: "+e.message,"error");
+  }
+};
 
 /* ============================================
    Admin: Feedback & Complaints (إدارة الشكاوى والاقتراحات)
@@ -10192,6 +10298,10 @@ window.toggleRestDeliveryFields=()=>{
 window.submitRestaurantDirectOrder=async()=>{
 
   if(cart.items.length===0){showToast("السلة فاضية!","warn");return;}
+
+  // 🛡️ إعادة مطابقة الأسعار والكميات مع قاعدة البيانات لمنع أي تلاعب محلي
+  sanitizeCartItems();
+  saveCart();
 
   const custName=(document.getElementById("restCustName")?.value||"").trim();
 
@@ -15491,13 +15601,7 @@ window.backToPvPhoneStep = function(){
 };
 
 window.onPvWaBtnClick = function(e){
-  const sess = window._pvActiveSession;
-  if(sess && sess.code){
-    const otpInput = document.getElementById("pvOtpCode");
-    if(otpInput){
-      otpInput.value = sess.code;
-    }
-  }
+  // 🔒 حماية أمنية: تم إلغاء الملء التلقائي لكود التأكيد لضمان وصول الرسالة الحقيقية لهاتف المستخدم
 };
 
 window.sendPvOtp = async function(){
@@ -15519,6 +15623,16 @@ window.sendPvOtp = async function(){
   }
   const cleanPhone = v.value;
   const localPhone = formatCallPhone(cleanPhone);
+
+  // 🔒 حماية أمنية: منع أي مستخدم عادي من محاولة ربط أرقام هواتف الإدارة
+  const isTargetAdmin = cleanPhone === "218928476784" || cleanPhone === "0928476784" ||
+                        cleanPhone.endsWith("928476784") || cleanPhone.endsWith("928476781") ||
+                        cleanPhone.endsWith("928476783") || cleanPhone.endsWith("928476785");
+  const isMeAbdo = typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile);
+  if(isTargetAdmin && !isMeAbdo){
+    showToast("⛔ غير مصرح: هذا الرقم مخصص لإدارة المنصة ولا يمكن ربطه بحساب عادي!", "error", 5500);
+    return;
+  }
 
   // 🔒 التحقق الفوري: هل هذا الرقم مسجل بالفعل بحساب مستخدم آخر؟
   const sbCheck = window.supabase || supabase;
@@ -18923,13 +19037,7 @@ window.formatPhoneInputLive = function(el){
 };
 
 window.onWaBtnClick = function(e){
-  const sess = window._activeWaSession;
-  if(sess && sess.code){
-    const otpInput = document.getElementById("authWaOtpCode");
-    if(otpInput){
-      otpInput.value = sess.code;
-    }
-  }
+  // 🔒 حماية أمنية: تم إلغاء الملء التلقائي لكود التأكيد لضمان وصول الرسالة الحقيقية لهاتف المستخدم
 };
 
 window.sendWhatsAppOtp = async function(){
@@ -18952,6 +19060,29 @@ window.sendWhatsAppOtp = async function(){
   const cleanPhone = v.value;
   const localPhone = formatCallPhone(cleanPhone);
 
+  // 🔒 حماية حديدية: منع تام لمحاولة تسجيل الدخول بأرقام هواتف المشرفين والإدارة عبر واتساب
+  const isTargetAdmin = cleanPhone === "218928476784" || cleanPhone === "0928476784" ||
+                        cleanPhone.endsWith("928476784") || cleanPhone.endsWith("928476781") ||
+                        cleanPhone.endsWith("928476783") || cleanPhone.endsWith("928476785");
+  if(isTargetAdmin){
+    showToast("⛔ حساب الإدارة العامة والمشرف الرئيسي محمي بأعلى معايير الأمان. يرجى تسجيل الدخول عبر حساب Google أو Hotmail المعتمد حصراً!", "error", 6500);
+    return;
+  }
+
+  // 🔒 فحص أمني: هل الرقم مسجل بالفعل بحساب مستخدم أو تاجر سابق؟
+  let isExistingAccount = false;
+  const sbCheck = window.supabase || supabase;
+  if(sbCheck){
+    try {
+      const { data: pRec } = await sbCheck.from("phones").select("uid").eq("phone", cleanPhone).maybeSingle();
+      if(pRec && pRec.uid) isExistingAccount = true;
+      else {
+        const { data: byP } = await sbCheck.from("profiles").select("id").eq("phone", cleanPhone).maybeSingle();
+        if(byP && byP.id) isExistingAccount = true;
+      }
+    } catch(e){}
+  }
+
   const code = Math.floor(1000 + Math.random() * 9000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000;
 
@@ -18964,7 +19095,8 @@ window.sendWhatsAppOtp = async function(){
     localPhone: localPhone,
     code: code,
     expiresAt: expiresAt,
-    waUrl: waUrl
+    waUrl: waUrl,
+    isExistingAccount: isExistingAccount
   };
 
   const oldBtnHtml = sendBtn ? sendBtn.innerHTML : "";
@@ -19010,7 +19142,15 @@ window.sendWhatsAppOtp = async function(){
   if(step1) step1.classList.add("hidden");
   if(step2) step2.classList.remove("hidden");
   if(targetPhoneEl) targetPhoneEl.textContent = localPhone;
-  if(displayCodeEl) displayCodeEl.textContent = code;
+  if(displayCodeEl){
+    if(isExistingAccount){
+      displayCodeEl.textContent = "••••";
+      displayCodeEl.style.letterSpacing = "6px";
+    } else {
+      displayCodeEl.textContent = code;
+      displayCodeEl.style.letterSpacing = "8px";
+    }
+  }
   if(openWaLink) openWaLink.href = waUrl;
   if(otpInput){
     otpInput.value = "";
@@ -19018,7 +19158,7 @@ window.sendWhatsAppOtp = async function(){
   }
 
   startWaResendCountdown();
-  showToast("💬 اضغط على الزر الأخضر لفتح واتساب وإرسال كود التأكيد", "info", 5000);
+  showToast(isExistingAccount ? "💬 تم إرسال كود التحقق السري إلى واتساب المسجل بالهاتف" : "💬 اضغط على الزر الأخضر لفتح واتساب وإرسال كود التأكيد", "info", 5000);
 };
 
 function startWaResendCountdown(){
@@ -19110,6 +19250,14 @@ window.confirmWhatsAppOtp = async function(){
   }
 
   const cleanPhone = session.phone;
+  // 🔒 حماية حديدية: منع تام لمحاولة تسجيل الدخول بأرقام المشرفين والإدارة عبر واتساب
+  const isTargetAdmin = cleanPhone === "218928476784" || cleanPhone === "0928476784" ||
+                        cleanPhone.endsWith("928476784") || cleanPhone.endsWith("928476781") ||
+                        cleanPhone.endsWith("928476783") || cleanPhone.endsWith("928476785");
+  if(isTargetAdmin){
+    showToast("⛔ حساب الإدارة العامة والمشرف الرئيسي محمي بأعلى معايير الأمان. يرجى تسجيل الدخول عبر حساب Google أو Hotmail المعتمد حصراً!", "error", 6500);
+    return;
+  }
   const localPhone = session.localPhone;
   const authEmail = "wa_" + cleanPhone + "@tasawuq.ly";
 
@@ -19201,25 +19349,18 @@ window.confirmWhatsAppOtp = async function(){
       }
 
       let origUid = (existingProfile && existingProfile.id) || (existingPhoneRow && existingPhoneRow.uid) || null;
-      const isAbdoOtp = cleanPhone === "218928476784" || cleanPhone === "0928476784";
-      if(isAbdoOtp && !origUid) origUid = "NrYY8We8VDgBiEk98bbxvkyfq2N2";
 
-      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم" && (isAbdoOtp || (existingProfile.name !== "Abdo Alkera" && !existingProfile.name.includes("Alkera"))))
+      const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم")
                         ? existingProfile.name
-                        : (isAbdoOtp ? "Abdo Alkera" : ((nameInput?.value || "").trim() || "عضو تسوق الآن"));
+                        : ((nameInput?.value || "").trim() || "عضو تسوق الآن");
 
-      const finalUsername = (existingProfile && existingProfile.username && (isAbdoOtp || existingProfile.username !== "abd"))
-                        ? existingProfile.username
-                        : (isAbdoOtp ? "abd" : null);
-
-      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo) && (isAbdoOtp || (existingProfile.member_no !== 1001 && existingProfile.memberNo !== 1001))) || (isAbdoOtp ? 1001 : Math.floor(100000 + Math.random() * 900000));
+      const finalUsername = (existingProfile && existingProfile.username) ? existingProfile.username : null;
+      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || Math.floor(100000 + Math.random() * 900000);
       const finalStoreId = (existingProfile && (existingProfile.store_id || existingProfile.storeId)) || null;
 
-      let finalAvatar = (existingProfile && existingProfile.avatar && (isAbdoOtp || !isAbdoMedia(existingProfile.avatar))) ? existingProfile.avatar : (isAbdoOtp ? "https://i.ibb.co/JwP60ttQ/photo.jpg" : null);
-
-      let finalCover = (existingProfile && existingProfile.cover && (isAbdoOtp || !isAbdoMedia(existingProfile.cover))) ? existingProfile.cover : (isAbdoOtp ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
-
-      const finalEmail = (existingProfile && existingProfile.email && !existingProfile.email.startsWith("wa_")) ? existingProfile.email : (isAbdoOtp ? "abdoalk73@gmail.com" : authEmail);
+      let finalAvatar = (existingProfile && existingProfile.avatar) ? existingProfile.avatar : null;
+      let finalCover = (existingProfile && existingProfile.cover) ? existingProfile.cover : null;
+      const finalEmail = (existingProfile && existingProfile.email && !existingProfile.email.startsWith("wa_")) ? existingProfile.email : authEmail;
 
       const newProfile = {
         id: loggedInUser.uid,
@@ -19230,8 +19371,8 @@ window.confirmWhatsAppOtp = async function(){
         avatar: finalAvatar,
         cover: finalCover,
         email: finalEmail,
-        original_uid: isAbdoOtp ? "NrYY8We8VDgBiEk98bbxvkyfq2N2" : origUid,
-        alias_uids: isAbdoOtp ? ["NrYY8We8VDgBiEk98bbxvkyfq2N2", "zoSxkP0PGPWx37J6GMQiOjVgiMC3"] : (origUid && origUid !== loggedInUser.uid ? [origUid, loggedInUser.uid] : [loggedInUser.uid]),
+        original_uid: origUid,
+        alias_uids: (origUid && origUid !== loggedInUser.uid ? [origUid, loggedInUser.uid] : [loggedInUser.uid]),
         phone: cleanPhone,
         local_phone: localPhone,
         phone_verified: true,
@@ -19494,7 +19635,6 @@ window.addEventListener('load',()=>{
   const hash=window.location.hash;
 
   if(hash === '#wheel' || hash === '#luckywheel'){
-    try{ localStorage.removeItem('luckyWheelLast'); }catch(e){}
     setTimeout(()=>{ if(typeof openLuckyWheel === 'function') openLuckyWheel(); }, 600);
   }
 
@@ -20727,7 +20867,8 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
         p_type: 'credit',
         p_note: reason || meta.adminNote || 'إيداع يدوي من الإدارة',
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
-        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || '',
+        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
         const finalBal = rpcRes.balance;
@@ -20746,7 +20887,8 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
                   p_type: altDiff > 0 ? 'credit' : 'debit',
                   p_note: 'مزامنة المعرف البديل',
                   p_user_name: meta.userName || 'مستخدم',
-                  p_user_phone: meta.userPhone || ''
+                  p_user_phone: meta.userPhone || '',
+                  p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
                 });
               }
             } catch(e){}
@@ -20843,7 +20985,47 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
   }
 
-  // 1. إذا توفرت دالة RPC السريعة المحمية (خصم أدمن أو سداد طلبية):
+  // 1. إذا كانت العملية سداد طلبية: نستخدم دالة الزبائن المخصصة user_pay_order المحمية ذرياً
+  if(meta.txType === "order_payment" && window.supabase && typeof window.supabase.rpc === 'function'){
+    try{
+      const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('user_pay_order', {
+        p_customer_uid: uid,
+        p_amount: amount,
+        p_order_no: String(meta.orderNo || meta.orderId || ''),
+        p_store_name: String(meta.storeName || 'المطعم')
+      });
+      if(!rpcErr && rpcRes && rpcRes.ok){
+        const finalBal = rpcRes.balance;
+        for(const altUid of targetCandUids){
+          if(altUid !== uid){
+            try{
+              await window.supabase.rpc('user_pay_order', {
+                p_customer_uid: altUid,
+                p_amount: 0,
+                p_order_no: 'sync',
+                p_store_name: 'sync'
+              });
+            }catch(e){}
+          }
+          try{
+            await setDoc(doc(db, "feedback", "wallet_" + altUid), {
+              id: "wallet_" + altUid,
+              type: "user_wallet",
+              uid: altUid,
+              message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
+              updatedAt: Date.now()
+            }, { merge: true });
+          }catch(e){}
+        }
+        if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
+          updateWalletUI(finalBal);
+        }
+        return { ok: true, balance: finalBal, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
+      }
+    }catch(e){}
+  }
+
+  // 2. إذا توفرت دالة RPC السريعة المحمية (خصم أدمن أو سداد طلبية):
   if((meta.txType === "admin_debit" || meta.txType === "order_payment") && window.supabase && typeof window.supabase.rpc === 'function'){
     try{
       const adminUid = "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
@@ -20854,7 +21036,8 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
         p_type: 'debit',
         p_note: reason || meta.adminNote || (meta.txType === "order_payment" ? 'سداد طلبية' : 'خصم يدوي من الإدارة'),
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
-        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
+        p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || '',
+        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
         const finalBal = rpcRes.balance;
@@ -21310,7 +21493,8 @@ window.submitCardRecharge = async()=>{
                   p_type: 'credit',
                   p_note: 'مزامنة شحن كارت المحفظة: ' + cleanCode,
                   p_user_name: (myProfile && myProfile.name) || "Abdo Alkera",
-                  p_user_phone: (myProfile && myProfile.phone) || "0928476784"
+                  p_user_phone: (myProfile && myProfile.phone) || "0928476784",
+                  p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
                 });
               } catch(e){}
             }
@@ -24080,7 +24264,19 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
 
     const imgUrl = m.text.replace("[صورة] ", "").trim();
 
-    bodyHtml = `<a href="${escapeHtml(imgUrl)}" target="_blank" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${escapeHtml(imgUrl)}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a>`;
+    const isSafeImg = /^(https?:\/\/|\/|data:image\/)/i.test(imgUrl);
+
+    if(isSafeImg){
+
+      const safeUrl = escapeHtml(imgUrl);
+
+      bodyHtml = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" onclick="if(window._chatSelectMode){event.preventDefault();}"><img src="${safeUrl}" style="max-width:220px;max-height:220px;border-radius:10px;display:block;margin-bottom:4px;pointer-events:none"></a>`;
+
+    } else {
+
+      bodyHtml = escapeHtml(m.text || '');
+
+    }
 
   } else if(m.text && m.text.startsWith("[صوت:")){
 
@@ -24088,19 +24284,31 @@ function _appendBubble(box, m, myUid, animate, otherReadTimestamp = 0){
 
     const audioSrc = parts.slice(1).join("] ").trim();
 
-    bodyHtml = `
+    const isSafeAudio = /^(https?:\/\/|\/|data:audio\/)/i.test(audioSrc);
 
-      <div style="display:flex;align-items:center;gap:8px">
+    if(isSafeAudio){
 
-        <span style="font-size:20px">🎙️</span>
+      const safeSrc = escapeHtml(audioSrc);
 
-        <audio controls style="max-width:210px;height:36px;outline:none">
+      bodyHtml = `
 
-          <source src="${audioSrc}" type="audio/webm">
+        <div style="display:flex;align-items:center;gap:8px">
 
-        </audio>
+          <span style="font-size:20px">🎙️</span>
 
-      </div>`;
+          <audio controls style="max-width:210px;height:36px;outline:none" preload="none">
+
+            <source src="${safeSrc}" type="audio/webm">
+
+          </audio>
+
+        </div>`;
+
+    } else {
+
+      bodyHtml = escapeHtml(m.text || '');
+
+    }
 
   }
 
