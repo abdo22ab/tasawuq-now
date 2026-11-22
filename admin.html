@@ -1927,8 +1927,7 @@ async function loadAdminWebCards(){
     if(window.supabase && typeof window.supabase.rpc === 'function'){
       const { data, error } = await window.supabase.rpc('admin_get_cards', {
         p_admin_uid: adminUid,
-        p_limit: 200,
-        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+        p_limit: 200
       });
       if(!error && data && data.ok && Array.isArray(data.cards)){
         cards = data.cards.map(r=>{
@@ -1999,8 +1998,7 @@ window.adminWebGenerateCards = async()=>{
         p_admin_uid: adminUid,
         p_count: count,
         p_denom: denom,
-        p_batch_id: batchId,
-        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+        p_batch_id: batchId
       });
 
       if(error) throw new Error(error.message);
@@ -2154,6 +2152,26 @@ window.admWebLookupPhone = async()=>{
       if(anyData) target = anyData;
     }
 
+    // 5. البحث الاحتياطي في Firestore profiles لضمان إيجاد أي حساب
+    if(!target && typeof db !== 'undefined' && db){
+      try {
+        const cleanPh = rawQuery.replace(/[^0-9]/g, "");
+        if(cleanPh.length >= 8){
+          const qPh = query(collection(db, "profiles"), where("phone", "==", cleanPh), limit(1));
+          const snapPh = await getDocs(qPh);
+          if(!snapPh.empty){
+            target = { id: snapPh.docs[0].id, ...snapPh.docs[0].data() };
+          }
+        }
+        if(!target){
+          const snapDoc = await getDoc(doc(db, "profiles", rawQuery));
+          if(snapDoc.exists()){
+            target = { id: snapDoc.id, ...snapDoc.data() };
+          }
+        }
+      } catch(e){}
+    }
+
     if(!target){
       box.style.background = "#fffbeb";
       box.style.border = "1px solid #fde68a";
@@ -2263,34 +2281,58 @@ window.admWebExecuteDeposit = async()=>{
         p_type: type,
         p_note: finalNote,
         p_user_name: _adminWalDepTarget.name || "مستخدم",
-        p_user_phone: _adminWalDepTarget.phone || "",
-        p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
+        p_user_phone: _adminWalDepTarget.phone || ""
       });
 
       if(error) throw new Error(error.message);
       if(data && !data.ok) throw new Error(data.error || "فشل تنفيذ العملية");
+
+      const finalBal = Number(data.balance || 0);
+
+      // مزامنة فورية في Firestore حتى تظهر للزبون لحظياً على شاشته
+      try {
+        await setDoc(doc(db, "feedback", "wallet_" + targetUid), {
+          id: "wallet_" + targetUid,
+          type: "user_wallet",
+          uid: targetUid,
+          userName: _adminWalDepTarget.name || "مستخدم",
+          userPhone: _adminWalDepTarget.phone || "",
+          message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch(fsE){}
 
       // إذا كان الحساب المستهدف هو حساب الأدمن الرئيسي بمُعرّفيه
       const isTargetAbdo = SUPER_ADMIN_UIDS.includes(targetUid) || 
                            (_adminWalDepTarget.phone && _adminWalDepTarget.phone.includes("928476784")) ||
                            (_adminWalDepTarget.email && _adminWalDepTarget.email.toLowerCase().includes("abdoalk"));
       if(isTargetAbdo){
-        const otherUid = targetUid === "zoSxkP0PGPWx37J6GMQiOjVgiMC3" ? "NrYY8We8VDgBiEk98bbxvkyfq2N2" : "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
-        try {
-          await window.supabase.rpc('admin_deposit_wallet', {
-            p_admin_uid: adminUid,
-            p_target_uid: otherUid,
-            p_amount: amt,
-            p_type: type,
-            p_note: finalNote,
-            p_user_name: _adminWalDepTarget.name || "Abdo Alkera",
-            p_user_phone: _adminWalDepTarget.phone || "0928476784",
-            p_secret_key: 'TASAWUQ_ADMIN_SECURE_KEY_7384'
-          });
-        } catch(e){}
+        const allAbdoUids = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074"];
+        const now = Date.now();
+        for(const altUid of allAbdoUids){
+          if(altUid !== targetUid){
+            try {
+              if(window.supabase){
+                await window.supabase.from("feedback").update({
+                  message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+                  updated_at: now
+                }).eq("id", "wallet_" + altUid);
+              }
+              await setDoc(doc(db, "feedback", "wallet_" + altUid), {
+                id: "wallet_" + altUid,
+                type: "user_wallet",
+                uid: altUid,
+                userName: "Abdo Alkera",
+                userPhone: "0928476784",
+                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
+                updatedAt: now
+              }, { merge: true });
+            } catch(e){}
+          }
+        }
       }
 
-      alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${Number(data.balance).toFixed(2)} د.ل`);
+      alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${finalBal.toFixed(2)} د.ل`);
       document.getElementById("admWebDepAmt").value = "";
       document.getElementById("admWebDepNote").value = "";
       admWebLookupPhone();
