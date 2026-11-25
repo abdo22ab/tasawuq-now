@@ -254,6 +254,16 @@ function getNetworkIp() {
 
 const networkIp = getNetworkIp();
 
+// ⚡ نظام الحفاظ التلقائي على خادم البوت في Render صاحياً 24/7 دون الحاجة لأي مواقع خارجية
+function pingRenderBot() {
+  const https = require('https');
+  https.get('https://tasawuq-now-2.onrender.com/status', (res) => {
+    // تم التنبيه بنجاح
+  }).on('error', () => {});
+}
+pingRenderBot();
+setInterval(pingRenderBot, 5 * 60 * 1000);
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 السيرفر يعمل الآن بنجاح على:`);
   console.log(`💻 من هذا الكمبيوتر: http://localhost:${PORT}`);
