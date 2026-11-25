@@ -850,16 +850,15 @@ window.openInbox = window.openInbox || function() {
             <div id="authWaTargetPhone" style="font-size:16px;font-weight:900;color:#065f46;direction:ltr;margin-top:2px">091XXXXXXX</div>
           </div>
 
-          <a id="authWaOpenWaLink" href="#" target="_blank" onclick="if(typeof onWaBtnClick==='function')onWaBtnClick(event)" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
+          <a id="authWaOpenWaLink" href="#" target="_blank" onclick="if(typeof onWaBtnClick==='function')onWaBtnClick(event)" style="display:none;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" style="flex-shrink:0"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.65 7.89 8.02 8.48 8.02 9.7C8.02 10.92 8.91 12.1 9.03 12.27C9.15 12.44 10.74 14.9 13.21 15.96C15.26 16.84 15.67 16.67 16.12 16.62C16.57 16.58 17.56 16.03 17.76 15.45C17.96 14.88 17.96 14.39 17.9 14.28C17.84 14.18 17.68 14.12 17.43 14C17.18 13.88 15.96 13.27 15.73 13.19C15.5 13.11 15.34 13.07 15.17 13.31C15 13.56 14.53 14.12 14.39 14.28C14.24 14.45 14.1 14.47 13.85 14.35C13.6 14.22 12.81 13.97 11.87 13.13C11.14 12.48 10.65 11.67 10.5 11.43C10.36 11.18 10.49 11.05 10.61 10.92C10.72 10.81 10.86 10.63 10.98 10.48C11.11 10.34 11.15 10.23 11.23 10.07C11.31 9.91 11.27 9.77 11.21 9.65C11.15 9.53 10.65 8.31 10.45 7.82C10.25 7.34 10.05 7.4 9.9 7.4C9.75 7.4 9.53 7.34 9.53 7.34Z"/></svg>
             <span>🟢 فتح واتساب وإرسال كود التأكيد</span>
           </a>
 
-          <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:10px 12px;text-align:center;margin-bottom:12px">
-            <div style="font-size:11.5px;color:#166534;font-weight:800;margin-bottom:2px">كود التأكيد الخاص بك:</div>
-            <div id="authWaDisplayCode" style="font-size:26px;font-weight:900;letter-spacing:8px;color:#059669;font-family:monospace;margin:2px 0">----</div>
-            <div style="font-size:11px;color:#047857;line-height:1.4">
-              اضغط على الزر الأخضر أعلاه لإرسال الكود عبر واتساب لإثبات ملكيتك للرقم، ثم اضغط تأكيد بالأسفل.
+          <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:12px;text-align:center;margin-bottom:12px">
+            <div style="font-size:13px;color:#166534;font-weight:900;margin-bottom:4px">📨 كود التحقق السري</div>
+            <div style="font-size:11.5px;color:#047857;line-height:1.5">
+              تم إرسال كود التحقق السري المكون من 4 أرقام إلى تطبيق واتساب المسجل برقم هاتفك. تفقد رسائلك وأدخل الكود في الخانة أدناه.
             </div>
           </div>
 
@@ -949,16 +948,15 @@ window.openInbox = window.openInbox || function() {
           <div id="pvTargetPhone" style="font-size:16px;font-weight:900;color:#065f46;direction:ltr;margin-top:2px">091XXXXXXX</div>
         </div>
 
-        <a id="pvOpenWaLink" href="#" target="_blank" onclick="if(typeof onPvWaBtnClick==='function')onPvWaBtnClick(event)" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
+        <a id="pvOpenWaLink" href="#" target="_blank" onclick="if(typeof onPvWaBtnClick==='function')onPvWaBtnClick(event)" style="display:none;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#ffffff;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,0.35);margin-bottom:12px;box-sizing:border-box;cursor:pointer">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff" style="flex-shrink:0"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.36 7.34 9.09 7.4 8.87 7.65C8.65 7.89 8.02 8.48 8.02 9.7C8.02 10.92 8.91 12.1 9.03 12.27C9.15 12.44 10.74 14.9 13.21 15.96C15.26 16.84 15.67 16.67 16.12 16.62C16.57 16.58 17.56 16.03 17.76 15.45C17.96 14.88 17.96 14.39 17.9 14.28C17.84 14.18 17.68 14.12 17.43 14C17.18 13.88 15.96 13.27 15.73 13.19C15.5 13.11 15.34 13.07 15.17 13.31C15 13.56 14.53 14.12 14.39 14.28C14.24 14.45 14.1 14.47 13.85 14.35C13.6 14.22 12.81 13.97 11.87 13.13C11.14 12.48 10.65 11.67 10.5 11.43C10.36 11.18 10.49 11.05 10.61 10.92C10.72 10.81 10.86 10.63 10.98 10.48C11.11 10.34 11.15 10.23 11.23 10.07C11.31 9.91 11.27 9.77 11.21 9.65C11.15 9.53 10.65 8.31 10.45 7.82C10.25 7.34 10.05 7.4 9.9 7.4C9.75 7.4 9.53 7.34 9.53 7.34Z"/></svg>
           <span>🟢 فتح واتساب وإرسال كود التوثيق</span>
         </a>
 
-        <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:10px 12px;text-align:center;margin-bottom:12px">
-          <div style="font-size:11.5px;color:#166534;font-weight:800;margin-bottom:2px">كود التوثيق الخاص بك:</div>
-          <div id="pvDisplayCode" style="font-size:26px;font-weight:900;letter-spacing:8px;color:#059669;font-family:monospace;margin:2px 0">----</div>
-          <div style="font-size:11px;color:#047857;line-height:1.4">
-            اضغط على الزر الأخضر أعلاه ليفتح واتساب ويرسل الكود، ثم اضغط تأكيد بالأسفل.
+        <div style="background:#f0fdf4;border:1.5px dashed #86efac;border-radius:12px;padding:12px;text-align:center;margin-bottom:12px">
+          <div style="font-size:13px;color:#166534;font-weight:900;margin-bottom:4px">📨 كود التحقق السري</div>
+          <div style="font-size:11.5px;color:#047857;line-height:1.5">
+            تم إرسال كود التحقق السري المكون من 4 أرقام إلى تطبيق واتساب على هاتفك. تفقد رسائلك وأدخل الكود في الخانة أدناه.
           </div>
         </div>
 
@@ -3180,27 +3178,8 @@ window.openInbox = window.openInbox || function() {
 
       <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:14px;padding:9px" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 
-      <!-- 📱 بطاقة رقم الهاتف والتوثيق عبر واتساب المباشر -->
-      <div class="field" style="margin-bottom:12px">
-        <label>📱 رقم الهاتف الموثق عبر واتساب</label>
-        <div id="accountPhoneCardWrap" style="background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-          <div style="flex:1">
-            <div id="accountPhoneDisplayText" style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right">لم يتم ربط رقم هاتف بعد</div>
-            <div id="accountPhoneStatusText" style="font-size:11px;color:var(--muted);margin-top:2px">وثّق رقمك عبر واتساب ليظهر لجميع الزوار ويحمي حسابك</div>
-          </div>
-          <span id="accountPhoneBadgeIcon" style="font-size:24px;margin-right:8px">🔒</span>
-        </div>
-
-        <button type="button" id="btnAccountVerifyWa" class="btnMain accountBtn" style="width:100%;margin:0;padding:12px;font-weight:900;background:linear-gradient(135deg,#059669,#047857);border:none;border-radius:12px;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 10px rgba(5,150,105,0.25)" onclick="openPhoneVerificationModal()">
-          <span style="font-size:18px">💬</span> <span id="accountPhoneBtnLabel">توثيق وربط رقم الهاتف عبر واتساب</span>
-        </button>
-
-        <!-- حقل مخفي للحفاظ على التوافق مع أي دوال تعتمد على معرف myPhone -->
-        <input type="hidden" id="myPhone" value="">
-      </div>
-
       <!-- 🔒 خيار إظهار أو إخفاء رقم الهاتف في الملف الشخصي -->
-      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:20px" id="phoneVisibilityIcon">👁️</span>
           <div>
@@ -3213,7 +3192,29 @@ window.openInbox = window.openInbox || function() {
         </button>
       </div>
 
-      <button type="button" class="btnMain" style="margin-top:8px;margin-bottom:0;width:100%;font-weight:900;padding:14px;border-radius:12px;font-size:15px" onclick="saveAllProfileData()">💾 حفظ جميع التعديلات</button>
+      <button type="button" class="btnMain" style="margin-top:0;margin-bottom:16px;width:100%;font-weight:900;padding:14px;border-radius:12px;font-size:15px" onclick="saveAllProfileData()">💾 حفظ جميع التعديلات</button>
+
+      <!-- 📱 بطاقة رقم الهاتف والتوثيق عبر واتساب (في آخر شاشة تعديل البيانات) -->
+      <div class="field" style="margin-bottom:4px;padding-top:14px;border-top:1.5px dashed var(--border)">
+        <label>📱 رقم الهاتف الموثق عبر واتساب (091 / 092 / 094 / 093)</label>
+        <div id="accountPhoneCardWrap" style="background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+          <div style="flex:1">
+            <div id="accountPhoneDisplayText" style="font-size:15px;font-weight:900;color:var(--text);direction:ltr;text-align:right">لم يتم ربط رقم هاتف بعد</div>
+            <div id="accountPhoneStatusText" style="font-size:11px;color:var(--muted);margin-top:2px">ربط أو تغيير رقم الهاتف يتطلب رمز تحقق (OTP) عبر واتساب</div>
+          </div>
+          <span id="accountPhoneBadgeIcon" style="font-size:24px;margin-right:8px">🔒</span>
+        </div>
+
+        <div style="position:relative;display:flex;align-items:center;margin-bottom:8px">
+          <input id="myPhone" type="tel" placeholder="091XXXXXXX" maxlength="15" oninput="if(typeof formatPhoneInputLive==='function')formatPhoneInputLive(this)" style="width:100%;box-sizing:border-box;padding:12px 14px;padding-left:65px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;direction:ltr;text-align:right;font-weight:800;background:var(--card);font-family:inherit;color:var(--text)">
+          <span style="position:absolute;left:10px;font-size:12.5px;font-weight:800;color:var(--muted);direction:ltr;pointer-events:none">🇱🇾 +218</span>
+        </div>
+
+        <button type="button" id="btnAccountVerifyWa" class="btnMain accountBtn" style="margin-top:0;margin-bottom:0;padding:12px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none;font-weight:900;width:100%;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 10px rgba(5,150,105,0.25)" onclick="saveMyPhone()">
+          <span>💬</span>
+          <span id="accountPhoneBtnLabel">توثيق أو تغيير الرقم عبر واتساب (OTP)</span>
+        </button>
+      </div>
 
     </div>
 
@@ -3445,7 +3446,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=250"></script>
+<script type="module" src="app.js?v=253"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
