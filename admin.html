@@ -2191,12 +2191,17 @@ window.admWebLookupPhone = async()=>{
           const { data: rows } = await window.supabase
             .from("feedback")
             .select("*")
-            .in("id", ["wallet_zoSxkP0PGPWx37J6GMQiOjVgiMC3", "wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2"]);
+            .in("id", ["wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2", "wallet_zoSxkP0PGPWx37J6GMQiOjVgiMC3"]);
           if(rows && rows.length > 0){
+            let bestTs = -1;
             rows.forEach(r => {
               try{
                 const p = JSON.parse(r.message || "{}");
-                if(typeof p.balance === "number") bal = Math.max(bal, p.balance);
+                const ts = Number(p.updatedAt || r.updated_at || r.created_at || 0);
+                if(typeof p.balance === "number" && (ts > bestTs || (ts === bestTs && r.id === "wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2"))){
+                  bestTs = ts;
+                  bal = p.balance;
+                }
               }catch(e){}
             });
           }
@@ -2254,6 +2259,7 @@ window.admWebLookupPhone = async()=>{
 };
 
 window.admWebExecuteDeposit = async()=>{
+  if(window._isExecutingDeposit) return;
   const amt = parseFloat(document.getElementById("admWebDepAmt")?.value || "0");
   const type = document.getElementById("admWebDepType")?.value || "credit";
   const note = (document.getElementById("admWebDepNote")?.value || "").trim();
@@ -2262,12 +2268,18 @@ window.admWebExecuteDeposit = async()=>{
   if(isNaN(amt) || amt <= 0){ alert("أدخل مبلغاً صحيحاً أكبر من 0"); return; }
   if(!_adminWalDepTarget){ alert("اضغط 'فحص' للتأكد من حساب الزبون أولاً"); return; }
 
-  const targetUid = _adminWalDepTarget.id || _adminWalDepTarget.uid;
+  const rawTargetUid = _adminWalDepTarget.id || _adminWalDepTarget.uid;
+  const isTargetAbdo = SUPER_ADMIN_UIDS.includes(rawTargetUid) ||
+                       rawTargetUid === "admin_client_1792952590074" ||
+                       (_adminWalDepTarget.phone && _adminWalDepTarget.phone.includes("928476784")) ||
+                       (_adminWalDepTarget.email && _adminWalDepTarget.email.toLowerCase().includes("abdoalk"));
+  const targetUid = isTargetAbdo ? "NrYY8We8VDgBiEk98bbxvkyfq2N2" : rawTargetUid;
   if(!targetUid){ alert("تعذر تحديد معرف المستخدم، تأكد من إعادة فحصه"); return; }
 
   const opLabel = type === 'credit' ? `إيداع +${amt} د.ل` : `خصم -${amt} د.ل`;
   if(!confirm(`هل أنت متأكد من ${opLabel} لحساب (${_adminWalDepTarget.name || _adminWalDepTarget.phone})؟`)) return;
 
+  window._isExecutingDeposit = true;
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري التنفيذ..."; }
   try{
     const adminUid = getAdminRpcUid();
@@ -2289,49 +2301,6 @@ window.admWebExecuteDeposit = async()=>{
 
       const finalBal = Number(data.balance || 0);
 
-      // مزامنة فورية في Firestore حتى تظهر للزبون لحظياً على شاشته
-      try {
-        await setDoc(doc(db, "feedback", "wallet_" + targetUid), {
-          id: "wallet_" + targetUid,
-          type: "user_wallet",
-          uid: targetUid,
-          userName: _adminWalDepTarget.name || "مستخدم",
-          userPhone: _adminWalDepTarget.phone || "",
-          message: JSON.stringify({ balance: finalBal, updatedAt: Date.now() }),
-          updatedAt: Date.now()
-        }, { merge: true });
-      } catch(fsE){}
-
-      // إذا كان الحساب المستهدف هو حساب الأدمن الرئيسي بمُعرّفيه
-      const isTargetAbdo = SUPER_ADMIN_UIDS.includes(targetUid) || 
-                           (_adminWalDepTarget.phone && _adminWalDepTarget.phone.includes("928476784")) ||
-                           (_adminWalDepTarget.email && _adminWalDepTarget.email.toLowerCase().includes("abdoalk"));
-      if(isTargetAbdo){
-        const allAbdoUids = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074"];
-        const now = Date.now();
-        for(const altUid of allAbdoUids){
-          if(altUid !== targetUid){
-            try {
-              if(window.supabase){
-                await window.supabase.from("feedback").update({
-                  message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-                  updated_at: now
-                }).eq("id", "wallet_" + altUid);
-              }
-              await setDoc(doc(db, "feedback", "wallet_" + altUid), {
-                id: "wallet_" + altUid,
-                type: "user_wallet",
-                uid: altUid,
-                userName: "Abdo Alkera",
-                userPhone: "0928476784",
-                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-                updatedAt: now
-              }, { merge: true });
-            } catch(e){}
-          }
-        }
-      }
-
       alert(`✅ تمت العملية بنجاح! الرصيد الجديد: ${finalBal.toFixed(2)} د.ل`);
       document.getElementById("admWebDepAmt").value = "";
       document.getElementById("admWebDepNote").value = "";
@@ -2343,6 +2312,7 @@ window.admWebExecuteDeposit = async()=>{
   }catch(e){
     alert("خطأ أثناء تنفيذ العملية: " + e.message);
   }finally{
+    window._isExecutingDeposit = false;
     if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
   }
 };
