@@ -271,6 +271,17 @@ function isAbdoAccount(user, prof) {
 }
 window.isAbdoAccount = isAbdoAccount;
 
+const ABDO_CANONICAL_WALLET_UID = "NrYY8We8VDgBiEk98bbxvkyfq2N2";
+function getCanonicalWalletUid(uid, user, prof) {
+  if (isAbdoUser(uid) || isAbdoAccount(user, prof)) return ABDO_CANONICAL_WALLET_UID;
+  const ph = String((prof && (prof.phone || prof.userPhone)) || (user && user.phoneNumber) || "").replace(/[^0-9]/g, "");
+  if (ph.endsWith("928476784")) return ABDO_CANONICAL_WALLET_UID;
+  const em = String((prof && prof.email) || (user && user.email) || "").toLowerCase().trim();
+  if (em === "abdoalk73@gmail.com" || em.startsWith("wa_218928476784@")) return ABDO_CANONICAL_WALLET_UID;
+  return uid;
+}
+window.getCanonicalWalletUid = getCanonicalWalletUid;
+
 function sanitizeCorruptedSellerMedia() {
   try {
     const toRemove = [];
@@ -15579,9 +15590,33 @@ function openFormScreen(skipHistory){
 
 window._pvActiveSession = null;
 
-window.openPhoneVerificationModal = function(){
+async function dispatchWhatsAppOtp(cleanPhone, code, message) {
+  try {
+    const r = await fetch(window.WHATSAPP_BOT_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-bot-secret": "Tasawuq#Bot2026_SecLock"
+      },
+      body: JSON.stringify({ phone: cleanPhone, code: code, message: message }),
+      signal: AbortSignal.timeout(12000)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d && d.ok) {
+      return { ok: true };
+    }
+    return { ok: false, error: (d && (d.msg || d.error)) || `تعذر إرسال كود التحقق (${r.status})` };
+  } catch (e) {
+    const msg = (e && e.name === "TimeoutError")
+      ? "انتهت مهلة الاتصال ببوت الواتساب، أعد المحاولة بعد لحظات"
+      : "تعذر الاتصال ببوت الواتساب حالياً، يرجى المحاولة مجدداً";
+    return { ok: false, error: msg };
+  }
+}
+
+window.openPhoneVerificationModal = function(prefillPhone, forceChange = false){
   const me = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
-  if(me && typeof window.isUserPhoneVerified === 'function' && window.isUserPhoneVerified(me, myProfile)){
+  if(!forceChange && !prefillPhone && me && typeof window.isUserPhoneVerified === 'function' && window.isUserPhoneVerified(me, myProfile)){
     showToast("✅ حسابك موثق بالفعل بالكامل 🇱🇾", "success", 3000);
     return;
   }
@@ -15591,8 +15626,8 @@ window.openPhoneVerificationModal = function(){
 
   const phoneInput = document.getElementById("pvPhoneNumber");
   if(phoneInput){
-    const currPhone = (myProfile && myProfile.phone) || "";
-    if(currPhone) phoneInput.value = formatCallPhone(currPhone);
+    const targetRaw = prefillPhone || (myProfile && myProfile.phone) || "";
+    phoneInput.value = targetRaw ? formatCallPhone(targetRaw) : "";
     setTimeout(() => phoneInput.focus(), 200);
   }
 
@@ -15680,48 +15715,41 @@ window.sendPvOtp = async function(){
   const oldBtnHtml = sendBtn ? sendBtn.innerHTML : "";
   if(sendBtn){
     sendBtn.disabled = true;
-    sendBtn.innerHTML = `<span>⏳</span> <span>جاري تجهيز الرابط...</span>`;
+    sendBtn.innerHTML = `<span>⏳</span> <span>جاري إرسال كود التحقق عبر واتساب...</span>`;
   }
 
-  try {
-    fetch(window.WHATSAPP_BOT_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-bot-secret": "Tasawuq#Bot2026_SecLock"
-      },
-      body: JSON.stringify({
-        phone: cleanPhone,
-        code: code,
-        message: "رمز توثيق رقم هاتفك في تسوق الآن هو: [ " + code + " ] - صالح لمدة 10 دقائق."
-      }),
-      signal: AbortSignal.timeout(2500)
-    }).catch(()=>{});
-  } catch(e){}
+  const dispatchRes = await dispatchWhatsAppOtp(
+    cleanPhone,
+    code,
+    "رمز توثيق رقم هاتفك في تسوق الآن هو: [ " + code + " ] - صالح لمدة 10 دقائق."
+  );
 
   if(sendBtn){
     sendBtn.disabled = false;
     sendBtn.innerHTML = oldBtnHtml;
   }
 
+  if(!dispatchRes.ok){
+    showToast("❌ " + (dispatchRes.error || "تعذر إرسال كود التحقق عبر واتساب"), "error", 5500);
+    return;
+  }
+
   const step1 = document.getElementById("pvStepPhone");
   const step2 = document.getElementById("pvStepOtp");
   const targetPhoneEl = document.getElementById("pvTargetPhone");
-  const displayCodeEl = document.getElementById("pvDisplayCode");
   const openWaLink = document.getElementById("pvOpenWaLink");
   const otpInput = document.getElementById("pvOtpCode");
 
   if(step1) step1.classList.add("hidden");
   if(step2) step2.classList.remove("hidden");
   if(targetPhoneEl) targetPhoneEl.textContent = localPhone;
-  if(displayCodeEl) displayCodeEl.textContent = code;
   if(openWaLink) openWaLink.href = waUrl;
   if(otpInput){
     otpInput.value = "";
     setTimeout(() => otpInput.focus(), 250);
   }
 
-  showToast("💬 اضغط على الزر الأخضر لفتح واتساب وإرسال كود التوثيق", "info", 5000);
+  showToast("💬 تم إرسال كود التحقق السري إلى واتساب الخاص برقمك", "success", 5000);
 };
 
 window.onPvOtpInput = function(el){
@@ -16760,7 +16788,10 @@ window.saveMyPhone=async()=>{
 
   const raw=(input.value||"").trim();
 
-  if(!raw){showToast("الرجاء كتابة رقم الهاتف أولاً","warn");return;}
+  if(!raw){
+    if(typeof openPhoneVerificationModal === 'function') openPhoneVerificationModal("", true);
+    return;
+  }
 
   const v=validatePhone(raw);
 
@@ -16768,8 +16799,10 @@ window.saveMyPhone=async()=>{
 
   const cleanNew=v.value;
 
-  if(myProfile && myProfile.phone === cleanNew && (typeof window.isUserPhoneVerified === 'function' ? window.isUserPhoneVerified(me, myProfile) : (myProfile.phone_verified || myProfile.whatsapp_verified))){
-    showToast("هذا رقمك الحالي الموثق بالفعل ✅","info");
+  const isAlreadyVerified = myProfile && (myProfile.phone_verified || myProfile.whatsapp_verified) && (typeof window.isUserPhoneVerified === 'function' ? window.isUserPhoneVerified(me, myProfile) : true);
+  if(myProfile && myProfile.phone === cleanNew && isAlreadyVerified){
+    // إذا ضغط الزر دون تغيير الرقم الموجود، نفتح نافذة التغيير ليتمكن من كتابة الرقم الجديد وتوثيقه بـ OTP
+    if(typeof openPhoneVerificationModal === 'function') openPhoneVerificationModal("", true);
     return;
   }
 
@@ -16793,15 +16826,14 @@ window.saveMyPhone=async()=>{
     } catch(e){}
   }
 
-  // 2) إرسال كود OTP على الواتساب للرقم الجديد وإلزام التحقق منه
-  showToast("📲 لتأكيد تغيير رقم الهاتف، سيتم إرسال كود تحقق إلى واتساب الرقم الجديد...", "info", 4000);
+  // 2) إرسال كود OTP على الواتساب للرقم الجديد وإلزام التحقق منه قبل التغيير
+  showToast("📲 جاري إرسال كود التحقق (OTP) إلى واتساب الرقم الجديد...", "info", 4000);
   if(typeof openPhoneVerificationModal === 'function'){
-    openPhoneVerificationModal(cleanNew);
+    openPhoneVerificationModal(cleanNew, true);
     setTimeout(() => {
       if(typeof sendPvOtp === 'function') sendPvOtp();
-    }, 350);
+    }, 300);
   }
-
 };
 
 /* ============================================
@@ -19198,50 +19230,35 @@ window.sendWhatsAppOtp = async function(){
   const oldBtnHtml = sendBtn ? sendBtn.innerHTML : "";
   if(sendBtn){
     sendBtn.disabled = true;
-    sendBtn.innerHTML = `<span>⏳</span> <span>جاري تجهيز كود التأكيد...</span>`;
+    sendBtn.innerHTML = `<span>⏳</span> <span>جاري إرسال كود التحقق عبر واتساب...</span>`;
   }
 
-  // محاولة إرسال عبر البوت في الخلفية (اختياري بدون حظر أو تعطيل المستخدم)
-  try {
-    fetch(window.WHATSAPP_BOT_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-bot-secret": "Tasawuq#Bot2026_SecLock"
-      },
-      body: JSON.stringify({
-        phone: cleanPhone,
-        code: code,
-        message: "رمز التحقق لتسجيل الدخول في تطبيق تسوق الآن هو: [ " + code + " ] - صالح لمدة 10 دقائق."
-      }),
-      signal: AbortSignal.timeout(2500)
-    }).then(async r => {
-      if(r.ok){
-        const d = await r.json().catch(()=>({}));
-        if(d.ok) console.log("Bot OTP dispatched in background");
-      }
-    }).catch(()=>{});
-  } catch(e){}
+  // إرسال كود التحقق عبر بوت الواتساب
+  const dispatchRes = await dispatchWhatsAppOtp(
+    cleanPhone,
+    code,
+    "رمز التحقق لتسجيل الدخول في تطبيق تسوق الآن هو: [ " + code + " ] - صالح لمدة 10 دقائق."
+  );
 
   if(sendBtn){
     sendBtn.disabled = false;
     sendBtn.innerHTML = oldBtnHtml;
   }
 
+  if(!dispatchRes.ok){
+    showToast("❌ " + (dispatchRes.error || "تعذر إرسال كود التحقق عبر واتساب"), "error", 5500);
+    return;
+  }
+
   const step1 = document.getElementById("authWaStepPhone");
   const step2 = document.getElementById("authWaStepOtp");
   const targetPhoneEl = document.getElementById("authWaTargetPhone");
-  const displayCodeEl = document.getElementById("authWaDisplayCode");
   const openWaLink = document.getElementById("authWaOpenWaLink");
   const otpInput = document.getElementById("authWaOtpCode");
 
   if(step1) step1.classList.add("hidden");
   if(step2) step2.classList.remove("hidden");
   if(targetPhoneEl) targetPhoneEl.textContent = localPhone;
-  if(displayCodeEl){
-    displayCodeEl.textContent = code;
-    displayCodeEl.style.letterSpacing = "8px";
-  }
   if(openWaLink) openWaLink.href = waUrl;
   if(otpInput){
     otpInput.value = "";
@@ -19249,7 +19266,7 @@ window.sendWhatsAppOtp = async function(){
   }
 
   startWaResendCountdown();
-  showToast(isExistingAccount ? "💬 تم إرسال كود التحقق السري إلى واتساب المسجل بالهاتف" : "💬 اضغط على الزر الأخضر لفتح واتساب وإرسال كود التأكيد", "info", 5000);
+  showToast("💬 تم إرسال كود التحقق السري إلى واتساب المسجل بالهاتف", "success", 5000);
 };
 
 function startWaResendCountdown(){
@@ -20940,6 +20957,9 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: "رمز الكارت مطلوب لإتمام الشحن" };
   }
 
+  // توحيد معرف المحفظة المرجعي (لمنع انقسام الرصيد بين جوجل والواتساب)
+  uid = getCanonicalWalletUid(uid, null, { phone: meta.userPhone, name: meta.userName });
+
   // تحديد كافة المعرفات البديلة للمستخدم المستهدف
   const targetCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
   if(targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || String(meta.userPhone||'').includes('928476784')){
@@ -20962,34 +20982,8 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
         const finalBal = Number(rpcRes.balance);
-        const now = Date.now();
 
-        // مزامنة قطعية ومباشرة لكافة المعرفات البديلة في Supabase و Firestore
-        for(const altUid of targetCandUids){
-          if(window.supabase){
-            try{
-              await window.supabase.from("feedback").update({
-                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-                updated_at: now
-              }).eq("id", "wallet_" + altUid);
-            }catch(e){}
-          }
-          try{
-            await setDoc(doc(db, "feedback", "wallet_" + altUid), {
-              id: "wallet_" + altUid,
-              type: "user_wallet",
-              uid: altUid,
-              userName: meta.userName || (myProfile && myProfile.name) || "مستخدم",
-              userPhone: meta.userPhone || (myProfile && myProfile.phone) || "",
-              message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-              updatedAt: now
-            }, { merge: true });
-          }catch(e){}
-        }
-
-        try{
-          await recordWalletTx(uid, meta.txType, amount, rpcRes.oldBalance, finalBal, reason, meta);
-        }catch(e){}
+        // 🛑 تم إلغاء recordWalletTx هنا لأن دالة RPC admin_deposit_wallet قامت بتسجيل الحركة بالفعل في السجل المالي، لمنع تكرار الحركة مرتين
 
         const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
         if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
@@ -21065,6 +21059,9 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
     ));
 
+  // توحيد معرف المحفظة المرجعي (لمنع انقسام الرصيد بين جوجل والواتساب)
+  uid = getCanonicalWalletUid(uid, null, { phone: meta.userPhone, name: meta.userName });
+
   const targetCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
   if(targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || String(meta.userPhone||'').includes('928476784')){
     if(!targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) targetCandUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
@@ -21078,6 +21075,13 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
   if(!isSelf && !isEffectiveAdmin){
     console.warn("محاولة غير مصرح بها لخصم رصيد من محفظة أخرى.");
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
+  }
+
+  // 🛡️ فحص قطعي لرصيد المحفظة أولاً لمنع الخصم بأكثر من الرصيد المتوفر (خاصة في طلبات المطعم)
+  const currentCheck = await getUserWallet(uid);
+  const oldBalCheck = Number(currentCheck.balance || 0);
+  if(oldBalCheck < amount && (!isEffectiveAdmin || meta.txType === "order_payment")){
+    return { ok: false, error: `الرصيد غير كافٍ (${oldBalCheck.toFixed(2)} د.ل لا تكفي لخصم ${amount.toFixed(2)} د.ل)`, balance: oldBalCheck };
   }
 
   // 1. الخصم الذري الآمن عبر Supabase RPC
@@ -21094,35 +21098,13 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
         p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
       });
       if(!rpcErr && rpcRes && rpcRes.ok){
-        const finalBal = Number(rpcRes.balance);
-        const now = Date.now();
-
-        // مزامنة فورية ومباشرة لكافة المعرفات البديلة في Supabase و Firestore
-        for(const altUid of targetCandUids){
-          if(window.supabase){
-            try{
-              await window.supabase.from("feedback").update({
-                message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-                updated_at: now
-              }).eq("id", "wallet_" + altUid);
-            }catch(e){}
-          }
-          try{
-            await setDoc(doc(db, "feedback", "wallet_" + altUid), {
-              id: "wallet_" + altUid,
-              type: "user_wallet",
-              uid: altUid,
-              userName: meta.userName || (myProfile && myProfile.name) || "مستخدم",
-              userPhone: meta.userPhone || (myProfile && myProfile.phone) || "",
-              message: JSON.stringify({ balance: finalBal, updatedAt: now }),
-              updatedAt: now
-            }, { merge: true });
-          }catch(e){}
+        // تأكيد أمني: إذا كان الرصيد السابق في قاعدة البيانات أقل من المبلغ المطلوب، لا نعتبره ناجحاً
+        if(Number(rpcRes.oldBalance || 0) < amount && (!isEffectiveAdmin || meta.txType === "order_payment")){
+          return { ok: false, error: "الرصيد في قاعدة البيانات غير كافٍ لإتمام الخصم", balance: rpcRes.oldBalance };
         }
+        const finalBal = Number(rpcRes.balance);
 
-        try{
-          await recordWalletTx(uid, meta.txType || "order_payment", -amount, rpcRes.oldBalance, finalBal, reason, meta);
-        }catch(e){}
+        // 🛑 تم إلغاء recordWalletTx هنا لأن دالة RPC قامت بتسجيل الحركة بالفعل لمنع تكرار الحركة مرتين
 
         if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
           updateWalletUI(finalBal);
@@ -21532,7 +21514,8 @@ window.submitCardRecharge = async()=>{
     // 🔒 الخطوة الأولى: محاولة شحن الكارت ذرياً عبر دالة Supabase RPC المحمية
     if(window.supabase && typeof window.supabase.rpc === 'function'){
       try {
-        const myWalletUid = (typeof myProfile !== 'undefined' && myProfile && (myProfile.originalUid || myProfile.original_uid)) || auth.currentUser.uid;
+        const rawWalletUid = (typeof myProfile !== 'undefined' && myProfile && (myProfile.originalUid || myProfile.original_uid)) || auth.currentUser.uid;
+        const myWalletUid = getCanonicalWalletUid(rawWalletUid, auth.currentUser, myProfile);
         const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('redeem_wallet_card', {
           p_code: cleanCode,
           p_uid: myWalletUid
@@ -21543,25 +21526,6 @@ window.submitCardRecharge = async()=>{
             const cardAmount = Number(rpcRes.amount || 0);
             const newBal = Number(rpcRes.balance || 0);
             updateWalletUI(newBal);
-
-            // إذا كان المستخدم هو صاحب الحساب المزدوج (Abdo)
-            const isAbdo = (typeof window.isAbdoAccount === 'function')
-                           ? window.isAbdoAccount(auth.currentUser, myProfile)
-                           : (myWalletUid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || myWalletUid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2');
-            if(isAbdo){
-              const otherUid = myWalletUid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' ? 'NrYY8We8VDgBiEk98bbxvkyfq2N2' : 'zoSxkP0PGPWx37J6GMQiOjVgiMC3';
-              try {
-                await window.supabase.rpc('admin_deposit_wallet', {
-                  p_admin_uid: 'zoSxkP0PGPWx37J6GMQiOjVgiMC3',
-                  p_target_uid: otherUid,
-                  p_amount: cardAmount,
-                  p_type: 'credit',
-                  p_note: 'مزامنة شحن كارت المحفظة: ' + cleanCode,
-                  p_user_name: (myProfile && myProfile.name) || "Abdo Alkera",
-                  p_user_phone: (myProfile && myProfile.phone) || "0928476784"
-                });
-              } catch(e){}
-            }
 
             if(inputEl) inputEl.value = "";
             if(statusBox){
@@ -22943,6 +22907,7 @@ window.admLookupUserByPhone = async()=>{
 };
 
 window.adminExecuteDeposit = async()=>{
+  if(window._isAdmExecutingDeposit) return;
 
   const canAdmin = (typeof isAdmin !== 'undefined' && isAdmin) ||
     (typeof window.isUserAdmin === 'function' && window.isUserAdmin(auth.currentUser, myProfile)) ||
@@ -22986,7 +22951,8 @@ window.adminExecuteDeposit = async()=>{
 
   }
 
-  const targetUid = _admDepTargetUser.id || _admDepTargetUser.uid;
+  const rawTargetUid = _admDepTargetUser.id || _admDepTargetUser.uid;
+  const targetUid = getCanonicalWalletUid(rawTargetUid, null, _admDepTargetUser);
 
   if(!targetUid){
 
@@ -23000,6 +22966,7 @@ window.adminExecuteDeposit = async()=>{
 
   if(!confirm(`هل أنت متأكد من ${opLabel} لحساب الزبون (${_admDepTargetUser.name || _admDepTargetUser.phone})؟`)) return;
 
+  window._isAdmExecutingDeposit = true;
   if(btn){ btn.disabled = true; btn.textContent = "⏳ جاري تنفيذ العملية وتحديث الرصيد..."; }
 
   try{
@@ -23066,9 +23033,8 @@ window.adminExecuteDeposit = async()=>{
     showToast("خطأ: " + e.message, "error");
 
   }finally{
-
+    window._isAdmExecutingDeposit = false;
     if(btn){ btn.disabled = false; btn.textContent = "💾 تنفيذ العملية وتحديث الرصيد فوراً"; }
-
   }
 
 };
@@ -26905,47 +26871,12 @@ window.saveAllProfileData = async () => {
   }
 
   const oldPhone = (myProfile && myProfile.phone) || "";
+  const cleanRawPhone = rawPhone ? normalizePhone(rawPhone) : "";
+  const cleanOldPhone = oldPhone ? normalizePhone(oldPhone) : "";
+  let phoneChangeRequested = false;
 
-  if (rawPhone && rawPhone !== oldPhone) {
-
-    try {
-
-      const res = await reservePhone(me, rawPhone, oldPhone);
-
-      if (res.ok) {
-
-        if (!myProfile) myProfile = {};
-
-        myProfile.phone = res.value;
-
-        changes.push("رقم الهاتف");
-
-        if (!window.sellersProfileCache) window.sellersProfileCache = {};
-        if (!window.sellersProfileCache[me.uid]) window.sellersProfileCache[me.uid] = {};
-        window.sellersProfileCache[me.uid].phone = res.value;
-
-        const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid];
-        const sb = window.supabase || supabase;
-        if(sb) sb.from("profiles").update({ phone: res.value }).in("id", candUids).catch(()=>{});
-
-        if(typeof db !== 'undefined' && db){
-          candUids.forEach(u => {
-            setDoc(doc(db, "profiles", u), { phone: res.value }, { merge: true }).catch(()=>{});
-          });
-        }
-
-      } else {
-
-        errors.push("رقم الهاتف: " + (res.msg || "خطأ"));
-
-      }
-
-    } catch(e) {
-
-      errors.push("رقم الهاتف: " + e.message);
-
-    }
-
+  if (cleanRawPhone && cleanRawPhone.length >= 8 && cleanRawPhone !== cleanOldPhone) {
+    phoneChangeRequested = true;
   }
 
   if (errors.length > 0) {
@@ -26956,13 +26887,15 @@ window.saveAllProfileData = async () => {
 
     showToast("✅ تم بنجاح تحديث: " + changes.join("، "), "success", 2000);
 
-    setTimeout(() => {
+    if (!phoneChangeRequested) {
+      setTimeout(() => {
 
-      if (typeof backFromEditProfile === "function") backFromEditProfile();
+        if (typeof backFromEditProfile === "function") backFromEditProfile();
 
-    }, 300);
+      }, 300);
+    }
 
-  } else {
+  } else if (!phoneChangeRequested) {
 
     showToast("لم تقم بإجراء أي تعديلات جديدة", "info");
 
@@ -26972,6 +26905,10 @@ window.saveAllProfileData = async () => {
 
     }, 300);
 
+  }
+
+  if (phoneChangeRequested && typeof window.saveMyPhone === "function") {
+    await window.saveMyPhone();
   }
 
 };
