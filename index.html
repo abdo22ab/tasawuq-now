@@ -47,7 +47,7 @@ window.OneSignalDeferred.push(async function(OneSignal) {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=233').then(function(reg) {
+    navigator.serviceWorker.register('./sw.js?v=234').then(function(reg) {
       if (reg && reg.update) reg.update();
     }).catch(function(e){ console.warn('SW reg error:', e); });
   });
@@ -3446,7 +3446,7 @@ window.openInbox = window.openInbox || function() {
 
 </div>
 
-<script type="module" src="app.js?v=255"></script>
+<script type="module" src="app.js?v=256"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
