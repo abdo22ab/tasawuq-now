@@ -382,7 +382,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged
-} from "./supabase-adapter.js?v=7";
+} from "./supabase-adapter.js?v=8";
 
 const IMGBB_API_KEY="114eae2e3072c10adec45b174bd7e67a";
 const MAIN_ADMIN="abdoalk73@gmail.com";
@@ -2191,31 +2191,42 @@ window.admWebLookupPhone = async()=>{
           const { data: rows } = await window.supabase
             .from("feedback")
             .select("*")
-            .in("id", ["wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2", "wallet_zoSxkP0PGPWx37J6GMQiOjVgiMC3"]);
-          if(rows && rows.length > 0){
-            let bestTs = -1;
-            rows.forEach(r => {
-              try{
-                const p = JSON.parse(r.message || "{}");
-                const ts = Number(p.updatedAt || r.updated_at || r.created_at || 0);
-                if(typeof p.balance === "number" && (ts > bestTs || (ts === bestTs && r.id === "wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2"))){
-                  bestTs = ts;
-                  bal = p.balance;
-                }
-              }catch(e){}
-            });
+            .eq("id", "wallet_NrYY8We8VDgBiEk98bbxvkyfq2N2")
+            .limit(1);
+          if(rows && rows[0] && rows[0].message){
+            try{
+              const p = JSON.parse(rows[0].message || "{}");
+              if(typeof p.balance === "number") bal = p.balance;
+            }catch(e){}
           }
         } else {
-          const { data: wRow } = await window.supabase
+          const candWalletIds = new Set(["wallet_" + target.id]);
+          if(target.phone){
+            try {
+              const { data: pRows } = await window.supabase.from("phones").select("uid").eq("phone", target.phone).limit(5);
+              if(Array.isArray(pRows)) pRows.forEach(r => { if(r && r.uid) candWalletIds.add("wallet_" + r.uid); });
+              const { data: prRows } = await window.supabase.from("profiles").select("id").eq("phone", target.phone).limit(5);
+              if(Array.isArray(prRows)) prRows.forEach(r => { if(r && r.id) candWalletIds.add("wallet_" + r.id); });
+            } catch(e){}
+          }
+          const { data: wRows } = await window.supabase
             .from("feedback")
             .select("*")
-            .eq("id", "wallet_" + target.id)
-            .maybeSingle();
-          if(wRow && wRow.message){
-            try{
-              const parsed = JSON.parse(wRow.message);
-              bal = Number(parsed.balance || 0);
-            }catch(e){}
+            .in("id", Array.from(candWalletIds));
+          if(Array.isArray(wRows) && wRows.length > 0){
+            let bestTs = -1;
+            let bestPosTs = -1;
+            let bestPosBal = null;
+            wRows.forEach(r => {
+              try{
+                const p = JSON.parse(r.message || "{}");
+                const b = Number(p.balance || 0);
+                const ts = Number(p.updatedAt || r.updated_at || r.created_at || 0);
+                if(b > 0 && ts > bestPosTs){ bestPosTs = ts; bestPosBal = b; }
+                if(ts > bestTs){ bestTs = ts; bal = b; }
+              }catch(e){}
+            });
+            if(bestPosBal != null) bal = bestPosBal;
           }
         }
       }
