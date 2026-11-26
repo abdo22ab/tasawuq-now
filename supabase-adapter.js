@@ -558,7 +558,7 @@ export async function setDoc(docRef, data, options = {}) {
   }
 
   let payload = { ...row };
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 15; attempt++) {
     const { error } = await supabase.from(table).upsert(payload);
     if (!error) return true;
     const missingCol = extractMissingColumn(error.message);
@@ -590,7 +590,7 @@ export async function addDoc(colRef, data) {
   row.id = newId;
 
   let payload = { ...row };
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 15; attempt++) {
     const { error } = await supabase.from(table).insert(payload);
     if (!error) return new DocRef(colRef.collectionName, newId);
     const missingCol = extractMissingColumn(error.message);
@@ -629,7 +629,7 @@ export async function updateDoc(docRef, data) {
   }
 
   let payload = { ...row };
-  for (let attempt = 0; attempt < 6; attempt++) {
+  for (let attempt = 0; attempt < 15; attempt++) {
     let req = supabase.from(table).update(payload);
     if (table === "phones") req = req.eq("phone", docRef.id);
     else if (table === "usernames") req = req.eq("username", docRef.id);
