@@ -76,7 +76,7 @@ import {
   objectFromDb,
   ai,
   getGenerativeModel
-} from "./supabase-adapter.js?v=7";
+} from "./supabase-adapter.js?v=8";
 
 // التقاط رابط الإحالة من الرابط عند الدخول
 
@@ -121,7 +121,7 @@ window.isUserAdmin = function(u, prof){
   }
 
   // 1. فحص معرفات الأدمن الرئيسية (جوجل وواتساب وحساب العميل الإداري)
-  const adminUids = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074"];
+  const adminUids = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074", "WSnolayKdiTgDvAj5psB4YRtZuG3"];
   if(user && adminUids.includes(user.uid)) { isAdmin = true; return true; }
   if(p && p.id && adminUids.includes(p.id)) { isAdmin = true; return true; }
 
@@ -132,7 +132,7 @@ window.isUserAdmin = function(u, prof){
   // 3. فحص هاتف الأدمن الموثق من جلسة الدخول المعتمدة فقط
   if(user && user.phoneNumber && ADMIN_PHONES.some(ap => user.phoneNumber.endsWith(ap.slice(-8)))) { isAdmin = true; return true; }
   if(user && user.email && user.email.startsWith("wa_")) {
-    const waPh = user.email.replace("wa_", "").replace("@tasawuq.ly", "").replace(/[^0-9]/g, "");
+    const waPh = user.email.split("@")[0].replace("wa_", "").replace(/[^0-9]/g, "");
     if(waPh && ADMIN_PHONES.some(ap => waPh.endsWith(ap.slice(-8)))) { isAdmin = true; return true; }
   }
 
@@ -140,7 +140,7 @@ window.isUserAdmin = function(u, prof){
   if(_dynamicAdminsCache && _dynamicAdminsCache.length > 0){
     const uEm = (user && user.email) ? user.email.toLowerCase() : "";
     const pEm = (p && p.email) ? p.email.toLowerCase() : "";
-    const uPh = ((user && user.phoneNumber) || (p && (p.phone || p.local_phone || p.localPhone)) || (user && user.email && user.email.startsWith("wa_") ? user.email.replace("wa_","").replace("@tasawuq.ly","") : "") || "").replace(/\D/g, "");
+    const uPh = ((user && user.phoneNumber) || (p && (p.phone || p.local_phone || p.localPhone)) || (user && user.email && user.email.startsWith("wa_") ? user.email.split("@")[0].replace("wa_","") : "") || "").replace(/\D/g, "");
     const uLast8 = uPh.length >= 8 ? uPh.slice(-8) : "";
 
     for(const adm of _dynamicAdminsCache){
@@ -227,9 +227,14 @@ window.isUserPhoneVerified = function(u, prof){
   return false;
 };
 
-const ABDO_UIDS = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074"];
+const ABDO_UIDS = ["zoSxkP0PGPWx37J6GMQiOjVgiMC3", "NrYY8We8VDgBiEk98bbxvkyfq2N2", "admin_client_1792952590074", "WSnolayKdiTgDvAj5psB4YRtZuG3"];
 const ABDO_AVATAR_URL = "https://i.ibb.co/JwP60ttQ/photo.jpg";
 const ABDO_COVER_URL = "https://i.ibb.co/tP2Br3hW/photo.jpg";
+
+function isAbdoWaEmail(email) {
+  const em = (email || '').toLowerCase().trim();
+  return em === 'wa_218928476784@tasawuq.ly' || em === 'wa_218928476784@tasawuqnow.com';
+}
 
 function isAbdoMedia(url) {
   if (!url || typeof url !== 'string') return false;
@@ -245,7 +250,7 @@ function isAbdoUser(uid) {
     const email = (me.email || '').toLowerCase().trim();
     if (email === 'abdoalk73@gmail.com') return true;
     if (me.phoneNumber === '+218928476784') return true;
-    if (email === 'wa_218928476784@tasawuq.ly') return true;
+    if (isAbdoWaEmail(email)) return true;
   }
   return false;
 }
@@ -259,12 +264,12 @@ function isAbdoAccount(user, prof) {
     const email = (user.email || '').toLowerCase().trim();
     if (email === 'abdoalk73@gmail.com') return true;
     if (user.phoneNumber === '+218928476784') return true;
-    if (email === 'wa_218928476784@tasawuq.ly') return true;
+    if (isAbdoWaEmail(email)) return true;
     return false;
   }
   if (prof) {
     const profEmail = (prof.email || '').toLowerCase().trim();
-    if (profEmail === 'abdoalk73@gmail.com') return true;
+    if (profEmail === 'abdoalk73@gmail.com' || isAbdoWaEmail(profEmail)) return true;
     return false;
   }
   return false;
@@ -273,12 +278,17 @@ window.isAbdoAccount = isAbdoAccount;
 
 const ABDO_CANONICAL_WALLET_UID = "NrYY8We8VDgBiEk98bbxvkyfq2N2";
 function getCanonicalWalletUid(uid, user, prof) {
-  if (isAbdoUser(uid) || isAbdoAccount(user, prof)) return ABDO_CANONICAL_WALLET_UID;
-  const ph = String((prof && (prof.phone || prof.userPhone)) || (user && user.phoneNumber) || "").replace(/[^0-9]/g, "");
+  const me = user || ((typeof auth !== 'undefined' && auth && auth.currentUser && auth.currentUser.uid === uid) ? auth.currentUser : null);
+  const effectiveProf = prof || ((typeof auth !== 'undefined' && auth && auth.currentUser && auth.currentUser.uid === uid && typeof myProfile !== 'undefined') ? myProfile : null);
+  if (isAbdoUser(uid) || isAbdoAccount(me, effectiveProf)) return ABDO_CANONICAL_WALLET_UID;
+  const ph = String((effectiveProf && (effectiveProf.phone || effectiveProf.userPhone)) || (me && me.phoneNumber) || "").replace(/[^0-9]/g, "");
   if (ph.endsWith("928476784")) return ABDO_CANONICAL_WALLET_UID;
-  const em = String((prof && prof.email) || (user && user.email) || "").toLowerCase().trim();
+  const em = String((effectiveProf && effectiveProf.email) || (me && me.email) || "").toLowerCase().trim();
   if (em === "abdoalk73@gmail.com" || em.startsWith("wa_218928476784@")) return ABDO_CANONICAL_WALLET_UID;
-  return uid;
+  const linkedMaster = (effectiveProf && (effectiveProf.originalUid || effectiveProf.original_uid))
+    || (window._linkedProfileState && window._linkedProfileState.userUid === uid && window._linkedProfileState.masterUid)
+    || (window.sellersProfileCache && window.sellersProfileCache[uid] && (window.sellersProfileCache[uid].originalUid || window.sellersProfileCache[uid].original_uid));
+  return linkedMaster || uid;
 }
 window.getCanonicalWalletUid = getCanonicalWalletUid;
 
@@ -385,6 +395,7 @@ window.getCandidateUids = function(uid){
   if(uid && typeof uid === 'string') list.push(uid);
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser : null;
   const prof = (typeof myProfile !== 'undefined') ? myProfile : null;
+  const lState = (typeof window !== 'undefined' && window._linkedProfileState) ? window._linkedProfileState : null;
 
   // تحديد ما إذا كان المعرف المطلوب يخص المستخدم الحالي المسجل دخوله
   const isTargetCurrent = !uid || 
@@ -392,37 +403,32 @@ window.getCandidateUids = function(uid){
     (prof && uid === prof.id) ||
     (prof && (uid === prof.originalUid || uid === prof.original_uid)) ||
     (prof && Array.isArray(prof.aliasUids) && prof.aliasUids.includes(uid)) ||
-    (prof && Array.isArray(prof.alias_uids) && prof.alias_uids.includes(uid));
+    (prof && Array.isArray(prof.alias_uids) && prof.alias_uids.includes(uid)) ||
+    (lState && (uid === lState.userUid || uid === lState.masterUid || (Array.isArray(lState.aliasUids) && lState.aliasUids.includes(uid))));
 
   if(isTargetCurrent){
     if(me && me.uid && !list.includes(me.uid)) list.push(me.uid);
     if(prof && prof.id && !list.includes(prof.id)) list.push(prof.id);
-    const oUid = prof && (prof.originalUid || prof.original_uid);
+    const oUid = (prof && (prof.originalUid || prof.original_uid)) || (lState && lState.masterUid);
     if(oUid && !list.includes(oUid)) list.push(oUid);
 
-    const aliases = (prof && (prof.aliasUids || prof.alias_uids)) || [];
-    if(Array.isArray(aliases)){
-      aliases.forEach(a => { if(a && !list.includes(a)) list.push(a); });
-    }
+    const aliases = [].concat((prof && (prof.aliasUids || prof.alias_uids)) || [], (lState && lState.aliasUids) || []);
+    aliases.forEach(a => { if(a && !list.includes(a)) list.push(a); });
 
     const isAbdo = (typeof isAbdoAccount === 'function')
                    ? isAbdoAccount(me, prof)
-                   : (list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                      list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
+                   : (list.some(u => ABDO_UIDS.includes(u)) ||
                       (me && me.email && me.email.toLowerCase() === 'abdoalk73@gmail.com') ||
-                      (me && me.email === 'wa_218928476784@tasawuq.ly') ||
+                      (me && isAbdoWaEmail(me.email)) ||
                       (me && me.phoneNumber === '+218928476784'));
 
     if(isAbdo){
-      if(!list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) list.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-      if(!list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) list.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-      if(!list.includes('admin_client_1792952590074')) list.push('admin_client_1792952590074');
+      ABDO_UIDS.forEach(au => { if(!list.includes(au)) list.push(au); });
     }
   } else {
     // المعرف المطلوب يخص بائعاً آخر - لا نخلطه أبداً مع المستخدم الحالي
-    if(uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2'){
-      if(!list.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) list.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-      if(!list.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) list.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
+    if(ABDO_UIDS.includes(uid)){
+      ABDO_UIDS.forEach(au => { if(!list.includes(au)) list.push(au); });
     }
     const cached = window.sellersProfileCache && window.sellersProfileCache[uid];
     if(cached){
@@ -517,84 +523,75 @@ window.resolveAndSyncUserProfile = async function(user){
   // Check if this is genuinely Abdo Alkera
   const isAbdo = (typeof isAbdoAccount === 'function')
                  ? isAbdoAccount(user, null)
-                 : (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                    user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
+                 : (ABDO_UIDS.includes(user.uid) ||
                     (user.email && user.email.toLowerCase() === 'abdoalk73@gmail.com') ||
-                    (user.email && user.email === 'wa_218928476784@tasawuq.ly') ||
+                    isAbdoWaEmail(user.email) ||
                     user.phoneNumber === '+218928476784');
 
   if(isAbdo){
     cleanPh = "218928476784";
   }
 
-  // 2. Locate master profile
+  // 2. Locate master profile and collect all linked UIDs for this account
   let master = null;
   let masterUid = user.uid;
+  const linkedUids = new Set([user.uid]);
 
-  // Check if current user.uid already has full data in Firestore
-  try {
-    const curSnap = await getDoc(doc(db, "profiles", user.uid));
-    if(curSnap && curSnap.exists()){
-      const d = curSnap.data() || {};
-      if(d.name && d.name !== "مستخدم" && !d.name.startsWith("wa_") && (d.memberNo != null || d.member_no != null)){
-        master = d;
-        masterUid = user.uid;
-      }
-    }
-  } catch(e){}
-
-  // Check Supabase by user.uid
-  if(!master && sb){
+  if(sb){
     try {
-      const { data: curRows } = await sb.from("profiles").select("*").eq("id", user.uid).limit(1);
-      if(curRows && curRows[0] && curRows[0].name && curRows[0].name !== "مستخدم"){
-        master = objectFromDb(curRows[0]);
-        masterUid = user.uid;
+      const orConds = [`id.eq.${user.uid}`];
+      if(cleanPh) orConds.push(`phone.eq.${cleanPh}`);
+      if(user.email && !user.email.toLowerCase().startsWith("wa_")){
+        orConds.push(`email.eq.${user.email.toLowerCase()}`);
+      }
+      const { data: matchedProfs } = await sb.from("profiles").select("*").or(orConds.join(",")).limit(15);
+      if(Array.isArray(matchedProfs) && matchedProfs.length > 0){
+        matchedProfs.forEach(r => { if(r && r.id) linkedUids.add(r.id); });
+        const bestProf =
+          matchedProfs.find(r => r.email && !String(r.email).toLowerCase().startsWith("wa_") && r.name && r.name !== "مستخدم") ||
+          matchedProfs.find(r => r.member_no != null && r.name && r.name !== "مستخدم") ||
+          matchedProfs.find(r => r.name && r.name !== "مستخدم") ||
+          matchedProfs[0];
+        if(bestProf){
+          master = objectFromDb(bestProf);
+          masterUid = bestProf.id || user.uid;
+        }
       }
     } catch(e){}
+
+    if(cleanPh){
+      try {
+        const { data: pRows } = await sb.from("phones").select("*").eq("phone", cleanPh).limit(5);
+        if(Array.isArray(pRows) && pRows[0] && pRows[0].uid){
+          linkedUids.add(pRows[0].uid);
+          if(!master || masterUid === user.uid || pRows[0].uid !== user.uid){
+            const { data: pProfs } = await sb.from("profiles").select("*").eq("id", pRows[0].uid).limit(1);
+            if(pProfs && pProfs[0] && pProfs[0].name && pProfs[0].name !== "مستخدم"){
+              if(!master || !master.memberNo || (pProfs[0].email && !String(pProfs[0].email).startsWith("wa_"))){
+                master = objectFromDb(pProfs[0]);
+                masterUid = pProfs[0].id;
+              }
+            } else if(!master) {
+              masterUid = pRows[0].uid;
+            }
+          }
+        }
+      } catch(e){}
+    }
   }
 
-  // If not resolved and we have a phone, query phones and profiles in Supabase/Firebase
-  if(!master && cleanPh){
-    // Query phones collection in Firestore
+  // Fallback check via adapter if needed
+  if(!master){
     try {
-      const pSnap = await getDoc(doc(db, "phones", cleanPh));
-      if(pSnap && pSnap.exists()){
-        const pData = pSnap.data();
-        if(pData && pData.uid && pData.uid !== user.uid){
-          const pProfSnap = await getDoc(doc(db, "profiles", pData.uid));
-          if(pProfSnap && pProfSnap.exists()){
-            master = pProfSnap.data();
-            masterUid = pData.uid;
-          }
+      const curSnap = await getDoc(doc(db, "profiles", user.uid));
+      if(curSnap && curSnap.exists()){
+        const d = curSnap.data() || {};
+        if(d.name && d.name !== "مستخدم" && !d.name.startsWith("wa_") && (d.memberNo != null || d.member_no != null)){
+          master = d;
+          masterUid = user.uid;
         }
       }
     } catch(e){}
-
-    // Query Supabase phones directly
-    if(!master && sb){
-      try {
-        const { data: pRows } = await sb.from("phones").select("*").eq("phone", cleanPh).limit(1);
-        if(pRows && pRows[0] && pRows[0].uid){
-          const { data: profRows } = await sb.from("profiles").select("*").eq("id", pRows[0].uid).limit(1);
-          if(profRows && profRows[0] && profRows[0].name){
-            master = objectFromDb(profRows[0]);
-            masterUid = profRows[0].id;
-          }
-        }
-      } catch(e){}
-    }
-
-    // Query Supabase profiles directly by phone
-    if(!master && sb){
-      try {
-        const { data: profByPhone } = await sb.from("profiles").select("*").eq("phone", cleanPh).limit(1);
-        if(profByPhone && profByPhone[0] && profByPhone[0].name){
-          master = objectFromDb(profByPhone[0]);
-          masterUid = profByPhone[0].id;
-        }
-      } catch(e){}
-    }
   }
 
   // Master profile resolution for Abdo
@@ -638,6 +635,10 @@ window.resolveAndSyncUserProfile = async function(user){
 
   if(!master && !isAbdo) return myProfile;
 
+  const resolvedAliases = isAbdo
+    ? Array.from(new Set([...ABDO_UIDS, ...linkedUids, user.uid]))
+    : Array.from(new Set([masterUid, user.uid, ...linkedUids]));
+
   const finalName = (master && master.name && master.name !== "مستخدم" && (isAbdo || (master.name !== "Abdo Alkera" && !master.name.includes("Alkera"))))
                     ? master.name
                     : (isAbdo ? "Abdo Alkera" : (user.displayName || "عضو تسوق الآن"));
@@ -653,7 +654,7 @@ window.resolveAndSyncUserProfile = async function(user){
   const finalCover = (master && master.cover && (!isAbdoMedia(master.cover) || isAbdo)) ? master.cover : (isAbdo ? "https://i.ibb.co/tP2Br3hW/photo.jpg" : null);
   const finalEmail = (master && master.email && !master.email.startsWith("wa_")) ? master.email : (user.email || (isAbdo ? "abdoalk73@gmail.com" : ""));
 
-  // Set in memory immediately
+  // Set in memory immediately & persist linking state against listener overwrites
   if(!myProfile) myProfile = {};
   myProfile.id = user.uid;
   myProfile.name = finalName;
@@ -668,8 +669,20 @@ window.resolveAndSyncUserProfile = async function(user){
   myProfile.email = finalEmail;
   myProfile.originalUid = masterUid;
   myProfile.original_uid = masterUid;
-  myProfile.aliasUids = isAbdo ? ["NrYY8We8VDgBiEk98bbxvkyfq2N2", "zoSxkP0PGPWx37J6GMQiOjVgiMC3"] : [masterUid, user.uid];
-  myProfile.alias_uids = myProfile.aliasUids;
+  myProfile.aliasUids = resolvedAliases;
+  myProfile.alias_uids = resolvedAliases;
+
+  window._linkedProfileState = {
+    userUid: user.uid,
+    masterUid: masterUid,
+    aliasUids: resolvedAliases,
+    phone: finalPhone,
+    email: finalEmail,
+    name: finalName,
+    username: finalUsername,
+    memberNo: finalMemberNo,
+    storeId: finalStoreId
+  };
 
   // علامة التوثيق الفورية بالواتساب ورقم الهاتف
   const isVerified = (typeof window.isUserPhoneVerified === 'function') ? window.isUserPhoneVerified(user, myProfile) : true;
@@ -685,71 +698,58 @@ window.resolveAndSyncUserProfile = async function(user){
     } catch(e){}
   }
   if(finalAvatar) {
-    try { localStorage.setItem("tasawuq_avatar_" + user.uid, finalAvatar); } catch(e){}
-    try { localStorage.setItem("tasawuq_avatar_" + masterUid, finalAvatar); } catch(e){}
+    resolvedAliases.forEach(au => { try { localStorage.setItem("tasawuq_avatar_" + au, finalAvatar); } catch(e){} });
   }
   if(finalCover) {
-    try { localStorage.setItem("tasawuq_cover_" + user.uid, finalCover); } catch(e){}
-    try { localStorage.setItem("tasawuq_cover_" + masterUid, finalCover); } catch(e){}
+    resolvedAliases.forEach(au => { try { localStorage.setItem("tasawuq_cover_" + au, finalCover); } catch(e){} });
   }
 
   // Update seller cache so any view of this profile across the app is immediate
   if(!window.sellersProfileCache) window.sellersProfileCache = {};
-  window.sellersProfileCache[user.uid] = { ...(window.sellersProfileCache[user.uid] || {}), ...myProfile };
-  if(masterUid !== user.uid){
-    window.sellersProfileCache[masterUid] = { ...(window.sellersProfileCache[masterUid] || {}), ...myProfile };
-  }
+  resolvedAliases.forEach(au => {
+    window.sellersProfileCache[au] = { ...(window.sellersProfileCache[au] || {}), ...myProfile, id: au };
+  });
 
-  // Sync to Firestore under both current UID and master UID
-  if(typeof db !== 'undefined' && db && typeof setDoc === 'function'){
-    const fsProfileData = {
-      name: finalName,
-      username: finalUsername,
-      phone: finalPhone,
-      localPhone: (typeof formatCallPhone === 'function' ? formatCallPhone(finalPhone) : finalPhone),
-      memberNo: finalMemberNo,
-      avatar: finalAvatar,
-      cover: finalCover,
-      email: finalEmail,
-      storeId: finalStoreId,
-      originalUid: masterUid,
-      aliasUids: isAbdo ? ["NrYY8We8VDgBiEk98bbxvkyfq2N2", "zoSxkP0PGPWx37J6GMQiOjVgiMC3"] : [masterUid, user.uid],
-      phone_verified: isVerified,
-      whatsapp_verified: isVerified,
-      updatedAt: Date.now()
-    };
-    setDoc(doc(db, "profiles", user.uid), fsProfileData, { merge: true }).catch(()=>{});
-    if(masterUid !== user.uid){
-      setDoc(doc(db, "profiles", masterUid), fsProfileData, { merge: true }).catch(()=>{});
-    }
-    if(finalPhone){
-      setDoc(doc(db, "phones", finalPhone), {
-        phone: finalPhone,
-        uid: masterUid,
-        email: finalEmail,
-        localPhone: (typeof formatCallPhone === 'function' ? formatCallPhone(finalPhone) : finalPhone),
-        linkedAt: Date.now()
-      }, { merge: true }).catch(()=>{});
-    }
-  }
-
-  // Update master profile in Supabase
+  // Update master profile & phone link cleanly in Supabase using ONLY valid columns
   if(sb && masterUid){
-    const cleanSupabaseProfile = {
+    const cleanMasterProfile = {
       id: masterUid,
       name: finalName,
-      username: finalUsername,
-      phone: finalPhone,
+      username: finalUsername || null,
+      phone: finalPhone || null,
       member_no: finalMemberNo,
       store_id: finalStoreId,
       avatar: finalAvatar,
-      email: finalEmail,
+      email: (finalEmail && !finalEmail.startsWith("wa_")) ? finalEmail : null,
       updated_at: Date.now()
     };
-    sb.from("profiles").upsert(cleanSupabaseProfile, { onConflict: "id" }).catch(()=>{});
+    sb.from("profiles").upsert(cleanMasterProfile, { onConflict: "id" }).catch(()=>{});
+
+    // If current session uses an alias UID (e.g. phone UID), keep minimal linked row without duplicating unique columns (member_no/phone/username)
+    if(user.uid !== masterUid){
+      const aliasProfileRow = {
+        id: user.uid,
+        name: finalName,
+        store_id: finalStoreId,
+        avatar: finalAvatar,
+        email: (finalEmail && !finalEmail.startsWith("wa_")) ? finalEmail : null,
+        updated_at: Date.now()
+      };
+      sb.from("profiles").upsert(aliasProfileRow, { onConflict: "id" }).catch(()=>{});
+    }
+
+    if(finalPhone && isVerified){
+      sb.from("phones").upsert({
+        phone: finalPhone,
+        uid: masterUid,
+        email: (finalEmail && !finalEmail.startsWith("wa_")) ? finalEmail : (user.email || ""),
+        local_phone: (typeof formatCallPhone === 'function' ? formatCallPhone(finalPhone) : finalPhone),
+        linked_at: Date.now()
+      }, { onConflict: "phone" }).catch(()=>{});
+    }
   }
 
-  // Sync wallet balance
+  // Read unified wallet balance (NEVER run RLS-blocked user_wallet upserts from browser)
   let masterBal = null;
   try {
     const wal = await getUserWallet(user.uid);
@@ -757,42 +757,6 @@ window.resolveAndSyncUserProfile = async function(user){
   } catch(e){}
   if(masterBal != null){
     if(typeof updateWalletUI === 'function') updateWalletUI(masterBal);
-    if(sb){
-      sb.from("feedback").upsert({
-        id: "wallet_" + user.uid,
-        type: "user_wallet",
-        message: JSON.stringify({ balance: masterBal, updatedAt: Date.now() }),
-        uid: user.uid,
-        user_name: finalName,
-        user_phone: finalPhone,
-        updated_at: Date.now()
-      }, { onConflict: "id" }).catch(()=>{});
-      if(masterUid !== user.uid){
-        sb.from("feedback").upsert({
-          id: "wallet_" + masterUid,
-          type: "user_wallet",
-          message: JSON.stringify({ balance: masterBal, updatedAt: Date.now() }),
-          uid: masterUid,
-          user_name: finalName,
-          user_phone: finalPhone,
-          updated_at: Date.now()
-        }, { onConflict: "id" }).catch(()=>{});
-      }
-    }
-    if(typeof db !== 'undefined' && db && typeof setDoc === 'function'){
-      setDoc(doc(db, "feedback", "wallet_" + user.uid), {
-        id: "wallet_" + user.uid,
-        type: "user_wallet",
-        message: JSON.stringify({ balance: masterBal, updatedAt: Date.now() })
-      }, { merge: true }).catch(()=>{});
-      if(masterUid !== user.uid){
-        setDoc(doc(db, "feedback", "wallet_" + masterUid), {
-          id: "wallet_" + masterUid,
-          type: "user_wallet",
-          message: JSON.stringify({ balance: masterBal, updatedAt: Date.now() })
-        }, { merge: true }).catch(()=>{});
-      }
-    }
   }
 
   // Update linked email badge in UI immediately
@@ -808,25 +772,24 @@ window.resolveAndSyncUserProfile = async function(user){
     }
   }
 
-  // Sync avatar & cover
+  // Sync avatar & cover across ALL linked alias UIDs
   let loadedAvatar = finalAvatar || null;
   let loadedCover = null;
   if(sb){
     try {
-      const mediaIds = ["avatar_" + masterUid, "cover_" + masterUid, "avatar_" + user.uid, "cover_" + user.uid];
+      const mediaIds = resolvedAliases.flatMap(u => ["avatar_" + u, "cover_" + u]);
       const { data: mediaRows } = await sb.from("feedback").select("id,message").in("id", mediaIds);
       if(mediaRows && mediaRows.length){
         mediaRows.forEach(item => {
+          if(!isAbdo && isAbdoMedia(item.message)) return;
           if(item.id.startsWith("avatar") && item.message){
-            if(!loadedAvatar) loadedAvatar = item.message;
-            myProfile.avatar = item.message;
-            try { localStorage.setItem("tasawuq_avatar_" + user.uid, item.message); } catch(e){}
-            try { localStorage.setItem("tasawuq_avatar_" + masterUid, item.message); } catch(e){}
+            if(!loadedAvatar || item.id === "avatar_" + masterUid) loadedAvatar = item.message;
+            myProfile.avatar = loadedAvatar;
+            resolvedAliases.forEach(au => { try { localStorage.setItem("tasawuq_avatar_" + au, loadedAvatar); } catch(e){} });
           } else if(item.id.startsWith("cover") && item.message){
-            if(!loadedCover) loadedCover = item.message;
-            myProfile.cover = item.message;
-            try { localStorage.setItem("tasawuq_cover_" + user.uid, item.message); } catch(e){}
-            try { localStorage.setItem("tasawuq_cover_" + masterUid, item.message); } catch(e){}
+            if(!loadedCover || item.id === "cover_" + masterUid) loadedCover = item.message;
+            myProfile.cover = loadedCover;
+            resolvedAliases.forEach(au => { try { localStorage.setItem("tasawuq_cover_" + au, loadedCover); } catch(e){} });
           }
         });
       }
@@ -5749,13 +5712,15 @@ function featuredDaysLeft(p){if(!isPostFeatured(p))return 0;return Math.ceil((p.
 
 function getStatus(p){return p.status||"approved";}
 
-function getExpiresAt(p){if(p && p.expiresAt) return p.expiresAt;if(p && p.createdAt) return p.createdAt + POST_DURATION_MS;return null;}
+function isStoreProduct(p){return !!(p && (p.storeId || p.store_id || p.isStore || p.is_store));}
 
-function isExpired(p){const e=getExpiresAt(p);if(!e)return false;return e < Date.now();}
+function getExpiresAt(p){if(isStoreProduct(p)) return null;if(p && p.expiresAt) return p.expiresAt;if(p && p.createdAt) return p.createdAt + POST_DURATION_MS;return null;}
 
-function daysLeft(p){const e=getExpiresAt(p);if(!e)return null;return Math.ceil((e-Date.now())/(24*60*60*1000));}
+function isExpired(p){if(isStoreProduct(p)) return false;const e=getExpiresAt(p);if(!e)return false;return e < Date.now();}
 
-function expiredGracePassed(p){const e=getExpiresAt(p);if(!e)return false;const graceEnd=e+EXPIRED_GRACE_DAYS*24*60*60*1000;return Date.now()>graceEnd;}
+function daysLeft(p){if(isStoreProduct(p)) return null;const e=getExpiresAt(p);if(!e)return null;return Math.ceil((e-Date.now())/(24*60*60*1000));}
+
+function expiredGracePassed(p){if(isStoreProduct(p)) return false;const e=getExpiresAt(p);if(!e)return false;const graceEnd=e+EXPIRED_GRACE_DAYS*24*60*60*1000;return Date.now()>graceEnd;}
 
 function isWanted(p){return p && p.adType==="wanted";}
 
@@ -7089,6 +7054,10 @@ async function loadPostsBatch(isInitial = false) {
     updateCartUI();
 
     updateCompareUI();
+
+    if (isInitial && typeof window.syncAllStorePosts === "function") {
+      window.syncAllStorePosts();
+    }
 
   } catch (err) {
 
@@ -8725,7 +8694,11 @@ if (_postSelectedVideoFile) {
 }
 
 if(wasEditing){
-  const existingExpires = (oldPost && oldPost.expiresAt) ? Number(oldPost.expiresAt) : (Date.now() + POST_DURATION_MS);
+  const isEditingStoreItem = !!(oldPost && (oldPost.storeId || oldPost.store_id));
+  const STORE_PRODUCT_DURATION_MS = 3650 * 24 * 60 * 60 * 1000;
+  const existingExpires = isEditingStoreItem
+    ? (Date.now() + STORE_PRODUCT_DURATION_MS)
+    : ((oldPost && oldPost.expiresAt) ? Number(oldPost.expiresAt) : (Date.now() + POST_DURATION_MS));
   const existingOrigData = (oldPost && oldPost.originalData && typeof oldPost.originalData === "object") ? oldPost.originalData : {};
 
   const upd = {
@@ -8811,8 +8784,8 @@ if(wasEditing){
 else{
 
   const now=Date.now();
-
-  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+POST_DURATION_MS,views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
+  const STORE_PRODUCT_DURATION_MS = 3650 * 24 * 60 * 60 * 1000;
+  const base={title,price:priceType==="contact"?null:Number(price),priceType:priceType,negotiable:negotiable,originalPrice:finalOriginalPrice,category,brand,city,description,phone,images,adType,subCategory,specs,originalData:{specs},keywords:postKeywords,status:"pending",createdAt:now,expiresAt:now+(isStore?STORE_PRODUCT_DURATION_MS:POST_DURATION_MS),views:0,whatsappClicks:0,favoritesCount:0,featured:false,featuredUntil:0,featuredPlan:null,termsAcceptedAt:now,sold:false,soldAt:null};
 
   if (finalVideoUrl) {
     base.videoUrl = finalVideoUrl;
@@ -10340,6 +10313,10 @@ window.submitRestaurantDirectOrder=async()=>{
 
     const totalToPay = cartTotalPrice();
 
+    const orderNum=Math.floor(100+Math.random()*900);
+
+    const orderId='order_'+Date.now()+'_'+orderNum;
+
     let walletDebitRes = null;
 
     if(paymentMethod === "wallet"){
@@ -10376,7 +10353,14 @@ window.submitRestaurantDirectOrder=async()=>{
 
         `دفع قيمة طلبية مطعم (${cart.storeName || "المطعم"})`,
 
-        { storeId: cart.storeId, storeName: cart.storeName || "المطعم", txType: "order_payment" }
+        {
+          storeId: cart.storeId,
+          storeName: cart.storeName || "المطعم",
+          txType: "order_payment",
+          orderNo: String(orderNum),
+          userPhone: (myProfile && myProfile.phone) || custPhone || "",
+          userName: (myProfile && myProfile.name) || custName || ""
+        }
 
       );
 
@@ -10391,10 +10375,6 @@ window.submitRestaurantDirectOrder=async()=>{
       }
 
     }
-
-    const orderNum=Math.floor(100+Math.random()*900);
-
-    const orderId='order_'+Date.now()+'_'+orderNum;
 
     const store=allStores.find(s=>s.id===cart.storeId);
 
@@ -12948,9 +12928,46 @@ window.handleFilesSelected=()=>{const input=document.getElementById("imageFile")
 
 let storesLoadedInitially = false;
 
+let _storePostsSyncPromise = null;
+window.syncAllStorePosts = async function(force = false){
+  if(_storePostsSyncPromise && !force) return _storePostsSyncPromise;
+  _storePostsSyncPromise = (async () => {
+    try {
+      const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+      if(!sb) return;
+      const { data, error } = await sb
+        .from("posts")
+        .select("*")
+        .not("store_id", "is", null)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if(!error && Array.isArray(data)){
+        data.forEach(sp => {
+          const mapped = (typeof objectFromDb === 'function') ? objectFromDb(sp) : sp;
+          const idx = allPosts.findIndex(p => p.id === mapped.id);
+          if(idx >= 0) allPosts[idx] = mapped;
+          else allPosts.push(mapped);
+        });
+        window.allPosts = allPosts;
+        const ss = document.getElementById("storesScreen");
+        if(ss && !ss.classList.contains("hidden")) renderStoresList();
+        if(typeof home !== 'undefined' && home && !home.classList.contains("hidden")) renderPosts();
+      }
+    } catch(e){
+      console.warn("syncAllStorePosts notice:", e);
+    } finally {
+      _storePostsSyncPromise = null;
+    }
+  })();
+  return _storePostsSyncPromise;
+};
+
 function startStoresListener(){
 
   if(unsubStores)return;
+
+  if(typeof window.syncAllStorePosts === 'function') window.syncAllStorePosts();
 
   unsubStores=onSnapshot(collection(db,"stores"),snap=>{
 
@@ -13015,6 +13032,7 @@ window.openStores=(mode='stores',skipHistory)=>{
   }
 
   if(!unsubStores) startStoresListener();
+  if(typeof window.syncAllStorePosts === 'function') window.syncAllStorePosts();
 
   renderStoresList();
 
@@ -15807,6 +15825,26 @@ window.confirmPvOtp = async function(){
   }
 
   try {
+    const sb = window.supabase || supabase;
+    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid];
+
+    // Check if an older account (e.g. Phone login) already used this OTP-verified phone number
+    let primaryUid = me.uid;
+    if(sb){
+      try {
+        const { data: pExist } = await sb.from("phones").select("*").eq("phone", cleanPhone).limit(5);
+        if(Array.isArray(pExist)){
+          pExist.forEach(r => { if(r && r.uid && !candUids.includes(r.uid)) candUids.push(r.uid); });
+          const firstUid = pExist[0] && pExist[0].uid;
+          if(firstUid && firstUid !== me.uid) primaryUid = firstUid;
+        }
+        const { data: profExist } = await sb.from("profiles").select("id,email").eq("phone", cleanPhone).limit(10);
+        if(Array.isArray(profExist)){
+          profExist.forEach(r => { if(r && r.id && !candUids.includes(r.id)) candUids.push(r.id); });
+        }
+      } catch(e){}
+    }
+
     const updateData = {
       phone: cleanPhone,
       local_phone: localPhone,
@@ -15814,14 +15852,16 @@ window.confirmPvOtp = async function(){
       whatsapp_verified: true,
       updated_at: now
     };
+    const safeSupaProfileUpdate = {
+      phone: cleanPhone,
+      updated_at: now
+    };
 
-    const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid];
-    const sb = window.supabase || supabase;
     if(sb){
-      await sb.from("profiles").update(updateData).in("id", candUids).catch(()=>{});
+      await sb.from("profiles").update(safeSupaProfileUpdate).eq("id", primaryUid).catch(()=>{});
       await sb.from("phones").upsert({
         phone: cleanPhone,
-        uid: me.uid,
+        uid: primaryUid,
         email: me.email || ("wa_" + cleanPhone + "@tasawuq.ly"),
         local_phone: localPhone,
         linked_at: now
@@ -15829,12 +15869,10 @@ window.confirmPvOtp = async function(){
     }
 
     if(typeof db !== 'undefined' && db && typeof setDoc === 'function'){
-      candUids.forEach(u => {
-        setDoc(doc(db, "profiles", u), updateData, { merge: true }).catch(()=>{});
-      });
+      setDoc(doc(db, "profiles", primaryUid), updateData, { merge: true }).catch(()=>{});
       setDoc(doc(db, "phones", cleanPhone), {
         phone: cleanPhone,
-        uid: me.uid,
+        uid: primaryUid,
         email: me.email || "",
         localPhone: localPhone,
         linkedAt: now
@@ -15847,6 +15885,18 @@ window.confirmPvOtp = async function(){
     myProfile.local_phone = localPhone;
     myProfile.phone_verified = true;
     myProfile.whatsapp_verified = true;
+    myProfile.originalUid = primaryUid;
+    myProfile.original_uid = primaryUid;
+    myProfile.aliasUids = Array.from(new Set(candUids));
+    myProfile.alias_uids = myProfile.aliasUids;
+    window._linkedProfileState = {
+      ...(window._linkedProfileState || {}),
+      userUid: me.uid,
+      masterUid: primaryUid,
+      aliasUids: myProfile.aliasUids,
+      phone: cleanPhone
+    };
+    if(typeof setupUserWalletListener === 'function') setupUserWalletListener(me.uid);
 
     // تحديث شارة التوثيق في البروفايل
     const phvEl = document.getElementById("accountPhoneVerifiedBadge");
@@ -16179,13 +16229,15 @@ window.openAccount=(skipHistory)=>{
     const me = auth.currentUser;
     const isAbdo = (typeof isAbdoAccount === 'function')
                    ? isAbdoAccount(me, myProfile)
-                   : (me.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                      me.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                      (me.email && me.email.toLowerCase() === 'abdoalk73@gmail.com') ||
-                      (me.email && me.email === 'wa_218928476784@tasawuq.ly') ||
+                   : (ABDO_UIDS.includes(me.uid) ||
+                      (me.email && (me.email.toLowerCase() === 'abdoalk73@gmail.com' || isAbdoWaEmail(me.email))) ||
                       me.phoneNumber === '+218928476784');
-    const masterUid = (isAbdo && myProfile && (myProfile.originalUid || myProfile.original_uid)) || (isAbdo ? 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' : me.uid);
-    const candUids = isAbdo ? (typeof window.getCandidateUids === 'function' ? window.getCandidateUids(me.uid) : [me.uid, masterUid]) : [me.uid];
+    const masterUid = (myProfile && (myProfile.originalUid || myProfile.original_uid))
+      || (window._linkedProfileState && window._linkedProfileState.userUid === me.uid && window._linkedProfileState.masterUid)
+      || (isAbdo ? ABDO_CANONICAL_WALLET_UID : me.uid);
+    const candUids = (typeof window.getCandidateUids === 'function')
+      ? window.getCandidateUids(me.uid)
+      : (masterUid && masterUid !== me.uid ? [me.uid, masterUid] : [me.uid]);
 
     if (!isAbdo && myProfile) {
       if (isAbdoMedia(myProfile.avatar)) myProfile.avatar = null;
@@ -16214,8 +16266,8 @@ window.openAccount=(skipHistory)=>{
     if (!isAbdo && unameVal === "abd") unameVal = "";
     if (!isAbdo && memberNoVal === 1001) memberNoVal = null;
 
-    let avUrl = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + me.uid) || (isAbdo ? localStorage.getItem("tasawuq_avatar_" + masterUid) : "");
-    let covUrl = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + me.uid) || (isAbdo ? localStorage.getItem("tasawuq_cover_" + masterUid) : "");
+    let avUrl = (myProfile && myProfile.avatar) || candUids.map(u => localStorage.getItem("tasawuq_avatar_" + u)).find(v => v && (isAbdo || !isAbdoMedia(v))) || "";
+    let covUrl = (myProfile && myProfile.cover) || candUids.map(u => localStorage.getItem("tasawuq_cover_" + u)).find(v => v && (isAbdo || !isAbdoMedia(v))) || "";
 
     if (!isAbdo) {
       if (isAbdoMedia(avUrl)) avUrl = "";
@@ -16285,7 +16337,7 @@ window.openAccount=(skipHistory)=>{
 
     const phvEl = document.getElementById("accountPhoneVerifiedBadge");
     const phvNum = document.getElementById("accountPhoneVerifiedNum");
-    let userPh = (me.phoneNumber ? me.phoneNumber.replace(/[^0-9]/g, '') : (me.email && me.email.startsWith("wa_") ? me.email.replace("wa_", "").replace("@tasawuq.ly", "") : ""));
+    let userPh = (me.phoneNumber ? me.phoneNumber.replace(/[^0-9]/g, '') : (me.email && me.email.startsWith("wa_") ? me.email.split("@")[0].replace("wa_", "").replace(/[^0-9]/g, '') : ""));
     const currentPh = (myProfile && myProfile.phone && (isAbdo || !myProfile.phone.includes("928476784"))) ? myProfile.phone : (isAbdo ? "218928476784" : userPh);
     if(phvEl){
       if(currentPh){
@@ -16756,12 +16808,11 @@ window.saveMyUsername=async()=>{
     if(unEl){unEl.textContent="@"+res.value;unEl.style.display="block";}
 
     const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid];
+    const canonUid = (typeof window.getCanonicalWalletUid === 'function' ? null : null) || (myProfile && (myProfile.originalUid || myProfile.original_uid)) || (window._linkedProfileState && window._linkedProfileState.masterUid) || me.uid;
     const sb = window.supabase || supabase;
-    if(sb) sb.from("profiles").update({ username: res.value }).in("id", candUids).catch(()=>{});
+    if(sb) sb.from("profiles").update({ username: res.value }).eq("id", canonUid).catch(()=>{});
     if(typeof db !== 'undefined' && db){
-      candUids.forEach(u => {
-        setDoc(doc(db,"profiles",u),{username:res.value},{merge:true}).catch(()=>{});
-      });
+      setDoc(doc(db,"profiles",canonUid),{username:res.value},{merge:true}).catch(()=>{});
     }
 
     showToast("✅ تم حفظ اسم المستخدم: @"+res.value,"success");
@@ -17195,8 +17246,10 @@ window.openSeller=async(rawUid,skipHistory)=>{
   if(!skipHistory && typeof pushNavState === 'function') pushNavState({ screen: 'seller', uid: uid }, '#seller-' + uid);
 
   const me = (typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-
-  const isMe = (!!me && me.uid === uid) || (typeof myProfile !== "undefined" && myProfile && myProfile.id === uid) || (window.myProfile && window.myProfile.id === uid);
+  const myCands = (me && typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : (me ? [me.uid] : []);
+  const isMe = (!!me && (me.uid === uid || myCands.includes(uid)))
+    || (typeof myProfile !== "undefined" && myProfile && (myProfile.id === uid || myProfile.originalUid === uid || myProfile.original_uid === uid || (Array.isArray(myProfile.aliasUids) && myProfile.aliasUids.includes(uid))))
+    || (window.myProfile && window.myProfile.id === uid);
 
   const titleEl = document.getElementById("sellerHeaderTitle");
 
@@ -17293,16 +17346,18 @@ window.openSeller=async(rawUid,skipHistory)=>{
 
     if(sb){
 
-      const profileQueryUids = (uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3') ? ['zoSxkP0PGPWx37J6GMQiOjVgiMC3', 'NrYY8We8VDgBiEk98bbxvkyfq2N2'] : [uid];
+      const profileQueryUids = candSellerUids && candSellerUids.length ? candSellerUids : [uid];
       bgTasks.push(
         sb.from("profiles").select("*").in("id", profileQueryUids).then(res => {
           if(res && res.data && res.data.length){
-            prof = res.data.find(d => d.name && d.name !== "مستخدم") || res.data[0];
+            prof = res.data.find(d => d.email && !String(d.email).startsWith("wa_") && d.name && d.name !== "مستخدم")
+              || res.data.find(d => d.name && d.name !== "مستخدم")
+              || res.data[0];
           }
         }).catch(()=>{})
       );
 
-      const candSellerUidsMedia = isAbdoUid ? ['zoSxkP0PGPWx37J6GMQiOjVgiMC3', 'NrYY8We8VDgBiEk98bbxvkyfq2N2'] : [uid];
+      const candSellerUidsMedia = candSellerUids && candSellerUids.length ? candSellerUids : [uid];
       bgTasks.push(
         sb.from("feedback").select("id,message").in("id", candSellerUidsMedia.flatMap(u => ["avatar_" + u, "cover_" + u])).then(res => {
           if(res && res.data && res.data.length){
@@ -17449,9 +17504,12 @@ function renderSeller(uid,prof,ratings,ratingsFailed,allRatings,followersCount,f
 window._currentSellerUid = uid;
 const box=document.getElementById("sellerContent");
 const me=(typeof auth !== 'undefined' && auth && auth.currentUser) || null;
-const isMe=(!!me && me.uid === uid) || (typeof myProfile !== "undefined" && myProfile && myProfile.id === uid) || (window.myProfile && window.myProfile.id === uid);
-const postsPool = (Array.isArray(window.allPosts) && window.allPosts.some(p => p.uid === uid)) ? window.allPosts : allPosts;
+const myCands=(me && typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : (me ? [me.uid] : []);
+const isMe=(!!me && (me.uid === uid || myCands.includes(uid)))
+  || (typeof myProfile !== "undefined" && myProfile && (myProfile.id === uid || myProfile.originalUid === uid || myProfile.original_uid === uid || (Array.isArray(myProfile.aliasUids) && myProfile.aliasUids.includes(uid))))
+  || (window.myProfile && window.myProfile.id === uid);
 const candSellerUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
+const postsPool = (Array.isArray(window.allPosts) && window.allPosts.some(p => candSellerUids.includes(p.uid))) ? window.allPosts : allPosts;
 // الملف الشخصي للبائع يعرض الإعلانات الشخصية الفردية فقط — استبعاد تام لبضائع ومنتجات وإعلانات المتاجر
 const isPersonalPost = (p) => !p.storeId && !p.store_id && !p.storeName && !p.store_name && !p.isStore && !p.is_store;
 const isAuthorMatch = (p) => isPersonalPost(p) && (candSellerUids.includes(p.uid) || (isMe && typeof window.isPostMine === 'function' && window.isPostMine(p)));
@@ -18296,26 +18354,45 @@ async function reservePhone(user,newPhoneRaw,oldPhoneRaw){
 
 function startProfileListener(user){
 
+  const preservedProf = myProfile;
   stopProfileListener();
+  if(preservedProf && window._linkedProfileState && window._linkedProfileState.userUid === user.uid){
+    myProfile = preservedProf;
+  }
 
   profileCreateTried=false;
 
   let assignAttempted=false;
 
-  unsubProfile=onSnapshot(doc(db,"profiles",user.uid),snap=>{
+  const targetListenUid = (window._linkedProfileState && window._linkedProfileState.userUid === user.uid && window._linkedProfileState.masterUid) || user.uid;
+
+  unsubProfile=onSnapshot(doc(db,"profiles",targetListenUid),snap=>{
 
     if(snap.exists()){
 
-      const prevAvatar = (myProfile && myProfile.avatar) || localStorage.getItem("tasawuq_avatar_" + user.uid);
-      const prevCover = (myProfile && myProfile.cover) || localStorage.getItem("tasawuq_cover_" + user.uid);
+      const prevProf = myProfile || {};
+      const lState = window._linkedProfileState || {};
+      const prevAvatar = prevProf.avatar || localStorage.getItem("tasawuq_avatar_" + user.uid);
+      const prevCover = prevProf.cover || localStorage.getItem("tasawuq_cover_" + user.uid);
 
-      myProfile=snap.data() || {};
+      const snapData = snap.data() || {};
+      myProfile = {
+        ...prevProf,
+        ...snapData,
+        id: user.uid,
+        originalUid: snapData.originalUid || snapData.original_uid || prevProf.originalUid || prevProf.original_uid || targetListenUid,
+        original_uid: snapData.original_uid || snapData.originalUid || prevProf.original_uid || prevProf.originalUid || targetListenUid,
+        aliasUids: snapData.aliasUids || snapData.alias_uids || prevProf.aliasUids || prevProf.alias_uids || (lState.userUid === user.uid ? lState.aliasUids : null),
+        alias_uids: snapData.alias_uids || snapData.aliasUids || prevProf.alias_uids || prevProf.aliasUids || (lState.userUid === user.uid ? lState.aliasUids : null)
+      };
+      if(!myProfile.username && lState.userUid === user.uid && lState.username) myProfile.username = lState.username;
+      if(!myProfile.email && lState.userUid === user.uid && lState.email) myProfile.email = lState.email;
+      if(!myProfile.phone && lState.userUid === user.uid && lState.phone) myProfile.phone = lState.phone;
 
       const isAbdo = (typeof window.isAbdoAccount === 'function')
                      ? window.isAbdoAccount(user, myProfile)
-                     : (user.uid === 'zoSxkP0PGPWx37J6GMQiOjVgiMC3' || 
-                        user.uid === 'NrYY8We8VDgBiEk98bbxvkyfq2N2' || 
-                        (user.email && (user.email.toLowerCase() === 'abdoalk73@gmail.com' || user.email === 'wa_218928476784@tasawuq.ly')) ||
+                     : (ABDO_UIDS.includes(user.uid) ||
+                        (user.email && (user.email.toLowerCase() === 'abdoalk73@gmail.com' || isAbdoWaEmail(user.email))) ||
                         user.phoneNumber === '+218928476784');
 
       if(isAbdo){
@@ -18345,7 +18422,7 @@ function startProfileListener(user){
       // مزامنة الصورة والغلاف من السيرفر السحابي فوراً لتعمل عبر جميع الهواتف والأجهزة
       const sbClient = window.supabase || supabase;
       if(sbClient && user && user.uid){
-        const candUids = isAbdo ? ((typeof window.getCandidateUids === 'function') ? window.getCandidateUids(user.uid) : [user.uid]) : [user.uid];
+        const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(user.uid) : [user.uid];
         sbClient.from("feedback").select("id,message").in("id", candUids.flatMap(u => ["avatar_" + u, "cover_" + u])).then(res => {
           if(res && res.data && res.data.length){
             res.data.forEach(item => {
@@ -18426,7 +18503,7 @@ function startProfileListener(user){
 
             if(!pSnap.exists()){
 
-              setDoc(doc(db,"phones",cleanPh),{uid:user.uid,email:user.email||"",phone:cleanPh,localPhone:formatCallPhone(cleanPh),linkedAt:Date.now()},{merge:true}).catch(e=>{});
+              setDoc(doc(db,"phones",cleanPh),{uid:targetListenUid,email:(myProfile.email && !String(myProfile.email).startsWith("wa_")) ? myProfile.email : (user.email||""),phone:cleanPh,localPhone:formatCallPhone(cleanPh),linkedAt:Date.now()},{merge:true}).catch(e=>{});
 
             }
 
@@ -18442,7 +18519,9 @@ function startProfileListener(user){
 
       profileCreateTried=true;
 
-      assignMemberNumber(user).catch(e=>{});
+      if(targetListenUid === user.uid && !(window._linkedProfileState && window._linkedProfileState.memberNo != null)){
+        assignMemberNumber(user).catch(e=>{});
+      }
 
     }
 
@@ -18969,6 +19048,7 @@ updateCartUI();
 isAdmin=false;
 myProfile=null;
 myStore=null;
+window._linkedProfileState=null;
 window._activeWaSession=null;
 try{
   localStorage.removeItem("tasawuq_my_name");
@@ -19430,45 +19510,67 @@ window.confirmWhatsAppOtp = async function(){
       const sb = window.supabase || supabase;
       let existingProfile = null;
 
-      // جلب بيانات البروفايل السابقة إن وُجدت لمنع ضياع الاسم أو اليوزر نيم
+      // جلب بيانات البروفايل السابقة إن وُجدت لمنع ضياع الاسم أو اليوزر نيم أو الرصيد
       let existingPhoneRow = null;
+      const allCandidateProfiles = [];
+      const foundUids = new Set([loggedInUser.uid]);
+      if(isAbdo) ABDO_UIDS.forEach(au => foundUids.add(au));
+
       if(sb){
         try {
-          const { data: pRec } = await sb.from("phones").select("*").eq("phone", cleanPhone).maybeSingle();
-          if(pRec) existingPhoneRow = pRec;
+          const { data: pRecs } = await sb.from("phones").select("*").eq("phone", cleanPhone).limit(5);
+          if(Array.isArray(pRecs) && pRecs[0]){
+            existingPhoneRow = pRecs[0];
+            if(existingPhoneRow.uid) foundUids.add(existingPhoneRow.uid);
+          }
         } catch(e){}
 
         try {
-          const { data } = await sb.from("profiles").select("*").eq("id", loggedInUser.uid).maybeSingle();
-          if(data) existingProfile = data;
+          const orIds = Array.from(foundUids).map(u => `id.eq.${u}`);
+          orIds.push(`phone.eq.${cleanPhone}`);
+          if(isAbdo) orIds.push("email.eq.abdoalk73@gmail.com");
+          const { data: profList } = await sb.from("profiles").select("*").or(orIds.join(",")).limit(15);
+          if(Array.isArray(profList)){
+            profList.forEach(r => {
+              if(r && r.id){
+                foundUids.add(r.id);
+                allCandidateProfiles.push(r);
+              }
+            });
+          }
         } catch(e){}
-        if(!existingProfile){
-          try {
-            const { data: byPhone } = await sb.from("profiles").select("*").eq("phone", cleanPhone).maybeSingle();
-            if(byPhone) existingProfile = byPhone;
-          } catch(e){}
-        }
-        if(!existingProfile && existingPhoneRow && existingPhoneRow.uid){
-          try {
-            const { data: byUid } = await sb.from("profiles").select("*").eq("id", existingPhoneRow.uid).maybeSingle();
-            if(byUid) existingProfile = byUid;
-          } catch(e){}
+
+        if(allCandidateProfiles.length > 0){
+          existingProfile =
+            (isAbdo && allCandidateProfiles.find(r => r.id === ABDO_CANONICAL_WALLET_UID)) ||
+            allCandidateProfiles.find(r => r.email && !String(r.email).toLowerCase().startsWith("wa_") && r.name && r.name !== "مستخدم") ||
+            allCandidateProfiles.find(r => r.member_no != null && r.name && r.name !== "مستخدم") ||
+            allCandidateProfiles.find(r => r.name && r.name !== "مستخدم") ||
+            allCandidateProfiles[0];
         }
       }
 
-      let origUid = (existingProfile && existingProfile.id) || (existingPhoneRow && existingPhoneRow.uid) || null;
+      const origUid = (isAbdo ? ABDO_CANONICAL_WALLET_UID : null)
+        || (existingProfile && existingProfile.id)
+        || (existingPhoneRow && existingPhoneRow.uid)
+        || loggedInUser.uid;
+      foundUids.add(origUid);
+      const aliasList = Array.from(foundUids);
 
       const finalName = (existingProfile && existingProfile.name && existingProfile.name.trim() && existingProfile.name !== "مستخدم")
                         ? existingProfile.name
-                        : ((nameInput?.value || "").trim() || "عضو تسوق الآن");
+                        : (isAbdo ? "Abdo Alkera" : ((nameInput?.value || "").trim() || "عضو تسوق الآن"));
 
-      const finalUsername = (existingProfile && existingProfile.username) ? existingProfile.username : null;
-      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || Math.floor(100000 + Math.random() * 900000);
+      const finalUsername = (existingProfile && existingProfile.username) ? existingProfile.username : (isAbdo ? "abd" : null);
+      const finalMemberNo = (existingProfile && (existingProfile.member_no || existingProfile.memberNo)) || (isAbdo ? 1001 : Math.floor(100000 + Math.random() * 900000));
       const finalStoreId = (existingProfile && (existingProfile.store_id || existingProfile.storeId)) || null;
 
-      let finalAvatar = (existingProfile && existingProfile.avatar) ? existingProfile.avatar : null;
-      let finalCover = (existingProfile && existingProfile.cover) ? existingProfile.cover : null;
-      const finalEmail = (existingProfile && existingProfile.email && !existingProfile.email.startsWith("wa_")) ? existingProfile.email : authEmail;
+      let finalAvatar = (existingProfile && existingProfile.avatar) ? existingProfile.avatar : (isAbdo ? ABDO_AVATAR_URL : null);
+      let finalCover = (existingProfile && existingProfile.cover) ? existingProfile.cover : (isAbdo ? ABDO_COVER_URL : null);
+      const linkedGoogleEmail = (existingProfile && existingProfile.email && !String(existingProfile.email).startsWith("wa_"))
+        ? existingProfile.email
+        : ((existingPhoneRow && existingPhoneRow.email && !String(existingPhoneRow.email).startsWith("wa_")) ? existingPhoneRow.email : (isAbdo ? "abdoalk73@gmail.com" : null));
+      const finalEmail = linkedGoogleEmail || loggedInUser.email || ("wa_" + cleanPhone + "@tasawuqnow.com");
 
       const newProfile = {
         id: loggedInUser.uid,
@@ -19480,7 +19582,7 @@ window.confirmWhatsAppOtp = async function(){
         cover: finalCover,
         email: finalEmail,
         original_uid: origUid,
-        alias_uids: (origUid && origUid !== loggedInUser.uid ? [origUid, loggedInUser.uid] : [loggedInUser.uid]),
+        alias_uids: aliasList,
         phone: cleanPhone,
         local_phone: localPhone,
         phone_verified: true,
@@ -19489,65 +19591,91 @@ window.confirmWhatsAppOtp = async function(){
       };
 
       try {
-        // مزامنة المحفظة الإلكترونية والرصيد من الحساب القديم تلقائياً
-        if(sb && origUid && origUid !== loggedInUser.uid){
-          try{
-            const { data: origWal } = await sb.from("feedback").select("*").eq("id", "wallet_" + origUid).maybeSingle();
-            if(origWal && origWal.message){
-              await sb.from("feedback").upsert({
-                id: "wallet_" + loggedInUser.uid,
-                type: "user_wallet",
-                message: origWal.message,
-                updated_at: now
-              }, { onConflict: "id" }).catch(()=>{});
-              console.log("💰 تم نسخ وتفعيل رصيد المحفظة للحساب الحالي بنجاح");
-            }
-          }catch(e){}
-        }
-
-        // إذا كان للمستخدم حساب سابق بمعرف مختلف، نقوم بربط إعلاناته ومتاجره بالمعرف الحالي
-        if(existingProfile && existingProfile.id && existingProfile.id !== loggedInUser.uid && sb){
-          try {
-            await sb.from("posts").update({ uid: loggedInUser.uid }).eq("uid", existingProfile.id);
-            await sb.from("stores").update({ owner_uid: loggedInUser.uid }).eq("owner_uid", existingProfile.id);
-          } catch(migErr){
-            console.warn("Migration link notice:", migErr);
-          }
-        }
-
-        // حفظ وتحديث في قاعدة بيانات Supabase
+        // حفظ وتحديث في قاعدة بيانات Supabase بالأعمدة الصحيحة فقط (دون كسر قيد الجدول أو استبدال ملكية الحساب الرئيسي)
         if(sb){
-          await sb.from("profiles").upsert(newProfile, { onConflict: "id" }).catch(()=>{});
+          if(origUid !== loggedInUser.uid){
+            await sb.from("profiles").upsert({
+              id: origUid,
+              name: finalName,
+              username: finalUsername,
+              member_no: finalMemberNo,
+              store_id: finalStoreId,
+              avatar: finalAvatar,
+              email: linkedGoogleEmail || null,
+              phone: cleanPhone,
+              updated_at: now
+            }, { onConflict: "id" }).catch(()=>{});
+
+            await sb.from("profiles").upsert({
+              id: loggedInUser.uid,
+              name: finalName,
+              store_id: finalStoreId,
+              avatar: finalAvatar,
+              email: linkedGoogleEmail || null,
+              updated_at: now
+            }, { onConflict: "id" }).catch(()=>{});
+          } else {
+            await sb.from("profiles").upsert({
+              id: loggedInUser.uid,
+              name: finalName,
+              username: finalUsername,
+              member_no: finalMemberNo,
+              store_id: finalStoreId,
+              avatar: finalAvatar,
+              email: finalEmail,
+              phone: cleanPhone,
+              updated_at: now
+            }, { onConflict: "id" }).catch(()=>{});
+          }
+
           await sb.from("phones").upsert({
             phone: cleanPhone,
-            uid: loggedInUser.uid,
-            email: finalEmail,
+            uid: origUid,
+            email: linkedGoogleEmail || finalEmail,
             local_phone: localPhone,
             linked_at: now
           }, { onConflict: "phone" }).catch(()=>{});
+
+          // جلب الصورة والغلاف من جدول feedback لجميع المعرفات المربوطة
+          try {
+            const { data: mRows } = await sb.from("feedback").select("id,message").in("id", aliasList.flatMap(u => ["avatar_" + u, "cover_" + u]));
+            if(Array.isArray(mRows)){
+              mRows.forEach(item => {
+                if(!isAbdo && isAbdoMedia(item.message)) return;
+                if(item.id.startsWith("avatar") && item.message){
+                  if(!finalAvatar || item.id === "avatar_" + origUid) finalAvatar = item.message;
+                } else if(item.id.startsWith("cover") && item.message){
+                  if(!finalCover || item.id === "cover_" + origUid) finalCover = item.message;
+                }
+              });
+            }
+          } catch(e){}
         }
 
-        // حفظ وتحديث في قاعدة بيانات Firebase
-        if(typeof db !== 'undefined' && db && typeof setDoc === 'function'){
-          setDoc(doc(db, "profiles", loggedInUser.uid), newProfile, { merge: true }).catch(()=>{});
-          if(isAbdo){
-            setDoc(doc(db, "profiles", "zoSxkP0PGPWx37J6GMQiOjVgiMC3"), newProfile, { merge: true }).catch(()=>{});
-            setDoc(doc(db, "profiles", "NrYY8We8VDgBiEk98bbxvkyfq2N2"), newProfile, { merge: true }).catch(()=>{});
-          }
-          setDoc(doc(db, "phones", cleanPhone), {
-            phone: cleanPhone,
-            uid: loggedInUser.uid,
-            email: finalEmail,
-            localPhone: localPhone,
-            linkedAt: now
-          }, { merge: true }).catch(()=>{});
-        }
-
-        // تحديث بيانات الذاكرة الحالية فوراً بدون خلط كاش المستخدم السابق
+        // تحديث بيانات الذاكرة الحالية فوراً
         myProfile = {
           ...(existingProfile || {}),
-          ...newProfile
+          ...newProfile,
+          avatar: finalAvatar,
+          cover: finalCover,
+          originalUid: origUid,
+          original_uid: origUid,
+          aliasUids: aliasList,
+          alias_uids: aliasList
         };
+        window._linkedProfileState = {
+          userUid: loggedInUser.uid,
+          masterUid: origUid,
+          aliasUids: aliasList,
+          phone: cleanPhone,
+          email: finalEmail,
+          name: finalName,
+          username: finalUsername || "",
+          memberNo: finalMemberNo,
+          storeId: finalStoreId
+        };
+        if(finalAvatar) aliasList.forEach(au => { try { localStorage.setItem("tasawuq_avatar_" + au, finalAvatar); } catch(e){} });
+        if(finalCover) aliasList.forEach(au => { try { localStorage.setItem("tasawuq_cover_" + au, finalCover); } catch(e){} });
         try { localStorage.setItem("tasawuq_phone_verified_" + loggedInUser.uid, "1"); } catch(e){}
 
         // التحقق من صلاحيات الأدمن فوراً وتفعيلها بالهاتف أو الإيميل
@@ -19578,7 +19706,14 @@ window.confirmWhatsAppOtp = async function(){
           if(phvNum) phvNum.textContent = formatCallPhone(cleanPhone);
         }
 
-        if(typeof updateWalletUI === 'function'){
+        const avCircleEl = document.getElementById("accountAvatarCircle");
+        if(avCircleEl && myProfile.avatar){
+          avCircleEl.innerHTML = `<img src="${escapeHtml(myProfile.avatar)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
+
+        if(typeof setupUserWalletListener === 'function'){
+          setupUserWalletListener(loggedInUser.uid);
+        } else if(typeof updateWalletUI === 'function'){
           getUserWallet(loggedInUser.uid).then(w => updateWalletUI(w.balance)).catch(()=>{});
         }
 
@@ -20787,69 +20922,147 @@ let _walletUnsub = null;
 
 const WALLET_THROTTLE_KEY = "tasawuq_wallet_throttle";
 
-// 1. استرجاع بيانات محفظة المستخدم
+// 1. استرجاع وتوحيد محفظة المستخدم ومعرفها الحقيقي المرجعي
+
+export async function resolveUserWalletState(uid, meta = {}){
+  const fallback = { balance: 0.00, updatedAt: Date.now(), targetUid: uid || '', candUids: uid ? [uid] : [] };
+  if(!uid) return fallback;
+
+  const sb = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+  const candSet = new Set((typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid]);
+
+  const cachedProf = (window.sellersProfileCache && window.sellersProfileCache[uid]) || null;
+  const selfProf = (auth.currentUser && auth.currentUser.uid === uid && typeof myProfile !== 'undefined') ? myProfile : null;
+  const effectiveProf = selfProf || cachedProf || (meta.userPhone ? { phone: meta.userPhone, name: meta.userName } : null);
+
+  const isTargetAbdo =
+    isAbdoUser(uid) ||
+    Array.from(candSet).some(u => ABDO_UIDS.includes(u)) ||
+    (auth.currentUser && auth.currentUser.uid === uid && typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, effectiveProf)) ||
+    String((effectiveProf && (effectiveProf.phone || effectiveProf.userPhone)) || meta.userPhone || '').replace(/[^0-9]/g, '').endsWith('928476784') ||
+    (effectiveProf && String(effectiveProf.email || '').toLowerCase().trim() === 'abdoalk73@gmail.com');
+
+  let primaryUid = isTargetAbdo ? ABDO_CANONICAL_WALLET_UID : null;
+
+  if(isTargetAbdo){
+    ABDO_UIDS.forEach(au => candSet.add(au));
+  } else if(sb){
+    // Expand linked UIDs from Supabase phones/profiles even when session wasn't hydrated yet or for any order/admin lookup
+    try {
+      let cleanPh = String((effectiveProf && (effectiveProf.phone || effectiveProf.local_phone || effectiveProf.localPhone)) || meta.userPhone || '').replace(/[^0-9]/g, '');
+      if(!cleanPh && auth.currentUser && auth.currentUser.uid === uid && auth.currentUser.email){
+        const m = auth.currentUser.email.match(/(?:wa_)?(\d{9,14})/);
+        if(m) cleanPh = m[1];
+      }
+      if(cleanPh && cleanPh.startsWith('0')) cleanPh = '218' + cleanPh.slice(1);
+
+      let realEmail = (effectiveProf && effectiveProf.email && !String(effectiveProf.email).toLowerCase().startsWith('wa_')) ? String(effectiveProf.email).toLowerCase().trim() : '';
+      if(!realEmail && auth.currentUser && auth.currentUser.uid === uid && auth.currentUser.email && !auth.currentUser.email.toLowerCase().startsWith('wa_')){
+        realEmail = auth.currentUser.email.toLowerCase().trim();
+      }
+
+      if(!cleanPh || !realEmail){
+        const { data: uProfs } = await sb.from('profiles').select('id,phone,email,member_no,name').eq('id', uid).limit(1);
+        if(Array.isArray(uProfs) && uProfs[0]){
+          if(!cleanPh && uProfs[0].phone) cleanPh = String(uProfs[0].phone).replace(/[^0-9]/g, '');
+          if(!realEmail && uProfs[0].email && !String(uProfs[0].email).toLowerCase().startsWith('wa_')) realEmail = String(uProfs[0].email).toLowerCase().trim();
+        }
+      }
+
+      if(cleanPh && cleanPh.startsWith('0')) cleanPh = '218' + cleanPh.slice(1);
+
+      if(cleanPh){
+        const { data: pRows } = await sb.from('phones').select('uid,email').eq('phone', cleanPh).limit(5);
+        if(Array.isArray(pRows)){
+          pRows.forEach(r => {
+            if(r && r.uid){
+              candSet.add(r.uid);
+              if(!primaryUid) primaryUid = r.uid;
+            }
+            if(!realEmail && r && r.email && !String(r.email).toLowerCase().startsWith('wa_')){
+              realEmail = String(r.email).toLowerCase().trim();
+            }
+          });
+        }
+      }
+
+      const orFilters = [];
+      if(cleanPh) orFilters.push(`phone.eq.${cleanPh}`);
+      if(realEmail) orFilters.push(`email.eq.${realEmail}`);
+      if(orFilters.length > 0){
+        const { data: relProfs } = await sb.from('profiles').select('id,email,member_no,name').or(orFilters.join(',')).limit(15);
+        if(Array.isArray(relProfs) && relProfs.length > 0){
+          relProfs.forEach(r => { if(r && r.id) candSet.add(r.id); });
+          const googleMaster = relProfs.find(r => r.email && !String(r.email).toLowerCase().startsWith('wa_') && r.name && r.name !== 'مستخدم');
+          if(!primaryUid && googleMaster && googleMaster.id) primaryUid = googleMaster.id;
+        }
+      }
+    } catch(e){}
+  }
+
+  const candUids = Array.from(candSet);
+  const canonicalFallbackUid = primaryUid || getCanonicalWalletUid(uid, auth.currentUser?.uid === uid ? auth.currentUser : null, effectiveProf) || uid;
+  const foundRows = [];
+
+  try {
+    if(sb && candUids.length > 0){
+      const walletIds = candUids.map(u => 'wallet_' + u);
+      const { data: rows } = await sb.from('feedback').select('id, uid, message, updated_at, created_at').in('id', walletIds).limit(20);
+      if(Array.isArray(rows)){
+        for(const r of rows){
+          if(!r || !r.message) continue;
+          try {
+            const p = JSON.parse(r.message);
+            if(p && typeof p.balance === 'number' && !isNaN(p.balance)){
+              const rowUid = String(r.id || '').replace(/^wallet_/, '') || r.uid || uid;
+              const ts = Number(p.updatedAt || r.updated_at || r.created_at || 0);
+              foundRows.push({
+                uid: rowUid,
+                balance: Math.max(0, Math.round(p.balance * 100) / 100),
+                updatedAt: ts
+              });
+            }
+          } catch(e){}
+        }
+      }
+    }
+  } catch(e){
+    console.warn('resolveUserWalletState error:', e);
+  }
+
+  if(isTargetAbdo){
+    const canonRow = foundRows.find(r => r.uid === ABDO_CANONICAL_WALLET_UID);
+    if(canonRow){
+      return { balance: canonRow.balance, updatedAt: canonRow.updatedAt, targetUid: ABDO_CANONICAL_WALLET_UID, candUids };
+    }
+    const positiveRows = foundRows.filter(r => r.balance > 0).sort((a, b) => b.updatedAt - a.updatedAt);
+    if(positiveRows.length > 0){
+      return { balance: positiveRows[0].balance, updatedAt: positiveRows[0].updatedAt, targetUid: ABDO_CANONICAL_WALLET_UID, candUids };
+    }
+    return { balance: 0.00, updatedAt: Date.now(), targetUid: ABDO_CANONICAL_WALLET_UID, candUids };
+  }
+
+  // Non-Abdo: prefer positive wallets so a phantom 0.00 row on an alias UID NEVER overrides real money
+  const positiveRows = foundRows.filter(r => r.balance > 0);
+  if(positiveRows.length > 0){
+    const masterPos = primaryUid ? positiveRows.find(r => r.uid === primaryUid) : null;
+    positiveRows.sort((a, b) => b.updatedAt - a.updatedAt);
+    const chosen = (positiveRows.length === 1) ? positiveRows[0] : (positiveRows[0] || masterPos);
+    return { balance: chosen.balance, updatedAt: chosen.updatedAt, targetUid: chosen.uid, candUids };
+  }
+
+  if(foundRows.length > 0){
+    const masterZero = primaryUid ? foundRows.find(r => r.uid === primaryUid) : null;
+    foundRows.sort((a, b) => b.updatedAt - a.updatedAt);
+    const chosen = masterZero || foundRows[0];
+    return { balance: chosen.balance, updatedAt: chosen.updatedAt, targetUid: primaryUid || chosen.uid, candUids };
+  }
+
+  return { balance: 0.00, updatedAt: Date.now(), targetUid: canonicalFallbackUid, candUids };
+}
 
 export async function getUserWallet(uid){
-  if(!uid) return { balance: 0.00, updatedAt: Date.now() };
-
-  const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  const isTargetAbdo = candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || 
-                       candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || 
-                       (auth.currentUser && auth.currentUser.uid === uid && typeof window.isAbdoAccount === 'function' && window.isAbdoAccount(auth.currentUser, myProfile));
-  if(isTargetAbdo){
-    if(!candUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) candUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-    if(!candUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) candUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-  }
-
-  const candidates = [];
-
-  try{
-    const sb = window.supabase || supabase;
-    if(sb){
-      try{
-        const walletIds = candUids.map(u => "wallet_" + u);
-        const { data: rows } = await sb.from("feedback").select("id, message, updated_at, created_at").in("id", walletIds).limit(10);
-        if(rows && rows.length > 0){
-          for(const r of rows){
-            if(r.message){
-              try{
-                const p = JSON.parse(r.message);
-                if(p && typeof p.balance === "number" && !isNaN(p.balance)){
-                  const ts = Number(p.updatedAt || r.updated_at || r.created_at || 0);
-                  candidates.push({ balance: Math.max(0, Math.round(p.balance * 100) / 100), updatedAt: ts });
-                }
-              }catch(e){}
-            }
-          }
-        }
-      }catch(e){}
-    }
-
-    // Firestore check across candidate UIDs
-    for(const u of candUids){
-      try{
-        const snap = await getDoc(doc(db, "feedback", "wallet_" + u));
-        if(snap && snap.exists()){
-          const raw = snap.data();
-          const parsed = raw.message ? JSON.parse(raw.message) : {};
-          if(typeof parsed.balance === "number" && !isNaN(parsed.balance)){
-            const bal = Math.max(0, Number(parsed.balance));
-            const ts = Number(parsed.updatedAt || raw.updatedAt || raw.createdAt || 0);
-            candidates.push({ balance: Math.round(bal * 100) / 100, updatedAt: ts });
-          }
-        }
-      }catch(e){}
-    }
-
-    if(candidates.length > 0){
-      candidates.sort((a, b) => b.updatedAt - a.updatedAt);
-      return candidates[0];
-    }
-  }catch(e){
-    console.warn("getUserWallet error:", e);
-  }
-
-  return { balance: 0.00, updatedAt: Date.now() };
+  return await resolveUserWalletState(uid);
 }
 
 window.getUserWallet = getUserWallet;
@@ -20958,17 +21171,12 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
   }
 
   // توحيد معرف المحفظة المرجعي (لمنع انقسام الرصيد بين جوجل والواتساب)
-  uid = getCanonicalWalletUid(uid, null, { phone: meta.userPhone, name: meta.userName });
+  const wState = await resolveUserWalletState(uid, meta);
+  uid = wState.targetUid || getCanonicalWalletUid(uid, auth.currentUser?.uid === uid ? auth.currentUser : null, { phone: meta.userPhone, name: meta.userName });
+  const targetCandUids = (wState.candUids && wState.candUids.length) ? wState.candUids : [uid];
 
-  // تحديد كافة المعرفات البديلة للمستخدم المستهدف
-  const targetCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  if(targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || String(meta.userPhone||'').includes('928476784')){
-    if(!targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) targetCandUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-    if(!targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) targetCandUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-  }
-
-  // 1. إذا كان إيداع أدمن أو استرجاع طلبية وتتوفر دالة RPC السريعة المحمية:
-  if((meta.txType === "admin_credit" || meta.txType === "order_refund") && window.supabase && typeof window.supabase.rpc === 'function'){
+  // تنفيذ الإيداع / الاسترجاع ذرياً عبر Supabase RPC
+  if(window.supabase && typeof window.supabase.rpc === 'function'){
     try{
       const adminUid = "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
       const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
@@ -20980,64 +21188,22 @@ export async function creditUserWallet(uid, amount, reason, meta = {}){
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
         p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
       });
-      if(!rpcErr && rpcRes && rpcRes.ok){
+      if(rpcErr) return { ok: false, error: rpcErr.message || "تعذر تحديث المحفظة في الخادم" };
+      if(rpcRes && rpcRes.ok){
         const finalBal = Number(rpcRes.balance);
-
-        // 🛑 تم إلغاء recordWalletTx هنا لأن دالة RPC admin_deposit_wallet قامت بتسجيل الحركة بالفعل في السجل المالي، لمنع تكرار الحركة مرتين
-
         const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
         if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
           updateWalletUI(finalBal);
         }
         return { ok: true, balance: finalBal, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
       }
+      return { ok: false, error: (rpcRes && rpcRes.error) || "فشل تحديث المحفظة" };
     }catch(rpcE){
-      console.warn("RPC admin_deposit_wallet fallback in creditUserWallet:", rpcE);
+      console.error("creditUserWallet RPC error:", rpcE);
+      return { ok: false, error: rpcE.message || "خطأ في الاتصال بالمحفظة" };
     }
   }
-
-  try{
-    const current = await getUserWallet(uid);
-    const oldBalance = current.balance;
-    const newBalance = Math.round((oldBalance + amount) * 100) / 100;
-    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
-    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-    const now = Date.now();
-
-    for(const u of targetCandUids){
-      try{
-        await setDoc(doc(db, "feedback", "wallet_" + u), {
-          id: "wallet_" + u,
-          type: "user_wallet",
-          uid: u,
-          userName: uName,
-          userPhone: uPhone,
-          message: JSON.stringify({ balance: newBalance, updatedAt: now }),
-          updatedAt: now
-        }, { merge: true });
-      }catch(e){}
-      if(window.supabase){
-        try{
-          await window.supabase.from("feedback").update({
-            message: JSON.stringify({ balance: newBalance, updatedAt: now }),
-            updated_at: now
-          }).eq("id", "wallet_" + u);
-        }catch(e){}
-      }
-    }
-
-    const txId = await recordWalletTx(uid, meta.txType, amount, oldBalance, newBalance, reason, meta);
-
-    const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
-    if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
-      updateWalletUI(newBalance);
-    }
-
-    return { ok: true, balance: newBalance, oldBalance, txId };
-  }catch(e){
-    console.error("creditUserWallet error:", e);
-    return { ok: false, error: e.message };
-  }
+  return { ok: false, error: "خدمة المحفظة غير متصلة حالياً" };
 }
 
 // 🔒 تم إلغاء window.creditUserWallet لمنع التلاعب من الكونسول
@@ -21059,15 +21225,10 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
       ADMIN_PHONES.includes((myProfile && myProfile.phone) || '')
     ));
 
-  // توحيد معرف المحفظة المرجعي (لمنع انقسام الرصيد بين جوجل والواتساب)
-  uid = getCanonicalWalletUid(uid, null, { phone: meta.userPhone, name: meta.userName });
-
-  const targetCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(uid) : [uid];
-  if(targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || String(meta.userPhone||'').includes('928476784')){
-    if(!targetCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) targetCandUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-    if(!targetCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) targetCandUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-    if(!targetCandUids.includes('admin_client_1792952590074')) targetCandUids.push('admin_client_1792952590074');
-  }
+  // توحيد معرف المحفظة المرجعي (لمنع انقسام الرصيد أو خلق محفظة 0 وهمية عند الشراء)
+  const wState = await resolveUserWalletState(uid, meta);
+  uid = wState.targetUid || getCanonicalWalletUid(uid, auth.currentUser?.uid === uid ? auth.currentUser : null, { phone: meta.userPhone, name: meta.userName });
+  const targetCandUids = (wState.candUids && wState.candUids.length) ? wState.candUids : [uid];
 
   const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser?.uid) : [auth.currentUser?.uid];
   const isSelf = targetCandUids.some(u => myCandUids.includes(u));
@@ -21077,90 +21238,66 @@ export async function debitUserWallet(uid, amount, reason, meta = {}){
     return { ok: false, error: "لا يمكنك الخصم من محفظة غير محفظتك" };
   }
 
-  // 🛡️ فحص قطعي لرصيد المحفظة أولاً لمنع الخصم بأكثر من الرصيد المتوفر (خاصة في طلبات المطعم)
-  const currentCheck = await getUserWallet(uid);
-  const oldBalCheck = Number(currentCheck.balance || 0);
+  const oldBalCheck = Number(wState.balance || 0);
   if(oldBalCheck < amount && (!isEffectiveAdmin || meta.txType === "order_payment")){
     return { ok: false, error: `الرصيد غير كافٍ (${oldBalCheck.toFixed(2)} د.ل لا تكفي لخصم ${amount.toFixed(2)} د.ل)`, balance: oldBalCheck };
   }
 
-  // 1. الخصم الذري الآمن عبر Supabase RPC
+  // 1. الخصم الذري المحمي عبر Supabase RPC (استخدام user_pay_order لمشتريات المطاعم لمنع أي إنشاء صف 0.00)
   if(window.supabase && typeof window.supabase.rpc === 'function'){
     try{
+      if(meta.txType === "order_payment"){
+        const { data: payRes, error: payErr } = await window.supabase.rpc('user_pay_order', {
+          p_customer_uid: uid,
+          p_amount: amount,
+          p_order_no: String(meta.orderNo || ''),
+          p_store_name: String(meta.storeName || 'المطعم')
+        });
+        if(payErr){
+          return { ok: false, error: payErr.message || "تعذر إتمام السداد من المحفظة" };
+        }
+        if(payRes && payRes.ok){
+          const finalBal = Number(payRes.balance);
+          if(auth.currentUser && isSelf){
+            updateWalletUI(finalBal);
+          }
+          return { ok: true, balance: finalBal, oldBalance: payRes.oldBalance, txId: payRes.txId };
+        }
+        return { ok: false, error: (payRes && payRes.error) || "الرصيد غير كافٍ لإتمام الطلب", balance: payRes && payRes.balance };
+      }
+
+      if(!isEffectiveAdmin){
+        return { ok: false, error: "نوع عملية الخصم غير مصرح به" };
+      }
+
       const adminUid = "zoSxkP0PGPWx37J6GMQiOjVgiMC3";
       const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('admin_deposit_wallet', {
         p_admin_uid: adminUid,
         p_target_uid: uid,
         p_amount: amount,
         p_type: 'debit',
-        p_note: reason || meta.adminNote || (meta.txType === "order_payment" ? 'سداد طلبية مطعم' : 'خصم رصيد'),
+        p_note: reason || meta.adminNote || 'خصم يدوي من الإدارة',
         p_user_name: meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || 'مستخدم',
         p_user_phone: meta.userPhone || (myProfile && myProfile.phone) || ''
       });
-      if(!rpcErr && rpcRes && rpcRes.ok){
-        // تأكيد أمني: إذا كان الرصيد السابق في قاعدة البيانات أقل من المبلغ المطلوب، لا نعتبره ناجحاً
-        if(Number(rpcRes.oldBalance || 0) < amount && (!isEffectiveAdmin || meta.txType === "order_payment")){
-          return { ok: false, error: "الرصيد في قاعدة البيانات غير كافٍ لإتمام الخصم", balance: rpcRes.oldBalance };
-        }
+      if(rpcErr){
+        return { ok: false, error: rpcErr.message || "تعذر تنفيذ الخصم في قاعدة البيانات" };
+      }
+      if(rpcRes && rpcRes.ok){
         const finalBal = Number(rpcRes.balance);
-
-        // 🛑 تم إلغاء recordWalletTx هنا لأن دالة RPC قامت بتسجيل الحركة بالفعل لمنع تكرار الحركة مرتين
-
-        if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
+        if(auth.currentUser && isSelf){
           updateWalletUI(finalBal);
         }
         return { ok: true, balance: finalBal, oldBalance: rpcRes.oldBalance, txId: rpcRes.txId };
       }
+      return { ok: false, error: (rpcRes && rpcRes.error) || "فشلت عملية الخصم" };
     }catch(rpcE){
-      console.warn("RPC admin_deposit_wallet fallback in debitUserWallet:", rpcE);
+      console.error("debitUserWallet RPC error:", rpcE);
+      return { ok: false, error: rpcE.message || "خطأ في الاتصال بخادم المحفظة" };
     }
   }
 
-  // 2. خط الدفاع الاحتياطي
-  try{
-    const current = await getUserWallet(uid);
-    const oldBalance = current.balance;
-    if(oldBalance < amount && !isEffectiveAdmin){
-      return { ok: false, error: "الرصيد غير كافٍ لإتمام العملية", balance: oldBalance };
-    }
-    const newBalance = Math.max(0, Math.round((oldBalance - amount) * 100) / 100);
-    const uName = meta.userName || (myProfile && myProfile.name) || auth.currentUser?.displayName || "مستخدم";
-    const uPhone = meta.userPhone || (myProfile && myProfile.phone) || "";
-    const now = Date.now();
-
-    for(const u of targetCandUids){
-      try{
-        await setDoc(doc(db, "feedback", "wallet_" + u), {
-          id: "wallet_" + u,
-          type: "user_wallet",
-          uid: u,
-          userName: uName,
-          userPhone: uPhone,
-          message: JSON.stringify({ balance: newBalance, updatedAt: now }),
-          updatedAt: now
-        }, { merge: true });
-      }catch(e){}
-      if(window.supabase){
-        try{
-          await window.supabase.from("feedback").update({
-            message: JSON.stringify({ balance: newBalance, updatedAt: now }),
-            updated_at: now
-          }).eq("id", "wallet_" + u);
-        }catch(e){}
-      }
-    }
-
-    const txId = await recordWalletTx(uid, meta.txType || "order_payment", -amount, oldBalance, newBalance, reason, meta);
-
-    if(auth.currentUser && targetCandUids.some(u => myCandUids.includes(u))){
-      updateWalletUI(newBalance);
-    }
-
-    return { ok: true, balance: newBalance, oldBalance, txId };
-  }catch(e){
-    console.error("debitUserWallet error:", e);
-    return { ok: false, error: e.message };
-  }
+  return { ok: false, error: "خدمة الدفع الإلكتروني غير متصلة حالياً" };
 }
 
 // 🔒 تم إلغاء window.debitUserWallet لمنع التلاعب من الكونسول
@@ -21315,8 +21452,10 @@ export function setupUserWalletListener(uid){
   // 1. جلب وتحديث فوري للرصيد الموحد عند الفتح
   refreshBalance();
 
-  // 2. مستمع التغييرات اللحظية: أي حركة شحن أو خصم تنعكس فورياً
-  const targetUid = (myProfile && (myProfile.originalUid || myProfile.original_uid)) || uid;
+  // 2. مستمع التغييرات اللحظية على المحفظة المرجعية: أي حركة شحن أو خصم تنعكس فورياً
+  const targetUid = (typeof getCanonicalWalletUid === 'function')
+    ? getCanonicalWalletUid(uid, auth.currentUser?.uid === uid ? auth.currentUser : null, auth.currentUser?.uid === uid ? myProfile : null)
+    : ((myProfile && (myProfile.originalUid || myProfile.original_uid)) || uid);
   try{
     _walletUnsub = onSnapshot(doc(db, "feedback", "wallet_" + targetUid), () => {
       refreshBalance();
@@ -21514,8 +21653,8 @@ window.submitCardRecharge = async()=>{
     // 🔒 الخطوة الأولى: محاولة شحن الكارت ذرياً عبر دالة Supabase RPC المحمية
     if(window.supabase && typeof window.supabase.rpc === 'function'){
       try {
-        const rawWalletUid = (typeof myProfile !== 'undefined' && myProfile && (myProfile.originalUid || myProfile.original_uid)) || auth.currentUser.uid;
-        const myWalletUid = getCanonicalWalletUid(rawWalletUid, auth.currentUser, myProfile);
+        const wState = await resolveUserWalletState(auth.currentUser.uid);
+        const myWalletUid = wState.targetUid || getCanonicalWalletUid(auth.currentUser.uid, auth.currentUser, myProfile);
         const { data: rpcRes, error: rpcErr } = await window.supabase.rpc('redeem_wallet_card', {
           p_code: cleanCode,
           p_uid: myWalletUid
@@ -21755,11 +21894,10 @@ window.openMyWalletHistory = async()=>{
     let txs = [];
 
     if(window.supabase){
-      const myCandUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser.uid) : [auth.currentUser.uid];
-      if(myCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3') || myCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2') || (myProfile && myProfile.phone === '218928476784')){
-        if(!myCandUids.includes('zoSxkP0PGPWx37J6GMQiOjVgiMC3')) myCandUids.push('zoSxkP0PGPWx37J6GMQiOjVgiMC3');
-        if(!myCandUids.includes('NrYY8We8VDgBiEk98bbxvkyfq2N2')) myCandUids.push('NrYY8We8VDgBiEk98bbxvkyfq2N2');
-      }
+      const wStateHist = await resolveUserWalletState(auth.currentUser.uid);
+      const myCandUids = (wStateHist.candUids && wStateHist.candUids.length)
+        ? wStateHist.candUids
+        : ((typeof window.getCandidateUids === 'function') ? window.getCandidateUids(auth.currentUser.uid) : [auth.currentUser.uid]);
       const { data, error } = await window.supabase
         .from("feedback")
         .select("*")
@@ -26845,13 +26983,12 @@ window.saveAllProfileData = async () => {
         if(unEl) unEl.textContent = "@" + res.value;
 
         const candUids = (typeof window.getCandidateUids === 'function') ? window.getCandidateUids(me.uid) : [me.uid];
+        const canonUid = (myProfile && (myProfile.originalUid || myProfile.original_uid)) || (window._linkedProfileState && window._linkedProfileState.masterUid) || me.uid;
         const sb = window.supabase || supabase;
-        if(sb) sb.from("profiles").update({ username: res.value }).in("id", candUids).catch(()=>{});
+        if(sb) sb.from("profiles").update({ username: res.value }).eq("id", canonUid).catch(()=>{});
 
         if(typeof db !== 'undefined' && db){
-          candUids.forEach(u => {
-            setDoc(doc(db, "profiles", u), { username: res.value }, { merge: true }).catch(()=>{});
-          });
+          setDoc(doc(db, "profiles", canonUid), { username: res.value }, { merge: true }).catch(()=>{});
         }
 
         if (myStore && typeof db !== 'undefined' && db) { try { await updateDoc(doc(db, "stores", myStore.id), { ownerUsername: res.value }); } catch(e){} }
