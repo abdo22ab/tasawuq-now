@@ -47,7 +47,7 @@ window.OneSignalDeferred.push(async function(OneSignal) {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=234').then(function(reg) {
+    navigator.serviceWorker.register('./sw.js?v=241').then(function(reg) {
       if (reg && reg.update) reg.update();
     }).catch(function(e){ console.warn('SW reg error:', e); });
   });
@@ -88,7 +88,7 @@ window.openInbox = window.openInbox || function() {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=237">
+<link rel="stylesheet" href="style.css?v=238">
 
 <!-- وسوم تحسين محركات البحث ومشاركة الروابط (SEO & Social Sharing) -->
 
@@ -1099,7 +1099,13 @@ window.openInbox = window.openInbox || function() {
 
       <button type="button" class="uwcBtnRecharge" onclick="openRechargeModal()">
 
-        <span>⚡</span> شحن المحفظة
+        <span>⚡</span> شحن
+
+      </button>
+
+      <button type="button" class="uwcBtnTransfer" onclick="openWalletTransferModal()">
+
+        <span>📲</span> تحويل
 
       </button>
 
@@ -1144,9 +1150,7 @@ window.openInbox = window.openInbox || function() {
 
   <button class="btnGhost" id="myStoreBtn" onclick="openMyStore()" style="background:#dcfce7;color:#166534;font-weight:800;display:none;width:100%">🏪 متجري</button>
 
-  <button class="btnGhost" id="myRestaurantOrdersBtn" style="background:#fef2f2;color:#b91c1c;border:1.5px solid #ef4444;font-weight:800;display:none">🔔 طلبات المطعم الحية المباشرة</button>
-
-  <!-- 📲 زر تثبيت التطبيق مباشرة بعد المتجر (يظهر فقط إذا لم يكن التطبيق مثبتاً) -->
+    <!-- 📲 زر تثبيت التطبيق مباشرة بعد المتجر (يظهر فقط إذا لم يكن التطبيق مثبتاً) -->
   <button type="button" class="btnGhost" id="accountInstallAppBtn" onclick="triggerPwaInstall()" style="background:#eff6ff;color:#0284c7;border:1.5px solid #bfdbfe;font-weight:900;font-size:13.5px;padding:12px;border-radius:12px;margin-top:6px;margin-bottom:6px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
     <span>📲</span>
     <span>تثبيت تطبيق تسوق الآن على الهاتف</span>
@@ -1989,23 +1993,29 @@ window.openInbox = window.openInbox || function() {
 
     <div style="padding:10px 14px 6px;background:var(--card);border-bottom:1px solid var(--border);flex:0 0 auto">
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr;gap:6px">
 
-        <button type="button" id="rloTabPending" class="filterBtn active" onclick="switchRloTab('pending')" style="position:relative;font-size:12px;padding:8px 3px">
+        <button type="button" id="rloTabPending" class="filterBtn active" onclick="switchRloTab('pending')" style="position:relative;font-size:11.5px;padding:8px 2px">
 
           🔔 بانتظار القبول <span id="rloPendingBadge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;margin-right:2px">0</span>
 
         </button>
 
-        <button type="button" id="rloTabActive" class="filterBtn" onclick="switchRloTab('active')" style="position:relative;font-size:12px;padding:8px 3px">
+        <button type="button" id="rloTabActive" class="filterBtn" onclick="switchRloTab('active')" style="position:relative;font-size:11.5px;padding:8px 2px">
 
           🍳 قيد التحضير <span id="rloActiveBadge" style="display:none;background:#f59e0b;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;margin-right:2px">0</span>
 
         </button>
 
-        <button type="button" id="rloTabDone" class="filterBtn" onclick="switchRloTab('done')" style="font-size:12px;padding:8px 3px">
+        <button type="button" id="rloTabDone" class="filterBtn" onclick="switchRloTab('done')" style="font-size:11.5px;padding:8px 2px">
 
           ✅ المكتملة
+
+        </button>
+
+        <button type="button" id="rloTabCancelled" class="filterBtn" onclick="switchRloTab('cancelled')" style="position:relative;font-size:11px;padding:8px 2px">
+
+          ❌ الملغية والمسترجعة <span id="rloCancelledBadge" style="display:none;background:#6b7280;color:#fff;border-radius:10px;padding:1px 4px;font-size:9.5px;margin-right:2px">0</span>
 
         </button>
 
@@ -2073,11 +2083,121 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
+<!-- 📲 نافذة تحويل الرصيد المباشر بين المستخدمين -->
+
+<!-- ============================================ -->
+
+<div id="walletTransferOverlay" class="overlay hidden" onclick="if(event.target===this)closeWalletTransferModal()">
+
+  <div class="sheet" style="max-height:92vh;overflow-y:auto">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10">
+
+      <div>
+
+        <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">📲 تحويل رصيد فوري</h3>
+
+        <div style="font-size:11px;color:var(--muted)">أرسل رصيداً إلى أي مستخدم فوراً بالاسم أو رقم الهاتف</div>
+
+      </div>
+
+      <button type="button" class="universalCloseBtn" onclick="closeWalletTransferModal()" title="إغلاق">✕</button>
+
+    </div>
+
+    <!-- شريط الرصيد المتاح للمرسل -->
+
+    <div style="background:linear-gradient(135deg,#e0f2fe,#bae6fd);border:1.5px solid #7dd3fc;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+
+      <div>
+
+        <div style="font-size:11px;color:#0369a1;font-weight:700">رصيدك المتاح حالياً:</div>
+
+        <div style="font-size:18px;font-weight:900;color:#0284c7;margin-top:2px"><span id="wtSenderBalanceText">0.00</span> د.ل</div>
+
+      </div>
+
+      <button type="button" onclick="closeWalletTransferModal();openRechargeModal();" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer">⚡ شحن</button>
+
+    </div>
+
+    <!-- حقل البحث عن المستلم -->
+
+    <div class="field" style="margin-bottom:12px">
+
+      <label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:6px">👤 المستلم (ابحث بالاسم، رقم الهاتف، أو اسم المستخدم):</label>
+
+      <div style="display:flex;gap:6px">
+
+        <input type="text" id="wtRecipientQuery" placeholder="مثال: 0928476784 أو صهيب أو @username" style="flex:1;height:44px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13.5px" onkeydown="if(event.key==='Enter'){event.preventDefault();searchTransferRecipient();}">
+
+        <button type="button" id="btnWtSearchRecipient" onclick="searchTransferRecipient()" style="flex:0 0 auto;height:44px;padding:0 16px;background:#0284c7;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer">🔍 بحث</button>
+
+      </div>
+
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">💡 اكتب أي جزء من رقم الهاتف (مثل <b>092</b> أو <b>091</b>) أو اسم المستخدم.</div>
+
+    </div>
+
+    <!-- صندوق نتائج بحث المستلم أو تفاصيل المستلم المختار -->
+
+    <div id="wtRecipientResultBox" style="display:none;margin-bottom:14px"></div>
+
+    <!-- حقل المبلغ -->
+
+    <div class="field" style="margin-bottom:12px">
+
+      <label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:6px">💰 المبلغ المراد تحويله (د.ل):</label>
+
+      <input type="number" id="wtAmountInput" min="1" max="5000" step="0.5" placeholder="0.00" style="width:100%;box-sizing:border-box;height:48px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:18px;font-weight:900;text-align:center">
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+
+        <button type="button" class="btnGhost" onclick="setWtAmount(5)" style="padding:6px;font-size:12px;font-weight:800;border:1px solid var(--border)">5 د.ل</button>
+
+        <button type="button" class="btnGhost" onclick="setWtAmount(10)" style="padding:6px;font-size:12px;font-weight:800;border:1px solid var(--border)">10 د.ل</button>
+
+        <button type="button" class="btnGhost" onclick="setWtAmount(20)" style="padding:6px;font-size:12px;font-weight:800;border:1px solid var(--border)">20 د.ل</button>
+
+        <button type="button" class="btnGhost" onclick="setWtAmount(50)" style="padding:6px;font-size:12px;font-weight:800;border:1px solid var(--border)">50 د.ل</button>
+
+      </div>
+
+    </div>
+
+    <!-- حقل ملاحظة / رسالة التحويل -->
+
+    <div class="field" style="margin-bottom:16px">
+
+      <label style="font-weight:800;font-size:12.5px;display:block;margin-bottom:6px">📝 ملاحظة أو سبب التحويل (اختياري):</label>
+
+      <input type="text" id="wtNoteInput" placeholder="مثال: سداد حساب / هدية / معاملة خاصة..." maxlength="100" style="width:100%;box-sizing:border-box;height:44px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">
+
+    </div>
+
+    <!-- حالة وزر التنفيذ -->
+
+    <div id="wtStatusBox" style="display:none;margin-bottom:12px;padding:10px 12px;border-radius:10px;font-size:12.5px;font-weight:700"></div>
+
+    <button type="button" id="btnSubmitWalletTransfer" class="btnMain" onclick="submitWalletTransfer()" style="background:#16a34a;color:#fff;font-weight:900;padding:13px;font-size:15px;width:100%">⚡ إرسال الرصيد الآن</button>
+
+    <div style="margin-top:12px;text-align:center">
+
+      <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);font-size:12px" onclick="closeWalletTransferModal()">إلغاء</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+
 <!-- نافذة شحن المحفظة الإلكترونية (Recharge Modal) -->
 
 <!-- ============================================ -->
 
-<div id="rechargeWalletOverlay" class="overlay hidden">
+<div id="rechargeWalletOverlay" class="overlay hidden" onclick="if(event.target===this)closeRechargeModal()">
 
   <div class="sheet" style="max-height:90vh;overflow-y:auto">
 
@@ -2187,11 +2307,11 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<div id="myWalletHistoryOverlay" class="overlay hidden">
+<div id="myWalletHistoryOverlay" class="overlay hidden" onclick="if(event.target===this)closeMyWalletHistory()">
 
   <div class="sheet" style="max-height:90vh;overflow-y:auto">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10">
 
       <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:6px">📜 كشف حساب محفظتي</h3>
 
@@ -2221,7 +2341,9 @@ window.openInbox = window.openInbox || function() {
 
     </div>
 
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:12px" onclick="closeMyWalletHistory()">إغلاق</button>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--card);padding-bottom:env(safe-area-inset-bottom, 8px)">
+      <button type="button" class="btnMain" style="background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:900;padding:11px;font-size:14px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)" onclick="closeMyWalletHistory()">✕ إغلاق كشف الحساب</button>
+    </div>
 
   </div>
 
@@ -2233,11 +2355,11 @@ window.openInbox = window.openInbox || function() {
 
 <!-- ============================================ -->
 
-<div id="adminWalletOverlay" class="overlay hidden">
+<div id="adminWalletOverlay" class="overlay hidden" onclick="if(event.target===this)closeAdminWallet()">
 
   <div class="sheet" style="max-height:92vh;overflow-y:auto">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:10">
 
       <div>
 
@@ -2553,7 +2675,9 @@ window.openInbox = window.openInbox || function() {
 
     </div>
 
-    <button type="button" class="btnGhost" style="background:transparent;color:var(--muted);margin-top:14px" onclick="closeAdminWallet()">إغلاق</button>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--card);padding-bottom:env(safe-area-inset-bottom, 8px);z-index:10">
+      <button type="button" class="btnMain" style="background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:900;padding:12px;font-size:14px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);width:100%" onclick="closeAdminWallet()">✕ إغلاق الإدارة المالية والمحفظة</button>
+    </div>
 
   </div>
 
@@ -3178,6 +3302,16 @@ window.openInbox = window.openInbox || function() {
 
       <button class="btnGhost accountBtn" style="margin-top:0;margin-bottom:14px;padding:9px" onclick="saveMyUsername()">🏷️ حفظ اسم المستخدم</button>
 
+      <!-- 📧 بطاقة البريد الإلكتروني (Google / Email) -->
+      <div class="field" style="margin-bottom:8px">
+        <label>📧 البريد الإلكتروني (Google / Email)</label>
+        <div style="position:relative;display:flex;align-items:center;margin-bottom:8px">
+          <input id="myEmailInput" type="email" placeholder="example@gmail.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;direction:ltr;text-align:right;font-weight:700;background:var(--card);font-family:inherit;color:var(--text)">
+        </div>
+        <button type="button" class="btnGhost accountBtn" style="margin-top:0;margin-bottom:14px;padding:9px" onclick="saveMyEmail()">📧 حفظ / ربط البريد الإلكتروني</button>
+      </div>
+
+
       <!-- 🔒 خيار إظهار أو إخفاء رقم الهاتف في الملف الشخصي -->
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:10px">
@@ -3260,7 +3394,12 @@ window.openInbox = window.openInbox || function() {
 
       <div style="display:flex;align-items:center;gap:7px;flex:0 0 auto">
 
-        <button type="button" id="chatHeaderCallBtn" class="chatHeaderIconBtn call" title="اتصال هاتفي مباشر" onclick="chatActionCall()">📞</button>
+        <button type="button" id="chatHeaderProfileBtn" onclick="openChatTargetProfile()" style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:800;color:#0284c7;display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;transition:all .15s ease" title="عرض الحساب والملف الشخصي">
+          <span>👤</span> <span>الملف</span>
+        </button>
+        <button type="button" id="chatHeaderCallBtn" class="chatHeaderIconBtn call" title="اتصال صوتي مباشر مجاني" onclick="chatActionCall()">📞</button>
+
+        <button type="button" id="chatHeaderRefreshBtn" class="chatHeaderIconBtn refresh" title="تحديث المحادثة لحظياً" onclick="refreshActiveChat(true)">🔄</button>
 
         <button type="button" id="chatHeaderDeleteBtn" class="chatHeaderIconBtn del" title="حذف رسائل محددة" onclick="toggleChatSelectionMode()">🗑️</button>
 
@@ -3442,11 +3581,168 @@ window.openInbox = window.openInbox || function() {
 
     </div>
 
+    <!-- نافذة إجراءات الرسالة المنبثقة: نسخ النص، حذف من الطرفين، حذف لدي فقط -->
+    <div id="chatMessageActionSheet" class="overlay hidden" style="background:rgba(0,0,0,0.65);align-items:flex-end;justify-content:center;z-index:99999;backdrop-filter:blur(3px)" onclick="if(event.target===this)closeChatMessageActionSheet()">
+      <div class="sheet" style="max-width:440px;width:100%;border-radius:24px 24px 0 0;padding:20px 18px 26px;background:var(--card);box-shadow:0 -10px 40px rgba(0,0,0,0.3);direction:rtl;text-align:right">
+        <div style="width:40px;height:4.5px;border-radius:3px;background:var(--border);margin:0 auto 14px"></div>
+        
+        <!-- معاينة مقتطفة من الرسالة -->
+        <div id="cmaPreviewBox" style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text);line-height:1.4;max-height:80px;overflow-y:auto">
+          <div id="cmaPreviewText" style="white-space:pre-wrap;word-break:break-word"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <!-- زر نسخ النص -->
+          <button type="button" id="cmaBtnCopy" onclick="chatActionCopyMessageText()" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:flex-start">
+            <span style="font-size:18px">📋</span>
+            <span>نسخ نص الرسالة</span>
+          </button>
+
+          <!-- زر الحذف من الطرفين (يظهر فقط إذا كانت الرسالة مرسلة من المستخدم) -->
+          <button type="button" id="cmaBtnDeleteEveryone" onclick="chatActionDeleteForEveryone()" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;border-radius:14px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:flex-start">
+            <span style="font-size:18px">🗑️</span>
+            <span>حذف لدى الجميع (من الطرفين)</span>
+          </button>
+
+          <!-- زر الحذف لدي فقط -->
+          <button type="button" id="cmaBtnDeleteForMe" onclick="chatActionDeleteForMe()" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:flex-start">
+            <span style="font-size:18px">👁️‍🗨️</span>
+            <span>حذف لدي فقط</span>
+          </button>
+
+          <!-- زر تحديد رسائل أخرى -->
+          <button type="button" id="cmaBtnSelectMode" onclick="chatActionEnterSelectFromCurrent()" style="background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:10px;justify-content:flex-start">
+            <span style="font-size:18px">☑️</span>
+            <span>تحديد رسائل متعددة</span>
+          </button>
+
+          <!-- إلغاء -->
+          <button type="button" onclick="closeChatMessageActionSheet()" style="background:transparent;color:var(--muted);border:none;border-radius:12px;padding:8px;font-size:13px;font-weight:700;cursor:pointer;margin-top:2px">
+            إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
-<script type="module" src="app.js?v=256"></script>
+<!-- مودال المكالمة الصوتية المباشرة المجانية WebRTC -->
+<style>
+  @keyframes callPulse {
+    0% { transform: scale(0.96); opacity: 0.85; box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+    70% { transform: scale(1.15); opacity: 0.15; box-shadow: 0 0 0 24px rgba(34,197,94,0); }
+    100% { transform: scale(0.96); opacity: 0; }
+  }
+</style>
+<div id="voiceCallModal" class="overlay hidden" style="background:rgba(15,23,42,0.94);align-items:center;justify-content:center;z-index:999999;backdrop-filter:blur(10px);direction:rtl">
+  <div style="max-width:360px;width:90%;border-radius:28px;padding:32px 22px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.55);background:#1e293b;border:1px solid rgba(255,255,255,0.12);color:#fff">
+    
+    <!-- صورة الطرف الآخر مع تأثير النبض والرنين -->
+    <div style="position:relative;width:110px;height:110px;margin:0 auto 20px">
+      <div id="callAvatarPulseRing" style="position:absolute;inset:-8px;border-radius:50%;border:2.5px solid #22c55e;animation:callPulse 1.6s infinite ease-out"></div>
+      <div id="callTargetAvatarBox" style="position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;background:#334155;border:3px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:46px;color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.4)">
+        👤
+      </div>
+    </div>
+
+    <!-- اسم المتصل والحالة -->
+    <h3 id="callTargetNameDisplay" style="margin:0 0 6px;font-size:20px;font-weight:900;color:#fff">اسم المستخدم</h3>
+    <div id="callStatusText" style="font-size:14px;color:#94a3b8;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:6px">
+      <span>جاري الاتصال المباشر...</span>
+    </div>
+
+    <!-- عداد وقت المكالمة (يظهر أثناء المكالمة الجارية) -->
+    <div id="callDurationDisplay" style="display:none;font-size:26px;font-weight:900;letter-spacing:1px;color:#22c55e;margin-bottom:20px;font-family:monospace">
+      00:00
+    </div>
+
+    <!-- أزرار التحكم بالمكالمة الصادرة -->
+    <div id="callControlsOutgoing" style="display:flex;flex-direction:column;gap:10px">
+      <button type="button" onclick="endVoiceCall('cancelled')" style="background:#ef4444;color:#fff;border:none;border-radius:18px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 20px rgba(239,68,68,0.4)">
+        <span style="font-size:20px">🔴</span>
+        <span>إلغاء الاتصال</span>
+      </button>
+      <button type="button" id="callBtnCellularFallback" onclick="callCellularFallback()" style="display:none;background:rgba(255,255,255,0.08);color:#cbd5e1;border:1px solid rgba(255,255,255,0.18);border-radius:16px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">
+        📱 اتصال عبر شريحة الهاتف
+      </button>
+    </div>
+
+    <!-- أزرار المكالمة الواردة (رد / رفض) -->
+    <div id="callControlsIncoming" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
+      <button type="button" onclick="rejectIncomingCall()" style="background:#ef4444;color:#fff;border:none;border-radius:18px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 20px rgba(239,68,68,0.4)">
+        <span style="font-size:18px">🔴</span>
+        <span>رفض</span>
+      </button>
+      <button type="button" onclick="acceptIncomingCall()" style="background:#22c55e;color:#fff;border:none;border-radius:18px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 20px rgba(34,197,94,0.4)">
+        <span style="font-size:18px">🟢</span>
+        <span>رد وقبول</span>
+      </button>
+    </div>
+
+    <!-- أزرار المكالمة الجارية النشطة -->
+    <div id="callControlsActive" style="display:none;grid-template-columns:1fr 1fr;gap:12px">
+      <button type="button" id="callBtnMuteToggle" onclick="toggleCallMute()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:18px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span id="callMuteIcon" style="font-size:18px">🎤</span>
+        <span id="callMuteText">كتم</span>
+      </button>
+      <button type="button" onclick="endVoiceCall('ended')" style="background:#ef4444;color:#fff;border:none;border-radius:18px;padding:13px;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 20px rgba(239,68,68,0.4)">
+        <span style="font-size:18px">🔴</span>
+        <span>إنهاء المكالمة</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+<!-- عنصر الصوت لتشغيل المكالمة المباشرة -->
+<audio id="activeCallRemoteAudio" autoplay playsinline style="display:none"></audio>
+
+
+<!-- 🚀 موجه الروابط الفوري وثبات الريفريش اللحظي للموقع -->
+<script>
+(function(){
+  var hash = window.location.hash;
+  if (!hash) {
+    try {
+      var saved = sessionStorage.getItem('tasawuq_active_screen') || '';
+      if (saved && saved !== '#' && saved !== '#home' && !saved.startsWith('#store-')) {
+        hash = saved;
+        window.location.hash = hash;
+      }
+    } catch(e){}
+  }
+  if (!hash || hash === '#' || hash === '#home') return;
+
+  function applyInstantScreen(){
+    var h = window.location.hash;
+    if (h === '#cart') {
+      var el = document.getElementById('cartOverlay');
+      if (el) el.classList.remove('hidden');
+    } else if (h === '#account') {
+      var el = document.getElementById('accountOverlay');
+      if (el) el.classList.remove('hidden');
+    } else if (h === '#inbox') {
+      var el = document.getElementById('userInboxOverlay');
+      if (el) el.classList.remove('hidden');
+    } else if (h === '#food-orders') {
+      var el = document.getElementById('foodOrdersModal');
+      if (el) el.classList.remove('hidden');
+    } else if (h === '#wallet') {
+      var el = document.getElementById('accountOverlay');
+      if (el) el.classList.remove('hidden');
+    }
+  }
+
+  if (document.readyState !== 'loading') {
+    applyInstantScreen();
+  } else {
+    document.addEventListener('DOMContentLoaded', applyInstantScreen);
+  }
+})();
+</script>
+
+<script type="module" src="app.js?v=266"></script>
 
 <!-- 🎬 Script شاشة الفيديو -->
 
