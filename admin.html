@@ -497,7 +497,13 @@ function startLiveListeners(){
   if(!unsubReports){unsubReports=onSnapshot(collection(db,"reports"),snap=>{allReportsCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderReportsList();updateStats();});}
   if(!unsubStores){unsubStores=onSnapshot(collection(db,"stores"),snap=>{allStoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));renderStoresList();updateStats();});}
   if(!unsubFeedback){unsubFeedback=onSnapshot(collection(db,"feedback"),snap=>{
-    allFeedbackCache=snap.docs.map(d=>{
+    allFeedbackCache=snap.docs
+      .filter(d => {
+        const raw = d.data() || {};
+        const t = raw.type || "";
+        return !["wallet_card", "user_wallet", "wallet_transaction"].includes(t);
+      })
+      .map(d=>{
       const raw=d.data()||{};
       let status=raw.status||"new";
       let text=raw.message||"";
@@ -1945,7 +1951,10 @@ async function loadAdminWebCards(){
     }
     box.innerHTML = _adminWalCardsData.map(c=>{
       const isUsed = c.isUsed;
-      const badge = isUsed
+      const isCancelled = c.usedByUid === 'burn_admin_cancelled';
+      const badge = isCancelled
+        ? `<span style="color:#64748b;font-weight:800;font-size:10.5px">🚫 ملغي ومسحوب من الإدارة</span>`
+        : isUsed
         ? `<span style="color:#dc2626;font-weight:800;font-size:10.5px">🔴 مستخدم بواسطة: ${esc(c.usedByName||"زبون")} (${esc(c.usedByPhone||"")})</span>`
         : `<span style="color:#16a34a;font-weight:800;font-size:10.5px">🟢 صالحة للاستخدام</span>`;
       return `
@@ -1954,7 +1963,10 @@ async function loadAdminWebCards(){
             <div style="font-family:monospace;font-weight:800;font-size:13px">${esc(c.code)} — <b>${c.amount} د.ل</b></div>
             <div>${badge}</div>
           </div>
-          <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${esc(c.code)}');alert('تم النسخ!');" style="padding:4px 8px;font-size:11px">📋 نسخ</button>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${esc(c.code)}');alert('تم النسخ!');" style="padding:4px 8px;font-size:11px">📋 نسخ</button>
+            ${!isUsed ? `<button class="btn btn-danger" onclick="cancelWebCard('${esc(c.code)}')" style="padding:4px 8px;font-size:11px">🗑️ حذف</button>` : ''}
+          </div>
         </div>
       `;
     }).join("");
@@ -1962,6 +1974,25 @@ async function loadAdminWebCards(){
     box.innerHTML = `<div class="listEmpty">خطأ: ${e.message}</div>`;
   }
 }
+
+window.cancelWebCard = async (code) => {
+  if (!confirm(`هل أنت متأكد من حذف وإلغاء الكارت (${code}) نهائياً ومنع استخدامه؟`)) return;
+  try {
+    if (window.supabase && typeof window.supabase.rpc === 'function') {
+      const { data, error } = await window.supabase.rpc('redeem_wallet_card', {
+        p_code: code,
+        p_uid: 'burn_admin_cancelled'
+      });
+      if (error) throw new Error(error.message);
+      alert('✅ تم حذف وإلغاء الكارت بنجاح!');
+      loadAdminWebCards();
+      return;
+    }
+    throw new Error('خدمة Supabase غير متصلة حالياً');
+  } catch (e) {
+    alert('خطأ أثناء إلغاء الكارت: ' + e.message);
+  }
+};
 
 window.adminWebGenerateCards = async()=>{
   const selDenom = document.getElementById("admWebGenDenom")?.value || "20";
